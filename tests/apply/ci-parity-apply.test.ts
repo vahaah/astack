@@ -1,14 +1,18 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
+	chmodSync,
 	cpSync,
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readdirSync,
 	readFileSync,
+	readlinkSync,
 	realpathSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -704,9 +708,15 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 });
 
 describe("apply --dry-run copies the repo for its checks", () => {
-	test("the copy holds the tracked and the ignored files of the repo, and no nested worktree", async () => {
+	test("the copy preserves tracked and ignored files, modes, and links, skips nested worktrees, and isolates writes", async () => {
 		const tree = seed({ ".gitignore": "node_modules/\n.claude/worktrees/\n" });
 		write(tree.main, "node_modules/left-pad/index.js", "module.exports = 1;\n");
+		write(tree.main, "run.sh", "#!/bin/sh\nexit 0\n");
+		chmodSync(join(tree.main, "run.sh"), 0o755);
+		symlinkSync(
+			"node_modules/left-pad/index.js",
+			join(tree.main, "dependency-link"),
+		);
 		git(
 			tree.main,
 			"worktree",
@@ -736,5 +746,15 @@ describe("apply --dry-run copies the repo for its checks", () => {
 				].filter((path) => existsSync(join(copy, path))),
 			),
 		).toEqual(["CLAUDE.md", "node_modules/left-pad/index.js"]);
+		for (const copy of copies) {
+			expect(lstatSync(join(copy, "run.sh")).mode & 0o777).toBe(0o755);
+			expect(readlinkSync(join(copy, "dependency-link"))).toBe(
+				"node_modules/left-pad/index.js",
+			);
+			write(copy, "node_modules/left-pad/index.js", "module.exports = 2;\n");
+			expect(
+				readFileSync(join(tree.main, "node_modules/left-pad/index.js"), "utf8"),
+			).toBe("module.exports = 1;\n");
+		}
 	});
 });

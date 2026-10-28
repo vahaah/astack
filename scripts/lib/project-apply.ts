@@ -1,4 +1,5 @@
 import {
+	constants,
 	existsSync,
 	lstatSync,
 	mkdirSync,
@@ -10,6 +11,7 @@ import {
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
+import { cp } from "node:fs/promises";
 import {
 	basename,
 	dirname,
@@ -1069,26 +1071,24 @@ function copySteps(
 	];
 }
 
-async function cloneRepo(
+async function copyRepo(
 	repo: string,
 	copy: string,
 	skipped: readonly string[],
 ): Promise<string | undefined> {
-	for (const step of copySteps(repo, skipped)) {
-		const target = join(copy, step.dir);
-		mkdirSync(target, { recursive: true });
-		if (step.entries.length === 0) continue;
-		const copied = await run(
-			[
-				"cp",
-				"-c",
-				"-R",
-				...step.entries.map((path) => join(repo, path)),
-				target,
-			],
-			{ cwd: dirname(copy), timeoutSeconds: 3600 },
-		);
-		if (copied.exitCode !== 0) return copied.stderr.trim();
+	try {
+		for (const step of copySteps(repo, skipped)) {
+			mkdirSync(join(copy, step.dir), { recursive: true });
+			for (const path of step.entries) {
+				await cp(join(repo, path), join(copy, path), {
+					recursive: true,
+					mode: constants.COPYFILE_FICLONE,
+					verbatimSymlinks: true,
+				});
+			}
+		}
+	} catch (error) {
+		return messageOf(error);
 	}
 	return undefined;
 }
@@ -1130,14 +1130,14 @@ export async function dryRunProject(
 	assertOwnedCopy(scratch, copy, project.name);
 	const started = Date.now();
 	const skipped = await nestedWorktrees(repo);
-	const copyError = await cloneRepo(repo, copy, skipped);
+	const copyError = await copyRepo(repo, copy, skipped);
 	if (copyError !== undefined) {
-		log(`Clonefile copy failed: ${copyError}`);
+		log(`Repository copy failed: ${copyError}`);
 		if (existsSync(copy)) rmSync(copy, { recursive: true, force: true });
 		return 1;
 	}
 	log(
-		`Copy: ${copy} (cp -c -R, ${((Date.now() - started) / 1000).toFixed(1)}s, with no copy of ${skipped.length} nested worktree(s))`,
+		`Copy: ${copy} (filesystem copy, ${((Date.now() - started) / 1000).toFixed(1)}s, with no copy of ${skipped.length} nested worktree(s))`,
 	);
 	let exitCode = 0;
 	try {
