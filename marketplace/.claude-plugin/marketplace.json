@@ -1,7 +1,7 @@
 {
 	"$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
 	"name": "astack",
-	"description": "One astack plugin with skills, agents, rules and hooks for plans, code, review, tickets and documentation.",
+	"description": "Skills, rules and hooks for the path from a goal to a merged pull request.",
 	"owner": {
 		"name": "Alex Vakhitov"
 	},
@@ -9,7 +9,7 @@
 		{
 			"name": "astack",
 			"source": "./plugins/astack",
-			"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks."
+			"description": "Plan, build, review and write, with hooks that check the work."
 		}
 	]
 }

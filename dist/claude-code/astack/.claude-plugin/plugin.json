@@ -1,7 +1,7 @@
 {
 	"name": "astack",
 	"version": "0.1.0+68a29a57180a",
-	"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks.",
+	"description": "Plan, build, review and write, with hooks that check the work.",
 	"author": {
 		"name": "Alex Vakhitov"
 	},
