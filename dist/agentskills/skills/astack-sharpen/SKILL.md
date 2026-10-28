@@ -4,7 +4,7 @@ description: "Improve the approach before work starts. Use for /astack-sharpen t
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

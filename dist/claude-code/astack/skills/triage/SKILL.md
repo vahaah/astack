@@ -2,8 +2,6 @@
 name: triage
 description: Triage issues and enabled external PRs. Classify requests, verify claims, clarify decisions and write agent briefs.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Triage

@@ -37,15 +37,6 @@ describe("rules/comments.md", () => {
 		);
 	});
 
-	test("holds the copyright line of the frozen pstack licence as its own line", async () => {
-		const copyright = (await repoText("upstream/pstack/LICENSE"))
-			.split("\n")
-			.filter((line) => line.startsWith("Copyright"));
-		expect(copyright).toHaveLength(1);
-		const lines = (await repoText("rules/comments.md")).split("\n");
-		expect(lines.filter((line) => copyright.includes(line))).toEqual(copyright);
-	});
-
 	test("its paths name each extension of the comment lexer", async () => {
 		expect(await repoText("rules/comments.md")).toStartWith(
 			[

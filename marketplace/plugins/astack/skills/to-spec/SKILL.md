@@ -2,8 +2,6 @@
 name: to-spec
 description: Create and publish a spec from the current conversation. Synthesize known information without another interview.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Create a spec

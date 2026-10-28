@@ -2,8 +2,6 @@
 name: sharpen
 description: "Improve the approach before work starts. Use for /astack:sharpen to check the goal, constraints, expert methods, and independent proof."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Sharpen

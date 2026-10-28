@@ -4,7 +4,7 @@ description: "Use for \"interrogate\", \"adversarial review\", \"multi-model rev
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

@@ -4,7 +4,7 @@ description: "Interview the user about a plan, decision or idea. Use when the us
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Grilling

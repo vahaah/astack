@@ -68,10 +68,6 @@ export type FlatBuild = {
 	readonly licenses: ByPlugin<string>;
 };
 
-function upstreamsOf(skill: Skill): readonly UpstreamName[] {
-	return skill.origin;
-}
-
 function rulesUpstreams(rules: readonly Rule[]): readonly UpstreamName[] {
 	const named = new Set(
 		rules.flatMap((rule) => PATH_ORIGINS[`rules/${rule.name}.md`] ?? []),
@@ -79,16 +75,8 @@ function rulesUpstreams(rules: readonly Rule[]): readonly UpstreamName[] {
 	return UPSTREAM_NAMES.filter((name) => named.has(name));
 }
 
-function sourceLabel(skill: Skill): string {
-	const upstreams = upstreamsOf(skill);
-	const label = skill.plugin;
-	return upstreams.length === 0
-		? label
-		: `${label}, adapted from ${upstreams.map((name) => UPSTREAMS[name].label).join(" and ")}`;
-}
-
 export function skillLicense(skill: Skill, base: string): string {
-	return licenseWith(base, upstreamsOf(skill));
+	return licenseWith(base, skill.origin);
 }
 
 function licenseWith(base: string, upstreams: readonly UpstreamName[]): string {
@@ -129,7 +117,7 @@ function metadata(
 		case "agentskills":
 			return {
 				"astack-version": build.version,
-				source: sourceLabel(skill),
+				source: skill.plugin,
 				...(isUserOnly(skill.values)
 					? { "disable-model-invocation": "true" }
 					: {}),

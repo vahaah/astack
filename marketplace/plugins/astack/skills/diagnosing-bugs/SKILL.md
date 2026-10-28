@@ -1,8 +1,6 @@
 ---
 name: diagnosing-bugs
 description: "Diagnosis loop for hard bugs, flaky tests and performance regressions. Use when the user says \"diagnose\" or \"debug this\", or a bug or regression resists a first look. Not for questions about how code works."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Diagnosing Bugs

@@ -2,8 +2,6 @@
 name: correct
 description: "Find repeated agent mistakes and prevent them. Try architecture, then types, then an actionable lint, then a test. Write docs last. Prove every check on a real past mistake. Repeat after an operator correction. Use for /astack:correct."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Correct

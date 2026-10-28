@@ -16,14 +16,11 @@ import {
 	pluginCredits,
 	renderPluginNotice,
 } from "../scripts/build.ts";
-import { validateSkillFrontmatter } from "../scripts/lib/frontmatter.ts";
 import {
 	AGENT_ORIGINS,
-	originOf,
 	PATH_ORIGINS,
-	UPSTREAM_NAMES,
+	SKILL_ORIGINS,
 	UPSTREAMS,
-	type UpstreamName,
 	upstreamOrigin,
 } from "../scripts/lib/upstreams.ts";
 import { err, ok } from "../src/astack/result.ts";
@@ -54,93 +51,25 @@ function pluginTree(files: Readonly<Record<string, string>>): string {
 	return root;
 }
 
-function skill(name: string, body: string, origin?: string): string {
-	const metadata =
-		origin === undefined ? [] : ["metadata:", `  origin: ${origin}`];
-	return [
-		"---",
-		`name: ${name}`,
-		"description: d",
-		...metadata,
-		"---",
-		"",
-		body,
-	].join("\n");
+function skill(name: string, body: string): string {
+	return ["---", `name: ${name}`, "description: d", "---", "", body].join("\n");
 }
 
 const upstreamText = readFileSync(
 	join(ROOT, "upstream/pstack/agents/comment-sicko.md"),
 	"utf8",
 );
-const upstreamNames = UPSTREAM_NAMES.join(", ");
-
-describe("originOf", () => {
-	const readable: readonly (readonly [
-		string,
-		Readonly<Record<string, unknown>>,
-		readonly UpstreamName[],
-	])[] = [
-		["no metadata", {}, []],
-		["a metadata map with no origin", { metadata: { version: "1" } }, []],
-		[
-			"two upstream names",
-			{ metadata: { origin: "pstack mattpocock-skills" } },
-			["pstack", "mattpocock-skills"],
-		],
-	];
-
-	test.each(readable)("reads %s", (_, values, expected) => {
-		expect(originOf(values)).toEqual(ok(expected));
-	});
-
-	test.each([
-		[
-			"a name that is not an upstream",
-			{ metadata: { origin: "pstack psatck" } },
-			`metadata.origin names "psatck", which is not one of ${upstreamNames}`,
-		],
-		[
-			"an origin with no name",
-			{ metadata: { origin: " " } },
-			"metadata.origin names no upstream",
-		],
-		[
-			"an origin that is not a string",
-			{ metadata: { origin: ["pstack"] } },
-			"metadata.origin must be a string of upstream names with a space between them",
-		],
-		[
-			"metadata that is not a map",
-			{ metadata: "pstack" },
-			"metadata must be a map",
-		],
-	])("refuses %s", (_, values, message) => {
-		expect(originOf(values)).toEqual(err(message));
-	});
-
-	test("the frontmatter validator reports a bad origin of a skill with its path", () => {
-		expect(
-			validateSkillFrontmatter(
-				{ name: "x", description: "d", metadata: { origin: "psatck" } },
-				"x",
-			),
-		).toEqual([
-			`skills/x/SKILL.md: metadata.origin names "psatck", which is not one of ${upstreamNames}`,
-		]);
-	});
-});
-
 describe("the notice test", () => {
 	test("fails on a planted skill or agent that shares a run with an upstream and has no origin, and notes an origin with no shared run", () => {
 		const root = pluginTree({
 			"skills/copied/SKILL.md": skill("copied", upstreamText),
-			"skills/credited/SKILL.md": skill("credited", upstreamText, "pstack"),
-			"skills/claimed/SKILL.md": skill("claimed", "Reply OK.", "pstack"),
+			"skills/how/SKILL.md": skill("how", upstreamText),
+			"skills/reflect/SKILL.md": skill("reflect", "Reply OK."),
 			"agents/copied.md": skill("copied", upstreamText),
 		});
 		expect(originFindings(pluginItems(root), runs)).toEqual({
 			gaps: ["skills/copied: pstack", "agents/copied.md: pstack"],
-			notes: ["skills/claimed: pstack"],
+			notes: ["skills/reflect: pstack"],
 		});
 	});
 
@@ -200,51 +129,42 @@ describe("the notice test", () => {
 		expect(gaps).toEqual([]);
 	});
 
-	test("each rule with an origin holds the copyright line of each origin upstream as its own line", () => {
-		const missing = Object.entries(PATH_ORIGINS)
-			.filter(([path]) => path.startsWith("rules/"))
-			.flatMap(([path, upstreams]) => {
-				const lines = readFileSync(join(ROOT, path), "utf8").split("\n");
-				return upstreams
-					.filter((name) => !lines.includes(UPSTREAMS[name].copyright))
-					.map((name) => `${path}: ${name}`);
-			});
-		expect(missing).toEqual([]);
-	});
-
-	test("each key of AGENT_ORIGINS and PATH_ORIGINS names a path of the repo", () => {
+	test("each origin registry entry names a source path of the repo", () => {
 		expect(
-			[...Object.keys(AGENT_ORIGINS), ...Object.keys(PATH_ORIGINS)].filter(
-				(path) => !existsSync(join(ROOT, path)),
-			),
+			[
+				...[...SKILL_ORIGINS.keys()].map(
+					(name) => `marketplace/plugins/astack/skills/${name}/SKILL.md`,
+				),
+				...Object.keys(AGENT_ORIGINS),
+				...Object.keys(PATH_ORIGINS),
+			].filter((path) => !existsSync(join(ROOT, path))),
 		).toEqual([]);
 	});
 });
 
 describe("the plugin NOTICE", () => {
-	test("credits each skill with an origin, and no skill without one", () => {
+	test("credits skills from the registry without origin fields in their instructions", () => {
 		const root = pluginTree({
-			"skills/adapted/SKILL.md": skill(
-				"adapted",
-				"Body.",
-				"pstack cursor-team-kit",
-			),
-			"skills/own/SKILL.md": skill("own", "Body."),
+			"skills/coding-rules/SKILL.md": skill("coding-rules", "Body."),
+			"skills/constructor/SKILL.md": skill("constructor", "Body."),
 		});
 		expect(pluginCredits(root)).toEqual(
 			ok([
-				{ item: "skills/adapted", upstreams: ["pstack", "cursor-team-kit"] },
+				{
+					item: "skills/coding-rules",
+					upstreams: ["pstack", "mattpocock-skills"],
+				},
 			]),
 		);
 	});
 
-	test("refuses a skill whose origin names no upstream", () => {
+	test("refuses a skill whose frontmatter is not closed", () => {
 		const root = pluginTree({
-			"skills/typo/SKILL.md": skill("typo", "Body.", "psatck"),
+			"skills/broken/SKILL.md": "---\nname: broken\n",
 		});
 		expect(pluginCredits(root)).toEqual(
 			err([
-				`skills/typo/SKILL.md: metadata.origin names "psatck", which is not one of ${upstreamNames}`,
+				`skills/broken/SKILL.md: ${join(root, "skills/broken/SKILL.md")}: frontmatter is not closed`,
 			]),
 		);
 	});

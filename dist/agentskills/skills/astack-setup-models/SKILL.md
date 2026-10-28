@@ -4,7 +4,7 @@ description: "Configure astack models and reasoning budgets by role. Use for /as
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
 ---
 
 # Set up models

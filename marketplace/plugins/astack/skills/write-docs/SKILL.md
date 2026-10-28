@@ -2,8 +2,6 @@
 name: write-docs
 description: Write and place documents, PR bodies and commit messages. Use for documentation changes, ADRs and change descriptions.
 argument-hint: "[doc type or path]"
-metadata:
-  origin: mattpocock-skills pstack
 ---
 
 # Write docs

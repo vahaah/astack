@@ -222,9 +222,9 @@ describe("the own text of astack", () => {
 describe("the STE exemption lists", () => {
 	test("name a missing file, a file with 0 findings and a file that shares no run with its item origin", () => {
 		const upstream = "run the whole suite before you open the pull request";
-		const skill = "marketplace/plugins/astack/skills/a";
+		const skill = "marketplace/plugins/astack/skills/how";
 		const root = repo({
-			[`${skill}/SKILL.md`]: `---\nname: a\nmetadata:\n  origin: pstack\n---\n\nIt's late, so ${upstream}.\n`,
+			[`${skill}/SKILL.md`]: `---\nname: how\n---\n\nIt's late, so ${upstream}.\n`,
 			[`${skill}/clean.md`]: `You must ${upstream}.\n`,
 			[`${skill}/own.md`]: "It's ours, and no upstream holds this text.\n",
 			[`${STE_EXEMPT_DIR}/a.txt`]: [

@@ -2,8 +2,6 @@
 name: implement
 description: Implement work from a spec or a set of tickets.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Implement

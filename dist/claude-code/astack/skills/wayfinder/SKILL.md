@@ -2,8 +2,6 @@
 name: wayfinder
 description: Plan work across agent sessions with a shared map of decision tickets. Resolve questions until the route to the destination is clear.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Wayfinder

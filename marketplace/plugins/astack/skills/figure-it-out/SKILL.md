@@ -2,8 +2,6 @@
 name: figure-it-out
 description: "Design a reviewable workflow when no narrower playbook fits. Use for /astack:figure-it-out, large migrations, or unattended work."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Figure it out

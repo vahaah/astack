@@ -2,8 +2,6 @@
 name: deslop
 description: Remove AI-generated slop from the diff of the current branch against its base branch. Examples are needless defensive code, type escapes, deep nesting and code that ignores local conventions. Comments go to /astack:no-comments. Use after an agent writes code, before review, or when asked to clean up a branch.
 argument-hint: "[base-branch]"
-metadata:
-  origin: cursor-team-kit
 ---
 
 # Deslop

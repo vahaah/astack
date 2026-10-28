@@ -60,8 +60,8 @@ const lines = (file: string, text: string) =>
 		text: line,
 	}));
 
-const upstreamSkill = (name: string, origin: string, body: string) =>
-	`---\nname: ${name}\ndescription: d\nmetadata:\n  origin: ${origin}\n---\n\n# ${name}\n\n${body || "Read the workflow."}\n`;
+const upstreamSkill = (name: string, body: string) =>
+	`---\nname: ${name}\ndescription: d\n---\n\n# ${name}\n\n${body || "Read the workflow."}\n`;
 
 function marketplace(plugins: Record<string, Record<string, string>>): string {
 	const root = mkdtempSync(join(tmpdir(), "validate-marketplace-"));
@@ -485,16 +485,8 @@ describe("upstream checks", () => {
 	test("a flow item under an astack path still gets the flow residual check, and astack text does not", () => {
 		const root = marketplace({
 			astack: {
-				"skills/grilling/SKILL.md": upstreamSkill(
-					"grilling",
-					"mattpocock-skills",
-					residual,
-				),
-				"skills/plan/SKILL.md": upstreamSkill(
-					"plan",
-					"mattpocock-skills pstack",
-					residual,
-				),
+				"skills/grilling/SKILL.md": upstreamSkill("grilling", residual),
+				"skills/plan/SKILL.md": upstreamSkill("plan", residual),
 				"skills/notes/SKILL.md": skill("notes", `# Notes\n\n${residual}`),
 			},
 		});
@@ -506,7 +498,7 @@ describe("upstream checks", () => {
 		);
 		expect(block.slice(-2)).toEqual([
 			"  astack/skills/grilling/SKILL.md",
-			`    10: upstream-setup-name: ${residual}`,
+			`    8: upstream-setup-name: ${residual}`,
 		]);
 	});
 
@@ -514,11 +506,7 @@ describe("upstream checks", () => {
 		const call = 'Call the Skill tool with "grilling".';
 		const root = marketplace({
 			astack: {
-				"skills/grilling/SKILL.md": upstreamSkill(
-					"grilling",
-					"mattpocock-skills",
-					call,
-				),
+				"skills/grilling/SKILL.md": upstreamSkill("grilling", call),
 				"skills/notes/SKILL.md": skill("notes", `# Notes\n\n${call}`),
 			},
 		});
@@ -529,7 +517,7 @@ describe("upstream checks", () => {
 			"FAIL Skill tool calls in astack name their plugin (1 errors, 0 warnings)",
 			"  1 bare callees found",
 			"  astack/skills/grilling/SKILL.md",
-			'    10: "grilling" is a bare skill name in a Skill tool call; name it astack:grilling',
+			'    8: "grilling" is a bare skill name in a Skill tool call; name it astack:grilling',
 		]);
 		expect(report.errors).toBe(1);
 	});
@@ -539,7 +527,6 @@ describe("upstream checks", () => {
 			astack: {
 				"skills/arena/SKILL.md": upstreamSkill(
 					"arena",
-					"pstack",
 					"Ask with `AskQuestion` here.",
 				),
 			},
@@ -557,20 +544,12 @@ describe("upstream checks", () => {
 	test("builtFlowSkills names the flow items of each plugin, and fails when it finds 0", () => {
 		const root = marketplace({
 			astack: {
-				"skills/grilling/SKILL.md": upstreamSkill(
-					"grilling",
-					"mattpocock-skills",
-					"",
-				),
-				"skills/plan/SKILL.md": upstreamSkill(
-					"plan",
-					"mattpocock-skills pstack",
-					"",
-				),
+				"skills/grilling/SKILL.md": upstreamSkill("grilling", ""),
+				"skills/plan/SKILL.md": upstreamSkill("plan", ""),
 				"skills/notes/SKILL.md": skill("notes", ""),
 			},
 			[F]: {
-				"skills/tdd/SKILL.md": upstreamSkill("tdd", "mattpocock-skills", ""),
+				"skills/tdd/SKILL.md": upstreamSkill("tdd", ""),
 			},
 		});
 		expect(builtFlowSkills(root)).toEqual(ok(["grilling", "tdd"]));
@@ -579,16 +558,6 @@ describe("upstream checks", () => {
 		});
 		expect(builtFlowSkills(none)).toEqual(
 			err(`no skill in ${none} has the origin mattpocock-skills`),
-		);
-		const unknown = marketplace({
-			astack: {
-				"skills/grilling/SKILL.md": upstreamSkill("grilling", "nobody", ""),
-			},
-		});
-		expect(builtFlowSkills(unknown)).toEqual(
-			err(
-				`astack/skills/grilling/SKILL.md: metadata.origin names "nobody", which is not one of pstack, mattpocock-skills, cursor-team-kit`,
-			),
 		);
 	});
 });

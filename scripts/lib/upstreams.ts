@@ -1,5 +1,3 @@
-import { err, ok, type Result } from "../../src/astack/result.ts";
-
 export type Upstream = {
 	readonly label: string;
 	readonly copyright: string;
@@ -70,31 +68,60 @@ export function upstreamOrigin(name: UpstreamName): string {
 	return `${repo}${place}, commit ${commit}`;
 }
 
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-export function originOf(
-	values: Readonly<Record<string, unknown>>,
-): Result<readonly UpstreamName[], string> {
-	const metadata = values.metadata;
-	if (metadata === undefined) return ok([]);
-	if (!isRecord(metadata)) return err("metadata must be a map");
-	const origin = metadata.origin;
-	if (origin === undefined) return ok([]);
-	if (typeof origin !== "string")
-		return err(
-			"metadata.origin must be a string of upstream names with a space between them",
-		);
-	const names = origin.split(" ").filter((name) => name !== "");
-	if (names.length === 0) return err("metadata.origin names no upstream");
-	const unknown = names.find((name) => !isUpstreamName(name));
-	if (unknown !== undefined)
-		return err(
-			`metadata.origin names "${unknown}", which is not one of ${UPSTREAM_NAMES.join(", ")}`,
-		);
-	return ok(names.filter(isUpstreamName));
-}
+export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
+	new Map([
+		["architect", ["pstack"]],
+		["arena", ["pstack"]],
+		["benchmark-checklist", ["pstack"]],
+		["blast-radius", ["pstack"]],
+		["code-review", ["mattpocock-skills"]],
+		["codebase-design", ["mattpocock-skills"]],
+		["coding-rules", ["pstack", "mattpocock-skills"]],
+		["control-cli", ["cursor-team-kit"]],
+		["control-ui", ["cursor-team-kit"]],
+		["correct", ["pstack"]],
+		["create-verification-skill", ["pstack"]],
+		["deslop", ["cursor-team-kit"]],
+		["diagnosing-bugs", ["mattpocock-skills"]],
+		["domain-modeling", ["mattpocock-skills"]],
+		["figure-it-out", ["pstack"]],
+		["grilling", ["mattpocock-skills"]],
+		["how", ["pstack"]],
+		["implement", ["mattpocock-skills"]],
+		["implement-spec", ["mattpocock-skills"]],
+		["improve-codebase-architecture", ["mattpocock-skills"]],
+		["in-your-own-words", ["pstack"]],
+		["interrogate", ["pstack"]],
+		["maintain-verification-skill", ["pstack"]],
+		["mode", ["pstack"]],
+		["no-comments", ["pstack"]],
+		["plan", ["mattpocock-skills", "pstack"]],
+		["pr-review-hardening", ["pstack"]],
+		["principles", ["pstack"]],
+		["prototype", ["mattpocock-skills"]],
+		["recall", ["pstack"]],
+		["reflect", ["pstack"]],
+		["research", ["mattpocock-skills"]],
+		["retro", ["mattpocock-skills"]],
+		["setup", ["mattpocock-skills"]],
+		["setup-models", ["pstack"]],
+		["sharpen", ["pstack"]],
+		["show-me-your-work", ["pstack"]],
+		["swarm", ["pstack"]],
+		["tdd", ["mattpocock-skills"]],
+		["to-questionnaire", ["mattpocock-skills"]],
+		["to-spec", ["mattpocock-skills"]],
+		["to-tickets", ["mattpocock-skills"]],
+		["triage", ["mattpocock-skills"]],
+		["types", ["pstack"]],
+		["wait-what", ["mattpocock-skills"]],
+		["wayfinder", ["mattpocock-skills"]],
+		["why", ["pstack"]],
+		["wizard", ["mattpocock-skills"]],
+		["write-docs", ["mattpocock-skills", "pstack"]],
+		["write-ticket", ["mattpocock-skills", "pstack"]],
+		["writing-for-agents", ["mattpocock-skills"]],
+	]);
 
 export const AGENT_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> =
 	{

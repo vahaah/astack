@@ -2,8 +2,6 @@
 name: interrogate
 description: "Use for \"interrogate\", \"adversarial review\", \"multi-model review\", \"challenge this\", \"stress test this code\", \"find blind spots\", or \"tear this apart\". Independent model reviewers challenge changes, and the lead returns a verdict."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Interrogate

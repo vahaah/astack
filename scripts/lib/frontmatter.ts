@@ -1,6 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
-import { originOf } from "./upstreams.ts";
 
 export const SKILL_KEYS = [
 	"name",
@@ -199,8 +198,8 @@ export function validateSkillFrontmatter(
 	if (values.context !== undefined && values.context !== "fork") {
 		errors.push(`${path}: context must be 'fork'`);
 	}
-	const origin = originOf(values);
-	if (!origin.ok) errors.push(`${path}: ${origin.error}`);
+	if (values.metadata !== undefined && !isRecord(values.metadata))
+		errors.push(`${path}: metadata must be a map`);
 	return errors;
 }
 

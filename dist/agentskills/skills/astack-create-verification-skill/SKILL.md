@@ -4,7 +4,7 @@ description: "Create a project-local verification skill for real app behavior. U
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

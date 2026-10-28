@@ -4,7 +4,7 @@ description: "Write and place documents, PR bodies and commit messages. Use for 
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills and pstack"
+  source: "astack"
 ---
 
 # Write docs

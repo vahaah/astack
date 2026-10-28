@@ -2,8 +2,6 @@
 name: blast-radius
 description: "Find effects of a change outside its diff before it ships. Prove the key safety fact by running real code. Use for \"blast radius of X\", \"what could this break\", or a small diff that needs review."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Blast radius

@@ -4,7 +4,7 @@ description: "Find repeated agent mistakes and prevent them. Try architecture, t
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

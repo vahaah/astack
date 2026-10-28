@@ -4,7 +4,7 @@ description: "Use when you write or review TypeScript or Swift types. The house 
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
 ---
 
 # Types

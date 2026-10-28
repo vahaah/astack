@@ -1,8 +1,6 @@
 ---
 name: principles
 description: Use this skill for engineering principles across core design, architecture, verification, delegation, and meta structure. Read the reference file of each principle that applies.
-metadata:
-  origin: pstack
 ---
 
 # Principles

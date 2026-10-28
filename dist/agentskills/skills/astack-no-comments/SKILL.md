@@ -4,7 +4,7 @@ description: "Use before opening or updating a PR, after added code comments, or
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
 ---
 
 # No comments

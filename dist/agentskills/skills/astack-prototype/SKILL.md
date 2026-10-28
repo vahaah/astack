@@ -4,7 +4,7 @@ description: "Build a temporary prototype to answer a design question. Use to ju
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Prototype

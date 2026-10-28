@@ -4,7 +4,7 @@ description: "Use this skill for engineering principles across core design, arch
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
 ---
 
 # Principles

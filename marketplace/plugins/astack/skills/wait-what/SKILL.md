@@ -2,8 +2,6 @@
 name: wait-what
 description: "Explain the current direction again when the previous message was unclear."
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Explain the current direction

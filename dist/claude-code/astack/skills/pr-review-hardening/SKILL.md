@@ -2,8 +2,6 @@
 name: pr-review-hardening
 description: Harden a branch or pull request before merge. Reviewers propose findings. Each finding is reproduced before it counts, and each real one is fixed in its own commit. The run stops clean only when the repo's deterministic gates, its metric budget and the no-comments gate are green. Repo settings come from .claude/pr-review-hardening.profile.md. Use when asked to harden a PR, run the review-fix loop, or when a repo stub points here.
 argument-hint: "[base-branch] [--pr <number>]"
-metadata:
-  origin: pstack
 ---
 
 # PR review hardening

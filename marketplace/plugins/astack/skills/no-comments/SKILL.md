@@ -1,8 +1,6 @@
 ---
 name: no-comments
 description: "Use before opening or updating a PR, after added code comments, or to remove, audit or review comments. Run Comment Sicko, delete accepted failures and fix their causes. Offer constraint enforcement and report constraints that remain open."
-metadata:
-  origin: pstack
 ---
 
 # No comments

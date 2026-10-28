@@ -44,9 +44,3 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 
 - The comments rule decides which comments stay. Never shorten a comment to pass the hook.
 - A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. The comment hook passes the license headers that the astack README names. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
-
-## Credit
-
-Some rules in this file are a short form of the principle skills of pstack, under the MIT License of pstack. The NOTICE file that comes with this copy holds the permission notice.
-
-Copyright (c) 2026 Lauren Tan

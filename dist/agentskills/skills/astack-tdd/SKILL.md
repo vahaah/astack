@@ -4,7 +4,7 @@ description: "Build features or fixes with failing tests at agreed seams. Use fo
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Test-Driven Development

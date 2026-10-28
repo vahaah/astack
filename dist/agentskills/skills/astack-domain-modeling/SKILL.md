@@ -4,7 +4,7 @@ description: "Build a project domain model. Use when you discuss terminology, ch
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Domain modeling

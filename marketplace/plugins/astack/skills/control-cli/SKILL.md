@@ -1,8 +1,6 @@
 ---
 name: control-cli
 description: "Drive, inspect, and profile interactive CLIs or TUIs. Use for terminal bugs, prompt flows, startup, hangs, memory growth, or demos."
-metadata:
-  origin: cursor-team-kit
 ---
 
 # Control CLI

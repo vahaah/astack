@@ -4,7 +4,7 @@ description: "Drive, inspect, and profile interactive CLIs or TUIs. Use for term
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from cursor-team-kit"
+  source: "astack"
 ---
 
 # Control CLI

@@ -4,7 +4,7 @@ description: "Create a questionnaire for someone whose knowledge the user needs 
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

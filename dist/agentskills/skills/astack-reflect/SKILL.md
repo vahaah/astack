@@ -4,7 +4,7 @@ description: "Review the active transcript with three parallel lenses. Use refle
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

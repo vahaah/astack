@@ -1,8 +1,6 @@
 ---
 name: types
 description: Use when you write or review TypeScript or Swift types. The house type and FP conventions as 25 rules, each with an example and the tool that enforces it. It also holds the bounds against over-engineering, Effect notes, Swift notes and the astack type hook.
-metadata:
-  origin: pstack
 ---
 
 # Types
