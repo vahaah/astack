@@ -131,6 +131,7 @@ bun run check:drift
 bun run check
 ```
 
+The frozen install pins Claude Code for plugin validation.
 The drift command reads fresh expected build outputs without rewriting generated files.
 The full check builds every target and runs validation, neutrality, and secret scans.
 It also runs STE checks, tests, formatting, lint, and typecheck.
