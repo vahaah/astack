@@ -56,12 +56,12 @@ function manifest(build: Build): string {
 			displayName: "astack",
 			version: build.version,
 			description:
-				"Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills.",
+				"Plan, build, review and write, with hooks that check the work, plus the astack skills.",
 			author: { name: build.author },
 			homepage: `https://github.com/${PUBLIC_REPO}`,
 			repository: `https://github.com/${PUBLIC_REPO}`,
 			license: "MIT",
-			keywords: ["astack", "flow", "planning", "standards", "hooks"],
+			keywords: ["astack", "workflow", "planning", "review", "hooks"],
 			category: "developer-tools",
 			skills: "./skills/",
 			agents: "./agents/",
@@ -80,14 +80,14 @@ export function cursorMarketplace(build: Build): string {
 			owner: { name: build.author },
 			metadata: {
 				description:
-					"astack for Cursor: the astack skills, the astack rules and the astack hooks.",
+					"astack for Cursor. Skills, rules and hooks for the path from a goal to a merged pull request.",
 			},
 			plugins: [
 				{
 					name: "astack",
 					source: CURSOR_ROOT,
 					description:
-						"Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills.",
+						"Plan, build, review and write, with hooks that check the work, plus the astack skills.",
 				},
 			],
 		},

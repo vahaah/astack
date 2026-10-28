@@ -2,7 +2,7 @@
 	"name": "astack",
 	"displayName": "astack",
 	"version": "0.1.0",
-	"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills.",
+	"description": "Plan, build, review and write, with hooks that check the work, plus the astack skills.",
 	"author": {
 		"name": "Alex Vakhitov"
 	},
@@ -11,9 +11,9 @@
 	"license": "MIT",
 	"keywords": [
 		"astack",
-		"flow",
+		"workflow",
 		"planning",
-		"standards",
+		"review",
 		"hooks"
 	],
 	"category": "developer-tools",

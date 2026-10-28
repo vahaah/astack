@@ -7,6 +7,137 @@ This repository holds the source and each generated client build.
 Credits stay in these package files and the licence files of standalone skills.
 Rules and skill instructions carry no credit blocks.
 
+Use this repository for the path from a goal to a merged pull request.
+[The workflow guide](docs/workflow.md) gives each step.
+The charts below are the same path.
+
+## Workflow
+
+Say what you want in plain words.
+The rule card selects the route.
+You can also start `/astack:mode` with no argument.
+Mode reads the plan, the tracker and git.
+Then it does the next step.
+
+When this page and the rule card differ, the rule card wins.
+The card is `marketplace/plugins/astack/skills/mode/references/card.md`.
+
+### Daily path
+
+Use this path for a change that you own.
+Do not build on the default branch.
+
+```mermaid
+flowchart TD
+  name[You name the work] --> pick{The rule card}
+  pick -->|New work| plan["/astack:plan"]
+  pick -->|One clear change| build[Build on a branch]
+  pick -->|A bug report| bug[Show the failure]
+  plan --> build
+  bug --> cause[Write the root cause]
+  cause --> build
+  build --> gates[Run the gates]
+  gates --> clean[Clean the diff]
+  clean --> review[Review the branch]
+  review --> openPr[Open the pull request]
+  openPr --> harden[Harden when the profile asks]
+  harden --> land[Land with a merge grant]
+  land --> next[Plan the next session]
+```
+
+A feature grows one slice at a time.
+Each slice starts with a test that fails.
+A bug fix starts from the failure that you can show.
+Write the root cause before the fix.
+Run the gates again after the clean-up.
+Run them again after each fix.
+
+Open the pull request from the session that owns the ticket.
+Run `/astack:pr-review-hardening` when the profile asks for it.
+Stop that run when it is not clean.
+Continue only when you say so.
+A merge needs a grant in the profile or in that turn.
+
+### Words that select a route
+
+A rule of yours can add a route.
+It cannot remove a route.
+This table is the set that you use most.
+
+| You say | astack does |
+|---|---|
+| "I am building X", or you give a ticket key | `/astack:plan` asks for the goal and for the one decision that the work drives. Grill rounds follow. |
+| `/plan` | Plan mode stays short. Open questions come last. After you approve, the first commit writes `docs/plans/<slug>.md`. |
+| `/grilling` | Each round covers the open questions. Each question has one recommendation and lettered options. |
+| "go", or "do your recommendation" | The plan records `delegate: on`. The work continues. "agree", "next" and "approve" accept the last recommendations. |
+| "resume" | Mode reads the plan, the tracker and git. Then it continues from the next step. |
+| `/goal`, or "continue the board" | Programme tier. At most 5 sessions. Merge the open pull requests first. |
+| "I need it fast" | Quick tier. At most one grill round. |
+| A bug, an error report, or a tester report | Bug-fix path. Write `Root cause: X because Y` before the fix. Read a tester report with care before you accept its scope. |
+| "comments", or "check github comments" | Triage each comment. Fix or answer it. Then fix the failing checks. |
+| `/pr-review-hardening` | Hardening uses the profile cap. The default cap is 2. |
+| "create pr" | Gates, deslop, the comment check, the pull request text, then one hardening run when the profile asks. |
+| "update from main" | Merge the base branch. Run the gates again. Keep the intent of the ticket. |
+| "merge", or "merge when green" | Shipping. A merge needs a grant from the profile or from this turn. |
+| UI polish, or a mobile check | `astack:control-ui` walks the journey as a real person and uses the UI kit of the repository. |
+| "pause", "prompt for next session", or "clean worktrees" | Pause is a hard stop. You get the hand-off prompt. Worktree cleanup comes after you record the worktree list. |
+
+### Shapes of the work
+
+```mermaid
+flowchart TD
+  work[The work] --> one[One ticket]
+  work --> session[One plan session]
+  work --> stack[A stack of pull requests]
+  work --> programme[A programme]
+  one --> implement["/astack:implement"]
+  session --> startCmd["astack session start"]
+  stack --> auto[Autopilot-stack]
+  programme --> board["astack board, then Orchestrate"]
+```
+
+One plan session is one pull request.
+Start it in a fresh session with `astack session start <plan>`.
+The steps sit in waves.
+Workers build the steps in worktrees.
+The main thread lands those commits in plan order.
+
+```mermaid
+flowchart LR
+  startNode["astack session start"] --> wave[One wave of steps]
+  wave --> land[Land the commits in order]
+  land --> more{More waves}
+  more -->|Yes| wave
+  more -->|No| point["astack session checkpoint"]
+```
+
+`astack session checkpoint` writes the checkpoint on the pull request.
+`astack board <plan>` shows the pull requests to merge first, the active sessions and the work that you can start.
+The board is a view.
+Do not commit it.
+
+### Rules that always apply
+
+- Push after the gates are green.
+- Open the pull request.
+- Update the pull request when the work changes.
+- Merge only with a grant from the profile or from this turn.
+- Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
+- Ask only for a choice that belongs to you.
+- Give one recommendation and lettered choices.
+- The word "agree" accepts the recommendations of the last round.
+- One plan is one pull request.
+- Put follow-up work in the open pull request.
+- Report the gate counts.
+- Walk the journey as a real person.
+- Measure a claim before you make it.
+- Keep the state in the plan, the tracker and git.
+- Write each reply in ASD-STE100 Simplified Technical English.
+- Give the result first.
+- A checkpoint reply has 6 lines or fewer.
+- Fix a broken skill in astack.
+- Leave the copy in a project repository unchanged.
+
 ## Install a release
 
 The CLI needs Node 22 or later, or Bun.
@@ -69,14 +200,16 @@ Avoid duplicate global copies when a client already loads the plugin.
 
 ## Use astack
 
-- `/astack:mode` reads the plan, tracker, and git state, then selects the next step.
-- `/astack:plan` plans new work or resumes a plan.
-- `/astack:pr-review-hardening` runs the repository profile's review gates.
-- Cursor and portable clients use flat names, such as `/astack-mode`.
+The [workflow](#workflow) section is the path.
+These commands start it.
 
-The rule card also routes requests such as "create pr" and "update from main".
-The catalog covers planning, coding, review, domain modeling, research, tickets, documentation, and tool control.
-Each client build keeps the skills and references that its capability map supports.
+- `/astack:mode` reads the plan, the tracker and git, and then it does the next step.
+- `/astack:plan` plans new work or continues a plan.
+- `/astack:pr-review-hardening` runs the review gates of the repository profile.
+- Cursor and other clients use flat names, such as `/astack-mode`.
+
+The catalog covers plans, code, review, the domain model, research, tickets, documents and tool control.
+Each client build keeps the skills and the references that its capability map supports.
 
 ## Language review packs
 

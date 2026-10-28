@@ -4,13 +4,13 @@
 		"name": "Alex Vakhitov"
 	},
 	"metadata": {
-		"description": "astack for Cursor: the astack skills, the astack rules and the astack hooks."
+		"description": "astack for Cursor. Skills, rules and hooks for the path from a goal to a merged pull request."
 	},
 	"plugins": [
 		{
 			"name": "astack",
 			"source": "cursor/astack",
-			"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills."
+			"description": "Plan, build, review and write, with hooks that check the work, plus the astack skills."
 		}
 	]
 }
