@@ -1,0 +1,24 @@
+{
+	"name": "astack",
+	"displayName": "astack",
+	"version": "0.1.0",
+	"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills.",
+	"author": {
+		"name": "Alex Vakhitov"
+	},
+	"homepage": "https://github.com/vahaah/astack",
+	"repository": "https://github.com/vahaah/astack",
+	"license": "MIT",
+	"keywords": [
+		"astack",
+		"flow",
+		"planning",
+		"standards",
+		"hooks"
+	],
+	"category": "developer-tools",
+	"skills": "./skills/",
+	"agents": "./agents/",
+	"rules": "./rules/",
+	"hooks": "./hooks/hooks.json"
+}

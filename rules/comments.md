@@ -1,0 +1,52 @@
+---
+paths:
+  - "**/*.ts"
+  - "**/*.mts"
+  - "**/*.cts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+  - "**/*.cjs"
+  - "**/*.sql"
+  - "**/*.swift"
+  - "**/*.kt"
+  - "**/*.kts"
+  - "**/*.go"
+  - "**/*.rs"
+  - "**/*.css"
+  - "**/*.scss"
+  - "**/*.less"
+  - "**/*.py"
+  - "**/*.sh"
+  - "**/*.bash"
+  - "**/*.zsh"
+---
+
+# Comments
+
+Write no comment by default. Names, types and tests carry intent. A comment stays only when a keep clause below covers it, or when one of its lines matches a `commentKeep` pattern in the repo's `.astack/profile.json`. When you are not sure a clause covers it, delete the comment. Before you open a PR, run `/astack:no-comments`. If it is unavailable, apply the keep clauses below yourself.
+
+The four sections below quote pstack's Comment Sicko reviewer verbatim from pstack commit 1e5c90a4b6f2, under pstack's MIT license. The NOTICE file that comes with this copy holds pstack's copyright notice and permission notice. "I" is that reviewer. `/how` and `/why` are the `astack:how` and why skills. They set disable-model-invocation, so read the SKILL.md that `astack skill-path astack:how` or `astack skill-path astack:why` prints and follow it. `MUST KILL` is a flag the reviewer puts in its report. When you write code, make the rename, extraction or type change it would ask for. Never write `MUST KILL` in a file.
+
+Copyright (c) 2026 Lauren Tan
+
+## Keep clauses
+
+- Legal or license headers.
+- Non-obvious behavior forced by an external dependency, platform, vendor, or protocol we cannot reshape. Surprises in our own code are meat. Kill them and mark the exact symbol `MUST KILL` for rename, extract, type, or rearchitecture that makes the behavior obvious without prose.
+- `// prettier-ignore`. Lint suppressions survive only when their rule is faulty, pedantic, or style-only.
+- Doc comments that define a public API contract.
+- Issue or RFC links that explain a constraint code cannot express.
+
+## Suppressions
+
+`eslint-disable`, `@ts-ignore`, `@ts-expect-error`, and similar suppressions stink. Look up the rule. If it catches real bugs or protects correctness or safety, kill the suppression and mark the exact guilty symbol `MUST KILL`.
+
+## Claims that a comment must stay
+
+`IMPORTANT`, `do not remove`, `too risky`, `fine for now`, and long justifications are scent, not conviction. Before judging, I read nearby code. If its claim is not obvious there, I run `/how`, `/why`, or both from the **how** and **why** skills on the named symbol or call. Only a foreign keep-list gotcha proven true today on a live path crawls away. Our-code surprises die with the reshape flag above. Doubt after the hunt is meat.
+
+## Long justifications
+
+A long justification without a proven keep-list exception is a confession. Kill it. Never polish meat into a shorter alibi. Mark the exact guilty symbol `MUST KILL`. My kill ends there. I do not touch the code.

@@ -1,0 +1,6 @@
+{
+	"astack@astack:hooks/hooks.json:session_start:0:0": "sha256:c97e0509168621377828309337bdcdc46b4744ac3257cb0e9ad7758bc3c02454",
+	"astack@astack:hooks/hooks.json:user_prompt_submit:0:0": "sha256:82211d4532a5ae0b6d0dd79f92b2d7b207ddda27adefe58a911906ee741bcc9e",
+	"astack@astack:hooks/hooks.json:pre_tool_use:0:0": "sha256:aa971d04c3732d60ef09bc50a0f8df632760cdc8adb24cfec167a8b77c6b1fb4",
+	"astack@astack:hooks/hooks.json:stop:0:0": "sha256:3d34211eed034969701c95a72e3554a1bf43c2769d44b9948eaa8a70edf1af94"
+}

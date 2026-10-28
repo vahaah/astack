@@ -1,0 +1,85 @@
+#!/bin/sh
+self="$0"
+while [ -L "$self" ]; do
+	link="$(readlink "$self")"
+	case "$link" in
+	/*) self="$link" ;;
+	*) self="$(dirname "$self")/$link" ;;
+	esac
+done
+script="$(dirname "$self")/astack.js"
+saved="$HOME/.local/state/astack/runtime"
+floor=22
+runtime=""
+
+pick() {
+	if [ -n "$runtime" ] || [ -z "$1" ] || [ ! -f "$1" ] || [ ! -x "$1" ]; then
+		return
+	fi
+	case "$(basename "$1")" in
+	bun*)
+		runtime="$1"
+		return
+		;;
+	esac
+	version="$("$1" --version 2>/dev/null)"
+	version="${version#v}"
+	major="${version%%.*}"
+	case "$major" in
+	'' | *[!0-9]*)
+		runtime="$1"
+		return
+		;;
+	esac
+	if [ "$major" -ge "$floor" ]; then
+		runtime="$1"
+	fi
+}
+
+pick "${ASTACK_RUNTIME:-}"
+if [ -z "$runtime" ] && [ -r "$saved" ]; then
+	pick "$(head -n 1 "$saved")"
+fi
+pick "$(command -v node 2>/dev/null)"
+pick "$(command -v bun 2>/dev/null)"
+pick /opt/homebrew/bin/node
+pick /opt/homebrew/bin/bun
+pick /usr/local/bin/node
+pick /usr/local/bin/bun
+pick "$HOME/.bun/bin/bun"
+pick "$HOME/.volta/bin/node"
+if [ -z "$runtime" ]; then
+	nvm_nodes="$(ls -1dt "$HOME"/.nvm/versions/node/*/bin/node 2>/dev/null)"
+	while IFS= read -r candidate; do
+		pick "$candidate"
+	done <<EOF
+$nvm_nodes
+EOF
+fi
+
+cursor_allow() {
+	case "$1" in
+	preToolUse | beforeShellExecution | beforeMCPExecution) echo '{"permission":"allow"}' ;;
+	beforeSubmitPrompt) echo '{"continue":true}' ;;
+	*) echo '{}' ;;
+	esac
+}
+
+if [ -z "$runtime" ]; then
+	echo "astack: found no node $floor or later and no bun, so the astack checks did not run. Set ASTACK_RUNTIME to the path of node or bun." >&2
+	if [ "$1" = hook ] && [ "$2" = cursor ]; then
+		cursor_allow "$3"
+	fi
+	exit 0
+fi
+if [ "$1" = hook ] && [ "$2" = cursor ]; then
+	output="$("$runtime" "$script" "$@")"
+	status=$?
+	if [ -z "$output" ]; then
+		cursor_allow "$3"
+		exit 0
+	fi
+	printf '%s\n' "$output"
+	exit "$status"
+fi
+exec "$runtime" "$script" "$@"

@@ -1,0 +1,10 @@
+jobs:
+  plan:
+    steps:
+      - id: lane
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          bun tooling/lane.ts \
+            --branch "$BRANCH" \
+            --event "$GITHUB_EVENT_NAME"

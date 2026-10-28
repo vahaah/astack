@@ -1,0 +1,5 @@
+# <relpath glob>:<regex tested against the whole line>:<reason the residual is correct in Claude Code>
+skills/domain-modeling/SKILL.md:already has a `GLOSSARY\.md` and no `CONTEXT\.md`:a repo that already uses GLOSSARY.md keeps that name
+skills/setup/SKILL.md:already has `GLOSSARY\.md` and `GLOSSARY-MAP\.md` instead keeps those names:a repo that already uses GLOSSARY.md keeps that name
+skills/setup/domain.md:The glossary is `GLOSSARY\.md` instead:a repo that already uses GLOSSARY.md keeps that name
+skills/**:`GLOSSARY\.md` where the repo already uses that name:a repo that already uses GLOSSARY.md keeps that name

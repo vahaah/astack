@@ -1,0 +1,542 @@
+# Labelled STE corpus. Synthetic text, written for astack.
+# A "# rule: <id>" line starts a section. "+ text" must make <id> fire, "- text" must not.
+# "\n" in a case is a line break.
+
+# rule: contraction
++ It doesn't run on Windows.
++ The build isn't green yet.
++ We can't merge this branch.
++ The tests won't pass without the fixture.
++ You're on the wrong branch.
++ They've closed the ticket.
++ We'll ship the patch tomorrow.
++ I'd keep the old flag.
++ I'm not sure about the cause.
++ It's a race in the queue.
++ That's the last step.
++ There's one open thread.
++ Here's the log from the run.
++ What's the exit code of the job?
++ Let's split the pull request.
++ The worker didn't start.
++ The cache wasn't warm.
++ The jobs aren't idempotent.
++ The parser shouldn't throw on empty input.
++ The script couldn't find the file.
++ The handler wouldn't retry the call.
++ You haven't pushed the branch.
++ The service hasn't restarted.
++ The deploy hadn't finished at noon.
++ The team doesn't use the flag.
++ Who's on call tonight?
++ Where's the config file for the worker?
++ He's the owner of the module.
++ She'll review the change.
++ They're in the same region.
++ We've seen this error before.
++ You'd need a new token for that.
++ It’s the same lock as before.
++ The app doesn’t load on the second tab.
+- The user's file is open.
+- You wrote 'don't touch the public API', so the signature stays.
+- The team's plan is short.
+- The `don't` keyword appears in the test name.
+- The message says "don't retry".
+- Read the first section of the guide.
+- Each job's queue has a limit.
+- The commit's author is the owner.
+- ```\nit's code, and it's skipped\n```
+- Do not merge the branch.
+- The function `isn't()` returns a boolean.
+- The O'Neil account is closed.
+- The owners' list has three names.
+- The tool reads the user's settings file.
+- A 1990's laptop runs the old build.
+- The value is "can't parse" in the log.
+- The subagent reads how's SKILL.md by path.
+- The guide explains why's answer to the second question.
+
+# rule: semicolon
++ The job failed; the disk was full.
++ Run the tests; then merge the branch.
++ The cache is cold; the first call is slow.
++ The flag is off by default; turn it on for tests.
++ We keep the old API; two clients still call it.
++ The queue drains at night; the day queue stays full.
++ The token expires after one hour; refresh it before then.
++ The parser accepts tabs; it rejects carriage returns.
++ One worker reads; the other worker writes.
++ The import is idempotent; a second run changes nothing.
++ The page loads fast; the chart loads later.
++ The lint passed; the type check failed.
++ The branch is stale; rebase it on main.
++ The file is large; the reader streams it.
++ The test is flaky; it fails one run in ten.
++ The client retries twice; then it stops.
++ The index is new; the old index stays for a week.
++ The report has three parts; each part has a table.
++ The script exits with 1; the hook reads that code.
++ The service is slow; the database is the cause.
++ The doc is short; the examples carry the detail.
++ The change is small; the risk is low.
++ Start the server; open the page.
++ The logs rotate daily; old logs go to cold storage.
++ The plan has two sessions; each session is one PR.
++ The job runs at noon; it takes ten minutes.
++ The key is in the vault; the app reads it at start.
++ The form saves a draft; the draft expires in a day.
++ The worker is idle; the queue is empty.
++ The release is ready; the notes are not.
++ The script is old; nobody runs it now.
++ A paragraph can hold two clauses; this one does.
+- - first item;\n- second item;\n- third item.
+- Run `a; b` in the shell.
+- The entity &amp; shows an ampersand.
+- | a; b | c |\n|---|---|\n| d | e |
+- ```\nconst a = 1; const b = 2;\n```
+- The link https://example.com/a;b has a semicolon.
+- The value "a; b" is a literal.
+- - the parser reads tabs;\n- the parser rejects carriage returns; and\n- the parser keeps spaces.
+- The job failed. The disk was full.
+- 1. Open the file;\n2. Add the line;\n3. Save the file.
+- export const c = 1;
+- The paragraph ends with a semicolon;
+
+# rule: dash
++ The plan is short — the tickets are long.
++ The job failed—the disk was full.
++ The cache — a small map — holds the tokens.
++ The worker restarts – then it reads the queue.
++ The change is small -- the risk is low.
++ One rule matters most — never push to main.
++ The owner decides — not the agent.
++ The test is flaky — it fails one run in ten.
++ The service — and its database — moved to a new region.
++ The script exits early — the hook reads the code.
++ The doc is short — the examples carry the detail.
++ The lint passed — the type check failed.
++ The branch is stale — rebase it on main.
++ The file is large – the reader streams it.
++ The client retries twice — then it stops.
++ The index is new — the old index stays for a week.
++ The report has three parts — each part has a table.
++ The page loads fast — the chart loads later.
++ The release is ready — the notes are not.
++ The key is in the vault — the app reads it at start.
++ The form saves a draft — the draft expires in a day.
++ The worker is idle — the queue is empty.
++ The token expires — refresh it first.
++ The import is idempotent — a second run changes nothing.
++ The queue drains at night — the day queue stays full.
++ The service is slow — the database is the cause.
++ The job runs at noon — it takes ten minutes.
++ The plan has two sessions — each session is one PR.
++ The logs rotate daily — old logs go to cold storage.
++ The parser accepts tabs – it rejects carriage returns.
++ The answer is simple — use the cache.
++ The team ships on Monday — the freeze starts on Friday.
+- Pages 10–15 hold the table.
+- The range 2020–2024 is in scope.
+- Steps 3 – 7 run in parallel.
+- The sessions B1–B4 land in one PR.
+- The well-known endpoint is public.
+- Pass `--force` only once.
+- The value is -5 degrees.
+- Run `a — b` as a literal.
+- ```\nfoo -- bar\n```
+- The read-only flag is on.
+- The score went from 3–2 to 4–2.
+- The pre-start check runs first.
+- Use the dry-run mode first.
+- The flag --no-verify is not allowed.
+- The digest runs around :56–:00 each hour.
+- The cases D6a–d share one fixture.
+- Packages A–E ship in one release.
+- The answers A–E are in the table.
+- The report covers January–June.
+- The office is open Mon–Fri.
+- The freeze runs from 22 Dec – 6 Jan.
+- The sessions acme-a–e run in order.
+- The co-owner reviews the change.
+
+# rule: latin
++ Use a list, e.g. three items.
++ Pick one store, i.e. the primary store.
++ The queue holds jobs, mails, events, etc.
++ The queue holds jobs, mails, events etc.
++ See the earlier note, cf. the design doc.
++ Smith et al. wrote the first paper.
++ Use a short name, e.g., the ticket key.
++ Use the main branch, i.e., the default branch.
++ The parser handles dates, times, etc. in one pass.
++ Keep small fixtures (e.g. one file per rule).
++ Name the output (i.e. the file on disk).
++ The tool supports Linux, macOS, etc.
++ Pick a region, e.g. the nearest one.
++ Log the result, i.e. the exit code.
++ The cache holds tokens, keys, etc. for one hour.
++ Use plain words, e.g. use instead of utilize.
++ The job stops on errors, i.e. on a non-zero exit.
++ Add a note, e.g. the reason for the change.
++ The fields (name, email, etc.) are optional.
++ Read the guide, i.e. the setup section.
++ Run one check, e.g. the type check.
++ Send events, logs, metrics, etc.
++ See also the old plan, cf. section two.
++ Keep the scope small, i.e. one ticket.
++ Use one source, e.g. the database.
++ The tests cover the parser, the cache, etc.
++ Write short names, e.g. id or key.
++ The hook skips generated files, i.e. files with a marker.
++ Use stable keys, e.g. a UUID.
++ The list (tests, docs, etc.) is complete.
++ Choose one, i.e. the faster path.
+- Edit /etc/hosts on the server.
+- The `e.g.` form is in the code sample.
+- The etcd cluster has three nodes.
+- ```\nfor example, e.g. in code\n```
+- Use the full words, for example a list.
+- The value "i.e." is a literal string.
+- The dataset uses the field ETCD_URL.
+- The vendor gives a fixed price.
+- The tool runs in each region.
+- The idea is clear.
+
+# rule: and-or
++ Write the name and/or the ID.
++ Send an email and/or a text.
++ The user can read and/or write the file.
++ Use the flag and / or the env var.
++ Tests And/Or lints run in CI.
++ The job reads and/or writes the cache.
++ Pick a region and/or a zone.
++ The fix touches the parser and/or the lexer.
++ The owner and/or the reviewer can merge.
++ Log the error and/or the stack.
++ Add a test and/or a fixture.
++ The client sends JSON and/or XML.
++ Use a token and/or a key.
++ The page shows a chart and/or a table.
++ Update the docs and/or the changelog.
++ The hook denies and/or notes.
++ The queue holds jobs and/or events.
++ Run the build and/or the tests.
++ The doc has a guide and/or a reference.
++ The worker retries and/or stops.
++ Read the logs and/or the metrics.
++ Ask the owner and/or the team.
++ The script copies and/or moves files.
++ The PR fixes a bug and/or a typo.
++ The tool reads stdin and/or a file.
++ Pick the cache and/or the store.
++ The API returns a list and/or a count.
++ Keep the flag and/or the config.
++ The report covers costs and/or time.
++ Use the CLI and/or the UI.
++ The rule applies to docs and/or plans.
+- The standard/order field is set.
+- Use `and/or` only in the code sample.
+- The brand/orange theme is new.
+- The value "and/or" is a literal.
+- Write the name, the ID, or both.
+- The android/organization path exists.
+- Add a test and a fixture.
+- Add a test or a fixture.
+- The land/ordinance table is old.
+- The and-or gate is in the circuit.
+
+# rule: sentence-length
++ The importer reads each row from the file, checks the header, maps every column to a field, and writes the result to the staging table before the next batch starts.
++ The service keeps one connection pool for each region, and each pool holds ten connections that the workers share when the traffic in that region goes up at night.
++ When the user opens the settings page and changes the region, the app stores the new value, refreshes the token, and sends a request to the server for the new data.
++ The report that the team sends to the owner each Friday lists the open tickets, the merged pull requests, the failed builds and the plan for the next week of work.
++ Open the file that the hook reads from the plan, add one line for each phase and one line for each open question, then save the file.
++ Run the migration on the staging database first, compare the row counts with the production snapshot, and then run the same migration on the production database at night.
++ The cache in front of the search service holds the results of the last thousand queries, and it drops the oldest result when a new query comes in after the limit.
++ The parser that reads the configuration file accepts comments, blank lines and quoted values, but it rejects tabs at the start of a line and keys that have no value.
++ Before you merge the branch, rebase it on the main branch, run every test in the repo, read the diff once more, and ask the owner for a review of the change.
++ The new endpoint returns a page of results with a cursor, and the client sends that cursor back in the next request until the server returns an empty page to it.
++ Each worker in the pool takes one job from the queue, runs it with a timeout of thirty seconds, and writes the result or the error to the job table when it stops.
++ The script that builds the release notes reads every merged pull request since the last tag, groups them by label, and writes one section for each label in the output file.
++ The team agreed to keep the old API for one more quarter because two large clients still call it every day and they need time to move to the new version.
++ If the build fails on the main branch, stop every merge, find the commit that broke the build, revert it, and tell the author in the team channel about the revert.
++ The dashboard shows the number of active users, the number of failed jobs and the average response time for each service in the last hour, and it refreshes every minute.
++ The import job that runs every night at two in the morning reads the files from the bucket, checks each file against the schema, and moves the bad files to a separate folder.
++ The design keeps the state in the plan, the tracker and git, so a new session can start from any of them without the transcript of the old session or any notes.
++ Write the summary in the first paragraph of the pull request, list the changes in the second paragraph, and put the test results with their counts in the last paragraph.
++ The owner reads the plan on Monday morning, marks the steps that need a decision, and sends the questions back to the agent before the first session of the week starts.
++ The billing service sends one invoice for each team at the end of the month, and it adds a line for each seat that was active for more than one day in that month.
++ The mobile app keeps a local copy of the last fifty messages for each chat, so the user can read them without a network connection when the phone is in a tunnel.
++ Copy the template into the new folder, rename each file to match the module name, replace the placeholder text in every file, and commit the result as the first commit of the branch.
++ The audit log records each change to a role with the time, the actor, the old value and the new value, and the security team reviews that log once a week.
++ The search page sends the query to the server after the user stops typing for three hundred milliseconds, so the server does not get a request for every single key press.
++ The release checklist asks the owner to confirm the version number, the changelog entry, the migration status and the feature flags before the team tags the release on the main branch.
++ The queue keeps failed jobs for seven days so that the team can read the error, fix the cause in the code, and run the same job again from the admin page.
++ Delete the old index only after the new index has served every query for one full week, and keep a snapshot of the old index in cold storage for one more month after that.
++ The test suite runs the unit tests first because they take less than a minute, and it runs the slow integration tests only when every unit test passes on that commit.
++ The export that the finance team runs at the end of each quarter reads every invoice, converts each amount to one currency, and writes one row for each customer in the file.
++ Make sure that the staging environment uses the same version of the database as production, the same feature flags, and a copy of the production data from the last night.
++ The first draft of the document had six sections, but the team cut it to three sections after the review because the other sections repeated facts from the design document.
+- Run `bun test` before the merge.
+- The job moved 2,406 of the 5,299 rows in the local database to the new store before the cutover at 08:50 on the first day.
+- The importer reads each row from the file and writes the result to the staging table.
+- Edit `src/a.ts`, `src/b.ts`, `src/c.ts`, `src/d.ts`, `src/e.ts`, `src/f.ts`, `src/g.ts` and `src/h.ts` before you run the tests.
+- The service keeps one connection pool for each region, and each pool holds ten connections for the workers.
+- See https://example.com/a/very/long/path/that/has/many/segments/in/it/and/more/segments/after/that for the full spec.
+- The report lists the open tickets, the merged pull requests and the failed builds for the week.
+- When the user changes the region, the app stores the new value and refreshes the token.
+- The cache holds the results of the last thousand queries and drops the oldest one.
+- Before you merge the branch, rebase it on the main branch and run every test.
+- The parser accepts comments, blank lines and quoted values, but it rejects tabs.
+- # The heading of this section is a long line with many words in it, more words than the limit for a sentence in prose
+- | The importer reads each row from the file, checks the header, maps every column to a field, and writes the result to the staging table before the next batch starts. | x |\n|---|---|\n| a | b |
+- ```\nThe importer reads each row from the file, checks the header, maps every column to a field, and writes the result to the staging table before the next batch starts.\n```
+- The dashboard shows the active users, the failed jobs and the response time for each service.
+- The team keeps the old API for one more quarter because two clients still call it.
+- Each worker takes one job from the queue and runs it with a timeout of thirty seconds.
+
+# rule: word-list
++ Ensure that the port is free.
++ The script ensures that the lock exists.
++ We ensured the backup ran.
++ The hook is ensuring a clean state.
++ The job utilizes two workers.
++ Utilise the cache for reads.
++ The utilization of the pool is high.
++ Leverage the cache for each read.
++ The team leverages the shared library.
++ The index facilitates the search.
++ The tool facilitated the move.
++ The import commences at midnight.
++ The sync commenced after the restart.
++ Keep the lock whilst the job runs.
++ The file is amongst the inputs.
++ Additionally, the tool writes a log.
++ The tool additionally writes a log.
++ Restart the job in order to clear the cache.
++ The job failed due to the fact that the disk was full.
++ In order to ship, the team cut the scope.
++ Ensure the token is valid before the call.
++ The worker ensures one job at a time.
++ Ensure each test has a name.
++ The migration utilized the old schema.
++ The guide leveraged the old examples.
++ The flag facilitates local tests.
++ The rollout commences on Monday.
++ The cache stays warm whilst the server runs.
++ Additionally, the hook writes a note.
++ The script runs twice in order to warm the cache.
++ The queue stalled due to the fact that a worker died.
++ Ensuring a clean tree is the first step.
+- The leverage ratio on the dashboard was wrong.
+- Make sure that the port is free.
+- The `ensure()` helper returns a Result.
+- The insurance team owns the form.
+- The utility module has no state.
+- The URL https://example.com/ensure-checks is old.
+- The value "whilst" is a literal.
+- The commencement date is in the contract.
+- Use the cache for each read.
+- The tool also writes a log.
+- Restart the job to clear the cache.
+- The job failed because the disk was full.
+- ```\nensure(x)\n```
+- The file `leverage.md` holds the notes.
+- The index helps the search.
+- The import starts at midnight.
+
+# rule: word-broad
++ Check the logs before you merge.
++ We verify the hash before the upload.
++ Confirm the version before the release.
++ The hook checks the file on each write.
++ The sync begins at noon.
++ The client initiates the call.
++ The script achieves the same result.
++ The worker performs the merge.
++ Obtain a token from the vault.
++ Run the tests prior to the merge.
++ Subsequently, the job writes the file.
++ Add additional tests.
++ The patch enhances the search.
++ Simply run the script.
++ The note is regarding the cache.
++ Send the file via the queue.
++ About 40 files changed.
++ The worker carries out the migration.
++ The script verified the checksum.
++ You must check the result.
+- Do a check of the logs.
+- The check runs in CI.
+- The verified flag is true.
+- Approximately 40 files changed.
+- The health check failed.
+- The first attempt failed.
+- The checks pass on main.
+- The note is about the cache.
+- Make sure that the version is correct.
+- Two checks ran on the branch.
+- Check: the build is green.
+- The email is verified.
+- The type check is slow.
+
+# rule: perfect
++ We have added the hook.
++ The team has merged the branch.
++ The job had finished before noon.
++ The owner has already approved the plan.
++ They have written the tests.
++ The parser has thrown an error.
++ The cache has expired.
++ The worker had stopped by then.
++ We have seen this error before.
++ The service has not restarted.
+- We have two hooks.
+- The team has a plan.
+- The job had to wait.
+- The file has the data.
+- They have no tests.
+- The owner has three options.
+- The worker had an error.
+- The service has one region.
+
+# rule: progressive
++ The hook is running now.
++ The team is merging the branch.
++ The job was failing at noon.
++ The workers are reading the queue.
++ We are moving the service.
++ The cache is growing fast.
++ The parser was throwing errors.
++ The owner is reviewing the plan.
++ The client is sending two requests.
++ They were writing the tests.
+- The test is missing a case.
+- The job is pending.
+- The file is interesting.
+- The flag is existing behavior.
+- The value is outstanding.
+- The task is ongoing.
+- The cache is the thing to fix.
+- The plan is remaining in draft.
+
+# rule: modal
++ You should run the tests.
++ The parser might fail on tabs.
++ The job could stop early.
++ The owner would approve it.
++ The flag may break the build.
++ The team shall review the plan.
++ The worker ought to retry.
++ The cache should expire after one hour.
++ The client might send two requests.
++ The script could use a timeout.
+- The job can stop early.
+- The owner must approve it.
+- The worker will retry.
+- The release is in May.
+- The parser cannot read tabs.
+- The cache expires after one hour.
+- The client sends two requests.
+- The job stops on error.
+
+# rule: passive
++ The file was deleted by the script.
++ The ticket is reviewed by the owner each week.
++ The token is rotated every month.
++ The cache was cleared at noon.
++ The branch was rebased by the agent.
++ The data is written to the bucket.
++ The report was sent to the team.
++ The error was thrown by the parser.
++ The keys are stored in the vault.
++ The job was started at midnight.
+- The file is open.
+- The job is done.
+- The ticket is closed.
+- The flag is enabled.
+- The worker is based in one region.
+- The test is required.
+- The branch is merged.
+- The service is known.
+
+# rule: paragraph-length
++ The job starts. It reads the queue. It takes one item. It runs the item. It writes the result. It logs the time. It stops.
++ One. Two. Three. Four. Five. Six. Seven. Eight.
++ The page loads. The chart loads. The table loads. The footer loads. The menu opens. The user clicks. The form opens.
++ The cache is cold. The first call is slow. The second call is fast. The third call is fast. The cache warms. The hit rate goes up. The latency drops.
++ The team plans. The team builds. The team tests. The team ships. The team reviews. The team learns. The team plans again.
++ The worker wakes. It checks the queue. It finds a job. It runs the job. It saves the result. It sleeps. It wakes again.
++ The plan has steps. Each step has an exit. Each exit has a proof. Each proof is a command. Each command runs in CI. CI reports the result. The owner reads it.
++ The file opens. The parser reads it. The parser finds a key. The key has a value. The value is a number. The number is valid. The parser returns it.
++ The hook runs. It reads the input. It decodes the event. It runs the handlers. It combines the verdicts. It encodes the result. It exits.
++ The import runs. It reads rows. It maps columns. It writes rows. It counts errors. It logs the counts. It stops.
+- The job starts. It reads the queue. It takes one item. It runs the item. It writes the result. It stops.
+- The job starts. It reads the queue. It takes one item.\n\nIt runs the item. It writes the result. It logs the time. It stops.
+- - The job starts.\n- It reads the queue.\n- It takes one item.\n- It runs the item.\n- It writes the result.\n- It logs the time.\n- It stops.
+- One. Two. Three.
+- The page loads. The chart loads.
+- The cache is cold. The first call is slow. The second call is fast. The cache warms. The latency drops. The user is happy.
+- # One. Two. Three. Four. Five. Six. Seven. Eight.
+- ```\nOne. Two. Three. Four. Five. Six. Seven. Eight.\n```
+
+# rule: one-instruction
++ Open the file and add the line.
++ Run the tests and merge the branch.
++ Read the log, then fix the error.
++ Build the image and push the tag.
++ Stop the worker and clear the queue.
++ Copy the template and rename the files.
++ Pull the branch and run the build.
++ Open the page and click the button.
+- Open the file.
+- Run the tests and the lints.
+- The worker reads the queue and writes the result.
+- Make sure the tests and the lints pass.
+- Read the log for the error.
+- Add a test for each case.
+
+# rule: ing-form
++ The worker keeps fetching the queue and retrying.
++ Try restarting the service.
++ The hook stops after decoding the input.
++ We avoid blocking the main thread.
++ The tool helps by storing the results.
++ The job ends without sending a log.
+- The routing table is new.
+- The pricing page is live.
+- The missing file is in the bucket.
+- The setting is on.
+- The hook is running.
+- The logging level is high.
+- The planning session starts at noon.
+
+# rule: noun-cluster
++ The database connection pool size limit is ten.
++ The user account settings page header is blue.
++ The release candidate artifact name field changed.
++ The payment gateway error response code is 402.
+- The pool has ten connections.
+- The page shows the settings of the account.
+- The build artifact has a new name.
+- The gateway returns an error code.
+
+# rule: hedge
++ The job might possibly fail at night.
++ The cache could probably expire early.
++ The fix may perhaps help.
++ The parser seems to likely fail.
+- The job might fail at night.
+- The cache expires early.
+- The fix helps.
+- The parser fails on tabs.
+
+# rule: symbol
++ The client → the server → the database.
++ Use the cache vs the store.
++ Tests & lints run in CI.
++ The flow is input ⇒ output.
+- The client calls the server.
+- Use the cache or the store.
+- Tests and lints run in CI.
+- Run `a => b` in the sample.

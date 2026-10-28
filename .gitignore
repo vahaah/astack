@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+*.log
+scratch/
+.scratch/
+tmp/
+.tmp/
+__pycache__/
+
+.env
+.env.*
+!.env.example

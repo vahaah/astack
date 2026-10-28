@@ -1,0 +1,16 @@
+{
+	"name": "astack",
+	"owner": {
+		"name": "Alex Vakhitov"
+	},
+	"metadata": {
+		"description": "astack for Cursor: the astack skills, the astack rules and the astack hooks."
+	},
+	"plugins": [
+		{
+			"name": "astack",
+			"source": "cursor/astack",
+			"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks, plus the astack skills."
+		}
+	]
+}

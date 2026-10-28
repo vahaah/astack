@@ -1,0 +1,38 @@
+# astack
+
+These rules apply in every session. A stricter repo rule wins, then astack. `/astack-mode` routes the work and does the next step.
+
+## Routes
+
+| Owner words | Route |
+|---|---|
+| "I am building X", a ticket key | `/astack-plan`. S0 asks for the goal and the one decision the work drives. Grill rounds follow |
+| `/plan` | Plan mode, concise, unresolved questions last. With "I am building", run `astack-plan` in plan mode. After approval, first write `docs/plans/<slug>.md` |
+| `/grilling` | `astack-grilling` on the frontier. One recommendation and lettered options for each question |
+| "go", "do your recommendation", "use best practices and our previous decisions" | A delegation grant. Write `delegate: on` in the plan. "agree", "next" and "approve" continue |
+| "resume" | Mode playbook `resume.md`. Read the plan, the tracker and git, then continue from the next step |
+| `/goal`, "continue the board" | Programme tier and the `astack-mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
+| a hotfix, "I need it fast" | Quick tier. One grill round at most |
+| a bug, an error report, a tester report | The `astack-mode` Bug fix playbook and `astack-diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
+| "comments", "check github comments" | Mode playbook `comments-triage.md` |
+| `/pr-review-hardening` | `astack-pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
+| "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
+| "update from main" | Mode playbook `refresh.md` |
+| "merge", "merge when green" | The `astack-mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
+| UI polish, mobile | `astack-control-ui`, a walk as a real persona, the repo UI kit |
+| "pause", "prompt for next session", "clean worktrees" | The `astack-mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack-mode` Worktree cleanup playbook |
+
+A user rule in the rules folder can add routes, and it never removes one. Find a mode playbook with `astack skill-path astack:mode references/<name>.md`, and read it.
+
+## Standing rules
+
+- Autonomy. Push after green gates. Open and update PRs. Merge only with a grant from the repo profile or from this turn.
+- Owner gates. Stop for accounts, secrets, paid infrastructure, production data writes with no grant and destructive resets. Stop for a force-push to a shared branch, an `--admin` merge and a message to a client.
+- Questions. Ask only the calls that belong to the owner. Give each one a recommendation and lettered options. "agree" accepts all of them. Never ask for a fact. Ask for owner-only inputs one at a time.
+- Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only when the owner says so. Put follow-ups in the open PR.
+- PR text. Write `Part of <key>` on the first line when the repo profile asks for it. Never put a key or `#n` after a closing word.
+- Proof. Report gate counts. Walk the journey as a real persona. Measure before you make a claim, and open each file that you cite. A zero result needs a positive control.
+- State. The plan, the tracker and git hold the state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
+- Replies. Write every reply in ASD-STE100 Simplified Technical English, also short and simple replies. Give the result first. Do not repeat agreed items. A checkpoint reply has 6 lines or fewer.
+- STE. Use 20 words or fewer in an instruction and 25 or fewer in a description. Use the active voice and one instruction in each sentence. Do not use contractions, semicolons, long dashes, "e.g.", "i.e.", "etc." or "and/or". Write "make sure", not "ensure", and "use", not "utilize". Keep code, paths and names as they are. Quote text that is not yours. Put a cited title, a log line, a header value and the user's words in backticks or double quotes.
+- Repair. Fix a broken skill or rule in astack, never in a project copy.

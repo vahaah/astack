@@ -1,0 +1,32 @@
+gates:
+  - name: typecheck
+    command: bun run typecheck
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
+  - name: biome
+    command: bunx --bun biome ci .
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
+test:
+  name: test
+  command: bun run test
+  env: []
+  requires: []
+  setup: []
+  when_changed: []
+  ci_env: []
+  after: []
+  tools: {}
+  rewrites: []

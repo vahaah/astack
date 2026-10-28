@@ -1,0 +1,39 @@
+{
+	"name": "astack",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"build": "bun scripts/build.ts",
+		"bundle": "bun scripts/bundle.ts",
+		"test": "bun test tests",
+		"apply": "bun scripts/apply.ts",
+		"validate": "bun scripts/validate.ts",
+		"dist": "bun scripts/dist.ts",
+		"neutral": "bun scripts/neutral.ts",
+		"secrets": "bun scripts/secrets.ts",
+		"deny": "bun scripts/deny.ts",
+		"check:companion": "bun scripts/check-companion.ts",
+		"ste": "bun scripts/ste.ts",
+		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun test tests && biome ci . && tsc -p .",
+		"check:drift": "bun scripts/drift.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.15",
+		"@types/bun": "1.4.3",
+		"typescript": "7.0.2"
+	},
+	"dependencies": {
+		"yaml": "2.9.1"
+	},
+	"version": "0.1.0",
+	"author": {
+		"name": "Alex Vakhitov"
+	},
+	"license": "MIT",
+	"bin": {
+		"astack": "dist/cli/astack.js"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

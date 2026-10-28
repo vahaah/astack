@@ -1,0 +1,12 @@
+{
+	"name": "astack",
+	"owner": {
+		"name": "Alex Vakhitov"
+	},
+	"plugins": [
+		{
+			"name": "astack",
+			"source": "./dist/cursor/astack"
+		}
+	]
+}

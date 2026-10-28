@@ -1,0 +1,130 @@
+{
+	"name": "acme",
+	"path": "~/Projects/acme",
+	"mode": "write",
+	"rulesDir": ".claude/rules/standards",
+	"artifacts": {
+		"rules": true,
+		"settings": true,
+		"reviewStub": true,
+		"agentDocs": true,
+		"profile": true
+	},
+	"tracker": {
+		"kind": "linear",
+		"team": "ABC",
+		"requirePartOf": true,
+		"categoryLabels": {
+			"bug": "Bug",
+			"enhancement": "Feature"
+		}
+	},
+	"merge": {
+		"authority": "turn"
+	},
+	"ste": {
+		"mode": "deny",
+		"technicalNouns": [
+			"Cart",
+			"Carrier",
+			"Catalog",
+			"Checkout",
+			"Customer",
+			"Discount code",
+			"Invoice",
+			"Order",
+			"Order line",
+			"Payment",
+			"Price list",
+			"Product",
+			"Purchase order",
+			"Refund",
+			"Return",
+			"Shipment",
+			"Stock level",
+			"Storefront",
+			"Supplier",
+			"Tax rate",
+			"Variant",
+			"Warehouse"
+		]
+	},
+	"domain": {
+		"glossary": "CONTEXT.md",
+		"adrDir": "docs/adr"
+	},
+	"keepPatterns": ["\\bADR-\\d{4}\\b"],
+	"lint": {
+		"adrCitation": true,
+		"conflictMarkers": true,
+		"denySubstrings": []
+	},
+	"gates": [
+		{
+			"name": "biome check on written JSON (repo-pinned binary)",
+			"run": ["./node_modules/.bin/biome", "check", "--no-errors-on-unmatched"],
+			"files": "written-json"
+		}
+	],
+	"ciOnlyGates": [
+		{
+			"name": "check: typecheck, lint, test",
+			"source": ".github/workflows/ci.yml:12",
+			"reason": "Apply writes Markdown, a NOTICE file and JSON files. The biome gate checks the JSON. The hardening run of the PR runs the three checks."
+		}
+	],
+	"ciParity": {
+		"setup": [
+			{
+				"command": "bun install --frozen-lockfile",
+				"reason": "CI installs the workspace. The gates run in a worktree that has it."
+			}
+		],
+		"map": [],
+		"exclude": []
+	},
+	"branches": {
+		"v2": {
+			"ciParity": {
+				"setup": [
+					{
+						"command": "bun install --frozen-lockfile",
+						"reason": "CI installs the workspace. The gates run in a worktree that has it."
+					}
+				],
+				"map": [],
+				"exclude": []
+			}
+		}
+	},
+	"commentConflicts": [
+		{
+			"form": "a comment on each workaround",
+			"file": "AGENTS.md",
+			"line": 12,
+			"match": "Explain each workaround in a comment",
+			"requires": "A comment above each workaround explains it.",
+			"conflict": "Sicko deletes a comment that explains our own code. Only a constraint of an external dependency stays.",
+			"sample": "// Workaround: the cache needs one more read before it is warm."
+		}
+	],
+	"commentDecisions": [
+		{
+			"form": "ADR citation in a code comment",
+			"decision": "keep",
+			"reason": "The owner keeps ADR citations in each repo. The keep pattern for the spelling of this repo keeps the comment, inside the 2-line limit.",
+			"sample": "// Money stays in integer minor units (ADR-0003)."
+		},
+		{
+			"form": "BOUNDARY-CAST comment",
+			"decision": "obsolete",
+			"reason": "Only the old copy of the hardening skill asked for it. The review stub replaces that file, and the astack type hook denies a new cast. The reason for a cast that stays goes in the commit body.",
+			"file": ".claude/skills/pr-review-hardening/SKILL.md",
+			"line": 120,
+			"match": "// BOUNDARY-CAST:"
+		}
+	],
+	"adrNeeded": [],
+	"branchTemplate": "dev/agent-tooling-{date}",
+	"commitSubject": "chore: add the agent tooling files"
+}

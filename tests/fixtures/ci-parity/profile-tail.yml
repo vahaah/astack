@@ -1,0 +1,33 @@
+metrics: null
+typescript: null
+reviewers:
+  select: applicable
+  agents:
+    - code-reviewer
+  checklists: []
+  notes: []
+test_adequacy: changed-behaviour
+ledger:
+  carry_over: false
+prepasses: []
+comments:
+  keep_patterns: []
+forbidden:
+  commands: []
+  paths:
+    - bun.lock
+conventions:
+  branch:
+    create: review-hardening/<short-name>
+    pattern: null
+  commit:
+    subject: "fix(review): <finding-id> <summary>"
+    trailers: []
+proof:
+  pr_comment: null
+  on_unclean: null
+threads:
+  answer: false
+merge:
+  after_clean_stop: report
+  conditions: []

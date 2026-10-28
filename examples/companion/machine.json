@@ -1,0 +1,10 @@
+{
+	"home": "/home/dev",
+	"config": "~/.claude",
+	"profiles": ["~/.claude-a", "~/.claude-b"],
+	"dotfiles": "~/config/claude",
+	"handles": ["dev-owner"],
+	"emails": ["owner@example.com"],
+	"hosts": ["dev-box"],
+	"publicRemote": "https://github.com/dev-owner/astack.git"
+}

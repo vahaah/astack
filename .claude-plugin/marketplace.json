@@ -1,0 +1,14 @@
+{
+	"$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+	"name": "astack",
+	"description": "One astack plugin with skills, agents, rules and hooks for plans, code, review, tickets and documentation.",
+	"owner": {
+		"name": "Alex Vakhitov"
+	},
+	"plugins": [
+		{
+			"name": "astack",
+			"source": "./dist/claude-code/astack"
+		}
+	]
+}

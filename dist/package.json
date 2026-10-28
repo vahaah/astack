@@ -1,0 +1,24 @@
+{
+	"name": "astack",
+	"version": "0.1.0",
+	"description": "The astack CLI: hook dispatcher and checks for plans, comments, tickets and PR bodies.",
+	"license": "MIT",
+	"author": "Alex Vakhitov",
+	"type": "module",
+	"bin": {
+		"astack": "cli/astack.js"
+	},
+	"files": [
+		"cli/",
+		"LICENSE",
+		"NOTICE",
+		"README.md"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/vahaah/astack.git"
+	}
+}

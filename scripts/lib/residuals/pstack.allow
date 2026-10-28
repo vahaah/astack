@@ -1,0 +1,5 @@
+# <relpath glob>:<regex tested against the whole line>:<reason the residual is correct in Claude Code>
+skills/mode/references/subagents.md:^\| Cross-family reviewer \|.*cursor-agent:optional cross-family reviewer seat that Claude Code runs through Bash, per arena/references/external-seats.md
+skills/arena/references/external-seats.md:\bcursor-agent\b:the optional cursor-agent CLI runs a cross-family panel seat through Bash
+skills/setup-models/SKILL.md:\bcursor-agent\b:setup-pstack detects the optional cursor-agent CLI for cross-family panel seats
+skills/mode/playbooks/review-bot-triage.md:Bugbot passes upstream|upstream's Bugbot runs:upstream's evidence came from Bugbot runs, so the source line names the bot it was measured on

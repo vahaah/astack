@@ -1,0 +1,16 @@
+name: Setup Bun and install
+description: Set up Bun and install the workspace with a frozen lockfile.
+
+runs:
+  using: composite
+  steps:
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version-file: .bun-version
+    - uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ hashFiles('bun.lock') }}
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile

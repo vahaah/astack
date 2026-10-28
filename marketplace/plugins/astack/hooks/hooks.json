@@ -1,0 +1,50 @@
+{
+	"description": "One astack dispatcher entry per event. The astack CLI routes each payload to its handlers. Every handler fails open.",
+	"hooks": {
+		"SessionStart": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code SessionStart'",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"UserPromptSubmit": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code UserPromptSubmit'",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"PreToolUse": [
+			{
+				"matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|mcp__.*",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code PreToolUse'",
+						"timeout": 10
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code Stop'",
+						"timeout": 10
+					}
+				]
+			}
+		]
+	}
+}

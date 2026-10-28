@@ -1,0 +1,63 @@
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * *"
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun and install
+        uses: ./.github/actions/setup
+      - name: Lint
+        run: bun lint
+      - name: Typecheck
+        run: bun typecheck
+      - name: Build the test database
+        run: bun run db:test:setup
+      - name: Test
+        run: bun run test
+      - name: Bundle the worker
+        working-directory: ./apps/tasks/
+        run: bunx worker-cli@1.2.3 deploy --dry-run
+      - name: What the servers said
+        if: ${{ failure() }}
+        run: tail -n 200 /tmp/app.log
+
+  browser-smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - name: Start the stack
+        run: |
+          # The stack serves the portal and the API.
+          supabase start
+          bun run dev &
+      - name: Layout smoke at two widths
+        run: bun run --filter=@acme/e2e e2e
+
+  judge:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/actions/setup
+      - run: bun run --filter @acme/eval judge
+
+  nightly:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - run: bun run --filter @acme/contract check
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: acme-tools/manifest-lint@v1

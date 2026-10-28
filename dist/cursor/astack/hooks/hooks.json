@@ -1,0 +1,55 @@
+{
+	"version": 1,
+	"hooks": {
+		"sessionStart": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor sessionStart",
+				"timeout": 10
+			}
+		],
+		"beforeSubmitPrompt": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor beforeSubmitPrompt",
+				"timeout": 10
+			}
+		],
+		"preToolUse": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor preToolUse",
+				"timeout": 10,
+				"matcher": "Write"
+			}
+		],
+		"afterFileEdit": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor afterFileEdit",
+				"timeout": 10
+			}
+		],
+		"beforeShellExecution": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor beforeShellExecution",
+				"timeout": 10
+			}
+		],
+		"beforeMCPExecution": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor beforeMCPExecution",
+				"timeout": 10
+			}
+		],
+		"afterAgentResponse": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor afterAgentResponse",
+				"timeout": 10
+			}
+		],
+		"stop": [
+			{
+				"command": "sh \"${CURSOR_PLUGIN_ROOT}/bin/astack\" hook cursor stop",
+				"timeout": 10,
+				"loop_limit": 1
+			}
+		]
+	}
+}

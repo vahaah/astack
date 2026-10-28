@@ -1,0 +1,75 @@
+gates:
+  - name: lint
+    command: bun run lint
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: &bun-tools
+      bun: "1.3.0"
+    rewrites: []
+  - name: typecheck
+    command: bun run typecheck
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: *bun-tools
+    rewrites: []
+  - name: worker-bundle
+    command: cd apps/tasks && bunx worker-cli@1.2.3 deploy --dry-run
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: *bun-tools
+    rewrites: []
+  - name: manifest-lint
+    command: bunx manifest-lint@1.0.0
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
+  - name: layout-smoke
+    command: bun run --filter=@acme/e2e e2e
+    env:
+      - name: SUPABASE_SERVICE_ROLE_KEY
+        why: The suite signs in with the auth admin API.
+    requires:
+      - name: local Supabase
+        check: supabase status
+        on_missing: stop
+      - name: Chromium for Playwright
+        check: bunx playwright --version
+        start: bunx playwright install chromium
+        on_missing: start
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: *bun-tools
+    rewrites: []
+    side_effects: Installs Chromium into the Playwright cache when it is missing.
+test:
+  name: test
+  command: bun run test
+  env: []
+  requires: []
+  setup:
+    - bun run db:test:setup
+  when_changed: []
+  ci_env: []
+  after: []
+  tools: *bun-tools
+  rewrites: []
+  side_effects: Rebuilds the local test database from the migrations.

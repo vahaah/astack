@@ -1,0 +1,9 @@
+{
+	"name": "astack",
+	"version": "0.1.0",
+	"description": "Plan, code, comment, ticket and documentation standards with enforcement hooks.",
+	"author": {
+		"name": "Alex Vakhitov"
+	},
+	"license": "MIT"
+}

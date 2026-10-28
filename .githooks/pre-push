@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+: "${ASTACK_COMPANION_DIR:?Set the private companion path before a public push}"
+exec bun scripts/pre-push.ts --companion "$ASTACK_COMPANION_DIR" "$@"

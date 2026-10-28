@@ -1,0 +1,22 @@
+# <path glob under dist/>:<regex>:<reason>. Each line allows one kind of Claude term in the Cursor, Grok Bot and Agent Skills builds.
+**/skills/**:\bCLAUDE(?:\.local)?\.md\b:CLAUDE.md is a repo file that the skills read and write on every tool
+**/skills/**:\.claude/pr-review-hardening\.profile\.md:the hardening profile is a repo path that astack reads on every tool
+**/skills/**:\.claude/rules/:a repo can keep scoped rules in this folder, and the skills name it as one place for a rule
+**/skills/astack-plan/references/unattended.md:Claude Code runs headless|CLAUDE_CODE_:the attended check reads these Claude Code variables, and other tools count as attended
+**/skills/astack-plan/**:\bAskUserQuestion\b|\bExitPlanMode\b:names Claude Code tools in a rule that forbids or waits for them
+**/skills/astack-grilling/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool in a rule that forbids it
+**/skills/astack-plan/SKILL.md:\bBash\(astack:\*\):names the permission rule that covers the astack calls in Claude Code
+**/skills/astack-plan/references/stages.md:subagent_type|model "(?:opus|sonnet|haiku)":the stage templates give the subagent type and model as intent, and a tool without them uses its own
+**/skills/astack-pr-review-hardening/references/*.md:subagent_type|Agent tool|`Agent`:the profile names subagent types as intent, and a tool without them runs the reviewer itself
+**/skills/astack-{code-review,grilling,implement-spec,improve-codebase-architecture,research,wayfinder,codebase-design}/**:subagent_type|`Agent`|Agent tool:flow names subagent types as intent, and a tool without them runs the brief itself
+**/skills/astack-retro/SKILL.md:\bClaude\b|~/\.claude\b:retro reads the session logs of the tool that ran the session
+**/skills/astack-plan/**:~/\.claude/plans:the rule warns that a plan in the Claude Code plan folder is lost to other tools
+**/skills/astack-{arena,how,interrogate,maintain-verification-skill,mode,no-comments,reflect,setup-models,swarm,why}/**:subagent_type|`Agent`|Agent tool|Agent subagent:pstack names subagent types and the Agent tool as intent, and a tool without them runs the brief itself
+**/skills/astack-{mode,recall,reflect,show-me-your-work}/**:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|`Skill` tool|claude plugin|claude -p:the skill reads the session transcripts and the skill folders of Claude Code
+**/skills/astack-setup-models/SKILL.md:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|\bAskUserQuestion\b:the skill writes the model rule of Claude Code and lists the Claude models
+**/skills/astack-arena/**:\bClaude\b:arena compares Claude models with the models of other families
+**/skills/astack-why/**:mcp__<server>__<tool>:the MCP tool names of Claude Code are an example of a tool name form
+**/skills/astack-{create-verification-skill,maintain-verification-skill}/SKILL.md:\.claude/skills|\bClaude Code may have\b:the verification skill lives at the project skill path of Claude Code
+**/skills/astack-no-comments/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool for the approval question, and other tools ask in plain text
+**/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
+**/skills/astack-plan/references/phase-boundaries.md:\bClaude\b:names Claude as one end of a harness hand-off example

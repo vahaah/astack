@@ -1,0 +1,144 @@
+astack 0.1.0
+Copyright (c) 2026 Alex Vakhitov. MIT License, in LICENSE.
+
+This folder holds the built plugins of the marketplace manifest:
+
+- astack, by Alex Vakhitov, MIT. Its notice follows.
+
+astack includes material adapted from the projects below. Each list names
+the astack files that hold material of one project.
+
+From pstack, https://github.com/cursor/plugins, path pstack, commit 1e5c90a4b6f249917bd21fe361b3a2a7deb741b8, MIT License, Copyright (c) 2026 Lauren Tan:
+
+- agents/comment-judge.md
+- agents/delegate.md
+- rules/coding.md in the astack source repo, and its copy in each build
+- rules/comments.md in the astack source repo, and its copy in each build
+- skills/architect
+- skills/arena
+- skills/benchmark-checklist
+- skills/blast-radius
+- skills/coding-rules
+- skills/correct
+- skills/create-verification-skill
+- skills/figure-it-out
+- skills/how
+- skills/in-your-own-words
+- skills/interrogate
+- skills/maintain-verification-skill
+- skills/mode
+- skills/no-comments
+- skills/plan
+- skills/pr-review-hardening
+- skills/principles
+- skills/recall
+- skills/reflect
+- skills/setup-models
+- skills/sharpen
+- skills/show-me-your-work
+- skills/swarm
+- skills/types
+- skills/why
+- skills/write-docs
+- skills/write-ticket
+- src/astack/orch in the astack source repo, bundled into bin/astack.js
+- src/astack/plan in the astack source repo, bundled into bin/astack.js
+- src/astack/watch-pr in the astack source repo, bundled into bin/astack.js
+
+From mattpocock/skills, https://github.com/mattpocock/skills, commit 49dd158d1076134a641b33efb035946536778336, MIT License, Copyright (c) 2026 Matt Pocock:
+
+- agents/researcher.md
+- skills/code-review
+- skills/codebase-design
+- skills/coding-rules
+- skills/diagnosing-bugs
+- skills/domain-modeling
+- skills/grilling
+- skills/implement
+- skills/implement-spec
+- skills/improve-codebase-architecture
+- skills/plan
+- skills/prototype
+- skills/research
+- skills/retro
+- skills/setup
+- skills/tdd
+- skills/to-questionnaire
+- skills/to-spec
+- skills/to-tickets
+- skills/triage
+- skills/wait-what
+- skills/wayfinder
+- skills/wizard
+- skills/write-docs
+- skills/write-ticket
+- skills/writing-for-agents
+
+From cursor-team-kit, https://github.com/cursor/plugins, path cursor-team-kit, commit 1e5c90a4b6f249917bd21fe361b3a2a7deb741b8, MIT License, Copyright (c) 2026 Cursor:
+
+- skills/control-cli
+- skills/control-ui
+- skills/deslop
+
+Each project above is distributed under this license:
+
+MIT License
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+bin/astack.js bundles the npm package yaml 2.9.1, under the ISC License:
+
+Copyright Eemeli Aro <eemeli@gmail.com>
+
+Permission to use, copy, modify, and/or distribute this software for any purpose
+with or without fee is hereby granted, provided that the above copyright notice
+and this permission notice appear in all copies.
+
+THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
+OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+THIS SOFTWARE.
+
+The PR evidence guidance in skills/write-docs is adapted from
+skills/engineering/pr/SKILL.md of mattpocock/skills, which credits the show-me
+skill by Dex Horthy (Humanlayer).
+
+ASD-STE100 Simplified Technical English:
+
+astack examines prose with STE rules based on ASD-STE100. astack is not
+affiliated with or endorsed by ASD. ASD owns the copyright of the standard.
+"ASD-STE100" and "Simplified Technical English" are EU trade mark
+No. 017966390.
+
+astack ships no text from the standard: no dictionary entries, no
+definitions, no examples and no word list taken from the dictionary. The
+word list of astack (src/astack/ste/words.ts in the astack source repo,
+bundled into bin/astack.js) is its own work. Each entry names its basis:
+a public statement about STE, the agreement of two public checkers, or a
+house rule. astack wrote each example sentence in it. astack never says
+that a text is compliant with, or certified to, ASD-STE100.
+
+The astack build examines astack's own skill, rule, README and doc text
+with the STE deny rules, and fails on a finding. It does not examine
+third-party text, and astack does not rewrite it. That is the pstack and
+flow plugins, and the four sections of the comments rule that quote
+pstack's Comment Sicko verbatim.

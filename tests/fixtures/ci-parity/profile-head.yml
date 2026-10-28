@@ -1,0 +1,11 @@
+version: 1
+base:
+  default: main
+  from_pr: false
+  sync: none
+iterations:
+  min: 1
+  max: 2
+after_create_pr: none
+push: when-authorised
+guardrails: []
