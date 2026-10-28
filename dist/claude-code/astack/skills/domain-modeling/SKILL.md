@@ -1,8 +1,6 @@
 ---
 name: domain-modeling
 description: Build a project domain model. Use when you discuss terminology, change CONTEXT.md, or record or edit an ADR.
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Domain modeling

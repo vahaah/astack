@@ -4,7 +4,7 @@ description: "Write documents that agents read. Use for skills, AGENTS.md, CLAUD
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Writing for agents

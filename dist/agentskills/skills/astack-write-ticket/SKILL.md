@@ -4,7 +4,7 @@ description: "Write, refine or split Linear and GitHub issues. Use the shared te
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills and pstack"
+  source: "astack"
 ---
 
 # Write a ticket

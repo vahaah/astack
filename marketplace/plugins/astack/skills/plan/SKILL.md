@@ -2,8 +2,6 @@
 name: plan
 description: Use for /astack:plan, "I am building <X>", a ticket key, or /plan with new work. Plans work the way the owner plans, from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives, and grills the owner on the calls that are theirs. Then it writes one plan file that astack check-plan proves. The plan holds sessions of parallel steps in waves, and astack session builds them. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request.
 argument-hint: "<what to plan> | <slug, plan path or ticket key> [--tier quick|standard|programme] [--afk]"
-metadata:
-  origin: mattpocock-skills pstack
 ---
 
 # Plan

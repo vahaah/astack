@@ -17,7 +17,6 @@ See "Per-repo overlays" below.
 ## Principles these rules build on
 
 The rules use the principles in `astack-principles`.
-Their source credit is pstack.
 The summary here is enough to apply each principle.
 For the full index, run `astack skill-path astack:principles`.
 Read the path it prints.
@@ -233,7 +232,7 @@ Type-level tests in `*.test-d.ts` files are fine.
 
 ## Write no comments
 
-Write no comment by default. pstack's Comment Sicko keep list is the only standard, and the comments rule quotes it. A comment stays only when it is one of these, or when it matches a repo keep pattern:
+Write no comment by default. The comments rule holds the keep list. A comment stays only when it is one of these, or when it matches a repo keep pattern:
 
 - A license or legal header.
 - Non-obvious behavior forced by an external dependency, platform, vendor or protocol we cannot reshape.

@@ -100,23 +100,11 @@ const SOURCE: Source = {
 				"skills/how/SKILL.md": skill(
 					"how",
 					"Use to explain.",
-					"disable-model-invocation: true\nmetadata:\n  origin: pstack\n",
+					"disable-model-invocation: true\n",
 				),
-				"skills/setup-models/SKILL.md": skill(
-					"setup-models",
-					"Use to set up.",
-					"metadata:\n  origin: pstack\n",
-				),
-				"skills/grilling/SKILL.md": skill(
-					"grilling",
-					"Use to grill.",
-					"metadata:\n  origin: mattpocock-skills\n",
-				),
-				"skills/tdd/SKILL.md": skill(
-					"tdd",
-					"Use for TDD.",
-					"metadata:\n  origin: mattpocock-skills\n",
-				),
+				"skills/setup-models/SKILL.md": skill("setup-models", "Use to set up."),
+				"skills/grilling/SKILL.md": skill("grilling", "Use to grill."),
+				"skills/tdd/SKILL.md": skill("tdd", "Use for TDD."),
 				"agents/comment-judge.md":
 					"---\nname: comment-judge\ndescription: Deletes comments.\nmodel: opus\n---\n\nYou delete.\n",
 				"agents/explorer.md":

@@ -1,4 +1,3 @@
-import { MANAGED_PATHS } from "../../src/astack/managed.ts";
 import {
 	UPSTREAM_NAMES,
 	UPSTREAMS,
@@ -36,25 +35,6 @@ export type Sourced = {
 	readonly content: string;
 	readonly sources?: readonly UpstreamUse[];
 };
-
-export function noticeReference(sources: readonly UpstreamUse[]): string {
-	const names = [
-		...new Set(sources.map((source) => UPSTREAMS[source.upstream].label)),
-	];
-	return `This file holds text from ${names.join(" and ")} under the MIT License. \`${MANAGED_PATHS.notice}\` holds the copyright notice and the permission notice.`;
-}
-
-export function withNoticeReference<T extends Sourced>(artifact: T): T {
-	if (artifact.sources === undefined || artifact.sources.length === 0)
-		return artifact;
-	const body = artifact.content.endsWith("\n")
-		? artifact.content
-		: `${artifact.content}\n`;
-	return {
-		...artifact,
-		content: `${body}\n${noticeReference(artifact.sources)}\n`,
-	};
-}
 
 export function renderNotice(
 	artifacts: readonly Sourced[],

@@ -1,8 +1,6 @@
 ---
 name: writing-for-agents
 description: Write documents that agents read. Use for skills, AGENTS.md, CLAUDE.md and documents reached through context pointers.
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Writing for agents

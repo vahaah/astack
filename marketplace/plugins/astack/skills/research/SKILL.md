@@ -1,8 +1,6 @@
 ---
 name: research
 description: "Research a question from primary sources and save cited findings. Use for background research, official docs, or API facts."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Research

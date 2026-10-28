@@ -4,7 +4,7 @@ description: "Maintain a verification skill and feature map through source revie
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

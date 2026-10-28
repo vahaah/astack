@@ -1,4 +1,4 @@
-import { originOf, type UpstreamName } from "../lib/upstreams.ts";
+import { SKILL_ORIGINS, type UpstreamName } from "../lib/upstreams.ts";
 import type { Plugin } from "./codemods.ts";
 import { type Split, tryFrontmatter, type Values } from "./frontmatter.ts";
 import {
@@ -72,11 +72,6 @@ export function componentsOf(plugin: Plugin, tree: FileTree): Components {
 		const path = `skills/${name}/SKILL.md`;
 		const split = parsed(tree, path, errors);
 		if (split === undefined) return [];
-		const origin = originOf(split.values);
-		if (!origin.ok) {
-			errors.push(`${path}: ${origin.error}`);
-			return [];
-		}
 		return [
 			{
 				plugin,
@@ -84,7 +79,7 @@ export function componentsOf(plugin: Plugin, tree: FileTree): Components {
 				values: split.values,
 				body: split.body,
 				files: sortTree(files),
-				origin: origin.value,
+				origin: SKILL_ORIGINS.get(name) ?? [],
 			},
 		];
 	});

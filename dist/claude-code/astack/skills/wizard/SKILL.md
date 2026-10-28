@@ -1,8 +1,6 @@
 ---
 name: wizard
 description: "Create an interactive Bash wizard for human-only setup or migration steps. Use for infrastructure, credentials, CI secrets, or unfamiliar dashboards."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Wizard

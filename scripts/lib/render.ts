@@ -10,12 +10,7 @@ import {
 } from "../../src/astack/pr-review-profile.ts";
 import { ASTACK_RULES } from "../../src/astack/rules.ts";
 import { renderFlowConfig } from "./flow-config.ts";
-import {
-	renderNotice,
-	type UpstreamUse,
-	upstreamUses,
-	withNoticeReference,
-} from "./notices.ts";
+import { renderNotice, type UpstreamUse, upstreamUses } from "./notices.ts";
 import type { ProjectConfig } from "./projects.ts";
 import {
 	profileDirFor,
@@ -308,7 +303,7 @@ function renderSet(
 				)
 			: []),
 		...review.artifacts,
-	].map(withNoticeReference);
+	];
 	const noticeText = renderNotice(copies);
 	const notice: Artifact[] =
 		noticeText === undefined

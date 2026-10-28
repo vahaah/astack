@@ -2,8 +2,6 @@
 name: to-questionnaire
 description: Create a questionnaire for someone whose knowledge the user needs to make a decision.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Create a questionnaire

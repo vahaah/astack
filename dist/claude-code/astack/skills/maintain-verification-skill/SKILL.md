@@ -2,8 +2,6 @@
 name: maintain-verification-skill
 description: "Maintain a verification skill and feature map through source review and live proof. Use for /astack:maintain-verification-skill or verification audits."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Maintain a verification skill

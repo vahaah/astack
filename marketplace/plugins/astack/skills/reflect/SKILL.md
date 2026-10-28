@@ -2,8 +2,6 @@
 name: reflect
 description: "Review the active transcript with three parallel lenses. Use reflect to find durable lessons and propose routed skill edits."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Reflect

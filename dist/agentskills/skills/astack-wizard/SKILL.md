@@ -4,7 +4,7 @@ description: "Create an interactive Bash wizard for human-only setup or migratio
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Wizard

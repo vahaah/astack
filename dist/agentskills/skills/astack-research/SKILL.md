@@ -4,7 +4,7 @@ description: "Research a question from primary sources and save cited findings. 
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Research

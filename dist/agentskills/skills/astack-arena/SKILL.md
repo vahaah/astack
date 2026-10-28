@@ -4,7 +4,7 @@ description: "Run parallel candidates on one task. Use for /astack-arena, \"aren
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

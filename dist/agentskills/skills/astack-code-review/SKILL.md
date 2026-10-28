@@ -4,7 +4,7 @@ description: "Review committed changes against a fixed point on two axes. Standa
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Code review

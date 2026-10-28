@@ -2,8 +2,6 @@
 name: to-tickets
 description: Split a plan, spec or conversation into vertical tickets. Publish one per file or tracker issue, with blocking edges.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Create tickets

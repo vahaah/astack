@@ -2,8 +2,6 @@
 name: write-ticket
 description: Write, refine or split Linear and GitHub issues. Use the shared templates and a ten-point rubric before filing.
 argument-hint: "[issue key or URL, or what the issue is about]"
-metadata:
-  origin: mattpocock-skills pstack
 ---
 
 # Write a ticket

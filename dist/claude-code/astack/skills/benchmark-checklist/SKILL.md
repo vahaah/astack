@@ -2,8 +2,6 @@
 name: benchmark-checklist
 description: "Check performance measurements before you report or use them. Use for benchmarks, measured speedups, regressions, or performance-based choices."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Benchmark checklist

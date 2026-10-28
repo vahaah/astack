@@ -4,7 +4,7 @@ description: "Use a shared vocabulary to design deep modules. Apply it to module
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Codebase Design

@@ -1,8 +1,6 @@
 ---
 name: tdd
 description: "Build features or fixes with failing tests at agreed seams. Use for test-first work, \"red-green-refactor\", or integration tests. Keep refactoring in review rather than the implementation loop."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Test-Driven Development

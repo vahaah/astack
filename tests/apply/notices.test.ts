@@ -5,7 +5,6 @@ import {
 	companionPaths,
 	exampleCompanionRoot,
 } from "../../scripts/lib/companion.ts";
-import { noticeReference } from "../../scripts/lib/notices.ts";
 import { loadAllProjects } from "../../scripts/lib/projects.ts";
 import {
 	type Artifact,
@@ -103,14 +102,12 @@ describe("text that apply copies from upstream", () => {
 	);
 
 	test.each(rendered)(
-		"$name: each copied file points at the notice",
+		"$name: credits stay outside the loaded repo instructions",
 		({ artifacts }) => {
 			for (const artifact of artifacts.filter((entry) => entry.sources)) {
-				expect(
-					artifact.content
-						.trimEnd()
-						.endsWith(noticeReference(artifact.sources ?? [])),
-				).toBe(true);
+				expect(artifact.content).not.toMatch(
+					/^Copyright |This file holds text from /m,
+				);
 			}
 		},
 	);

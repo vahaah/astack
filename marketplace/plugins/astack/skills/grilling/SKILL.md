@@ -1,8 +1,6 @@
 ---
 name: grilling
 description: Interview the user about a plan, decision or idea. Use when the user asks to grill or test their reasoning.
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Grilling

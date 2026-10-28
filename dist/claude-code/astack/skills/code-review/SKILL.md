@@ -1,8 +1,6 @@
 ---
 name: code-review
 description: "Review committed changes against a fixed point on two axes. Standards checks repo rules. Spec checks the originating requirements. Run parallel reviewers and report each axis separately. Use for a branch, PR, work in progress, or \"review since X\"."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Code review

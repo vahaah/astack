@@ -1,8 +1,6 @@
 ---
 name: control-ui
 description: "Drive and inspect web, Electron, Chromium, and mobile UIs. Use for visual proof, accessibility, logs, profiles, or bug reproduction."
-metadata:
-  origin: cursor-team-kit
 ---
 
 # Control UI

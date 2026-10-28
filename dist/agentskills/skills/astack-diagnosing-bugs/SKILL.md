@@ -4,7 +4,7 @@ description: "Diagnosis loop for hard bugs, flaky tests and performance regressi
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
 ---
 
 # Diagnosing Bugs

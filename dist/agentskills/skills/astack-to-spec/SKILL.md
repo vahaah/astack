@@ -4,7 +4,7 @@ description: "Create and publish a spec from the current conversation. Synthesiz
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills"
+  source: "astack"
   disable-model-invocation: "true"
 ---
 

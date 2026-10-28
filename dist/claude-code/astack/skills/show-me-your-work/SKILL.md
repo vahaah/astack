@@ -2,8 +2,6 @@
 name: show-me-your-work
 description: "Keep a TSV decision trail for long or unattended work. Store it locally unless a reviewer needs a committed trail."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Show me your work

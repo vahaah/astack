@@ -14,8 +14,8 @@ import { migrationPaths, renderMigrationDoc } from "./lib/migration.ts";
 import {
 	AGENT_ORIGINS,
 	MIT_PERMISSION,
-	originOf,
 	PATH_ORIGINS,
+	SKILL_ORIGINS,
 	STATIC_NOTICE,
 	UPSTREAM_NAMES,
 	UPSTREAMS,
@@ -175,7 +175,8 @@ export function componentOrigin(
 	if (component.kind === "agent")
 		return ok(AGENT_ORIGINS[relative(repoRoot, component.file)] ?? []);
 	try {
-		return originOf(readComponentValues(component));
+		readComponentValues(component);
+		return ok(SKILL_ORIGINS.get(component.name) ?? []);
 	} catch (error) {
 		if (error instanceof FrontmatterError) return err(error.message);
 		throw error;

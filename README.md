@@ -1,9 +1,11 @@
 # astack
 
 astack holds skills, agents, rules, and hooks for planning, coding, review, tickets, and documentation.
-One `astack` plugin supplies the kept pstack and Matt Pocock material.
+One `astack` plugin supplies text adapted from pstack, Matt Pocock, and Cursor.
 This repository holds the source and each generated client build.
 `LICENSE` and `NOTICE` record the licence and credits.
+Credits stay in these package files and the licence files of standalone skills.
+Rules and skill instructions carry no credit blocks.
 
 ## Install a release
 

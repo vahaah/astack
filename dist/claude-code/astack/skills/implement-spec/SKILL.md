@@ -2,8 +2,6 @@
 name: implement-spec
 description: Implement the output of /astack:to-spec and /astack:to-tickets.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Implement a spec

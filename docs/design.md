@@ -12,6 +12,8 @@ astack holds the owner's planning, coding, review, and writing rules.
 One plugin named `astack` holds each kept skill and agent.
 The source keeps MIT credits for the pstack and Matt Pocock text that an item retains.
 `NOTICE` records those credits and the bundled package licences.
+The build registry in `scripts/lib/upstreams.ts` maps each skill, agent, rule, and code module to its sources.
+Rules and skill instructions carry no credit blocks or origin fields.
 
 Claude Code, Codex, and Grok Build read the Claude plugin format.
 Cursor uses flat skill names in its own plugin build.
@@ -54,7 +56,7 @@ Codex hook hashes stay pinned until a deliberate hook change.
 The generated files remain in git for review.
 
 Each flat build keeps reference files beside its skill.
-Each skill that keeps upstream text records its origin.
+The build registry records the origin of each skill that keeps upstream text.
 The build emits the required MIT notices from those origins.
 The catalog rewrite is complete and the STE exemption cap is 0.
 The protected comment-rule quotations and licence text retain their upstream wording.

@@ -90,21 +90,13 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 - The comments rule decides which comments stay. Never shorten a comment to pass the hook.
 - A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. The comment hook passes the license headers that the astack README names. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
 
-### Credit
-
-Some rules in this file are a short form of the principle skills of pstack, under the MIT License of pstack. The NOTICE file that comes with this copy holds the permission notice.
-
-Copyright (c) 2026 Lauren Tan
-
 This section applies to files that match `**/*.ts`, `**/*.mts`, `**/*.cts`, `**/*.tsx`, `**/*.js`, `**/*.jsx`, `**/*.mjs`, `**/*.cjs`, `**/*.sql`, `**/*.swift`, `**/*.kt`, `**/*.kts`, `**/*.go`, `**/*.rs`, `**/*.css`, `**/*.scss`, `**/*.less`, `**/*.py`, `**/*.sh`, `**/*.bash`, `**/*.zsh`.
 
 ## Comments
 
 Write no comment by default. Names, types and tests carry intent. A comment stays only when a keep clause below covers it, or when one of its lines matches a `commentKeep` pattern in the repo's `.astack/profile.json`. When you are not sure a clause covers it, delete the comment. Before you open a PR, run `/astack-no-comments`. If it is unavailable, apply the keep clauses below yourself.
 
-The four sections below quote pstack's Comment Sicko reviewer verbatim from pstack commit 1e5c90a4b6f2, under pstack's MIT license. The NOTICE file that comes with this copy holds pstack's copyright notice and permission notice. "I" is that reviewer. `/how` and `/why` are the `astack-how` and why skills. They set disable-model-invocation, so read the SKILL.md that `astack skill-path astack:how` or `astack skill-path astack:why` prints and follow it. `MUST KILL` is a flag the reviewer puts in its report. When you write code, make the rename, extraction or type change it would ask for. Never write `MUST KILL` in a file.
-
-Copyright (c) 2026 Lauren Tan
+The reviewer uses "I" below. `/how` and `/why` are the `astack-how` and why skills. They set disable-model-invocation, so read the SKILL.md that `astack skill-path astack:how` or `astack skill-path astack:why` prints and follow it. `MUST KILL` is a flag the reviewer puts in its report. When you write code, make the rename, extraction or type change it would ask for. Never write `MUST KILL` in a file.
 
 ### Keep clauses
 

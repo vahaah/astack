@@ -2,8 +2,6 @@
 name: how
 description: "Explain code behavior, architecture, ownership, or placement. Use for walkthroughs and teaching requests. Use why for design reasons."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # How

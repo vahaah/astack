@@ -2,8 +2,6 @@
 name: arena
 description: "Run parallel candidates on one task. Use for /astack:arena, \"arena this\", \"throw it in the arena\", or substantial work that needs alternative designs. Choose a base, integrate useful parts from other candidates, and verify the result."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Arena

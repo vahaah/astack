@@ -2,8 +2,6 @@
 name: improve-codebase-architecture
 description: "Find codebase deepening opportunities and present them in an HTML report. Then grill the candidate that the user chooses before planning implementation."
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Improve Codebase Architecture

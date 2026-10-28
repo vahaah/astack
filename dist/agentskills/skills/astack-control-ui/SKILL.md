@@ -4,7 +4,7 @@ description: "Drive and inspect web, Electron, Chromium, and mobile UIs. Use for
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from cursor-team-kit"
+  source: "astack"
 ---
 
 # Control UI

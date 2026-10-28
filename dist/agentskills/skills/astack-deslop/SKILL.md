@@ -4,7 +4,7 @@ description: "Remove AI-generated slop from the diff of the current branch again
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from cursor-team-kit"
+  source: "astack"
 ---
 
 # Deslop

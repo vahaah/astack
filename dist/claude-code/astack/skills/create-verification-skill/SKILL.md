@@ -2,8 +2,6 @@
 name: create-verification-skill
 description: "Create a project-local verification skill for real app behavior. Use for /astack:create-verification-skill or a missing UI, CLI, or service driver."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Create a verification skill

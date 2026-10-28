@@ -2,8 +2,6 @@
 name: recall
 description: "Rebuild recent work context from chat history, live state, and shared records. Use for recall, catch-up, or work resumption."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Recall

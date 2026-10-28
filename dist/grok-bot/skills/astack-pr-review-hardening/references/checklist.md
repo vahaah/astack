@@ -160,7 +160,7 @@ Guard: `astackSource` in `scripts/lib/project-apply.ts`, and "apply --worktree r
 
 ### upstream-licence
 
-Does each file or skill that holds upstream text point to a notice? Does the notice hold the copyright notice and the permission notice of each upstream that the file copies?
+Does each package or standalone skill carry its notices? Do the notices name each copied file and hold each upstream's copyright and permission notices?
 
 Guard: "the upstreams that the run scan reads" and "text that apply copies from upstream" in `tests/apply/notices.test.ts`.
 

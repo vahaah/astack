@@ -2,8 +2,6 @@
 name: setup
 description: Configure the issue tracker, triage labels and domain documents for astack engineering skills. Run before their first use in a repo.
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Set up astack

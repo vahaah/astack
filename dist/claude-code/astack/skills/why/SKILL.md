@@ -2,8 +2,6 @@
 name: why
 description: "Investigate code history and design reasons across available evidence categories. Use for why questions, regressions, postmortems, tradeoffs, or data-backed thresholds."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Why

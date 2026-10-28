@@ -2,8 +2,6 @@
 name: architect
 description: "Sketch types, signatures and module structure before implementation. Use for /astack:architect, \"architect this\", \"design this\", or substantial work that needs a design first. Compare model perspectives, then follow the chosen sketch during implementation."
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # Architect

@@ -1,8 +1,6 @@
 ---
 name: prototype
 description: "Build a temporary prototype to answer a design question. Use to judge a state model, business logic or alternative UI designs."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Prototype

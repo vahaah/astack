@@ -3,8 +3,6 @@ name: mode
 description: Use for /astack:mode, "what next", "go" or "resume". The owner's way of work as a router over astack playbooks and skills. With no argument, it reads the plan, the tracker and git and does the next frontier step. It handles the delegation grant and keeps replies in STE.
 argument-hint: "[what to do, or nothing for the next frontier step]"
 disable-model-invocation: true
-metadata:
-  origin: pstack
 ---
 
 # astack mode

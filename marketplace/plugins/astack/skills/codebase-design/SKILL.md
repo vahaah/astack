@@ -1,8 +1,6 @@
 ---
 name: codebase-design
 description: "Use a shared vocabulary to design deep modules. Apply it to module interfaces, deepening candidates, seam placement, testability, and code that agents must navigate. Other skills use it as a design reference."
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Codebase Design

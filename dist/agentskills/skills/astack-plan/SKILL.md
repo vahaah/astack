@@ -4,7 +4,7 @@ description: "Use for /astack-plan, \"I am building <X>\", a ticket key, or /pla
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from mattpocock/skills and pstack"
+  source: "astack"
 ---
 
 # Plan

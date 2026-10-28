@@ -4,7 +4,7 @@ description: "Harden a branch or pull request before merge. Reviewers propose fi
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
-  source: "astack, adapted from pstack"
+  source: "astack"
 ---
 
 # PR review hardening

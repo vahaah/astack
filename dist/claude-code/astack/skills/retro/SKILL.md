@@ -2,8 +2,6 @@
 name: retro
 description: "Review a coding session and propose evidence-based improvements to the agent environment."
 disable-model-invocation: true
-metadata:
-  origin: mattpocock-skills
 ---
 
 # Retrospective

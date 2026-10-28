@@ -66,6 +66,25 @@ describe("the dist of this repo", () => {
 		expect(failures).toEqual([]);
 	});
 
+	test("credits stay outside loaded instructions in every client build", () => {
+		if (!result.ok) throw new Error(result.error.join("\n"));
+		const repeated = [...result.value.tree].flatMap(([path, entry]) => {
+			if (
+				!/(?:\/SKILL\.md|(?:^|\/)rules\/[^/]+\.(?:md|mdc)|\/AGENTS\.fragment\.md)$/.test(
+					path,
+				) ||
+				!isText(entry)
+			)
+				return [];
+			return /^(?:Copyright |\s+origin:|## Credit|This file holds text from )|source: "astack, adapted from /m.test(
+				textOf(entry),
+			)
+				? [path]
+				: [];
+		});
+		expect(repeated).toEqual([]);
+	});
+
 	test("each astack skill with an origin carries the copyright of each origin upstream in its flat licence", () => {
 		if (!result.ok) return;
 		const text = (path: string) => {
@@ -89,7 +108,7 @@ describe("the dist of this repo", () => {
 		);
 		expect(unnamed).toEqual([]);
 		expect(text("agentskills/skills/astack-deslop/SKILL.md")).toContain(
-			'source: "astack, adapted from cursor-team-kit"',
+			'source: "astack"',
 		);
 	});
 
