@@ -1,0 +1,15 @@
+flowchart TD
+  name[You name the work] --> pick{The rule card}
+  pick -->|New work| plan["/astack:plan"]
+  pick -->|One clear change| build[Build on a branch]
+  pick -->|A bug report| bug[Show the failure]
+  plan --> build
+  bug --> cause[Write the root cause]
+  cause --> build
+  build --> gates[Run the gates]
+  gates --> clean[Clean the diff]
+  clean --> review[Review the branch]
+  review --> openPr[Open the pull request]
+  openPr --> harden[Harden when the profile asks]
+  harden --> land[Land with a merge grant]
+  land --> next[Plan the next session]

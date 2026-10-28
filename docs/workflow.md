@@ -95,6 +95,37 @@ Or name the feature playbook to `/astack:mode`.
 | A programme | `/astack:mode` Orchestrate for the plan, and `astack board` for the frontier |
 | Work that only a person can do | None. Name the step and stop. |
 
+## Chart images
+
+The README shows each chart as an SVG image, so a viewer needs no Mermaid renderer.
+The source of a chart is `docs/charts/<name>.mmd`.
+The image has the same name with the suffix `.svg`.
+`docs/charts/mermaid.config.json` holds the render settings.
+The settings use plain SVG text, and the command sets a white background.
+So the labels stay readable in light and dark views.
+
+Do not edit an image by hand.
+Change the source.
+Then run this command from the repository root:
+
+```sh
+(
+  chart_cache="$(mktemp -d)"
+  trap 'rm -rf "$chart_cache"' EXIT
+  for chart in docs/charts/*.mmd; do
+    BUN_INSTALL_CACHE_DIR="$chart_cache/bun" PUPPETEER_CACHE_DIR="$chart_cache/chrome" \
+      bunx @mermaid-js/mermaid-cli@12.0.0 -c docs/charts/mermaid.config.json -b white -i "$chart" -o "${chart%.mmd}.svg" || exit
+  done
+  bun scripts/check-workflow-charts.ts
+)
+```
+
+The command downloads the Mermaid CLI and Chrome into a temporary folder.
+It removes that folder when it stops.
+CI does not run it.
+The chart check makes sure each image holds the labels of its Mermaid source.
+Commit the source and its image in the same commit.
+
 ## Other help
 
 | You want | Open |

@@ -27,23 +27,9 @@ The card is `marketplace/plugins/astack/skills/mode/references/card.md`.
 Use this path for a change that you own.
 Do not build on the default branch.
 
-```mermaid
-flowchart TD
-  name[You name the work] --> pick{The rule card}
-  pick -->|New work| plan["/astack:plan"]
-  pick -->|One clear change| build[Build on a branch]
-  pick -->|A bug report| bug[Show the failure]
-  plan --> build
-  bug --> cause[Write the root cause]
-  cause --> build
-  build --> gates[Run the gates]
-  gates --> clean[Clean the diff]
-  clean --> review[Review the branch]
-  review --> openPr[Open the pull request]
-  openPr --> harden[Harden when the profile asks]
-  harden --> land[Land with a merge grant]
-  land --> next[Plan the next session]
-```
+![Flowchart of the daily path. You name the work, the rule card picks a route, and the path runs from a branch through the gates, review, the pull request and the merge to the next session.](docs/charts/daily-path.svg)
+
+The source is [`docs/charts/daily-path.mmd`](docs/charts/daily-path.mmd).
 
 A feature grows one slice at a time.
 Each slice starts with a test that fails.
@@ -84,17 +70,9 @@ This table is the set that you use most.
 
 ### Shapes of the work
 
-```mermaid
-flowchart TD
-  work[The work] --> one[One ticket]
-  work --> session[One plan session]
-  work --> stack[A stack of pull requests]
-  work --> programme[A programme]
-  one --> implement["/astack:implement"]
-  session --> startCmd["astack session start"]
-  stack --> auto[Autopilot-stack]
-  programme --> board["astack board, then Orchestrate"]
-```
+![Flowchart of the shapes of the work. One ticket, one plan session, a stack of pull requests and a programme each start in a different way.](docs/charts/work-shapes.svg)
+
+The source is [`docs/charts/work-shapes.mmd`](docs/charts/work-shapes.mmd).
 
 One plan session is one pull request.
 Start it in a fresh session with `astack session start <plan>`.
@@ -102,14 +80,9 @@ The steps sit in waves.
 Workers build the steps in worktrees.
 The main thread lands those commits in plan order.
 
-```mermaid
-flowchart LR
-  startNode["astack session start"] --> wave[One wave of steps]
-  wave --> land[Land the commits in order]
-  land --> more{More waves}
-  more -->|Yes| wave
-  more -->|No| point["astack session checkpoint"]
-```
+![Flowchart of one plan session. A wave of steps lands its commits in order. The loop repeats until no wave is left. Then the session writes its checkpoint.](docs/charts/session-waves.svg)
+
+The source is [`docs/charts/session-waves.mmd`](docs/charts/session-waves.mmd).
 
 `astack session checkpoint` writes the checkpoint on the pull request.
 `astack board <plan>` shows the pull requests to merge first, the active sessions and the work that you can start.
