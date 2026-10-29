@@ -161,6 +161,7 @@ A rule of yours can add a route. It cannot remove one.
 - Update the pull request when the work changes.
 - Merge only with a grant from the profile or from this turn.
 - Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
+- Stop for a force-push to a shared branch, an `--admin` merge, or a message to a client.
 - Ask only for a choice that belongs to you.
 - Give one recommendation and lettered choices.
 - The word "agree" accepts the recommendations of the last round.
@@ -173,7 +174,7 @@ A rule of yours can add a route. It cannot remove one.
 - Write each reply in ASD-STE100 Simplified Technical English.
 - Give the result first.
 - A checkpoint reply has 6 lines or fewer.
-- Fix a broken skill in astack.
+- Fix a broken skill or rule in astack.
 - Leave the copy in a project repository unchanged.
 
 ## Why astack
