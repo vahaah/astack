@@ -14,7 +14,8 @@
 		"deny": "bun scripts/deny.ts",
 		"check:companion": "bun scripts/check-companion.ts",
 		"ste": "bun scripts/ste.ts",
-		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun test tests && biome ci . && tsc -p .",
+		"charts": "bun scripts/check-readme-charts.ts",
+		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run charts && bun test tests && biome ci . && tsc -p .",
 		"check:drift": "bun scripts/drift.ts"
 	},
 	"devDependencies": {

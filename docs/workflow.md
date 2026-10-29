@@ -1,7 +1,7 @@
 # Workflow
 
 This page is the path that astack asks you to follow.
-The charts on the [README](../README.md#workflow) show the same path.
+The charts on the [README](../README.md#the-daily-path) show the same path.
 The rule card is the list that the agent loads.
 When this page and the card differ, the card wins.
 The card is `marketplace/plugins/astack/skills/mode/references/card.md`.
@@ -97,34 +97,11 @@ Or name the feature playbook to `/astack:mode`.
 
 ## Chart images
 
-The README shows each chart as an SVG image, so a viewer needs no Mermaid renderer.
-The source of a chart is `docs/charts/<name>.mmd`.
-The image has the same name with the suffix `.svg`.
-`docs/charts/mermaid.config.json` holds the render settings.
-The settings use plain SVG text, and the command sets a white background.
-So the labels stay readable in light and dark views.
-
-Do not edit an image by hand.
-Change the source.
-Then run this command from the repository root:
-
-```sh
-(
-  chart_cache="$(mktemp -d)"
-  trap 'rm -rf "$chart_cache"' EXIT
-  for chart in docs/charts/*.mmd; do
-    BUN_INSTALL_CACHE_DIR="$chart_cache/bun" PUPPETEER_CACHE_DIR="$chart_cache/chrome" \
-      bunx @mermaid-js/mermaid-cli@12.0.0 -c docs/charts/mermaid.config.json -b white -i "$chart" -o "${chart%.mmd}.svg" || exit
-  done
-  bun scripts/check-workflow-charts.ts
-)
-```
-
-The command downloads the Mermaid CLI and Chrome into a temporary folder.
-It removes that folder when it stops.
-CI does not run it.
-The chart check makes sure each image holds the labels of its Mermaid source.
-Commit the source and its image in the same commit.
+The README draws each chart in a `mermaid` code block.
+GitHub renders the block in the light or dark theme of the reader.
+The file `docs/charts/<name>.mmd` keeps the source of each chart.
+When you change a chart, change the `.mmd` file and the README block together.
+`bun run charts` fails when they differ.
 
 ## Other help
 

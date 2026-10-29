@@ -1,8 +1,8 @@
 flowchart TD
   name[You name the work] --> pick{The rule card}
-  pick -->|New work| plan["/astack:plan"]
-  pick -->|One clear change| build[Build on a branch]
-  pick -->|A bug report| bug[Show the failure]
+  pick --> plan["New work: /astack:plan"]
+  pick --> build[One clear change: build on a branch]
+  pick --> bug[A bug report: show the failure]
   plan --> build
   bug --> cause[Write the root cause]
   cause --> build
@@ -13,3 +13,7 @@ flowchart TD
   openPr --> harden[Harden when the profile asks]
   harden --> land[Land with a merge grant]
   land --> next[Plan the next session]
+  classDef cmd font-family:monospace
+  classDef gate stroke-width:2px
+  class plan cmd
+  class gates,review,harden,land gate
