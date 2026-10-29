@@ -34,6 +34,8 @@ Run `bun run check` before each commit. Do not weaken a check to make a change p
 
 Never add customer names, credentials, captured identifiers or personal paths. Private config stays outside the repo. Public CI uses synthetic data only, so it cannot catch every private value. Take care with what you paste.
 
+Run the owner companion scan (`bun run check:companion`) before a public release.
+
 ## Pull requests
 
 Include:

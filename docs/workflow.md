@@ -101,6 +101,7 @@ The README draws each chart in a `mermaid` code block.
 GitHub renders the block in the light or dark theme of the reader.
 The file `docs/charts/<name>.mmd` keeps the source of each chart.
 When you change a chart, change the `.mmd` file and the README block together.
+`bun run charts` fails when they differ.
 
 ## Other help
 

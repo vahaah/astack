@@ -80,7 +80,7 @@ flowchart TD
   openPr --> harden[Harden when the profile asks]
   harden --> land[Land with a merge grant]
   land --> next[Plan the next session]
-  classDef cmd font-family:ui-monospace,SFMono-Regular,monospace
+  classDef cmd font-family:monospace
   classDef gate stroke-width:2px
   class plan cmd
   class gates,review,harden,land gate
@@ -114,7 +114,7 @@ flowchart TB
   land --> more{More waves?}
   more -->|Yes| wave
   more -->|No| point["astack session checkpoint"]
-  classDef cmd font-family:ui-monospace,SFMono-Regular,monospace
+  classDef cmd font-family:monospace
   class startNode,point cmd
 ```
 
@@ -153,20 +153,29 @@ A rule of yours can add a route. It cannot remove one.
 
 ### Rules that always apply
 
-- Measure a claim before you make it.
-- Walk the journey as a real person.
-- Ask only for a choice that belongs to you.
-- Give the result first.
-- Keep the state in the plan, the tracker and git.
-- Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
+- Push after the gates are green.
+- Open the pull request.
+- Update the pull request when the work changes.
 - Merge only with a grant from the profile or from this turn.
+- Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
+- Ask only for a choice that belongs to you.
+- Give one recommendation and lettered choices.
+- The word "agree" accepts the recommendations of the last round.
+- One plan is one pull request.
+- Put follow-up work in the open pull request.
+- Report the gate counts.
+- Walk the journey as a real person.
+- Measure a claim before you make it.
+- Keep the state in the plan, the tracker and git.
 - Write each reply in ASD-STE100 Simplified Technical English.
+- Give the result first.
+- A checkpoint reply has 6 lines or fewer.
+- Fix a broken skill in astack.
+- Leave the copy in a project repository unchanged.
 
 ## Why astack
 
 astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own, and the right choice depends on what you need.
-
-<!-- INFOGRAPHIC: a simple comparison grid. Rows: plain rules file, pstack, Matt Pocock's skills, Cursor team kit, astack. Columns: skills, hooks that enforce rules, workflow from plan to merge, owner stops, multi-client builds. Use neutral ticks and text, no scores. -->
 
 | Option | What it gives you | When to choose it |
 |---|---|---|
@@ -278,7 +287,18 @@ bun run check
 | `upstream/` | Frozen snapshots for licence evidence and tests |
 | `docs/` | Design, decisions, workflow and runbooks |
 
-Change generated files at their source. `AGENTS.md` names each generated path and its build command. Private config stays outside the repo.
+Change generated files at their source. `AGENTS.md` names each generated path and its build command. Private config stays in the [private companion](#private-companion).
+
+## Private companion
+
+Keep project configs, machine settings, private rules and deny lists in a separate private repository.
+Pass its path through `--companion` or `ASTACK_COMPANION_DIR`.
+Without one, read commands use the synthetic example.
+Write commands refuse that example.
+
+[The companion guide](docs/runbooks/private-companion.md) explains the layout.
+[The repository install guide](docs/install-repo.md) covers apply and branch overlays.
+Public CI uses synthetic data and cannot identify every private value of an owner.
 
 ## Contribute
 
