@@ -1,123 +1,41 @@
 # astack
 
-astack holds skills, agents, rules, and hooks for planning, coding, review, tickets, and documentation.
-One `astack` plugin supplies text adapted from pstack, Matt Pocock, and Cursor.
-This repository holds the source and each generated client build.
-`LICENSE` and `NOTICE` record the licence and credits.
-Credits stay in these package files and the licence files of standalone skills.
-Rules and skill instructions carry no credit blocks.
+**Skills, rules and hooks for the path from a goal to a merged pull request.**
 
-Use this repository for the path from a goal to a merged pull request.
-[The workflow guide](docs/workflow.md) gives each step.
-The charts below are the same path.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
+    <img alt="Goal to merged PR: plan, build from a failing test, gates, review, PR, harden, merge with a grant." src="docs/hero-light.svg" width="760">
+  </picture>
+</p>
 
-## Workflow
+<p align="center"><a href="#quickstart">Install</a> · <a href="#how-it-works">Workflow</a> · <a href="marketplace/plugins/astack/skills/mode/references/card.md">Rule card</a></p>
 
-Say what you want in plain words.
-The rule card selects the route.
-You can also start `/astack:mode` with no argument.
-Mode reads the plan, the tracker and git.
-Then it does the next step.
+astack is one plugin for AI coding agents. It gives the agent a planning method and a build loop that starts from a failing test. It adds review and hardening passes, and it stops before each decision that is yours. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-When this page and the rule card differ, the rule card wins.
-The card is `marketplace/plugins/astack/skills/mode/references/card.md`.
+- **52 skills** for plans, code, review, the domain model, research, tickets, documents and tool control
+- **Read-only reviewer agents** for TypeScript and PostgreSQL
+- **Hooks** that guard the workflow and check reply language, types and comments
+- **A CLI** (`astack`) for sessions, plan checks, the board and `doctor`
 
-### Daily path
 
-Use this path for a change that you own.
-Do not build on the default branch.
+## Contents
 
-![Flowchart of the daily path. You name the work, the rule card picks a route, and the path runs from a branch through the gates, review, the pull request and the merge to the next session.](docs/charts/daily-path.svg)
+- [Quickstart](#quickstart)
+- [How it works](#how-it-works)
+- [Why astack](#why-astack)
+- [Install by client](#install-by-client)
+- [The CLI](#the-cli)
+- [Hook profiles](#hook-profiles)
+- [Build and verify](#build-and-verify)
+- [Source layout](#source-layout)
+- [Contribute](#contribute)
 
-The source is [`docs/charts/daily-path.mmd`](docs/charts/daily-path.mmd).
+## Quickstart
 
-A feature grows one slice at a time.
-Each slice starts with a test that fails.
-A bug fix starts from the failure that you can show.
-Write the root cause before the fix.
-Run the gates again after the clean-up.
-Run them again after each fix.
+Install the signed release `v0.1.0`. See [the release list](https://github.com/vahaah/astack/releases).
 
-Open the pull request from the session that owns the ticket.
-Run `/astack:pr-review-hardening` when the profile asks for it.
-Stop that run when it is not clean.
-Continue only when you say so.
-A merge needs a grant in the profile or in that turn.
-
-### Words that select a route
-
-A rule of yours can add a route.
-It cannot remove a route.
-This table is the set that you use most.
-
-| You say | astack does |
-|---|---|
-| "I am building X", or you give a ticket key | `/astack:plan` asks for the goal and for the one decision that the work drives. Grill rounds follow. |
-| `/plan` | Plan mode stays short. Open questions come last. After you approve, the first commit writes `docs/plans/<slug>.md`. |
-| `/grilling` | Each round covers the open questions. Each question has one recommendation and lettered options. |
-| "go", or "do your recommendation" | The plan records `delegate: on`. The work continues. "agree", "next" and "approve" accept the last recommendations. |
-| "resume" | Mode reads the plan, the tracker and git. Then it continues from the next step. |
-| `/goal`, or "continue the board" | Programme tier. At most 5 sessions. Merge the open pull requests first. |
-| "I need it fast" | Quick tier. At most one grill round. |
-| A bug, an error report, or a tester report | Bug-fix path. Write `Root cause: X because Y` before the fix. Read a tester report with care before you accept its scope. |
-| "comments", or "check github comments" | Triage each comment. Fix or answer it. Then fix the failing checks. |
-| `/pr-review-hardening` | Hardening uses the profile cap. The default cap is 2. |
-| "create pr" | Gates, deslop, the comment check, the pull request text, then one hardening run when the profile asks. |
-| "update from main" | Merge the base branch. Run the gates again. Keep the intent of the ticket. |
-| "merge", or "merge when green" | Shipping. A merge needs a grant from the profile or from this turn. |
-| UI polish, or a mobile check | `astack:control-ui` walks the journey as a real person and uses the UI kit of the repository. |
-| "pause", "prompt for next session", or "clean worktrees" | Pause is a hard stop. You get the hand-off prompt. Worktree cleanup comes after you record the worktree list. |
-
-### Shapes of the work
-
-![Flowchart of the shapes of the work. One ticket, one plan session, a stack of pull requests and a programme each start in a different way.](docs/charts/work-shapes.svg)
-
-The source is [`docs/charts/work-shapes.mmd`](docs/charts/work-shapes.mmd).
-
-One plan session is one pull request.
-Start it in a fresh session with `astack session start <plan>`.
-The steps sit in waves.
-Workers build the steps in worktrees.
-The main thread lands those commits in plan order.
-
-![Flowchart of one plan session. A wave of steps lands its commits in order. The loop repeats until no wave is left. Then the session writes its checkpoint.](docs/charts/session-waves.svg)
-
-The source is [`docs/charts/session-waves.mmd`](docs/charts/session-waves.mmd).
-
-`astack session checkpoint` writes the checkpoint on the pull request.
-`astack board <plan>` shows the pull requests to merge first, the active sessions and the work that you can start.
-The board is a view.
-Do not commit it.
-
-### Rules that always apply
-
-- Push after the gates are green.
-- Open the pull request.
-- Update the pull request when the work changes.
-- Merge only with a grant from the profile or from this turn.
-- Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
-- Ask only for a choice that belongs to you.
-- Give one recommendation and lettered choices.
-- The word "agree" accepts the recommendations of the last round.
-- One plan is one pull request.
-- Put follow-up work in the open pull request.
-- Report the gate counts.
-- Walk the journey as a real person.
-- Measure a claim before you make it.
-- Keep the state in the plan, the tracker and git.
-- Write each reply in ASD-STE100 Simplified Technical English.
-- Give the result first.
-- A checkpoint reply has 6 lines or fewer.
-- Fix a broken skill in astack.
-- Leave the copy in a project repository unchanged.
-
-## Install a release
-
-The CLI needs Node 22 or later, or Bun.
-Choose a published signed release from [the release list](https://github.com/vahaah/astack/releases).
-The commands below use `v0.1.0` as an example.
-They require that public release to exist.
-Review the tag's commit and verified signature before installation.
+You need Node 22 or later, or Bun.
 
 ```sh
 ASTACK_TAG=v0.1.0
@@ -125,9 +43,151 @@ ASTACK_RELEASE="$HOME/.local/share/astack/releases/$ASTACK_TAG"
 git clone --branch "$ASTACK_TAG" --depth 1 https://github.com/vahaah/astack.git "$ASTACK_RELEASE"
 ```
 
-Use a new destination for each release.
-For development, set `ASTACK_RELEASE` to a built local checkout.
-Before publication, the cloud guides also support local exported bundles.
+Before you install, review the tag's commit and verified signature. Use a new folder for each release.
+
+The generated builds under `dist/` are committed, so the checkout is ready to install. For Claude Code:
+
+```sh
+claude plugin marketplace add "$ASTACK_RELEASE"
+claude plugin install astack@astack
+```
+
+Then link the shared rules as [`dist/README.md`](dist/README.md) describes, and check the setup:
+
+```sh
+"$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" doctor
+```
+
+Start work with `/astack:mode` (flat builds such as Cursor use `/astack-mode`). With no argument it reads the plan, the tracker and git, then does the next step. Or say what you want in plain words, such as "I am building X" or "merge when green".
+
+## How it works
+
+### The daily path
+
+```mermaid
+flowchart TD
+  name[You name the work] --> pick{The rule card}
+  pick --> plan["New work: /astack:plan"]
+  pick --> build[One clear change: build on a branch]
+  pick --> bug[A bug report: show the failure]
+  plan --> build
+  bug --> cause[Write the root cause]
+  cause --> build
+  build --> gates[Run the gates]
+  gates --> clean[Clean the diff]
+  clean --> review[Review the branch]
+  review --> openPr[Open the pull request]
+  openPr --> harden[Harden when the profile asks]
+  harden --> land[Land with a merge grant]
+  land --> next[Plan the next session]
+  classDef cmd font-family:ui-monospace,SFMono-Regular,monospace
+  classDef gate stroke-width:2px
+  class plan cmd
+  class gates,review,harden,land gate
+```
+
+1. **Plan.** `/astack:plan` asks for the goal and the one decision the work drives. Later rounds ask only for choices that belong to you, each with one recommendation and lettered options.
+2. **Build.** On a branch or worktree, never on the default branch. A feature grows one slice at a time, and each slice starts with a test that fails. A bug fix starts with `Root cause: X because Y`.
+3. **Run the gates.** Lint, type check, tests and doc checks, matching CI. Run them again after the clean-up and after each fix. Report the counts in the PR.
+4. **Clean the diff.** `/astack:deslop` and the comment check.
+5. **Review.** `/astack:code-review` on two axes: standards and spec.
+6. **Open the PR** from the session that owns the ticket.
+7. **Harden.** `/astack:pr-review-hardening` reproduces each finding before it counts, and stops when the run is not clean.
+8. **Merge** only with a grant in the profile or in that turn.
+9. **Plan the next session.**
+
+The full guide is [docs/workflow.md](docs/workflow.md). When the README and the rule card differ, the rule card wins: `marketplace/plugins/astack/skills/mode/references/card.md`.
+
+### One plan session is one pull request
+
+| Shape of the work | Start with |
+|---|---|
+| One ticket | `/astack:implement` |
+| One plan session | `astack session start <plan>` |
+| A stack of pull requests | Autopilot-stack |
+| A programme | `astack board <plan>`, then Orchestrate |
+
+```mermaid
+flowchart TB
+  startNode["astack session start"] --> wave[One wave of steps]
+  wave --> land[Land the commits in order]
+  land --> more{More waves?}
+  more -->|Yes| wave
+  more -->|No| point["astack session checkpoint"]
+  classDef cmd font-family:ui-monospace,SFMono-Regular,monospace
+  class startNode,point cmd
+```
+
+Start a session with `astack session start <plan>`. The steps sit in waves, workers build them in worktrees, and the main thread lands the commits in plan order. `astack session checkpoint` writes the checkpoint on the PR. `astack board <plan>` shows the PRs to merge first, the active sessions and the work you can start. The board is a view, so do not commit it.
+
+### Words that select a route
+
+#### Start
+
+| You say | astack does |
+|---|---|
+| "I am building X", or a ticket key | `/astack:plan` asks for the goal and the deciding choice, then grill rounds follow |
+| "go", or "do your recommendation" | Records `delegate: on` and continues |
+| "resume" | Reads the plan, tracker and git, then continues |
+| "I need it fast" | Quick tier, at most one grill round |
+| A bug or error report | Bug-fix path, root cause written before the fix |
+| `/goal`, or "continue the board" | Programme tier, at most 5 sessions |
+
+#### During
+
+| You say | astack does |
+|---|---|
+| "comments" | Triages each PR comment, then fixes failing checks |
+| UI polish, or a mobile check | `astack:control-ui` walks the journey as a real person |
+| "pause" | Hard stop with a hand-off prompt |
+
+#### Ship
+
+| You say | astack does |
+|---|---|
+| "create pr" | Gates, deslop, comment check, PR text, then one hardening run if the profile asks |
+| "update from main" | Merges the base branch and runs the gates again |
+| "merge when green" | Ships, if a grant exists |
+
+A rule of yours can add a route. It cannot remove one.
+
+### Rules that always apply
+
+- Measure a claim before you make it.
+- Walk the journey as a real person.
+- Ask only for a choice that belongs to you.
+- Give the result first.
+- Keep the state in the plan, the tracker and git.
+- Stop for an account, a secret, paid infrastructure, a production write with no grant, or a destructive reset.
+- Merge only with a grant from the profile or from this turn.
+- Write each reply in ASD-STE100 Simplified Technical English.
+
+## Why astack
+
+astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own, and the right choice depends on what you need.
+
+<!-- INFOGRAPHIC: a simple comparison grid. Rows: plain rules file, pstack, Matt Pocock's skills, Cursor team kit, astack. Columns: skills, hooks that enforce rules, workflow from plan to merge, owner stops, multi-client builds. Use neutral ticks and text, no scores. -->
+
+| Option | What it gives you | When to choose it |
+|---|---|---|
+| A plain rules file (`AGENTS.md`, `CLAUDE.md`, Cursor rules) | Your conventions in one file, read every session | Small projects, or when you want no extra tooling |
+| [pstack](https://github.com/cursor/plugins/tree/main/pstack) | Lauren Tan's (poteto) skills, principles and multi-model mode for rigorous agent work in Cursor | You want that method as its author maintains it |
+| [Matt Pocock's skills](https://github.com/mattpocock/skills) | Small, composable engineering skills (grilling, TDD, review, triage) that work with any model | You want individual skills to pick from |
+| [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) | The Cursor team's skills for CI, PRs and review | You work mainly in Cursor and want its team's flow |
+| astack | One opinionated path from goal to merge, built for several clients | You want the same workflow, hooks and stops across clients |
+
+What astack adds on top:
+
+- **Enforcement, not only guidance.** Hooks check reply language, types and comments, and workflow guards stay on in every profile.
+- **Owner stops.** The agent stops before merges with no grant, money, accounts, secrets and destructive resets.
+- **CI parity.** The hardening gates mirror the repo's CI jobs, and a check keeps them in step.
+- **One source, many clients.** A capability map decides what each client build receives.
+
+The trade-off is that astack is opinionated. If its path does not fit, the projects above are good places to start.
+
+## Install by client
+
+All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#quickstart)).
 
 ### Claude Code and Grok Build
 
@@ -136,10 +196,7 @@ claude plugin marketplace add "$ASTACK_RELEASE"
 claude plugin install astack@astack
 ```
 
-Link the shared rules as `dist/README.md` describes.
-The plugin carries its CLI and hooks.
-Grok Build uses the Claude plugin build.
-Follow its client's marketplace install procedure.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes. Grok Build uses the Claude plugin build through its own marketplace install.
 
 ### Codex
 
@@ -148,61 +205,40 @@ codex plugin marketplace add "$ASTACK_RELEASE"
 codex plugin add astack@astack
 ```
 
-Follow `dist/codex/README.md` for the rules fragment and four trusted hook hashes.
-Use the hashes from that same release.
+Then follow [`dist/codex/README.md`](dist/codex/README.md). Trust the four astack hooks in `/hooks` and put the CLI on `PATH`. Add the rules fragment with `astack print codex-agents`. Codex calls skills with `$`, as in `$astack:plan`.
 
 ### Cursor
 
-Use the local-copy procedure in `dist/cursor/astack/README.md` from the tagged checkout.
-The generated plugin includes flat skills, scoped rules, read-only reviewers, and hooks.
-For cloud agents, follow [the Cursor cloud guide](docs/runbooks/install-cursor-cloud.md).
-Use repository skills for automation runs.
+Use the local-copy procedure in [`dist/cursor/astack/README.md`](dist/cursor/astack/README.md). The build includes flat skills, scoped rules, read-only reviewers and hooks. For cloud agents, see [the Cursor cloud guide](docs/runbooks/install-cursor-cloud.md).
 
 ### Grok Bot
 
-Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md).
-It imports private skills from the tagged source archive.
-It keeps reference files and a CLI runtime in the Bot's workspace.
-This target ships no astack hooks.
+Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks.
 
-### Other clients
+### Other Agent Skills clients
 
-`dist/agentskills/` holds portable skills and a rules fragment.
-Use a project install and preserve each skill's other files.
-Avoid duplicate global copies when a client already loads the plugin.
+`dist/agentskills/` holds portable skills and a rules fragment. Use a project install and keep each skill's other files. Avoid duplicate global copies when a client already loads the plugin.
 
-## Use astack
+## The CLI
 
-The [workflow](#workflow) section is the path.
-These commands start it.
+```sh
+"$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" --help
+```
 
-- `/astack:mode` reads the plan, the tracker and git, and then it does the next step.
-- `/astack:plan` plans new work or continues a plan.
-- `/astack:pr-review-hardening` runs the review gates of the repository profile.
-- Cursor and other clients use flat names, such as `/astack-mode`.
+| Command | Purpose |
+|---|---|
+| `astack session start\|checkpoint\|handoff\|resume` | Run one plan session |
+| `astack board <plan>` | Show what to merge, what is active and what can start |
+| `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
+| `astack init` | Write `.astack/profile.json` for a repo |
+| `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
+| `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
-The catalog covers plans, code, review, the domain model, research, tickets, documents and tool control.
-Each client build keeps the skills and the references that its capability map supports.
-
-## Language review packs
-
-The TypeScript pack covers `.ts`, `.tsx`, `.mts`, and `.cts` files.
-The PostgreSQL pack covers SQL in repositories that use PostgreSQL.
-Detailed checklists live under `skills/code-review/references/` in each relevant build.
-
-The optional `typescript-reviewer` and `postgres-reviewer` agents share those checklists.
-They inherit the selected model and allow only Read, Grep, and Glob tools.
-The parent runs executable proof and makes accepted fixes.
-Adding a pack does not start a reviewer or change `reviewers.extra`.
-Portable clients can apply the checklists in their main review.
+Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
 
 ## Hook profiles
 
-Strict is the default hook profile.
-Minimal disables the STE, type, and comment quality groups.
-A separate Boolean can override each quality group.
-Required workflow guards remain active.
-CLI and CI quality commands still run independently.
+Strict is the default. Minimal turns off the STE, type and comment checks. Each group can be overridden with a Boolean, and the workflow guards stay on.
 
 ```json
 {
@@ -213,23 +249,11 @@ CLI and CI quality commands still run independently.
 }
 ```
 
-Keep this block in the repository's `.astack/profile.json`.
-[The hook profile guide](docs/runbooks/hook-profiles.md) explains presets, overrides, and overlapping comment checks.
-A client with no astack hooks receives text guidance only.
+Put this in `.astack/profile.json`. See [the hook profile guide](docs/runbooks/hook-profiles.md).
 
-## The CLI
+## Language review packs
 
-```sh
-"$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" --help
-"$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" skill-path astack:principles references/fix-root-causes.md
-```
-
-Keep the plugin folder beside this launcher so reference discovery works.
-The standalone `dist/cli/astack.js` serves direct checks in CI and git hooks.
-It does not carry its own skill library.
-
-Run `astack doctor` after an install to examine that local setup.
-It reads installed profiles, duplicate skills, rules, runtime availability, and hook trust.
+The TypeScript pack covers `.ts`, `.tsx`, `.mts` and `.cts`. The PostgreSQL pack covers SQL in PostgreSQL repos. The optional `typescript-reviewer` and `postgres-reviewer` agents share those checklists and use only the Read, Grep and Glob tools. The parent agent runs the proof and makes the fixes.
 
 ## Build and verify
 
@@ -239,52 +263,27 @@ bun run check:drift
 bun run check
 ```
 
-The frozen install pins Claude Code for plugin validation.
-The drift command reads fresh expected build outputs without rewriting generated files.
-The full check builds every target and runs validation, neutrality, and secret scans.
-It also runs STE checks, tests, formatting, lint, and typecheck.
-The authenticated Claude load test needs an API key or OAuth token in its isolated environment.
-Without one, the check reports that gate as skipped.
-A local pass does not establish a hosted CI pass or a live cloud install.
+`check:drift` compares fresh build output with the committed files without rewriting them. `check` builds every target and runs validation, neutrality and secret scans, STE checks, tests, formatting, lint and type checks. The authenticated Claude load test needs an API key or OAuth token and is reported as skipped without one.
 
 ## Source layout
 
 | Folder | Purpose |
 |---|---|
-| `marketplace/plugins/astack/` | Plugin source, skills, agents, hooks, and launcher |
+| `marketplace/plugins/astack/` | Plugin source: skills, agents, hooks, launcher |
 | `src/astack/` | CLI and hook implementation |
-| `rules/` | Shared rules, scoped language packs, and the generated rule card |
-| `scripts/` | Build, apply, scans, and per-tool renderers |
-| `dist/` | Generated install builds |
+| `rules/` | Shared rules, language packs and the generated rule card |
+| `scripts/` | Build, apply, scans and per-client renderers |
+| `dist/` | Generated builds, one folder per client |
 | `tests/` | Tests and synthetic fixtures |
-| `examples/companion/` | Synthetic companion example |
-| `upstream/` | Frozen test data and licence evidence |
-| `docs/` | Design, decisions, and runbooks |
+| `upstream/` | Frozen snapshots for licence evidence and tests |
+| `docs/` | Design, decisions, workflow and runbooks |
 
-Change generated files at their source.
-`AGENTS.md` names each generated path and its build command.
-No script syncs or ports a frozen snapshot.
+Change generated files at their source. `AGENTS.md` names each generated path and its build command. Private config stays outside the repo.
 
-## Private companion
+## Contribute
 
-Keep project configs, machine settings, private rules, and deny lists in a separate private repository.
-Pass its path through `--companion` or `ASTACK_COMPANION_DIR`.
-Without one, read commands use the synthetic example.
-Write commands refuse that example.
+Read [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately through [SECURITY.md](SECURITY.md).
 
-[The companion guide](docs/runbooks/private-companion.md) explains the layout.
-[The repository install guide](docs/install-repo.md) covers apply and branch overlays.
-Public CI uses synthetic data and cannot identify every owner's private value.
+## Licence and credits
 
-## Contribute and release
-
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before a change.
-Use [SECURITY.md](SECURITY.md) for a private report.
-[The publication runbook](docs/runbooks/publish.md) requires a scanned tree and a new first commit.
-The owner creates that first commit and pushes it.
-Keep old private history outside the public repository.
-
-The signed-tag workflow verifies the tag and exact commit before running release gates.
-It creates a draft release for owner review.
-Signing keys stay outside CI.
-Publish only after the owner reviews the draft and its checks.
+MIT, Copyright (c) 2026 Alex Vakhitov. astack adapts material from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock and the [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) by Cursor, all MIT. [NOTICE](NOTICE) lists the files that hold each project's material.

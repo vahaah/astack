@@ -1,6 +1,6 @@
-flowchart LR
+flowchart TB
   startNode["astack session start"] --> wave[One wave of steps]
   wave --> land[Land the commits in order]
-  land --> more{More waves}
+  land --> more{More waves?}
   more -->|Yes| wave
   more -->|No| point["astack session checkpoint"]

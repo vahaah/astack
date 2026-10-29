@@ -47,7 +47,6 @@ Change the source and rerun the command.
 | `.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json` | `scripts/build.ts` and the source marketplace | `bun run build` |
 | `LICENSE`, `NOTICE` | the astack plugin licence and notice | `bun run build` |
 | `package.json` name, version, private, author, license, bin and engines | the astack plugin manifest and `scripts/build.ts` | `bun run build` |
-| `docs/charts/*.svg` | `docs/charts/*.mmd` and `docs/charts/mermaid.config.json` | the loop in "Chart images" of `docs/workflow.md` |
 
 Never edit `upstream/`. It holds frozen snapshots, and no script syncs or ports them (ADR 0001). To take a useful upstream change, copy it by hand as a normal astack change.
 

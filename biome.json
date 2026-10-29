@@ -14,7 +14,6 @@
 			"!!marketplace/*/pstack",
 			"!!marketplace/*/flow",
 			"!marketplace/plugins/astack/bin/astack.js",
-			"!docs/charts/*.svg",
 			"!!dist",
 			"!!tests/fixtures"
 		]
