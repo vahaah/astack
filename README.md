@@ -27,9 +27,12 @@ astack is one plugin for AI coding agents. It gives the agent a planning method 
 - [Install by client](#install-by-client)
 - [The CLI](#the-cli)
 - [Hook profiles](#hook-profiles)
+- [Language review packs](#language-review-packs)
 - [Build and verify](#build-and-verify)
 - [Source layout](#source-layout)
+- [Private companion](#private-companion)
 - [Contribute](#contribute)
+- [Licence and credits](#licence-and-credits)
 
 ## Quickstart
 

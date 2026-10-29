@@ -1,7 +1,7 @@
 # Workflow
 
 This page is the path that astack asks you to follow.
-The charts on the [README](../README.md#workflow) show the same path.
+The charts on the [README](../README.md#the-daily-path) show the same path.
 The rule card is the list that the agent loads.
 When this page and the card differ, the card wins.
 The card is `marketplace/plugins/astack/skills/mode/references/card.md`.
