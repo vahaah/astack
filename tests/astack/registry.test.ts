@@ -60,6 +60,7 @@ describe("the command registry", () => {
 			"check-migrations",
 			"check-stack-config",
 			"check-ci-pins",
+			"check-pr-head",
 		]);
 	});
 
@@ -124,7 +125,7 @@ describe("the command registry", () => {
 		const badCheck = capture();
 		expect(main(["check", "spelling"], badCheck.io)).toBe(2);
 		expect(badCheck.err()).toBe(
-			"astack check: give one of comments, types, ticket, pr, plan, ste, migrations, stack-config, ci-pins\n",
+			"astack check: give one of comments, types, ticket, pr, plan, ste, migrations, stack-config, ci-pins, pr-head\n",
 		);
 	});
 
