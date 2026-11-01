@@ -47,6 +47,7 @@ function spawnText(
 		cwd: io.cwd,
 		env: io.env,
 		encoding: "utf8",
+		maxBuffer: Infinity,
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 	if (result.error !== undefined)

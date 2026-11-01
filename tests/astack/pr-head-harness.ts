@@ -174,6 +174,7 @@ export function astack(
 		{
 			cwd: world.work,
 			encoding: "utf8",
+			maxBuffer: Infinity,
 			env: {
 				PATH: `${world.bin}:/usr/bin:/bin`,
 				HOME: world.base,

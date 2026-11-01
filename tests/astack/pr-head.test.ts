@@ -16,6 +16,24 @@ import {
 afterAll(removeWorlds);
 
 describe("astack check pr-head", () => {
+	test("the complete unpushed list survives output above the default process buffer", () => {
+		const world = createWorld();
+		const pushed = git(world.work, "rev-parse", "HEAD");
+		const subject = `large ${"x".repeat(1_200_000)}`;
+		const message = join(world.base, "message");
+		writeFileSync(message, `${subject}\n`);
+		git(world.work, "commit", "-q", "--allow-empty", "-F", message);
+		const head = git(world.work, "rev-parse", "HEAD");
+		script(world, 1, viewing(12, pushed));
+		const run = astack(world, []);
+		expect(run.code).toBe(0);
+		expect(run.err).toBe("");
+		expect(run.out).toBe(
+			`PR=12\nHEAD=${head}\nPR_HEAD=${pushed}\nUNPUSHED:\n${head.slice(0, 7)} ${subject}\nok: HEAD descends from PR_HEAD\n`,
+		);
+		expect(run.git).toEqual(sequence(pushed));
+	});
+
 	test("a signalled gh keeps its original diagnostic and stops before Git", () => {
 		const world = createWorld();
 		writeFileSync(
