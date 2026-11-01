@@ -1,4 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
 	astack,
 	commit,
@@ -14,6 +16,21 @@ import {
 afterAll(removeWorlds);
 
 describe("astack check pr-head", () => {
+	test("a signalled gh keeps its original diagnostic and stops before Git", () => {
+		const world = createWorld();
+		writeFileSync(
+			join(world.bin, "gh"),
+			"#!/bin/sh\nprintf 'original process diagnostic\\n' >&2\nkill -TERM $$\n",
+		);
+		const run = astack(world, []);
+		expect(run.code).toBe(1);
+		expect(run.out).toBe("stop: gh pr view did not finish\n");
+		expect(run.err).toBe(
+			"original process diagnostic\ngh pr view: ended by signal SIGTERM\n",
+		);
+		expect(run.git).toEqual([]);
+	});
+
 	test("a local branch at the PR head exits 0, names both heads and the empty unpushed list, and runs each operation in order", () => {
 		const world = createWorld();
 		const head = git(world.work, "rev-parse", "HEAD");

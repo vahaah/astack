@@ -15,7 +15,11 @@ type Failure =
 			readonly code: number;
 			readonly stderr: string;
 	  }
-	| { readonly kind: "lost"; readonly reason: string };
+	| {
+			readonly kind: "lost";
+			readonly reason: string;
+			readonly stderr: string;
+	  };
 
 type PullRequest = {
 	readonly number: number;
@@ -46,9 +50,17 @@ function spawnText(
 		stdio: ["ignore", "pipe", "pipe"],
 	});
 	if (result.error !== undefined)
-		return err({ kind: "lost", reason: result.error.message });
+		return err({
+			kind: "lost",
+			reason: result.error.message,
+			stderr: result.stderr ?? "",
+		});
 	if (result.status === null)
-		return err({ kind: "lost", reason: `ended by signal ${result.signal}` });
+		return err({
+			kind: "lost",
+			reason: `ended by signal ${result.signal}`,
+			stderr: result.stderr ?? "",
+		});
 	return result.status === 0
 		? ok(result.stdout)
 		: err({ kind: "exited", code: result.status, stderr: result.stderr });
@@ -59,6 +71,7 @@ function stopped(io: Io, label: string, failure: Failure): number {
 		io.err(failure.stderr);
 		io.out(`stop: ${label} exited ${failure.code}\n`);
 	} else {
+		io.err(failure.stderr);
 		io.err(`${label}: ${failure.reason}\n`);
 		io.out(`stop: ${label} did not finish\n`);
 	}
