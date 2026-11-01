@@ -29,10 +29,14 @@ A new worktree has no file that git ignores, such as a `.env` file. A gate prere
 
 CI tests the head of the PR. A local branch that does not hold that head gives a stale tree to the reviewers and the gates. So every run with a PR does the head check, with `--pr` or without it, before it loads the profile.
 
-1. Without `--pr`, read `gh pr view --json number,headRefOid` for the current branch. The run has no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Then it skips this check. gh can start that message with an uppercase or a lowercase letter. Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.
-2. Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.
-3. Print `HEAD` as the output of `git rev-parse HEAD`, and `PR_HEAD` as `headRefOid`. When `git merge-base --is-ancestor <headRefOid> HEAD` fails, stop with principled incompletion before the baseline. The local branch does not hold every commit of the PR, so the owner pulls first.
-4. Print `git log --oneline <headRefOid>..HEAD` as `UNPUSHED`. CI did not test these commits, so the final report names each one.
+1. Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`. Print its output and its exit code.
+2. Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`. A run with `--pr` read the PR in its selection step, so the call reads it a second time.
+3. When it exits 0 and its last line starts with `ok:`, the check passes. The `PR=` line gives the number of the PR.
+4. When it exits 3 and its last line starts with `no_pr:`, the run has no PR. Then it skips this check. Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.
+5. Accept no other pair of exit code and last line. Stop with principled incompletion before the baseline. The local branch can lack commits of the PR, so the owner pulls first.
+6. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.
+7. The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.
+8. Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.
 
 Each gate run does the head check again (`references/gate.md`).
 
@@ -103,7 +107,7 @@ For each iteration `n` up to `iterations.max`, from 1 or from the first iteratio
 4. Fix. Fix every open blocking finding in the ledger, including gate findings left open by the previous iteration. Commit each finding as the rules above say, inside the fix fence, and push as the profile says. Before each fix, read the item of `references/checklist.md` for the class of the finding. `references/fix.md` holds the rules, and `references/typescript.md` applies when `typescript.rules` is true.
 5. Comment gate. Run it over `git diff <BASE_SHA>...HEAD` (`references/comments.md`). Each accepted deletion set and each in-fence `MUST KILL` fix is a finding `C<n>.<k>` with its own commits.
 6. Deterministic gate. Run every gate, and the metrics when `metrics` is not `null` (`references/gate.md`). A failure the PR introduced becomes a finding `G<n>.<k>`, fixed in step 4 of the next iteration.
-7. Decide. In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`. Then read the `headRefOid` of the PR again and do the head check again. Print `GATE_SUMMARY` with the decision, and post the PR comment if the profile asks for one.
+7. Decide. In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`. Then do the head check again. Print `GATE_SUMMARY` with the decision, and post the PR comment if the profile asks for one.
 
 ## Decide
 

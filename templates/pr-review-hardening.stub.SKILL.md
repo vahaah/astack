@@ -23,7 +23,21 @@ With `--pr <n>` in `$ARGUMENTS`, select the head of that PR first, because the p
 1. Read `gh pr view <n> --json headRefName,headRefOid,baseRefName,state,isCrossRepository`, and print the three ref values. Stop with principled incompletion when `state` is not `OPEN`. The local branch of the PR is `headRefName`, or `pr-<n>` when `isCrossRepository` is true. A branch of a fork can have the name of a local branch, such as `main`. So the run never takes a checkout by the head branch name of a PR from a fork.
 2. When `git branch --show-current` prints the local branch of the PR, stay in this checkout. Otherwise continue in the worktree that holds the local branch of the PR in `git worktree list --porcelain`. When no worktree holds it, run `git worktree add --detach <dir>` with a new directory outside this checkout. Then run `gh pr checkout <n> --branch <local branch>` in it. Continue the run in that worktree. Never switch the branch of this checkout.
 
-CI tests the head of the PR. So every run with a PR does the head check, with `--pr` or without it, before it reads the profile:
+CI tests the head of the PR. So every run with a PR does the head check, with `--pr` or without it, before it reads the profile.
+
+When `command -v astack` succeeds, do the head check with the command:
+
+1. Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`. Print its output and its exit code.
+2. Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`. A run with `--pr` read the PR in its selection step, so the call reads it a second time.
+3. When it exits 0 and its last line starts with `ok:`, the check passes. The `PR=` line gives the number of the PR.
+4. When it exits 3 and its last line starts with `no_pr:`, the run has no PR. Then it skips this check. Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.
+5. Accept no other pair of exit code and last line. Stop with principled incompletion before the baseline. The local branch can lack commits of the PR, so the owner pulls first.
+6. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.
+7. The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.
+8. Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.
+9. A later step that says to read `headRefOid` again and do the head check again is one call of the command.
+
+When `command -v astack` fails, do the head check by hand:
 
 1. Without `--pr`, read `gh pr view --json number,headRefOid` for the current branch. The run has no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Then it skips this check. gh can start that message with an uppercase or a lowercase letter. Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.
 2. Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.
