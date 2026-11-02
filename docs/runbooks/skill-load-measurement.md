@@ -24,8 +24,11 @@ Report it as unavailable.
 3. Read the last lines of the output. They name the units and the limits.
 4. A shallow clone can lack the base revision. Then the script prints `n/a` for the before columns and runs the structural checks only.
 
-A read set is the list of files that the instruction text points to for one path.
+A read set is an explicitly configured set of direct files for one path.
+The report does not expand shared or transitive dependencies.
 It is not a trace of a real run.
+The old plan baseline includes every skill name in its composition section, including conditional names.
+It is a broad source-list interpretation, not the required input for S0 or resume.
 The script exits 1 when a pointer is missing or when the moved fallback differs from the inline fallback of the base revision.
 
 ## Diagnose a real host

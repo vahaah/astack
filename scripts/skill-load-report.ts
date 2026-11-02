@@ -168,13 +168,13 @@ export function scenarios(
 			after: [STUB, FALLBACK],
 		},
 		{
-			name: "plan, S0 intake in the main thread",
+			name: "plan, S0 against the broad old read list",
 			entry: skill("plan"),
 			before: planBefore,
 			after: [skill("plan"), ...PLAN_STAGE_READS.map(skill)],
 		},
 		{
-			name: "plan, resume of an existing plan",
+			name: "plan, resume against the broad old read list",
 			entry: skill("plan"),
 			before: planBefore,
 			after: [skill("plan"), reference("plan", "upkeep.md")],
@@ -282,6 +282,30 @@ export function scenarios(
 			before: [skill("control-ui")],
 			after: [skill("control-ui"), reference("control-ui", "argent.md")],
 		},
+		{
+			name: "control-ui, claude-in-chrome",
+			entry: skill("control-ui"),
+			before: [skill("control-ui")],
+			after: [
+				skill("control-ui"),
+				reference("control-ui", "claude-in-chrome.md"),
+			],
+		},
+		{
+			name: "control-ui, local script fallback",
+			entry: skill("control-ui"),
+			before: [skill("control-ui")],
+			after: [
+				skill("control-ui"),
+				reference("control-ui", "fallback-script.md"),
+			],
+		},
+		{
+			name: "control-ui, raw CDP",
+			entry: skill("control-ui"),
+			before: [skill("control-ui")],
+			after: [skill("control-ui"), reference("control-ui", "raw-cdp.md")],
+		},
 	];
 }
 
@@ -319,7 +343,9 @@ export function report(
 const LIMITS = [
 	"Words are whitespace-delimited source words. Bytes are UTF-8 source bytes.",
 	"These are source metrics. They are not prompt tokens, model calls, latency or cost.",
-	"A read set lists the files that the instruction text points to for one path. It is not a trace of a real run.",
+	"Read sets are explicitly configured direct-file sets. Shared and transitive dependencies are not expanded.",
+	"Plan before values include every skill named in the old composition section, including conditional names.",
+	"They are a broad source-list comparison, not required S0 or resume input or observed context.",
 	"Host loading differs. Claude Code keeps an invoked skill in the conversation, and a host can keep only part of it after a compaction.",
 	"`skillOverrides` does not control plugin skills. Use the diagnostics in docs/runbooks/skill-load-measurement.md.",
 ];

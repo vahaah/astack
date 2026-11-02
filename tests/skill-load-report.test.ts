@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import {
 	fallbackParity,
@@ -12,6 +13,33 @@ import {
 const root = resolve(import.meta.dir, "..");
 
 describe("the static checks of the skill load report", () => {
+	test("every moved UI recipe has a checked scenario that rejects a missing pointer", () => {
+		const entry = "marketplace/plugins/astack/skills/control-ui/SKILL.md";
+		const folder = "marketplace/plugins/astack/skills/control-ui/references";
+		const current = workingTree(root);
+		const text = current(entry);
+		if (text === undefined) throw new Error("The UI entry point is missing");
+		const references = readdirSync(resolve(root, folder))
+			.filter((name) => name.endsWith(".md"))
+			.map((name) => `${folder}/${name}`)
+			.sort();
+		const list = scenarios("", () => undefined).filter(
+			(scenario) => scenario.entry === entry,
+		);
+		const covered = [...new Set(list.flatMap((scenario) => scenario.after))]
+			.filter((path) => path !== entry)
+			.sort();
+		expect(covered).toEqual(references);
+		for (const path of references) {
+			const name = path.slice(path.lastIndexOf("/") + 1);
+			const missing = (file: string) =>
+				file === entry ? text.replaceAll(name, "") : current(file);
+			expect(
+				list.flatMap((scenario) => pointerProblems(missing, scenario)),
+			).toEqual([`${entry} does not point to ${path} as "${name}"`]);
+		}
+	});
+
 	test("each conditional read of the current tree has a pointer in its entry file", () => {
 		const current = workingTree(root);
 		const list = scenarios("", () => undefined);
