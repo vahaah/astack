@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	astack,
@@ -204,10 +205,23 @@ describe("astack check pr-head", () => {
 
 	test("a gh that cannot start stops the run", () => {
 		const world = createWorld();
-		const run = astack(world, [], { PATH: "/usr/bin:/bin" });
+		const emptyPath = join(world.base, "empty-bin");
+		mkdirSync(emptyPath);
+		const direct = spawnSync(
+			"gh",
+			["pr", "view", "--json", "number,headRefOid"],
+			{
+				cwd: world.work,
+				env: { PATH: emptyPath },
+			},
+		);
+		if (direct.error === undefined)
+			throw new Error("gh unexpectedly started from the empty PATH");
+		const run = astack(world, [], { PATH: emptyPath });
 		expect(run.out).toBe("stop: gh pr view did not finish\n");
-		expect(run.err).toContain("gh");
+		expect(run.err).toBe(`gh pr view: ${direct.error.message}\n`);
 		expect(run.code).toBe(1);
+		expect(run.gh).toEqual([]);
 		expect(run.git).toEqual([]);
 	});
 
