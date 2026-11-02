@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
 	mkdtempSync,
@@ -31,6 +31,12 @@ import {
 	profileGates,
 	validateProfile,
 } from "../src/astack/pr-review-profile.ts";
+import {
+	astack,
+	createWorld,
+	removeWorlds,
+	script,
+} from "./astack/pr-head-harness.ts";
 import {
 	exampleProjects,
 	profilePaths,
@@ -1419,21 +1425,85 @@ describe("the head of the PR on every path", () => {
 			),
 		],
 	] as const;
-	const headCheck = [
+	const commandHeadCheck = [
+		"Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`. Print its output and its exit code.",
+		"Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`. A run with `--pr` read the PR in its selection step, so the call reads it a second time.",
+		"When it exits 0 and its last line starts with `ok:`, the check passes.",
+		"When it exits 3 and its last line starts with `no_pr:`, the run has no PR.",
+		"Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.",
+		"Accept no other pair of exit code and last line. Stop with principled incompletion before the baseline.",
+		"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+		"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
+	];
+	const manualHeadCheck = [
 		"Without `--pr`, read `gh pr view --json number,headRefOid` for the current branch.",
 		"Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.",
 		"Print `HEAD` as the output of `git rev-parse HEAD`, and `PR_HEAD` as `headRefOid`. When `git merge-base --is-ancestor <headRefOid> HEAD` fails, stop with principled incompletion before the baseline.",
 		"Print `git log --oneline <headRefOid>..HEAD` as `UNPUSHED`. CI did not test these commits, so the final report names each one.",
 	];
 
-	test.each(headCheck)(
-		"the engine and the stub fallback check the head of every PR, with --pr or without it: %s",
+	const withCommand =
+		"When `command -v astack` succeeds, do the head check with the command:";
+	const byHand = "When `command -v astack` fails, do the head check by hand:";
+	const engineHeadCheck = sentencesFrom(
+		engineSkill,
+		"## The head check",
+		"## Authority",
+	);
+	const stubCommandBlock = fallback.slice(
+		fallback.indexOf(withCommand),
+		fallback.indexOf(byHand),
+	);
+	const stubManualBlock = fallback.slice(
+		fallback.indexOf(byHand),
+		fallback.indexOf("Print `WORKTREE` as the output"),
+	);
+
+	test.each(commandHeadCheck)(
+		"the engine and the command block of the stub fallback check the head of every PR with one command, with --pr or without it: %s",
 		(sentence) => {
-			expect(engineSkill).toContain(sentence);
-			expect(fallback).toContain(sentence);
+			expect(engineHeadCheck).toContain(sentence);
+			expect(stubCommandBlock).toContain(sentence);
 			for (const [, text] of onlyWithPr) expect(text).not.toContain(sentence);
 		},
 	);
+
+	test.each(manualHeadCheck)(
+		"only the manual block of the stub fallback keeps the manual head check: %s",
+		(sentence) => {
+			expect(stubManualBlock).toContain(sentence);
+			expect(engineSkill).not.toContain(sentence);
+			for (const [, text] of onlyWithPr) expect(text).not.toContain(sentence);
+		},
+	);
+
+	test("the stub fallback runs the command when astack is on the PATH, and does the manual head check by hand otherwise", () => {
+		const order = [
+			fallback.indexOf(withCommand),
+			fallback.indexOf("1. Run `astack check pr-head`"),
+			fallback.indexOf(byHand),
+			fallback.indexOf(manualHeadCheck[0] ?? ""),
+		];
+		expect(order.every((at) => at > -1)).toBe(true);
+		expect(order).toEqual([...order].sort((a, b) => a - b));
+	});
+
+	test("each text that runs the command takes only exit 0 with an ok: last line or exit 3 with a no_pr: last line", () => {
+		const callers = [
+			...markdownUnder("marketplace/plugins/astack"),
+			...markdownUnder("rules"),
+			...markdownUnder("templates"),
+			...profilePaths,
+		].filter((path) => read(path).includes("astack check pr-head"));
+		const scopes = [
+			[`${engine}/SKILL.md`, engineHeadCheck],
+			["templates/pr-review-hardening.stub.SKILL.md", stubCommandBlock],
+		] as const;
+		expect(callers).toEqual(scopes.map(([path]) => path));
+		for (const [, text] of scopes)
+			for (const sentence of commandHeadCheck.slice(2, 7))
+				expect(text).toContain(sentence);
+	});
 
 	test("a local branch that is only ahead of the PR goes on, and the report names its commits", () => {
 		for (const text of [engineSkill, fallback])
@@ -1447,20 +1517,26 @@ describe("the head of the PR on every path", () => {
 		"In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`.";
 	const readPrHead =
 		"Then read the `headRefOid` of the PR again and do the head check again.";
+	const checkAgain = "Then do the head check again.";
 
 	test.each([
-		["the decision step of SKILL.md", stepWith(engineSkill, "7. Decide.")],
+		[
+			"the decision step of SKILL.md",
+			stepWith(engineSkill, "7. Decide."),
+			checkAgain,
+		],
 		[
 			"the decision step of the stub fallback",
 			stepWith(fallback, "Print a gate summary and a decision."),
+			readPrHead,
 		],
 	])(
 		"%s pushes an unpushed head of the PR, then reads the head of the PR again before the summary",
-		(_, step) => {
+		(_, step, again) => {
 			expect(step).toContain(push);
-			expect(step).toContain(readPrHead);
-			expect(step.indexOf(push)).toBeLessThan(step.indexOf(readPrHead));
-			expect(step.indexOf(readPrHead)).toBeLessThan(step.search(/summary/i));
+			expect(step).toContain(again);
+			expect(step.indexOf(push)).toBeLessThan(step.indexOf(again));
+			expect(step.indexOf(again)).toBeLessThan(step.search(/summary/i));
 		},
 	);
 
@@ -1491,11 +1567,22 @@ describe("the head of the PR on every path", () => {
 	const again =
 		"When the run has a PR, read its `headRefOid` again and do the head check again. A push to the PR can move its head.";
 
+	const gateAgain =
+		"When the run has a PR, do the head check again. A push to the PR can move its head.";
+
 	test.each([
-		["references/gate.md", sentencesFrom(gate, "## Run it", "## Green")],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
-	])("%s checks the head of the PR again", (_, text) => {
-		expect(text).toContain(again);
+		[
+			"references/gate.md",
+			sentencesFrom(gate, "## Run it", "## Green"),
+			gateAgain,
+		],
+		[
+			"the gate run of the stub fallback",
+			paragraphStarting(stub, "Gate run:"),
+			again,
+		],
+	])("%s checks the head of the PR again", (_, text, sentence) => {
+		expect(text).toContain(sentence);
 	});
 });
 
@@ -2041,30 +2128,37 @@ describe("a failed gh is never a run with no PR", () => {
 		);
 	}
 
-	test.each([
-		["SKILL.md", engineSkill],
-		["the stub fallback", fallback],
-	])(
-		"%s takes the no-PR message of gh as no PR, with an uppercase or a lowercase first letter",
-		(_, text) => {
-			const rule = ruleOf(text);
-			expect(noPrMessages.filter((message) => !isNoPr(rule, message))).toEqual(
-				[],
-			);
-		},
-	);
+	afterAll(removeWorlds);
 
-	test.each([
-		["SKILL.md", engineSkill],
-		["the stub fallback", fallback],
-	])("%s never takes another failure of gh as no PR", (_, text) => {
-		const rule = ruleOf(text);
+	test("the stub fallback takes the no-PR message of gh as no PR, with an uppercase or a lowercase first letter", () => {
+		const rule = ruleOf(fallback);
+		expect(noPrMessages.filter((message) => !isNoPr(rule, message))).toEqual(
+			[],
+		);
+	});
+
+	test("the stub fallback never takes another failure of gh as no PR", () => {
+		const rule = ruleOf(fallback);
 		expect(failures.filter((message) => isNoPr(rule, message))).toEqual([]);
 	});
 
-	test("SKILL.md and the stub fallback give the same rule, and each other failure stops the run", () => {
-		const rule = ruleOf(engineSkill);
-		expect(ruleOf(fallback)).toBe(rule);
+	test("the command and the manual rule of the stub fallback classify each gh answer the same way", () => {
+		const rule = ruleOf(fallback);
+		const messages = [...noPrMessages, ...failures];
+		const world = createWorld();
+		const byCommand = messages.map((message, at) => {
+			script(world, at + 1, { code: 1, out: "", err: `${message}\n` });
+			return astack(world, []).code === 3;
+		});
+		const byRule = messages.map((message) => isNoPr(rule, message));
+		expect(byCommand).toEqual(byRule);
+		expect(byRule).toContain(true);
+		expect(byRule).toContain(false);
+	});
+
+	test("SKILL.md leaves the no-PR rule to the command, and it and the stub fallback stop the run on each other failure", () => {
+		expect(engineSkill).not.toContain(ruleStart);
+		expect(engineSkill).not.toContain("grep -qi");
 		for (const text of [engineSkill, fallback]) {
 			expect(text).toContain(
 				"Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.",
@@ -2081,7 +2175,7 @@ describe("a failed gh is never a run with no PR", () => {
 	const ownForms: readonly (readonly [string, string])[] = [
 		[
 			`${engine}/SKILL.md`,
-			"The engine holds the run form of both rules, which the tests above and the head check tests pin.",
+			"The engine holds the run form of both rules. Its head check calls the command that tests/astack/pr-head.test.ts pins, and the tests above pin the rest.",
 		],
 		[
 			`${engine}/references/gate.md`,
@@ -3134,49 +3228,61 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		reasoned("gives a stale tree to the reviewers and the gates", explains),
 		stubbed(
 			"So every run with a PR does the head check",
-			"So every run with a PR does the head check, with `--pr` or without it, before it reads the profile:",
+			"So every run with a PR does the head check, with `--pr` or without it, before it reads the profile.",
 		),
 		stubbed(
-			"Without `--pr`, read `gh pr view --json number,headRefOid`",
-			"Without `--pr`, read `gh pr view --json number,headRefOid` for the current branch.",
+			"Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`.",
+			"Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`.",
 		),
 		stubbed(
-			"The run has no PR only when gh exits 1",
-			"The run has no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`.",
+			"Print its output and its exit code.",
+			"Print its output and its exit code.",
+		),
+		stubbed(
+			"Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`.",
+			"Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`.",
+		),
+		stubbed(
+			"A run with `--pr` read the PR in its selection step, so the call reads it a second time.",
+			"A run with `--pr` read the PR in its selection step, so the call reads it a second time.",
+		),
+		stubbed(
+			"When it exits 0 and its last line starts with `ok:`, the check passes.",
+			"When it exits 0 and its last line starts with `ok:`, the check passes.",
+		),
+		stubbed(
+			"The `PR=` line gives the number of the PR.",
+			"The `PR=` line gives the number of the PR.",
+		),
+		stubbed(
+			"When it exits 3 and its last line starts with `no_pr:`, the run has no PR.",
+			"When it exits 3 and its last line starts with `no_pr:`, the run has no PR.",
 		),
 		stubbed("Then it skips this check.", "Then it skips this check."),
 		stubbed(
-			"gh can start that message with an uppercase or a lowercase letter.",
-			"gh can start that message with an uppercase or a lowercase letter.",
+			"Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.",
+			"Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.",
+		),
+		stubbed(
+			"Accept no other pair of exit code and last line.",
+			"Accept no other pair of exit code and last line.",
+		),
+		stubbed(
+			"Stop with principled incompletion before the baseline.",
+			"Stop with principled incompletion before the baseline.",
+		),
+		reasoned("so the owner pulls first", explains),
+		stubbed(
+			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+		),
+		stubbed(
+			"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
+			"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
 		),
 		stubbed(
 			"Each other failure of a `gh pr view` of the run stops the run",
 			"Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.",
-		),
-		stubbed(
-			"Run `git fetch origin <headRefOid>`.",
-			"Run `git fetch origin <headRefOid>`.",
-		),
-		stubbed(
-			"When it fails, stop with principled incompletion.",
-			"Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.",
-		),
-		stubbed(
-			"Print `HEAD` as the output of `git rev-parse HEAD`",
-			"Print `HEAD` as the output of `git rev-parse HEAD`, and `PR_HEAD` as `headRefOid`.",
-		),
-		stubbed(
-			"When `git merge-base --is-ancestor <headRefOid> HEAD` fails",
-			"When `git merge-base --is-ancestor <headRefOid> HEAD` fails, stop with principled incompletion before the baseline.",
-		),
-		reasoned("so the owner pulls first", explains),
-		stubbed(
-			"as `UNPUSHED`.",
-			"Print `git log --oneline <headRefOid>..HEAD` as `UNPUSHED`.",
-		),
-		stubbed(
-			"CI did not test these commits, so the final report names each one.",
-			"CI did not test these commits, so the final report names each one.",
 		),
 		stubbed(
 			"Each gate run does the head check again",
@@ -3799,7 +3905,7 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`.",
 		),
 		stubbed(
-			"Then read the `headRefOid` of the PR again",
+			"Then do the head check again.",
 			"Then read the `headRefOid` of the PR again and do the head check again.",
 		),
 		stubbed(
@@ -4209,7 +4315,7 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"The mode follows the result of the last check of the run.",
 		),
 		stubbed(
-			"When the run has a PR, read its `headRefOid` again",
+			"When the run has a PR, do the head check again.",
 			"When the run has a PR, read its `headRefOid` again and do the head check again.",
 		),
 		stubbed(
