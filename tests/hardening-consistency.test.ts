@@ -9,7 +9,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, relative } from "node:path";
+import { join, posix, relative } from "node:path";
 import {
 	profileDirFor,
 	projectNames,
@@ -19,7 +19,6 @@ import {
 import {
 	renderReviewCopies,
 	reviewFallbackSource,
-	reviewStubSource,
 } from "../scripts/lib/render.ts";
 import { exemptPaths } from "../scripts/lib/ste-exempt.ts";
 import { marketplacePlugins, originItems } from "../scripts/validate.ts";
@@ -106,14 +105,19 @@ describe("the fallback that the guards read is the file that the stub links to",
 	);
 	const rendered = renderReviewCopies(acme, join(exampleProjects, "acme"));
 
-	test("the rendered stub links to a sibling that holds the text of the guards, and the stub holds no fallback sentence", () => {
-		const entry = readFileSync(reviewStubSource, "utf8");
+	test("the rendered stub links to the text of the guards and holds no fallback sentence", () => {
+		const entry = rendered.artifacts.find((artifact) =>
+			artifact.path.endsWith("/SKILL.md"),
+		);
 		expect(rendered.problems).toEqual([]);
-		expect(entry).toContain("[FALLBACK.md](FALLBACK.md)");
+		if (entry === undefined) throw new Error("no rendered stub");
+		const target = /\[FALLBACK\.md\]\(([^)]+)\)/.exec(entry.content)?.[1];
+		if (target === undefined) throw new Error("no fallback link");
+		const linked = posix.normalize(
+			posix.join(posix.dirname(entry.path), target),
+		);
 		expect(
-			rendered.artifacts.find((artifact) =>
-				artifact.path.endsWith("/pr-review-hardening/FALLBACK.md"),
-			)?.content,
+			rendered.artifacts.find((artifact) => artifact.path === linked)?.content,
 		).toBe(stub);
 		for (const sentence of [
 			"Each iteration:",
@@ -121,7 +125,7 @@ describe("the fallback that the guards read is the file that the stub links to",
 			"Preflight:",
 			"Decide:",
 		])
-			expect(entry).not.toContain(sentence);
+			expect(entry.content).not.toContain(sentence);
 	});
 
 	test("a stub that does not link to its fallback fails the render", () => {

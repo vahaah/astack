@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, posix, resolve } from "node:path";
 import type { ProjectConfig } from "../../scripts/lib/projects.ts";
 import { hasManagedShape, planRemovals } from "../../scripts/lib/removals.ts";
 import {
@@ -9,12 +9,9 @@ import {
 	reviewFallbackSource,
 	reviewStubSource,
 } from "../../scripts/lib/render.ts";
+import { lintTarget } from "../../scripts/lib/target-lint.ts";
 import type { PathKind } from "../../scripts/lib/write-paths.ts";
-import {
-	managedList,
-	mirroredFallbackPath,
-	REVIEW_FALLBACK_FILE,
-} from "../../src/astack/managed.ts";
+import { managedList } from "../../src/astack/managed.ts";
 
 const root = resolve(import.meta.dir, "../..");
 const profileDir = join(root, "examples/companion/projects/acme");
@@ -41,15 +38,44 @@ const project: ProjectConfig = {
 	ciOnlyGates: [],
 	commentConflicts: [],
 	adrNeeded: [],
-	skillMirrors: [".agents/skills"],
+	skillMirrors: [
+		".agents/skills",
+		"agent-skills",
+		"tooling/nested/agent/skills",
+	],
 };
 
 const stubFolders = [
 	".claude/skills/pr-review-hardening",
-	".agents/skills/pr-review-hardening",
+	...(project.skillMirrors ?? []).map((dir) => `${dir}/pr-review-hardening`),
 ];
 
-describe("the review stub forwards and its fallback is a sibling file", () => {
+describe("the review stubs link to one shared fallback", () => {
+	test("the fallback respects existing file-scoped tool-name exceptions", async () => {
+		const restricted: ProjectConfig = {
+			...project,
+			lint: {
+				...project.lint,
+				denySubstrings: ["astack"],
+				denySubstringsExempt: [
+					...stubFolders.map((folder) => `${folder}/SKILL.md`),
+					".claude/pr-review-hardening.profile.md",
+					".astack/",
+				],
+			},
+		};
+		const rendered = renderReviewCopies(restricted, profileDir);
+		const result = await lintTarget(restricted, rendered.artifacts, {
+			projects: [restricted],
+			hashes: new Set(),
+		});
+		expect(rendered.problems).toEqual([]);
+		expect(result.findings).toEqual([]);
+		expect(
+			rendered.artifacts.some((file) => file.content.includes("astack")),
+		).toBe(true);
+	});
+
 	test("the stub holds no line of the fallback", () => {
 		const copied = fallback
 			.split("\n")
@@ -58,22 +84,35 @@ describe("the review stub forwards and its fallback is a sibling file", () => {
 		expect(stub).not.toContain("## Fallback");
 	});
 
-	test("apply renders the fallback beside the stub in the primary folder and in each mirror", () => {
+	test("each stub link resolves to the complete shared fallback at every mirror depth", () => {
 		const rendered = renderReviewCopies(project, profileDir);
 		expect(rendered.problems).toEqual([]);
-		const bySibling = (name: string) =>
+		const entries = rendered.artifacts.filter((artifact) =>
+			artifact.path.endsWith("/SKILL.md"),
+		);
+		expect(entries.map((entry) => entry.path)).toEqual(
+			stubFolders.map((folder) => `${folder}/SKILL.md`),
+		);
+		expect(
 			rendered.artifacts
-				.filter((artifact) => artifact.path.endsWith(`/${name}`))
-				.map((artifact) => [dirname(artifact.path), artifact.content]);
-		expect(bySibling("SKILL.md")).toEqual(
-			stubFolders.map((folder) => [folder, stub]),
-		);
-		expect(bySibling(REVIEW_FALLBACK_FILE)).toEqual(
-			stubFolders.map((folder) => [folder, fallback]),
-		);
+				.filter((artifact) => artifact.path.endsWith("/FALLBACK.md"))
+				.map((artifact) => [artifact.path, artifact.content]),
+		).toEqual([[".astack/pr-review-hardening/FALLBACK.md", fallback]]);
+		for (const entry of entries) {
+			const target = /\[FALLBACK\.md\]\(([^)]+)\)/.exec(entry.content)?.[1];
+			if (target === undefined)
+				throw new Error(`no fallback link in ${entry.path}`);
+			const linked = posix.normalize(
+				posix.join(posix.dirname(entry.path), target),
+			);
+			expect(
+				rendered.artifacts.find((artifact) => artifact.path === linked)
+					?.content,
+			).toBe(fallback);
+		}
 	});
 
-	test("the astack profile lists the stub and the fallback of each folder as managed", () => {
+	test("the astack profile lists every stub and the shared fallback as managed", () => {
 		const { artifacts } = renderRepoArtifacts(project, [], profileDir);
 		const profile = artifacts.find(
 			(artifact) => artifact.path === ".astack/profile.json",
@@ -82,12 +121,12 @@ describe("the review stub forwards and its fallback is a sibling file", () => {
 		expect(managed).toEqual(
 			expect.arrayContaining([
 				...stubFolders.map((folder) => `${folder}/SKILL.md`),
-				...stubFolders.map((folder) => `${folder}/${REVIEW_FALLBACK_FILE}`),
+				".astack/pr-review-hardening/FALLBACK.md",
 			]),
 		);
-		expect(mirroredFallbackPath(".agents/skills")).toBe(
-			".agents/skills/pr-review-hardening/FALLBACK.md",
-		);
+		expect(managed?.filter((path) => path.endsWith("/FALLBACK.md"))).toEqual([
+			".astack/pr-review-hardening/FALLBACK.md",
+		]);
 	});
 });
 
@@ -95,27 +134,29 @@ describe("cleanup of the fallback", () => {
 	const probe = (files: Readonly<Record<string, PathKind>>) => (path: string) =>
 		files[path] ?? "missing";
 
-	test("a mirror fallback that a repo drops from its managed list is deleted", () => {
+	test("apply deletes the shared fallback when the review artifacts are disabled", () => {
 		const plan = planRemovals({
-			project,
-			written: [".claude/skills/pr-review-hardening/FALLBACK.md"],
-			previous: [".agents/skills/pr-review-hardening/FALLBACK.md"],
+			project: {
+				...project,
+				artifacts: { ...project.artifacts, reviewStub: false },
+			},
+			written: [],
+			previous: [".astack/pr-review-hardening/FALLBACK.md"],
 			probe: probe({
-				".agents/skills/pr-review-hardening/FALLBACK.md": "file",
-				".agents/skills/pr-review-hardening": "directory",
-				".agents/skills": "directory",
-				".agents": "directory",
+				".astack/pr-review-hardening/FALLBACK.md": "file",
+				".astack/pr-review-hardening": "directory",
+				".astack": "directory",
 			}),
 		});
 		expect(plan.refused).toEqual([]);
 		expect(plan.remove.map((removal) => removal.path)).toEqual([
-			".agents/skills/pr-review-hardening/FALLBACK.md",
+			".astack/pr-review-hardening/FALLBACK.md",
 		]);
 	});
 
 	test.each([
-		[".claude/skills/pr-review-hardening/FALLBACK.md", true],
-		[".agents/skills/pr-review-hardening/FALLBACK.md", true],
+		[".astack/pr-review-hardening/FALLBACK.md", true],
+		[".claude/skills/pr-review-hardening/FALLBACK.md", false],
 		["docs/FALLBACK.md", false],
 		[".claude/skills/other/FALLBACK.md", false],
 	])("%s has the managed shape: %p", (path, expected) => {

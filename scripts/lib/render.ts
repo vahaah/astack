@@ -1,9 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
 import {
 	MANAGED_PATHS,
-	mirroredFallbackPath,
 	mirroredStubPath,
 	REVIEW_FALLBACK_FILE,
 } from "../../src/astack/managed.ts";
@@ -182,13 +181,6 @@ export function stubPaths(project: ProjectConfig): string[] {
 	];
 }
 
-export function fallbackPaths(project: ProjectConfig): string[] {
-	return [
-		reviewFallbackPath,
-		...(project.skillMirrors ?? []).map((dir) => mirroredFallbackPath(dir)),
-	];
-}
-
 export function renderReviewCopies(
 	project: ProjectConfig,
 	dir: string,
@@ -210,15 +202,20 @@ export function renderReviewCopies(
 		);
 	if (fallback === undefined) problems.push(`${sources.fallback} is missing`);
 	if (stub !== undefined && fallback !== undefined) {
-		for (const path of stubPaths(project))
-			artifacts.push({ path, kind: "review-stub", content: stub });
-		for (const path of fallbackPaths(project))
+		for (const path of stubPaths(project)) {
+			const target = posix.relative(posix.dirname(path), reviewFallbackPath);
 			artifacts.push({
 				path,
 				kind: "review-stub",
-				content: fallback,
-				sources: [upstreamUses.keepList],
+				content: stub.replace(fallbackLink, `](${target})`),
 			});
+		}
+		artifacts.push({
+			path: reviewFallbackPath,
+			kind: "review-stub",
+			content: fallback,
+			sources: [upstreamUses.keepList],
+		});
 	}
 	if (profile === undefined) {
 		problems.push(`${profileLabel} is missing`);

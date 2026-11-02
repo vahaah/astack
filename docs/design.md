@@ -72,10 +72,11 @@ The neutrality scan of a public candidate must use the real companion.
 A secret scan also examines the complete candidate tree.
 
 The review stub that apply writes is a thin forwarding entry.
-Its fallback is a sibling file, `FALLBACK.md`, in each skill folder that apply writes.
+Apply writes its fallback once at `.astack/pr-review-hardening/FALLBACK.md`.
 The agent reads the fallback only when the plugin is absent, so an available plugin never loads it.
-Apply writes the stub and the fallback together at the primary path and at each skill mirror.
-Both paths are in the `managed` list, and the removal and stray-copy checks know the fallback.
+Each primary or mirrored stub links to the shared fallback through a relative path.
+The `managed` list names every stub and the fallback, and the removal and stray-copy checks know these paths.
+The shared fallback stays in the managed metadata scope, so file-scoped name rules need no new exception.
 Apply reports a stub that has no link to `FALLBACK.md` and a missing fallback source.
 The sentence guards of `tests/hardening-consistency.test.ts` read the fallback file and compare it with the file that the rendered stub links to.
 

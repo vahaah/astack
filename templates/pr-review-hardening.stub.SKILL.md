@@ -14,4 +14,4 @@ astack apply writes this file and `FALLBACK.md`. Fix them in the astack repo. Th
 
 If the Skill tool lists `astack:pr-review-hardening`, invoke it with the arguments `$ARGUMENTS` and follow it. Stop here. Never read `FALLBACK.md`.
 
-Otherwise read [FALLBACK.md](FALLBACK.md) in the folder of this file, and run the loop that it holds. The arguments of the run are `$ARGUMENTS`.
+Otherwise read [FALLBACK.md](FALLBACK.md). Run its loop with `$ARGUMENTS`.

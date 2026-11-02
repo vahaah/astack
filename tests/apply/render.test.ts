@@ -154,7 +154,7 @@ describe("review stub and profile copies", () => {
 		expect(rendered.problems).toEqual([]);
 		expect(rendered.artifacts.map((artifact) => artifact.path)).toEqual([
 			".claude/skills/pr-review-hardening/SKILL.md",
-			".claude/skills/pr-review-hardening/FALLBACK.md",
+			".astack/pr-review-hardening/FALLBACK.md",
 			".claude/pr-review-hardening.profile.md",
 		]);
 	});
@@ -171,6 +171,9 @@ describe("review stub and profile copies", () => {
 			readFileSync(
 				join(astackRoot, "templates/pr-review-hardening.stub.SKILL.md"),
 				"utf8",
+			).replace(
+				"](FALLBACK.md)",
+				"](../../../.astack/pr-review-hardening/FALLBACK.md)",
 			),
 			readFileSync(
 				join(astackRoot, "templates/pr-review-hardening.stub.FALLBACK.md"),
@@ -189,10 +192,7 @@ describe("review stub and profile copies", () => {
 			]),
 		).toEqual([
 			[".claude/skills/pr-review-hardening/SKILL.md", undefined],
-			[
-				".claude/skills/pr-review-hardening/FALLBACK.md",
-				[upstreamUses.keepList.use],
-			],
+			[".astack/pr-review-hardening/FALLBACK.md", [upstreamUses.keepList.use]],
 			[".claude/pr-review-hardening.profile.md", undefined],
 		]);
 	});
@@ -223,7 +223,7 @@ describe("review stub and profile copies", () => {
 		]);
 	});
 
-	test("writes the stub and its fallback into each skill mirror too", () => {
+	test("each mirrored stub links to the shared fallback", () => {
 		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
 		const rendered = renderReviewCopies(
 			project({ skillMirrors: [".agents/skills"] }),
@@ -237,14 +237,13 @@ describe("review stub and profile copies", () => {
 		).toEqual([
 			[
 				".claude/skills/pr-review-hardening/SKILL.md",
-				"stub [FALLBACK.md](FALLBACK.md)\n",
+				"stub [FALLBACK.md](../../../.astack/pr-review-hardening/FALLBACK.md)\n",
 			],
 			[
 				".agents/skills/pr-review-hardening/SKILL.md",
-				"stub [FALLBACK.md](FALLBACK.md)\n",
+				"stub [FALLBACK.md](../../../.astack/pr-review-hardening/FALLBACK.md)\n",
 			],
-			[".claude/skills/pr-review-hardening/FALLBACK.md", "fallback\n"],
-			[".agents/skills/pr-review-hardening/FALLBACK.md", "fallback\n"],
+			[".astack/pr-review-hardening/FALLBACK.md", "fallback\n"],
 		]);
 	});
 
