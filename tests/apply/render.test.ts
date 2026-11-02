@@ -143,19 +143,23 @@ describe("review stub and profile copies", () => {
 	afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 	const stub = join(dir, "stub.SKILL.md");
-	writeFileSync(stub, "stub\n");
+	const fallback = join(dir, "stub.FALLBACK.md");
+	const sources = { stub, fallback };
+	writeFileSync(stub, "stub [FALLBACK.md](FALLBACK.md)\n");
+	writeFileSync(fallback, "fallback\n");
 
 	test("copies the stub and profile to their repo paths", () => {
 		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
-		const rendered = renderReviewCopies(project(), dir, stub);
+		const rendered = renderReviewCopies(project(), dir, sources);
 		expect(rendered.problems).toEqual([]);
 		expect(rendered.artifacts.map((artifact) => artifact.path)).toEqual([
 			".claude/skills/pr-review-hardening/SKILL.md",
+			".astack/pr-review-hardening/FALLBACK.md",
 			".claude/pr-review-hardening.profile.md",
 		]);
 	});
 
-	test("renders the one review stub from templates/", () => {
+	test("renders the one review stub and its fallback from templates/", () => {
 		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
 		const rendered = renderReviewCopies(project(), dir);
 		expect(rendered.problems).toEqual([]);
@@ -167,24 +171,79 @@ describe("review stub and profile copies", () => {
 			readFileSync(
 				join(astackRoot, "templates/pr-review-hardening.stub.SKILL.md"),
 				"utf8",
+			).replace(
+				"](FALLBACK.md)",
+				"](../../../.astack/pr-review-hardening/FALLBACK.md)",
+			),
+			readFileSync(
+				join(astackRoot, "templates/pr-review-hardening.stub.FALLBACK.md"),
+				"utf8",
 			),
 		]);
 	});
 
-	test("writes the stub into each skill mirror too", () => {
+	test("the credit for the keep list sits on the fallback, which holds its text", () => {
+		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
+		const rendered = renderReviewCopies(project(), dir, sources);
+		expect(
+			rendered.artifacts.map((artifact) => [
+				artifact.path,
+				artifact.sources?.map((source) => source.use),
+			]),
+		).toEqual([
+			[".claude/skills/pr-review-hardening/SKILL.md", undefined],
+			[".astack/pr-review-hardening/FALLBACK.md", [upstreamUses.keepList.use]],
+			[".claude/pr-review-hardening.profile.md", undefined],
+		]);
+	});
+
+	test("reports a stub with no link to its fallback, so the fallback cannot be reached", () => {
+		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
+		const unlinked = join(dir, "unlinked.SKILL.md");
+		writeFileSync(unlinked, "stub\n");
+		const rendered = renderReviewCopies(project(), dir, {
+			stub: unlinked,
+			fallback,
+		});
+		expect(rendered.problems).toEqual([
+			`${unlinked} has no link to FALLBACK.md, so a repo without the plugin cannot reach the fallback`,
+		]);
+	});
+
+	test("reports a missing fallback and writes no stub without it", () => {
+		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
+		const gone = join(dir, "gone.FALLBACK.md");
+		const rendered = renderReviewCopies(project(), dir, {
+			stub,
+			fallback: gone,
+		});
+		expect(rendered.problems).toEqual([`${gone} is missing`]);
+		expect(rendered.artifacts.map((artifact) => artifact.path)).toEqual([
+			".claude/pr-review-hardening.profile.md",
+		]);
+	});
+
+	test("each mirrored stub links to the shared fallback", () => {
 		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
 		const rendered = renderReviewCopies(
 			project({ skillMirrors: [".agents/skills"] }),
 			dir,
-			stub,
+			sources,
 		);
 		expect(
 			rendered.artifacts
 				.filter((artifact) => artifact.kind === "review-stub")
 				.map((artifact) => [artifact.path, artifact.content]),
 		).toEqual([
-			[".claude/skills/pr-review-hardening/SKILL.md", "stub\n"],
-			[".agents/skills/pr-review-hardening/SKILL.md", "stub\n"],
+			[
+				".claude/skills/pr-review-hardening/SKILL.md",
+				"stub [FALLBACK.md](../../../.astack/pr-review-hardening/FALLBACK.md)\n",
+			],
+			[
+				".agents/skills/pr-review-hardening/SKILL.md",
+				"stub [FALLBACK.md](../../../.astack/pr-review-hardening/FALLBACK.md)\n",
+			],
+			[".astack/pr-review-hardening/FALLBACK.md", "fallback\n"],
 		]);
 	});
 
@@ -193,7 +252,7 @@ describe("review stub and profile copies", () => {
 			join(dir, "pr-review-hardening.profile.md"),
 			complete('["^TODO"]'),
 		);
-		const rendered = renderReviewCopies(project(), dir, stub);
+		const rendered = renderReviewCopies(project(), dir, sources);
 		expect(rendered.problems).toHaveLength(1);
 		expect(rendered.problems[0]).toContain("differ");
 	});
@@ -203,7 +262,7 @@ describe("review stub and profile copies", () => {
 			join(dir, "pr-review-hardening.profile.md"),
 			profileWith("[]"),
 		);
-		const rendered = renderReviewCopies(project(), dir, stub);
+		const rendered = renderReviewCopies(project(), dir, sources);
 		expect(rendered.problems).toHaveLength(1);
 		expect(rendered.problems[0]).toContain(
 			"the stub fallback reads base.default, base.from_pr",
@@ -219,7 +278,7 @@ describe("review stub and profile copies", () => {
 				"reviewers: {select: applicable, agents: [code-reviewer], checklists: [], notes: [], extra: [{name: extra, invoke: Skill, when: always}]}",
 			]),
 		);
-		const rendered = renderReviewCopies(project(), dir, stub);
+		const rendered = renderReviewCopies(project(), dir, sources);
 		expect(rendered.problems).toEqual([
 			"projects/acme/pr-review-hardening.profile.md: the profile sets type_coverage, reviewers.extra away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it",
 		]);
@@ -314,7 +373,7 @@ describe("review stub and profile copies", () => {
 				join(dir, "pr-review-hardening.profile.md"),
 				`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
 			);
-			expect(renderReviewCopies(project(), dir, stub).problems).toEqual([
+			expect(renderReviewCopies(project(), dir, sources).problems).toEqual([
 				`projects/acme/pr-review-hardening.profile.md: the profile sets ${key} away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it`,
 			]);
 		},
@@ -332,7 +391,7 @@ describe("review stub and profile copies", () => {
 				join(dir, "pr-review-hardening.profile.md"),
 				`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
 			);
-			return renderReviewCopies(project(), dir, stub).problems;
+			return renderReviewCopies(project(), dir, sources).problems;
 		};
 		expect(merging([])).toEqual([
 			"projects/acme/pr-review-hardening.profile.md: the profile merges after a clean stop, but no line of merge.conditions checks CI on the head. A local version note is advisory only when CI gates the merge. Add a condition that checks CI on the head SHA, or set merge.after_clean_stop to report",
@@ -347,7 +406,7 @@ describe("review stub and profile copies", () => {
 			join(dir, "pr-review-hardening.profile.md"),
 			complete("[]", ["type_coverage: null"]),
 		);
-		expect(renderReviewCopies(project(), dir, stub).problems).toEqual([]);
+		expect(renderReviewCopies(project(), dir, sources).problems).toEqual([]);
 	});
 
 	test("the stub fallback follows test adequacy per clause, a contract-coverage prepass, commit trailers and thread answers", () => {
@@ -362,17 +421,16 @@ describe("review stub and profile copies", () => {
 			join(dir, "pr-review-hardening.profile.md"),
 			`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
 		);
-		expect(renderReviewCopies(project(), dir, stub).problems).toEqual([]);
+		expect(renderReviewCopies(project(), dir, sources).problems).toEqual([]);
 	});
 
 	test("reports missing sources instead of inventing them", () => {
-		const rendered = renderReviewCopies(
-			project(),
-			join(dir, "nowhere"),
-			join(dir, "nowhere.md"),
-		);
+		const rendered = renderReviewCopies(project(), join(dir, "nowhere"), {
+			stub: join(dir, "nowhere.md"),
+			fallback: join(dir, "nowhere.FALLBACK.md"),
+		});
 		expect(rendered.artifacts).toEqual([]);
-		expect(rendered.problems).toHaveLength(2);
+		expect(rendered.problems).toHaveLength(3);
 	});
 
 	test("reads keep patterns from the profile's YAML block", () => {

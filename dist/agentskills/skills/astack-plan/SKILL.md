@@ -1,6 +1,6 @@
 ---
 name: "astack-plan"
-description: "Use for /astack-plan, \"I am building <X>\", a ticket key, or /plan with new work. Plans work the way the owner plans, from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives, and grills the owner on the calls that are theirs. Then it writes one plan file that astack check-plan proves. The plan holds sessions of parallel steps in waves, and astack session builds them. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
+description: "Use for /astack-plan, \"I am building <X>\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
@@ -114,45 +114,6 @@ Put an addendum in a comment.
 
 A plan moves to Linear or GitHub only when the owner asks. `references/tracker.md` has `astack plan export`, `move`, `import`, `drift` and `keys`.
 
-## Load the skills you compose
-
-Invoke these skills. Each one is model-invocable.
-
-- `astack-grilling` and `astack-domain-modeling`, together, for each round.
-- `astack-research` for facts outside the repo, `astack-prototype` when a person must judge a prototype, and `astack-codebase-design` for the depth words.
-- `astack-write-ticket` for each ticket, and `astack-write-docs` for ADRs, the glossary and PR bodies.
-- `astack-write-docs` for the prose of the plan. ASD-STE100 takes priority over its other prose rules.
-
-The other skills set `disable-model-invocation`, so the model cannot invoke them.
-Read their SKILL.md by path:
-
-```sh
-astack skill-path astack:architect
-astack skill-path astack:mode playbooks/prototype.md
-```
-
-Each command prints an absolute path.
-Read that file.
-Run each `astack` command as its own Bash call.
-Never chain it with `&&` or `cd`.
-Then one allow rule, `Bash(astack:*)`, covers them all.
-When `astack` is not on the PATH, run `bunx github:vahaah/astack#v0.1.0`.
-Exit 1 means that the skill or reference is unavailable.
-Say so once.
-Use `references/fallbacks.md`.
-
-Read these skills by path:
-
-- `astack-sharpen`, `astack-in-your-own-words`, `astack-how`, `astack-why` and `astack-recall`.
-- `astack-architect`, `astack-interrogate`, `astack-show-me-your-work` and `astack-figure-it-out`.
-- The playbooks of `astack-mode`.
-- `astack-principles` and each reference that its index says applies.
-
-Read `astack-wayfinder`, `astack-to-tickets` and `astack-to-spec` for their rules only.
-Each ticket still goes through `astack-write-ticket`.
-
-Name `/astack-retro`, `/astack-reflect` and `/astack-to-questionnaire` when they fit, because the user runs them. Never copy them.
-
 ## Pick the mode
 
 First look for a plan that covers the work.
@@ -211,6 +172,57 @@ S1 and S6 always start at least one subagent.
 S4 starts one when its trigger holds.
 Skip S4 only when the work stays inside one function and adds no module, seam or schema.
 Then write `exhaust the design space. n/a. <reason>` under `## Gates`.
+
+## Read the skills of the stage
+
+Read a skill when its stage starts, and not before.
+A mode other than new reads only what its reference names.
+Tell each subagent to read its own skill, as the briefs in `references/stages.md` do.
+When a stage runs inline with no subagent, the main thread reads the skills of that stage.
+
+| Stage | Load | Read by path |
+|---|---|---|
+| S0 | `astack-write-docs`, for the prose of the plan. ASD-STE100 takes priority over its other prose rules | `astack-in-your-own-words`, `astack-sharpen`. `astack-show-me-your-work` before the first trail row |
+| S1 | `astack-research`, for a fact outside the repo | The S1 subagents read `astack-how`, `astack-why` and `astack-recall` |
+| S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
+| S4 | `astack-codebase-design` for the depth words. `astack-prototype` when a person must judge a prototype | The S4 lead reads `astack-architect` and `astack-arena`. A fork that a test settles reads `astack-mode playbooks/prototype.md` |
+| S5 | None | `astack-principles` and each reference that its index says applies. The slicing rules of `astack-to-tickets`. `astack-figure-it-out` for a large migration or an unattended run. The charting rules of `astack-wayfinder`, in a programme |
+| S6 | None | The S6 lead reads `astack-interrogate`, or `astack-principles references/attack-the-premise.md` |
+| S7 | `astack-write-ticket` for each ticket | The rules of `astack-to-spec`, when the owner asks for a spec |
+| S8 | `astack-write-docs` for ADRs, the glossary and PR bodies | None |
+
+The other skills set `disable-model-invocation`, so the model cannot invoke them.
+Read their SKILL.md by path:
+
+```sh
+astack skill-path astack:architect
+astack skill-path astack:mode playbooks/prototype.md
+```
+
+Each command prints an absolute path.
+Read that file.
+Run each `astack` command as its own Bash call.
+Never chain it with `&&` or `cd`.
+Then one allow rule, `Bash(astack:*)`, covers them all.
+When `astack` is not on the PATH, run `bunx github:vahaah/astack#v0.1.0`.
+Exit 1 means that the skill or reference is unavailable.
+Say so once.
+Use `references/fallbacks.md`.
+
+Name `/astack-retro`, `/astack-reflect` and `/astack-to-questionnaire` when they fit, because the user runs them. Never copy them.
+Each ticket still goes through `astack-write-ticket`.
+
+## Recover after a compaction
+
+A host can keep only part of this file after a compaction.
+During planning, after a compaction, read this file again.
+Run `astack check-plan --brief`, and read the plan file and the last trail rows.
+
+Select the mode from the request, plan, tracker, and Git with the existing route rules.
+For an existing plan, follow Resume in `references/upkeep.md`.
+Use the trail and current artifacts to recover unfinished planning work.
+The plan records implementation sessions, and its frontmatter holds status, tier, home, and grants.
+Read the skills required by the recovered mode and current work, because earlier reads can be gone.
 
 ## Write the plan
 

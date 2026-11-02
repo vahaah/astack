@@ -14,6 +14,7 @@ const ownFiles: readonly string[] = [
 	MANAGED_PATHS.profile,
 	MANAGED_PATHS.notice,
 	MANAGED_PATHS.reviewStub,
+	MANAGED_PATHS.reviewFallback,
 	MANAGED_PATHS.reviewProfile,
 ];
 

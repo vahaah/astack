@@ -1,7 +1,10 @@
+export const REVIEW_FALLBACK_FILE = "FALLBACK.md";
+
 export const MANAGED_PATHS = {
 	profile: ".astack/profile.json",
 	notice: ".astack/NOTICE",
 	reviewStub: ".claude/skills/pr-review-hardening/SKILL.md",
+	reviewFallback: `.astack/pr-review-hardening/${REVIEW_FALLBACK_FILE}`,
 	reviewProfile: ".claude/pr-review-hardening.profile.md",
 	settings: ".claude/settings.json",
 } as const;

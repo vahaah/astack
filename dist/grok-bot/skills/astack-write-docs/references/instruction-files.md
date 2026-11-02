@@ -3,6 +3,8 @@
 `AGENTS.md` is the shared instruction file for coding agents in a repo.
 Every session loads it, so every line costs tokens on every task.
 Include facts needed for all tasks that an agent cannot find with one search elsewhere.
+Include stable rules only. Give each rule one sentence and a pointer to its ADR, test or lint.
+Add a trap only after a real failure. Use one table row for the trap, its effect and the correct action.
 
 ## Use one source
 

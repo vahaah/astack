@@ -20,3 +20,4 @@
 **/skills/astack-no-comments/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool for the approval question, and other tools ask in plain text
 **/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
 **/skills/astack-plan/references/phase-boundaries.md:\bClaude\b:names Claude as one end of a harness hand-off example
+**/skills/astack-writing-for-agents/SKILL-MECHANICS.md:\bClaude Code\b:the invocation rules state what Claude Code does with a user-only skill, and name Codex for contrast

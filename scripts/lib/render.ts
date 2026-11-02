@@ -1,7 +1,11 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, posix } from "node:path";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
-import { MANAGED_PATHS, mirroredStubPath } from "../../src/astack/managed.ts";
+import {
+	MANAGED_PATHS,
+	mirroredStubPath,
+	REVIEW_FALLBACK_FILE,
+} from "../../src/astack/managed.ts";
 import {
 	mergesWithoutCi,
 	missingFallbackKeys,
@@ -40,6 +44,7 @@ export type Artifact = {
 export type Rendered = { artifacts: Artifact[]; problems: string[] };
 
 export const reviewStubPath = MANAGED_PATHS.reviewStub;
+export const reviewFallbackPath = MANAGED_PATHS.reviewFallback;
 export const astackProfilePath = MANAGED_PATHS.profile;
 export const reviewProfilePath = MANAGED_PATHS.reviewProfile;
 export const noticePath = MANAGED_PATHS.notice;
@@ -49,6 +54,24 @@ export const reviewStubSource = join(
 	"templates",
 	"pr-review-hardening.stub.SKILL.md",
 );
+
+export const reviewFallbackSource = join(
+	repoRoot,
+	"templates",
+	"pr-review-hardening.stub.FALLBACK.md",
+);
+
+export type ReviewSources = {
+	readonly stub: string;
+	readonly fallback: string;
+};
+
+export const reviewSources: ReviewSources = {
+	stub: reviewStubSource,
+	fallback: reviewFallbackSource,
+};
+
+export const fallbackLink = `](${REVIEW_FALLBACK_FILE})`;
 
 export function readRuleSources(root = repoRoot): RuleSource[] {
 	const dir = join(root, "rules");
@@ -161,26 +184,38 @@ export function stubPaths(project: ProjectConfig): string[] {
 export function renderReviewCopies(
 	project: ProjectConfig,
 	dir: string,
-	stubSource = reviewStubSource,
+	sources: ReviewSources = reviewSources,
 	branch?: string,
 ): Rendered {
-	const stub = readOptional(stubSource);
+	const stub = readOptional(sources.stub);
+	const fallback = readOptional(sources.fallback);
 	const profile = readOptional(
 		join(profileDirFor(dir, branch), reviewProfileName),
 	);
 	const profileLabel = reviewProfileLabel(project.name, branch);
 	const problems: string[] = [];
 	const artifacts: Artifact[] = [];
-	if (stub === undefined) {
-		problems.push(`${stubSource} is missing`);
-	} else {
-		for (const path of stubPaths(project))
+	if (stub === undefined) problems.push(`${sources.stub} is missing`);
+	else if (!stub.includes(fallbackLink))
+		problems.push(
+			`${sources.stub} has no link to ${REVIEW_FALLBACK_FILE}, so a repo without the plugin cannot reach the fallback`,
+		);
+	if (fallback === undefined) problems.push(`${sources.fallback} is missing`);
+	if (stub !== undefined && fallback !== undefined) {
+		for (const path of stubPaths(project)) {
+			const target = posix.relative(posix.dirname(path), reviewFallbackPath);
 			artifacts.push({
 				path,
 				kind: "review-stub",
-				content: stub,
-				sources: [upstreamUses.keepList],
+				content: stub.replace(fallbackLink, `](${target})`),
 			});
+		}
+		artifacts.push({
+			path: reviewFallbackPath,
+			kind: "review-stub",
+			content: fallback,
+			sources: [upstreamUses.keepList],
+		});
 	}
 	if (profile === undefined) {
 		problems.push(`${profileLabel} is missing`);
@@ -290,7 +325,7 @@ function renderSet(
 	branch?: string,
 ): Rendered {
 	const review = flags.reviewStub
-		? renderReviewCopies(project, reviewDir, reviewStubSource, branch)
+		? renderReviewCopies(project, reviewDir, reviewSources, branch)
 		: { artifacts: [], problems: [] };
 	const copies: Artifact[] = [
 		...(flags.rules ? renderRuleCopies(project, sources) : []),

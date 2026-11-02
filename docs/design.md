@@ -31,6 +31,7 @@ The public history starts from a scanned tree with no private parent commit.
 | `marketplace/plugins/astack/` | Plugin source, skills, agents, hooks, and launcher |
 | `src/astack/` | CLI and hook implementation |
 | `scripts/` | Build, apply, scan, and dist code |
+| `templates/` | The review stub and its fallback, which apply writes into each repo |
 | `rules/` | Shared rules and the generated rule card |
 | `upstream/` | Frozen test data and licence evidence |
 | `examples/companion/` | Synthetic companion fixtures |
@@ -69,6 +70,23 @@ Read commands use the synthetic example when no private companion path is set.
 Write commands refuse that example.
 The neutrality scan of a public candidate must use the real companion.
 A secret scan also examines the complete candidate tree.
+
+The review stub that apply writes is a thin forwarding entry.
+Apply writes its fallback once at `.astack/pr-review-hardening/FALLBACK.md`.
+The agent reads the fallback only when the plugin is absent, so an available plugin never loads it.
+Each primary or mirrored stub links to the shared fallback through a relative path.
+The `managed` list names every stub and the fallback, and the removal and stray-copy checks know these paths.
+The shared fallback stays in the managed metadata scope, so file-scoped name rules need no new exception.
+Apply reports a stub that has no link to `FALLBACK.md` and a missing fallback source.
+The sentence guards of `tests/hardening-consistency.test.ts` read the fallback file and compare it with the file that the rendered stub links to.
+
+Skills name their conditional reads.
+`astack:plan` lists the skills that each stage reads, and a mode other than new reads only what its reference names.
+The main router of `astack:mode` reads the route table and the playbook index only when a route needs them.
+An `astack:delegate`, and a role that cannot name itself, reads the complete set, as `agents/delegate.md` requires.
+Branch-specific detail sits in direct references of `astack:types`, `astack:write-docs`, `astack:control-ui` and the hardening engine.
+`scripts/skill-load-report.ts` measures source words and bytes of these read sets.
+It is a source metric, not a token, call, time or cost figure, and `docs/runbooks/skill-load-measurement.md` names the limits.
 
 ## 3. Hook and CLI architecture
 

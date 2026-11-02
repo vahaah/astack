@@ -15,13 +15,12 @@ Commits and PRs record change history.
 Follow the repo's PR template, ADR format and document layout when they exist.
 Use this skill where the repo has no convention.
 
-The references provide details:
+Read the reference for the document that you write, and no other document type:
 
-- `references/adr.md` defines ADR criteria, format, amendments and supersession.
-- `references/pr-and-commits.md` defines PR bodies and commit messages.
-- `references/instruction-files.md` defines stable instruction files and includes a skeleton.
-- `references/technical-writing.md` defines four layers of technical writing.
-- `references/unslop.md` lists patterns to remove from prose.
+- ADR, or a change that reverses a decision: `references/adr.md`.
+- `AGENTS.md`, `CLAUDE.md` or another instruction file: `references/instruction-files.md`.
+- Any prose: `references/technical-writing.md`, then `references/unslop.md`.
+- PR bodies and commit messages: this file holds the rules, and `references/pr-and-commits.md` holds a worked example and the first-line rules.
 
 ## Write plainly
 
@@ -85,31 +84,14 @@ During design discussions, `astack:domain-modeling` updates the glossary and pro
 This skill owns their file names and format.
 Keep an existing `GLOSSARY.md` name.
 Otherwise use `CONTEXT.md`.
-
-Use a title that states a claim true after the decision takes effect.
-"Exports stream rows to the client" is a claim.
-"Export architecture" is only a topic.
-Number decisions `D1`, `D2` and onwards.
-Never renumber them.
-Cite them as `ADR NNNN D2`.
-Use a Note block for stale wording.
-Use an Amended block to quote and correct misleading wording.
-A changed decision needs a new ADR that supersedes the old one.
-Use the template in `references/adr.md`.
+Read `references/adr.md` for the title, the numbering, notes, amendments, supersession and the template.
 
 ## Keep instruction files lean
 
-Use `AGENTS.md` as the shared instruction source.
 Make `CLAUDE.md` contain `@AGENTS.md` or link to it with a symlink.
-Claude Code reads `AGENTS.md` independently only when no `CLAUDE.md` exists.
-Other agent files must be symlinks or generated copies of the shared source.
-
-- Keep the source under about 300 lines or 6,000 tokens. Every session loads it.
-- Include stable rules only. Give each rule one sentence and a pointer to its ADR, test or lint.
-- Put status, dates, phases, session IDs and delivery history in the tracker.
-- Add a trap only after a real failure. Use one table row for the trap, its effect and the correct action.
-
-Use `references/instruction-files.md` for a skeleton and reduction process.
+Keep the shared source under about 300 lines or 6,000 tokens, because every session loads it.
+Put status, dates, phases, session IDs and delivery history in the tracker.
+Read `references/instruction-files.md` for the rules, the skeleton and the reduction process.
 
 ## Write the PR body
 

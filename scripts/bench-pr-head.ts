@@ -16,7 +16,7 @@ import { valueAfter } from "../src/astack/cli/args.ts";
 const ROOT = resolve(import.meta.dir, "..");
 const LAUNCHER = join(ROOT, "marketplace/plugins/astack/bin/astack");
 const BUNDLE = join(ROOT, "marketplace/plugins/astack/bin/astack.js");
-const STUB = join(ROOT, "templates/pr-review-hardening.stub.SKILL.md");
+const FALLBACK = join(ROOT, "templates/pr-review-hardening.stub.FALLBACK.md");
 const ENGINE = join(
 	ROOT,
 	"marketplace/plugins/astack/skills/pr-review-hardening/SKILL.md",
@@ -445,11 +445,11 @@ function numberedSteps(text: string, from: string, to: string): number {
 }
 
 function sourceSteps() {
-	const stub = readFileSync(STUB, "utf8");
+	const fallback = readFileSync(FALLBACK, "utf8");
 	const engine = readFileSync(ENGINE, "utf8");
 	return {
 		manualHeadCheckSteps: numberedSteps(
-			stub,
+			fallback,
 			"When `command -v astack` fails, do the head check by hand:",
 			"Print `WORKTREE` as the output",
 		),
