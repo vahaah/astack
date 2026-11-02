@@ -16,13 +16,20 @@ The mode lasts until the context is compacted. After a compaction, read `SKILL.m
 
 ## Load the rules
 
+The reads depend on your role.
+The router is the chat that receives `/astack-mode`.
+A delegate is an `astack-delegate`.
+When you cannot name your role, read as a delegate. That is the complete set.
+
 1. Apply the rule card. The always-on copy is `astack.md` in the rules directory of the agent tool. When it is not in your context, read `references/card.md`.
-2. Read the mode section files in `references/`: `non-negotiables.md`, `autonomy.md`, `subagents.md`, `paths-and-wakeups.md`, `writing-the-reply.md`, and `playbooks.md`. Read `astack-principles` (`astack skill-path astack:principles`) for the engineering principles.
-3. Load `astack-coding-rules` before the first code edit.
+2. Every role reads these files in `references/`: `non-negotiables.md`, `autonomy.md`, `subagents.md`, `paths-and-wakeups.md` and `writing-the-reply.md`. Read `astack-principles` (`astack skill-path astack:principles`) for the engineering principles.
+3. A delegate also reads `playbooks.md` and `routes.md` in `references/`. The router reads `routes.md` in the route step below. It reads `playbooks.md` when a route row or a state row names an execution playbook.
+4. Load `astack-coding-rules` before the first code edit.
 
 ## Route the request
 
-Use the arguments in the user's request and the last owner message. Find the first row of the route table in `references/routes.md` that matches the owner's words. Open the playbook or skill that the row names. Copy its steps into the task list before you start. A step that you skip stays in the list with `skip: <reason>`.
+The router with no argument skips this section and follows "With no argument, do the next step".
+Otherwise use the arguments in the user's request and the last owner message. Read `references/routes.md`. Find the first row of its route table that matches the owner's words. Open the playbook or skill that the row names. Copy its steps into the task list before you start. A step that you skip stays in the list with `skip: <reason>`.
 
 The mode playbooks are in `references/` and `playbooks/`:
 
@@ -30,7 +37,7 @@ The mode playbooks are in `references/` and `playbooks/`:
 - `references/comments-triage.md` for "comments" and "check github comments".
 - `references/resume.md` for "resume" and a new session on old work.
 - `references/create-pr.md` for "create pr".
-- `references/playbooks.md` for the 23 execution playbooks in `playbooks/`.
+- `references/playbooks.md` for the 23 execution playbooks in `playbooks/`. The router reads it when a route row or a state row names an execution playbook.
 
 ## With no argument, do the next step
 

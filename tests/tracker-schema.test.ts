@@ -80,6 +80,7 @@ describe("save_issue fields that some Linear servers lack", () => {
 		expect(shippedTexts).toEqual(
 			expect.arrayContaining([
 				"templates/pr-review-hardening.stub.SKILL.md",
+				"templates/pr-review-hardening.stub.FALLBACK.md",
 				"examples/companion/projects/acme/pr-review-hardening.profile.md",
 			]),
 		);

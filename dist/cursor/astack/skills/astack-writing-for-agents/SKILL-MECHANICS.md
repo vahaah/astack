@@ -22,10 +22,17 @@ Apply the pointer rules from `SKILL.md` to that description.
 
 A user-invoked skill permits invocation only when the human types its name.
 Neither the agent nor another skill can invoke it independently.
-It has zero context load but requires human recall.
+It removes agent discovery and requires human recall.
 To select this form, set `disable-model-invocation: true`.
 Write its `description` as a one-line summary for the human.
 Remove discovery trigger lists from that summary.
+
+Its context cost depends on the host:
+
+- In Claude Code, `disable-model-invocation: true` keeps the description out of context until the human invokes the skill. The body then enters the conversation.
+- In Codex, `allow_implicit_invocation: false` stops implicit invocation. The Codex documentation does not promise that the metadata leaves the catalog.
+- Both hosts budget the catalog of descriptions. Claude Code can drop the descriptions of the skills that a session invokes least, when the listing is crowded. A source character count does not show what the model receives.
+- `skillOverrides` does not control the skills of a plugin.
 
 Choose model invocation only when the agent or another skill must reach the skill independently.
 If the skill is used only by explicit invocation, choose user invocation.

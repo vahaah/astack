@@ -16,7 +16,11 @@ import {
 	reviewProfileName,
 	validateProjectConfig,
 } from "../scripts/lib/projects.ts";
-import { reviewStubSource } from "../scripts/lib/render.ts";
+import {
+	renderReviewCopies,
+	reviewFallbackSource,
+	reviewStubSource,
+} from "../scripts/lib/render.ts";
 import { exemptPaths } from "../scripts/lib/ste-exempt.ts";
 import { marketplacePlugins, originItems } from "../scripts/validate.ts";
 import {
@@ -47,7 +51,8 @@ import {
 const root = join(import.meta.dir, "..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 const engine = "marketplace/plugins/astack/skills/pr-review-hardening";
-const stub = readFileSync(reviewStubSource, "utf8");
+const stub = readFileSync(reviewFallbackSource, "utf8");
+const fallbackPath = "templates/pr-review-hardening.stub.FALLBACK.md";
 
 function paragraphStarting(text: string, start: string): string {
 	const line = text.split("\n").find((entry) => entry.startsWith(start));
@@ -61,6 +66,17 @@ function stepWith(text: string, part: string): string {
 		.find((entry) => /^\d+\. /.test(entry) && entry.includes(part));
 	if (line === undefined) throw new Error(`no step holds "${part}"`);
 	return line;
+}
+
+function sectionLines(text: string, heading: string): string[] {
+	const from = text.indexOf(`\n## ${heading}\n`);
+	if (from === -1) throw new Error(`no section ${heading}`);
+	const to = text.indexOf("\n## ", from + 1);
+	return text
+		.slice(from, to === -1 ? undefined : to)
+		.split("\n")
+		.slice(2)
+		.filter((line) => line.trim() !== "");
 }
 
 function sentencesFrom(text: string, first: string, last: string): string {
@@ -82,6 +98,43 @@ const markdownUnder = (dir: string): string[] =>
 	readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
 		.filter((path) => path.endsWith(".md"))
 		.map((path) => join(dir, path));
+
+describe("the fallback that the guards read is the file that the stub links to", () => {
+	const acme = validateProjectConfig(
+		JSON.parse(readFileSync(join(exampleProjects, "acme.json"), "utf8")),
+		"acme",
+	);
+	const rendered = renderReviewCopies(acme, join(exampleProjects, "acme"));
+
+	test("the rendered stub links to a sibling that holds the text of the guards, and the stub holds no fallback sentence", () => {
+		const entry = readFileSync(reviewStubSource, "utf8");
+		expect(rendered.problems).toEqual([]);
+		expect(entry).toContain("[FALLBACK.md](FALLBACK.md)");
+		expect(
+			rendered.artifacts.find((artifact) =>
+				artifact.path.endsWith("/pr-review-hardening/FALLBACK.md"),
+			)?.content,
+		).toBe(stub);
+		for (const sentence of [
+			"Each iteration:",
+			"Gate run:",
+			"Preflight:",
+			"Decide:",
+		])
+			expect(entry).not.toContain(sentence);
+	});
+
+	test("a stub that does not link to its fallback fails the render", () => {
+		expect(
+			renderReviewCopies(acme, join(exampleProjects, "acme"), {
+				stub: join(root, "README.md"),
+				fallback: reviewFallbackSource,
+			}).problems,
+		).toEqual([
+			`${join(root, "README.md")} has no link to FALLBACK.md, so a repo without the plugin cannot reach the fallback`,
+		]);
+	});
+});
 
 describe("the profile scans", () => {
 	const writtenBy = (projects: string): string[] =>
@@ -1497,7 +1550,7 @@ describe("the head of the PR on every path", () => {
 		].filter((path) => read(path).includes("astack check pr-head"));
 		const scopes = [
 			[`${engine}/SKILL.md`, engineHeadCheck],
-			["templates/pr-review-hardening.stub.SKILL.md", stubCommandBlock],
+			[fallbackPath, stubCommandBlock],
 		] as const;
 		expect(callers).toEqual(scopes.map(([path]) => path));
 		for (const [, text] of scopes)
@@ -2303,7 +2356,11 @@ describe("each diff runs against the fetched base", () => {
 		).toEqual([]);
 	});
 
-	test.each([...texts, "templates/pr-review-hardening.stub.SKILL.md"])(
+	test.each([
+		...texts,
+		"templates/pr-review-hardening.stub.SKILL.md",
+		fallbackPath,
+	])(
 		"%s runs no git command against the local base branch, which can be behind",
 		(path) => {
 			expect(gitOnBase(read(path))).toEqual([]);
@@ -2366,8 +2423,17 @@ describe("a PR that changes CI", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const fallback = stub.slice(stub.indexOf("## Fallback"));
+	const ciPins = read(`${engine}/references/ci-pins.md`);
+	const ciPinsPointer =
+		"When the exit code is not 0, or when the diff changes a CI file, read `references/ci-pins.md` for what each exit code means.";
+	const reachEngine = (preflight: string): string =>
+		preflight.replace(
+			ciPinsPointer,
+			sectionLines(ciPins, "What each exit code means").join(" "),
+		);
 	const ciCheck = [
-		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. When the diff also changes another file, the check exits 1, because a red gate can then come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version. When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. When the diff also changes another file, the check exits 1, because a red gate can then come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
 		"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
 		"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
 		"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
@@ -2385,8 +2451,8 @@ describe("a PR that changes CI", () => {
 
 	test.each([
 		[
-			"the preflight of SKILL.md",
-			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
+			"the preflight of SKILL.md, with the reference that it points to",
+			reachEngine(sentencesFrom(engineSkill, "## Preflight", "## Baseline")),
 		],
 		[
 			"the preflight of the stub fallback",
@@ -2395,6 +2461,16 @@ describe("a PR that changes CI", () => {
 	])("%s stops, because the gates mirror the CI that apply read", (_, text) => {
 		for (const sentence of ciCheck) expect(text).toContain(sentence);
 		expect(text).not.toContain(everyVersionFile);
+	});
+
+	test("the preflight of SKILL.md points to the reference of the exit codes, and the stub fallback keeps each of its sentences", () => {
+		expect(sentencesFrom(engineSkill, "## Preflight", "## Baseline")).toContain(
+			ciPinsPointer,
+		);
+		expect(engineSkill).toContain("- `references/ci-pins.md`: ");
+		const preflight = sentencesFrom(fallback, "Preflight:", "Gate run:");
+		for (const line of sectionLines(ciPins, "What each exit code means"))
+			expect(preflight).toContain(line);
 	});
 
 	test.each([
@@ -3095,6 +3171,7 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const review = read(`${engine}/references/review.md`);
+	const ciPinsText = read(`${engine}/references/ci-pins.md`);
 	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	type Counterpart =
 		| {
@@ -3119,21 +3196,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 	});
 	const explains =
 		"It gives the reason for a step. It holds no step or stop of its own.";
+	const orderOfReads =
+		"It orders the reads of two sections of the engine. The stub holds the decision and the merge sentence in its own steps.";
+	const compaction =
+		"A compaction is an event of the host that loads the plugin skill. The fallback is read on demand, and its ledger step resumes a run that was cut off.";
 	const pointer =
 		"It names the reference that holds the detail. The stub states the short form in its own steps.";
 	const noChecklist =
 		"references/checklist.md ships only in the astack plugin, and the fallback runs when the plugin is absent. So the fallback has no checklist pass, no class field in its ledger and no lesson candidates.";
-
-	function sectionLines(text: string, heading: string): string[] {
-		const from = text.indexOf(`\n## ${heading}\n`);
-		if (from === -1) throw new Error(`no section ${heading}`);
-		const to = text.indexOf("\n## ", from + 1);
-		return text
-			.slice(from, to === -1 ? undefined : to)
-			.split("\n")
-			.slice(2)
-			.filter((line) => line.trim() !== "");
-	}
 
 	const argumentsRows: readonly Counterpart[] = [
 		stubbed("Arguments: `$ARGUMENTS`.", "Read the arguments, `$ARGUMENTS`."),
@@ -3316,6 +3386,22 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"If it does not reproduce, it is advisory.",
 			"It blocks only when the reproduction shows a concrete failure that the PR introduces.",
 		),
+		stubbed(
+			"A clean stop needs each condition of the Decide section.",
+			"- `stop_clean`: the iteration found no blocking finding",
+		),
+		stubbed(
+			"A merge needs each condition of the After the stop section.",
+			"Merge only when `merge.after_clean_stop` is `merge` and every line of `merge.conditions` holds.",
+		),
+		reasoned("Read both before the first iteration.", orderOfReads),
+	];
+
+	const compactionRows: readonly Counterpart[] = [
+		reasoned("A host can keep only part of this file", compaction),
+		reasoned("After a compaction, read this file again", compaction),
+		reasoned("Print `git rev-parse HEAD` and `git status --short`", compaction),
+		reasoned("Continue with the iteration after the highest", compaction),
 	];
 
 	const loadRows: readonly Counterpart[] = [
@@ -3599,41 +3685,9 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"Run `astack check ci-pins --base <BASE_SHA>`",
 			"run `astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code.",
 		),
-		stubbed(
-			"It exits 3 when the diff changes only paths under",
-			"It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses.",
-		),
-		stubbed(
-			"For exit 3, each tool version that CI sets up stays the same",
-			"For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`.",
-		),
-		stubbed(
-			"The check reads the tools of the setup steps",
-			"The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow.",
-		),
-		stubbed(
-			"It does not read a tool that a `run` step or a script installs",
-			"It does not read a tool that a `run` step or a script installs, so the review examines such a change.",
-		),
-		stubbed(
-			"When the diff also changes another file, the check exits 1",
-			"When the diff also changes another file, the check exits 1, because a red gate can then come from that file.",
-		),
-		stubbed(
-			"A version file is a file that a workflow or an action names",
-			"A version file is a file that a workflow or an action names in a `-version-file` input.",
-		),
-		stubbed(
-			"The check exits 1 when the diff changes a version file",
-			"The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes.",
-		),
-		stubbed(
-			"It also exits 1 when it cannot read an exact version",
-			"It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`.",
-		),
-		stubbed(
-			"It also exits 1 when the diff changes CI and a tool version",
-			"It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		reasoned(
+			"When the exit code is not 0, or when the diff changes a CI file, read",
+			pointer,
 		),
 		stubbed(
 			"When it exits 0 and its last line starts with `ok:`",
@@ -3650,14 +3704,6 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		stubbed(
 			"With no node and no bun, the launcher prints a note",
 			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
-		),
-		stubbed(
-			"Another change to a version file",
-			"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
-		),
-		stubbed(
-			"so only CI can prove a CI change",
-			"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
 		),
 		stubbed(
 			"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
@@ -4642,6 +4688,53 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		),
 	];
 
+	const ciPinsRows: readonly Counterpart[] = [
+		stubbed(
+			"It exits 3 when the diff changes only paths under",
+			"It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses.",
+		),
+		stubbed(
+			"For exit 3, each tool version that CI sets up stays the same",
+			"For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`.",
+		),
+		stubbed(
+			"The check reads the tools of the setup steps",
+			"The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow.",
+		),
+		stubbed(
+			"It does not read a tool that a `run` step or a script installs",
+			"It does not read a tool that a `run` step or a script installs, so the review examines such a change.",
+		),
+		stubbed(
+			"When the diff also changes another file, the check exits 1",
+			"When the diff also changes another file, the check exits 1, because a red gate can then come from that file.",
+		),
+		stubbed(
+			"A version file is a file that a workflow or an action names",
+			"A version file is a file that a workflow or an action names in a `-version-file` input.",
+		),
+		stubbed(
+			"The check exits 1 when the diff changes a version file",
+			"The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes.",
+		),
+		stubbed(
+			"It also exits 1 when it cannot read an exact version",
+			"It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`.",
+		),
+		stubbed(
+			"It also exits 1 when the diff changes CI and a tool version",
+			"It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		),
+		stubbed(
+			"Another change to a version file",
+			"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
+		),
+		stubbed(
+			"so only CI can prove a CI change",
+			"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
+		),
+	];
+
 	const skillSection = (heading: string): string[] =>
 		sectionLines(engineSkill, heading);
 
@@ -4667,6 +4760,11 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		],
 		["the authority of SKILL.md", skillSection("Authority"), authorityRows],
 		[
+			"the compaction recovery of SKILL.md",
+			skillSection("Recover after a compaction"),
+			compactionRows,
+		],
+		[
 			"the profile load of SKILL.md",
 			skillSection("Load the profile"),
 			loadRows,
@@ -4677,6 +4775,11 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			rulesRows,
 		],
 		["the preflight of SKILL.md", skillSection("Preflight"), preflightRows],
+		[
+			"the exit codes in references/ci-pins.md",
+			sectionLines(ciPinsText, "What each exit code means"),
+			ciPinsRows,
+		],
 		["the baseline of SKILL.md", skillSection("Baseline"), baselineRows],
 		["the iterations of SKILL.md", skillSection("Iterate"), iterateRows],
 		["the decision of SKILL.md", skillSection("Decide"), decideRows],
@@ -4732,6 +4835,7 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"Review the PR that --pr names",
 			"The head check",
 			"Authority",
+			"Recover after a compaction",
 			"Load the profile",
 			"Rules for the whole run",
 			"Preflight",

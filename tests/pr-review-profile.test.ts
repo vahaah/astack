@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { reviewStubSource } from "../scripts/lib/render.ts";
+import {
+	reviewFallbackSource,
+	reviewStubSource,
+} from "../scripts/lib/render.ts";
 import {
 	extractProfileBlock,
 	FIXER_FLAGS,
@@ -72,7 +75,8 @@ describe("project profiles", () => {
 	});
 
 	test("the shared stub names no old install", () => {
-		expect(readFileSync(reviewStubSource, "utf8")).not.toMatch(/agent-stack/i);
+		for (const source of [reviewStubSource, reviewFallbackSource])
+			expect(readFileSync(source, "utf8")).not.toMatch(/agent-stack/i);
 	});
 });
 

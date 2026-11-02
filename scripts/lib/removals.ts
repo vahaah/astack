@@ -14,10 +14,12 @@ const ownFiles: readonly string[] = [
 	MANAGED_PATHS.profile,
 	MANAGED_PATHS.notice,
 	MANAGED_PATHS.reviewStub,
+	MANAGED_PATHS.reviewFallback,
 	MANAGED_PATHS.reviewProfile,
 ];
 
-const stubShape = /(?:^|\/)skills\/pr-review-hardening\/SKILL\.md$/;
+const stubShape =
+	/(?:^|\/)skills\/pr-review-hardening\/(?:SKILL|FALLBACK)\.md$/;
 
 export function hasManagedShape(path: string, project: ProjectConfig): boolean {
 	if (ownFiles.includes(path)) return true;

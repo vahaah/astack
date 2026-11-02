@@ -1,13 +1,20 @@
+export const REVIEW_FALLBACK_FILE = "FALLBACK.md";
+
 export const MANAGED_PATHS = {
 	profile: ".astack/profile.json",
 	notice: ".astack/NOTICE",
 	reviewStub: ".claude/skills/pr-review-hardening/SKILL.md",
+	reviewFallback: `.claude/skills/pr-review-hardening/${REVIEW_FALLBACK_FILE}`,
 	reviewProfile: ".claude/pr-review-hardening.profile.md",
 	settings: ".claude/settings.json",
 } as const;
 
 export function mirroredStubPath(skillsDir: string): string {
 	return `${skillsDir}/pr-review-hardening/SKILL.md`;
+}
+
+export function mirroredFallbackPath(skillsDir: string): string {
+	return `${skillsDir}/pr-review-hardening/${REVIEW_FALLBACK_FILE}`;
 }
 
 export type RetiredPath = { readonly path: string; readonly reason: string };
