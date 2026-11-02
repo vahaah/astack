@@ -215,11 +215,14 @@ Each ticket still goes through `astack-write-ticket`.
 ## Recover after a compaction
 
 A host can keep only part of this file after a compaction.
-After a compaction, read this file again.
+During planning, after a compaction, read this file again.
 Run `astack check-plan --brief`, and read the plan file and the last trail rows.
-The plan frontmatter gives the tier and the mode.
-Continue from the first stage that the plan shows as open.
-Read the skills of that stage again, because earlier reads can be gone.
+
+Select the mode from the request, plan, tracker, and Git with the existing route rules.
+For an existing plan, follow Resume in `references/upkeep.md`.
+Use the trail and current artifacts to recover unfinished planning work.
+The plan records implementation sessions, and its frontmatter holds status, tier, home, and grants.
+Read the skills required by the recovered mode and current work, because earlier reads can be gone.
 
 ## Write the plan
 

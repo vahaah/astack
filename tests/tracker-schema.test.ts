@@ -121,3 +121,23 @@ describe("save_issue fields that some Linear servers lack", () => {
 		);
 	});
 });
+
+describe("plan recovery uses the recorded workflow state", () => {
+	test("compaction selects the existing mode without inventing frontmatter or open planning stages", () => {
+		const text = read("marketplace/plugins/astack/skills/plan/SKILL.md");
+		const recovery =
+			text
+				.split("## Recover after a compaction")[1]
+				?.split("## Write the plan")[0] ?? "";
+		expect(recovery).toContain(
+			"Select the mode from the request, plan, tracker, and Git with the existing route rules.",
+		);
+		expect(recovery).toContain("follow Resume in `references/upkeep.md`");
+		expect(recovery).not.toContain(
+			"The plan frontmatter gives the tier and the mode",
+		);
+		expect(recovery).not.toContain(
+			"the first stage that the plan shows as open",
+		);
+	});
+});
