@@ -3167,6 +3167,25 @@ describe("the ledger keeps the evidence of the whole run", () => {
 	);
 });
 
+describe("hardening compaction keeps the active iteration", () => {
+	test("recovery completes the in-progress iteration instead of exhausting the iteration cap", () => {
+		const recovery = sentencesFrom(
+			read(`${engine}/SKILL.md`),
+			"## Recover after a compaction",
+			"## Load the profile",
+		);
+		expect(recovery).toContain(
+			"Continue the current iteration and its unfinished step.",
+		);
+		expect(recovery).toContain(
+			"Complete every required step of that iteration before deciding.",
+		);
+		expect(recovery).not.toContain(
+			"Continue with the iteration after the highest",
+		);
+	});
+});
+
 describe("each sentence of the run has a counterpart in the stub fallback", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
@@ -3401,7 +3420,22 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		reasoned("A host can keep only part of this file", compaction),
 		reasoned("After a compaction, read this file again", compaction),
 		reasoned("Print `git rev-parse HEAD` and `git status --short`", compaction),
-		reasoned("Continue with the iteration after the highest", compaction),
+		reasoned(
+			"Continue the current iteration and its unfinished step.",
+			compaction,
+		),
+		reasoned(
+			"Complete every required step of that iteration before deciding.",
+			compaction,
+		),
+		reasoned(
+			"Do not advance the iteration merely because the context was compacted.",
+			compaction,
+		),
+		reasoned(
+			"Use the interrupted-run resume rule only when a new run starts after an interruption.",
+			compaction,
+		),
 	];
 
 	const loadRows: readonly Counterpart[] = [

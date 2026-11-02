@@ -56,7 +56,10 @@ Read both before the first iteration.
 A host can keep only part of this file after a compaction.
 After a compaction, read this file again from its start.
 Print `git rev-parse HEAD` and `git status --short`, and read the ledger of the branch.
-Continue with the iteration after the highest `iteration` in the ledger, as a run that was cut off does.
+Continue the current iteration and its unfinished step.
+Complete every required step of that iteration before deciding.
+Do not advance the iteration merely because the context was compacted.
+Use the interrupted-run resume rule only when a new run starts after an interruption.
 
 ## Load the profile
 
