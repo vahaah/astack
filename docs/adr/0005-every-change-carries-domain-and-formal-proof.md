@@ -29,6 +29,9 @@ No profile flag or minimal hook preset disables this requirement.
 The contract names the affected contexts, terms, aggregates, invariants, effective ADRs, and implementation controls.
 Product names and interfaces follow their domain language.
 Technical adapters keep I/O outside pure admission rules.
+The ADR reader accepts plain metadata and bold list metadata with an accepted provenance stamp.
+It recognises numbered decision headings with a full stop or a long dash.
+Fenced examples and duplicate Status fields cannot establish an effective decision.
 The ChangeProof aggregate owns proof admission.
 ReviewRun retains its separate ledger and review authority.
 

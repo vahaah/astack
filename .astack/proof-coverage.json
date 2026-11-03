@@ -53,6 +53,10 @@
 			"controls": [
 				"proof-domain-reference",
 				"proof-adr-contract",
+				"proof-adr-format",
+				"proof-adr-status",
+				"proof-adr-duplicate",
+				"proof-adr-examples",
 				"proof-symlink-reference"
 			]
 		},

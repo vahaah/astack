@@ -30,7 +30,10 @@ The manifest never stores its own digest or its containing commit's hash.
 ## Domain and decisions
 
 Use the affected context's glossary and aggregate symbol.
-Each governing ADR must be accepted and contain the cited `### D<n>.` decision.
+Each governing ADR must be accepted and contain the cited decision.
+Metadata uses `Status: Accepted` or `- **Status:** Accepted · <stamp>`.
+Decision headings use `### D<n>. <claim>` or `### D<n> — <claim>`.
+Fenced examples and duplicate Status fields cannot provide governing metadata.
 It also connects the function contract to formal claims, category composition, implementation correspondence, and verification controls.
 The ADR explains the claim and its limits.
 Models and tests remain executable files linked from that explanation.
