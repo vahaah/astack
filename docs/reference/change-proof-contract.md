@@ -9,7 +9,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-01] Missing contracts and summary-only results cannot admit a delivery.
 - [criterion:CP-02] Admission requires complete positive, expected negative, and unchanged restored-positive results.
 - [criterion:CP-03] A syntax error, wrong violation, or unchanged passing countermodel cannot count as the negative control.
-- [criterion:CP-04] Scope and candidate binding cover live edits, staged edits, removals, and nonignored untracked files.
+- [criterion:CP-04] Scope and candidate binding cover live edits, executable modes, staged edits, removals, and nonignored untracked files.
 - [criterion:CP-05] Model dependencies, configurations, and mutation targets remain explicit and safe under the supported subset.
 - [criterion:CP-06] Domain, symbol, control, and governing ADR references must resolve to current integrated contracts.
 - [criterion:CP-07] Declared arrows compose, effects stay explicit, and applicable laws have witnesses for the actual carrier.

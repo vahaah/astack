@@ -91,6 +91,8 @@ The notation does not add a runtime monad wrapper.
 
 These links describe the abstraction relation.
 They do not establish refinement of all TypeScript behavior.
+`snapshot` binds the bytes of each file, the staged index, and the Git mode of each regular file.
+The model's `InputChange` represents a change to any of those inputs.
 The [admission implementation](../../src/astack/change-proof/admission.ts) remains subject to its executable controls.
 
 #### Verification

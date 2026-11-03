@@ -28,7 +28,8 @@
 			"controls": [
 				"proof-scope-hole",
 				"proof-stale-digest",
-				"proof-index-binding"
+				"proof-index-binding",
+				"proof-worktree-mode"
 			]
 		},
 		{

@@ -4,6 +4,7 @@ import {
 	readFileSync,
 	readlinkSync,
 	realpathSync,
+	type Stats,
 	statSync,
 } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
@@ -87,9 +88,7 @@ export function changedPaths(
 	);
 }
 
-function lstatOrUndefined(
-	path: string,
-): ReturnType<typeof lstatSync> | undefined {
+function lstatOrUndefined(path: string): Stats | undefined {
 	try {
 		return lstatSync(path);
 	} catch {
@@ -128,8 +127,10 @@ function entryLine(root: string, base: string, path: string): string {
 		return `absent ${blob ?? "none"}`;
 	}
 	if (stat.isSymbolicLink()) return `link ${readlinkSync(full)}`;
-	if (stat.isFile())
-		return `file ${createHash("sha256").update(readFileSync(full)).digest("hex")}`;
+	if (stat.isFile()) {
+		const gitMode = (stat.mode & 0o100) !== 0 ? "100755" : "100644";
+		return `file ${gitMode} ${createHash("sha256").update(readFileSync(full)).digest("hex")}`;
+	}
 	return stat.isDirectory() ? "directory" : "other";
 }
 

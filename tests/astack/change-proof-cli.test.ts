@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn, spawnSync } from "node:child_process";
 import {
+	chmodSync,
 	mkdirSync,
 	readdirSync,
 	readFileSync,
@@ -219,6 +220,56 @@ describe("astack check proof", () => {
 		expect(
 			git(repo.root, "diff", "--cached", "--", "formal/Gate.tla"),
 		).toContain("-Admit ==");
+	});
+
+	test("[control:proof-worktree-mode] losing an unstaged launcher execute bit during model execution makes the proof stale", async () => {
+		const repo = proofRepo(scratch);
+		git(repo.root, "config", "core.fileMode", "true");
+		const launcher = join(repo.root, "src/launcher.sh");
+		const content = "#!/bin/sh\nprintf 'ready\\n'\n";
+		writeFileSync(launcher, content);
+		chmodSync(launcher, 0o755);
+		git(repo.root, "add", "src/launcher.sh");
+		git(repo.root, "commit", "-q", "-m", "add the launcher");
+		const index = git(repo.root, "ls-files", "--stage", "-z");
+		const executable = spawnSync(launcher, [], { encoding: "utf8" });
+		expect({ code: executable.status, out: executable.stdout }).toEqual({
+			code: 0,
+			out: "ready\n",
+		});
+		let changed = false;
+		const run = await new Promise<Run>((done) => {
+			const child = spawn(process.execPath, [CLI, "check", "proof"], {
+				cwd: repo.root,
+				env: proofEnv({}),
+			});
+			let out = "";
+			let err = "";
+			child.stdout.on("data", (chunk: Buffer) => {
+				out += chunk.toString();
+				if (!changed && out.includes("positive:")) {
+					changed = true;
+					chmodSync(launcher, 0o644);
+				}
+			});
+			child.stderr.on("data", (chunk: Buffer) => {
+				err += chunk.toString();
+			});
+			child.on("close", (code) => done({ code, out, err }));
+		});
+		expect(changed).toBe(true);
+		expect(run.err).toBe("");
+		expect(readFileSync(launcher, "utf8")).toBe(content);
+		expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
+		expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
+			"mode change 100755 => 100644 src/launcher.sh",
+		);
+		const blocked = spawnSync(launcher, [], { encoding: "utf8" });
+		expect(blocked.error?.message).toContain("EACCES");
+		expect(lastLine(run.out)).toStartWith(
+			"stop: proof stale: the candidate inputs changed during the proof",
+		);
+		expect(run.code).toBe(1);
 	});
 
 	test("[control:proof-symlink-reference] a glossary cannot hide unbound input bytes behind an in-repo symlink", () => {
