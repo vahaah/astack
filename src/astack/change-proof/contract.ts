@@ -208,157 +208,190 @@ export function isRepoPath(path: string): boolean {
 
 type Sink = { first: string | undefined };
 
-class Fields {
-	constructor(
-		private readonly sink: Sink,
-		private readonly raw: Raw,
-		private readonly where: string,
-	) {}
-
-	static open(
-		sink: Sink,
-		value: unknown,
-		where: string,
-		keys: readonly string[],
-	): Fields {
-		if (!isRaw(value)) {
-			sink.first ??= `${where} must be an object`;
-			return new Fields(sink, {}, where);
-		}
-		const extra = Object.keys(value).find((key) => !keys.includes(key));
-		if (extra !== undefined)
-			sink.first ??= `${where} has the unknown key ${JSON.stringify(extra)}`;
-		return new Fields(sink, value, where);
-	}
-
-	private at(key: string): string {
-		return this.where === "the proof" ? key : `${this.where}.${key}`;
-	}
-
-	fail(key: string, message: string): void {
-		this.report(this.at(key), message);
-	}
-
-	value(key: string): unknown {
-		return this.raw[key];
-	}
-
-	text(key: string, pattern?: RegExp, shape = "nonblank text"): string {
-		const value = this.raw[key];
-		if (
-			typeof value !== "string" ||
-			value.trim() === "" ||
-			(pattern !== undefined && !pattern.test(value))
-		) {
-			this.fail(key, `must be ${shape}`);
-			return "";
-		}
-		return value;
-	}
-
-	string(key: string): string {
-		const value = this.raw[key];
-		if (typeof value === "string") return value;
-		this.fail(key, "must be a string");
-		return "";
-	}
-
-	path(key: string, extension?: string): string {
-		const value = this.text(key);
-		if (
-			value !== "" &&
-			(!isRepoPath(value) ||
-				(extension !== undefined && !value.endsWith(extension)))
-		)
-			this.fail(
-				key,
-				`must be a repository path${extension === undefined ? "" : ` ending in ${extension}`}, outside .git`,
-			);
-		return value;
-	}
-
-	report(where: string, message: string): void {
-		this.sink.first ??= `${where} ${message}`;
-	}
-
-	oneOf<T extends string>(key: string, values: readonly [T, ...T[]]): T {
-		const value = this.raw[key];
-		const found = values.find((candidate) => candidate === value);
-		if (found === undefined)
-			this.fail(key, `must be one of ${values.join(", ")}`);
-		return found ?? values[0];
-	}
-
+type Fields = {
+	at(key: string): string;
+	fail(key: string, message: string): void;
+	value(key: string): unknown;
+	text(key: string, pattern?: RegExp, shape?: string): string;
+	string(key: string): string;
+	path(key: string, extension?: string): string;
+	report(where: string, message: string): void;
+	oneOf<T extends string>(key: string, values: readonly [T, ...T[]]): T;
 	items<T>(
 		key: string,
 		min: number,
 		read: (value: unknown, where: string) => T,
-	): readonly T[] {
-		const value = this.raw[key];
-		if (!Array.isArray(value) || value.length < min) {
-			this.fail(
-				key,
-				min === 0
-					? "must be an array"
-					: `must be an array with at least ${min} ${min === 1 ? "entry" : "entries"}`,
-			);
-			return [];
-		}
-		return value.map((item, index) => read(item, `${this.at(key)}[${index}]`));
-	}
-
+	): readonly T[];
 	texts(
 		key: string,
 		min: number,
 		pattern?: RegExp,
-		shape = "nonblank text",
-	): readonly string[] {
-		return this.items(key, min, (item, where) => {
-			if (
-				typeof item !== "string" ||
-				item.trim() === "" ||
-				(pattern !== undefined && !pattern.test(item))
-			) {
-				this.report(where, `must be ${shape}`);
-				return "";
-			}
-			return item;
-		});
-	}
-
-	paths(key: string, min: number, extension: string): readonly string[] {
-		return this.texts(key, min).map((path, index) => {
-			if (path !== "" && (!isRepoPath(path) || !path.endsWith(extension)))
-				this.report(
-					`${this.at(key)}[${index}]`,
-					`must be a repository path ending in ${extension}, outside .git`,
-				);
-			return path;
-		});
-	}
-
+		shape?: string,
+	): readonly string[];
+	paths(key: string, min: number, extension: string): readonly string[];
 	object<T>(
 		key: string,
 		keys: readonly string[],
 		read: (fields: Fields) => T,
-	): T {
-		return read(Fields.open(this.sink, this.raw[key], this.at(key), keys));
-	}
-
+	): T;
 	objects<T>(
 		key: string,
 		min: number,
 		keys: readonly string[],
 		read: (fields: Fields) => T,
-	): readonly T[] {
-		return this.items(key, min, (item, where) =>
-			read(Fields.open(this.sink, item, where, keys)),
-		);
-	}
+	): readonly T[];
+	child(value: unknown, where: string, keys: readonly string[]): Fields;
+};
 
-	child(value: unknown, where: string, keys: readonly string[]): Fields {
-		return Fields.open(this.sink, value, where, keys);
+function openFields(
+	sink: Sink,
+	value: unknown,
+	where: string,
+	keys: readonly string[],
+): Fields {
+	let raw: Raw;
+	if (!isRaw(value)) {
+		sink.first ??= `${where} must be an object`;
+		raw = {};
+	} else {
+		const extra = Object.keys(value).find((key) => !keys.includes(key));
+		if (extra !== undefined)
+			sink.first ??= `${where} has the unknown key ${JSON.stringify(extra)}`;
+		raw = value;
 	}
+	const fields: Fields = {
+		at(key: string): string {
+			return where === "the proof" ? key : `${where}.${key}`;
+		},
+
+		fail(key: string, message: string): void {
+			fields.report(fields.at(key), message);
+		},
+
+		value(key: string): unknown {
+			return raw[key];
+		},
+
+		text(key: string, pattern?: RegExp, shape = "nonblank text"): string {
+			const value = raw[key];
+			if (
+				typeof value !== "string" ||
+				value.trim() === "" ||
+				(pattern !== undefined && !pattern.test(value))
+			) {
+				fields.fail(key, `must be ${shape}`);
+				return "";
+			}
+			return value;
+		},
+
+		string(key: string): string {
+			const value = raw[key];
+			if (typeof value === "string") return value;
+			fields.fail(key, "must be a string");
+			return "";
+		},
+
+		path(key: string, extension?: string): string {
+			const value = fields.text(key);
+			if (
+				value !== "" &&
+				(!isRepoPath(value) ||
+					(extension !== undefined && !value.endsWith(extension)))
+			)
+				fields.fail(
+					key,
+					`must be a repository path${extension === undefined ? "" : ` ending in ${extension}`}, outside .git`,
+				);
+			return value;
+		},
+
+		report(where: string, message: string): void {
+			sink.first ??= `${where} ${message}`;
+		},
+
+		oneOf<T extends string>(key: string, values: readonly [T, ...T[]]): T {
+			const value = raw[key];
+			const found = values.find((candidate) => candidate === value);
+			if (found === undefined)
+				fields.fail(key, `must be one of ${values.join(", ")}`);
+			return found ?? values[0];
+		},
+
+		items<T>(
+			key: string,
+			min: number,
+			read: (value: unknown, where: string) => T,
+		): readonly T[] {
+			const value = raw[key];
+			if (!Array.isArray(value) || value.length < min) {
+				fields.fail(
+					key,
+					min === 0
+						? "must be an array"
+						: `must be an array with at least ${min} ${min === 1 ? "entry" : "entries"}`,
+				);
+				return [];
+			}
+			return value.map((item, index) =>
+				read(item, `${fields.at(key)}[${index}]`),
+			);
+		},
+
+		texts(
+			key: string,
+			min: number,
+			pattern?: RegExp,
+			shape = "nonblank text",
+		): readonly string[] {
+			return fields.items(key, min, (item, where) => {
+				if (
+					typeof item !== "string" ||
+					item.trim() === "" ||
+					(pattern !== undefined && !pattern.test(item))
+				) {
+					fields.report(where, `must be ${shape}`);
+					return "";
+				}
+				return item;
+			});
+		},
+
+		paths(key: string, min: number, extension: string): readonly string[] {
+			return fields.texts(key, min).map((path, index) => {
+				if (path !== "" && (!isRepoPath(path) || !path.endsWith(extension)))
+					fields.report(
+						`${fields.at(key)}[${index}]`,
+						`must be a repository path ending in ${extension}, outside .git`,
+					);
+				return path;
+			});
+		},
+
+		object<T>(
+			key: string,
+			keys: readonly string[],
+			read: (fields: Fields) => T,
+		): T {
+			return read(openFields(sink, raw[key], fields.at(key), keys));
+		},
+
+		objects<T>(
+			key: string,
+			min: number,
+			keys: readonly string[],
+			read: (fields: Fields) => T,
+		): readonly T[] {
+			return fields.items(key, min, (item, where) =>
+				read(openFields(sink, item, where, keys)),
+			);
+		},
+
+		child(value: unknown, where: string, keys: readonly string[]): Fields {
+			return openFields(sink, value, where, keys);
+		},
+	};
+	return fields;
 }
 
 const readLink = (fields: Fields): FileLink => ({
@@ -834,7 +867,7 @@ export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
 	}
 	const sink: Sink = { first: undefined };
 	const proof = readProof(
-		Fields.open(sink, parsed, "the proof", [
+		openFields(sink, parsed, "the proof", [
 			"version",
 			"change",
 			"base",
