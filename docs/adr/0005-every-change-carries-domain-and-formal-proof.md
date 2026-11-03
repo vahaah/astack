@@ -117,6 +117,10 @@ A parse error or another violation does not satisfy that obligation.
 The unchanged positive model must pass again.
 Current results belong to CI and proof receipts, so this ADR does not copy a transient pass result.
 
+`bun run test` runs the repository proof before integration tests as a toolchain prerequisite.
+The integration suite starts after a complete successful toolchain check.
+`bun run check` repeats proof admission after the implementation gates.
+
 ### D4. Adoption preserves review and CI authority
 
 Each repo adopts the CLI pin, proof files, required CI check, companion gate, and applicable branch overlays together.
