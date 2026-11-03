@@ -92,7 +92,17 @@ The notation does not add a runtime monad wrapper.
 These links describe the abstraction relation.
 They do not establish refinement of all TypeScript behavior.
 `snapshot` binds the bytes of each file, the staged index, and the Git mode of each regular file.
+
+Initialized submodules apply the same rules to their HEAD, index, and files, including nested submodules.
+An empty uninitialized submodule binds its gitlink and empty state.
+A populated submodule without a readable checkout blocks admission.
 The model's `InputChange` represents a change to any of those inputs.
+
+Let `D(R)` denote the digest of the index and recorded worktree entries of repository `R`.
+For a child checkout `C`, its parent entry records `(Head(C), D(C))`.
+Each initialized child uses the same rule.
+Under the no-collision assumption, equal snapshots preserve the recorded data at every finite depth.
+The finite model abstracts this structure as `current`.
 The [admission implementation](../../src/astack/change-proof/admission.ts) remains subject to its executable controls.
 
 #### Verification

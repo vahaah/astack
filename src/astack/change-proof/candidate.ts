@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import {
 	lstatSync,
+	readdirSync,
 	readFileSync,
 	readlinkSync,
 	realpathSync,
@@ -134,6 +135,56 @@ function entryLine(root: string, base: string, path: string): string {
 	return stat.isDirectory() ? "directory" : "other";
 }
 
+interface DirectoryEntry {
+	readonly line: string;
+	readonly files: number;
+	readonly nested: boolean;
+}
+
+function directoryEntry(
+	root: string,
+	path: string,
+	submodule: boolean,
+	paths: readonly string[],
+): Result<DirectoryEntry, string> {
+	try {
+		const full = realpathSync(join(root, path));
+		if (!isInside(root, full))
+			return err(`candidate directory ${path} is outside the repository`);
+		if (gitText(full, ["rev-parse", "--show-toplevel"]) !== full) {
+			if (submodule && readdirSync(full).length > 0)
+				return err(
+					`submodule ${path} has files but is not a readable Git worktree`,
+				);
+			return ok({
+				line: submodule ? "submodule uninitialized" : "directory",
+				files: 1,
+				nested: false,
+			});
+		}
+		const head = resolveCommit(full, "HEAD");
+		if (head === undefined)
+			return err(`nested repository ${path} has no HEAD commit`);
+		const changed = changedPaths(full, head);
+		if (!changed.ok) return err(`nested repository ${path}: ${changed.error}`);
+		const prefix = `${path.replace(/\/+$/, "")}/`;
+		const explicit = paths
+			.filter(
+				(entry) => entry.startsWith(prefix) && entry.length > prefix.length,
+			)
+			.map((entry) => entry.slice(prefix.length));
+		const nested = snapshot(full, head, changed.value, explicit);
+		if (!nested.ok) return err(`nested repository ${path}: ${nested.error}`);
+		return ok({
+			line: `repository ${nested.value.head} ${nested.value.digest}`,
+			files: 1 + nested.value.files,
+			nested: true,
+		});
+	} catch {
+		return err(`cannot read candidate directory ${path}`);
+	}
+}
+
 export function snapshot(
 	root: string,
 	base: string,
@@ -152,6 +203,13 @@ export function snapshot(
 	if (!listed.ok) return listed;
 	const index = runGit(root, ["ls-files", "--stage", "-z"]);
 	if (!index.ok) return err("git cannot read the candidate index");
+	const gitlinks = new Set<string>();
+	for (const row of index.stdout.toString("utf8").split("\0")) {
+		if (!row.startsWith("160000 ")) continue;
+		const tab = row.indexOf("\t");
+		if (tab < 0) return err("git returned a malformed submodule index entry");
+		gitlinks.add(row.slice(tab + 1));
+	}
 	const paths = [
 		...new Set([
 			...listed.value,
@@ -163,11 +221,31 @@ export function snapshot(
 	hash.update("index\0");
 	hash.update(index.stdout);
 	hash.update("\0worktree\0");
-	for (const path of paths)
-		hash.update(`${path}\0${entryLine(root, base, path)}\n`);
+	const covered: string[] = [];
+	let files = 0;
+	for (const path of paths) {
+		if (covered.some((prefix) => path.startsWith(prefix))) continue;
+		const line = entryLine(root, base, path);
+		if (
+			gitlinks.has(path) &&
+			line !== "directory" &&
+			!line.startsWith("absent ")
+		)
+			return err(`submodule ${path} is not a directory`);
+		if (line === "directory") {
+			const entry = directoryEntry(root, path, gitlinks.has(path), paths);
+			if (!entry.ok) return entry;
+			hash.update(`${path}\0${entry.value.line}\n`);
+			files += entry.value.files;
+			if (entry.value.nested) covered.push(`${path.replace(/\/+$/, "")}/`);
+		} else {
+			hash.update(`${path}\0${line}\n`);
+			files++;
+		}
+	}
 	return ok({
 		head,
 		digest: `sha256:${hash.digest("hex")}`,
-		files: paths.length,
+		files,
 	});
 }

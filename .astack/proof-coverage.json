@@ -3,6 +3,7 @@
 	"specs": ["docs/reference/change-proof-contract.md"],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
+		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof.test.ts",
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts"
@@ -30,7 +31,10 @@
 				"proof-scope-hole",
 				"proof-stale-digest",
 				"proof-index-binding",
-				"proof-worktree-mode"
+				"proof-worktree-mode",
+				"proof-submodule-binding",
+				"proof-submodule-unreadable",
+				"proof-submodule-explicit"
 			]
 		},
 		{
