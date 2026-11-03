@@ -11,6 +11,8 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { isMap, isSeq, parseDocument } from "yaml";
 import {
 	git,
 	PROOF_FILES,
@@ -78,6 +80,67 @@ describe("astack check proof", () => {
 			expect(run.code).toBe(0);
 		},
 	);
+
+	test("[control:proof-release-history] the release verification checkout can admit a proof against its historical base", () => {
+		const workflow = parseDocument(
+			readFileSync(
+				resolve(import.meta.dir, "../../.github/workflows/release.yml"),
+				"utf8",
+			),
+		);
+		const steps = workflow.getIn(["jobs", "verify", "steps"], true);
+		if (!isSeq(steps)) throw new Error("release verification has no steps");
+		const checkout = steps.items.find((step) => {
+			if (!isMap(step)) return false;
+			const action = step.get("uses");
+			return (
+				typeof action === "string" && action.startsWith("actions/checkout@")
+			);
+		});
+		if (!isMap(checkout))
+			throw new Error("release verification has no checkout");
+		const depth = checkout.getIn(["with", "fetch-depth"]) ?? 1;
+		if (typeof depth !== "number" || !Number.isInteger(depth) || depth < 0)
+			throw new Error("release verification has no valid fetch depth");
+		const repo = proofRepo(scratch);
+		git(repo.root, "tag", "v0.1.0");
+		const source = pathToFileURL(repo.root).href;
+		const shallow = join(scratch, "release-shallow");
+		git(
+			scratch,
+			"clone",
+			"-q",
+			"--branch",
+			"v0.1.0",
+			"--depth",
+			"1",
+			source,
+			shallow,
+		);
+		expect(proof(shallow)).toEqual({
+			code: 1,
+			err: "",
+			out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
+		});
+		const verified = join(scratch, "release-verify");
+		const depthArgs = depth === 0 ? [] : ["--depth", String(depth)];
+		git(
+			scratch,
+			"clone",
+			"-q",
+			"--branch",
+			"v0.1.0",
+			...depthArgs,
+			source,
+			verified,
+		);
+		const run = proof(verified);
+		expect(run.err).toBe("");
+		expect(lastLine(run.out)).toBe(
+			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+		);
+		expect(run.code).toBe(0);
+	});
 
 	test("[control:proof-missing-manifest] a repo with no proof manifest fails", () => {
 		const root = join(scratch, "empty");

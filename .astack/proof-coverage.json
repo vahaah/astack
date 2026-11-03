@@ -13,7 +13,11 @@
 		},
 		{
 			"criterion": "CP-02",
-			"controls": ["proof-valid-triple", "proof-restored-run"]
+			"controls": [
+				"proof-valid-triple",
+				"proof-restored-run",
+				"proof-release-history"
+			]
 		},
 		{
 			"criterion": "CP-03",
