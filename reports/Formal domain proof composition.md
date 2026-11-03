@@ -107,3 +107,25 @@ The owner must accept the installation-migration transition before a blocked ado
 | Proposed design | Aggregate, runner, admission rules, migration transition | This synthesis ran no TLC and created no adoption PR. |
 
 Review must judge relevance, domain meaning, abstraction, and implementation correspondence. Repository rules can require visible artifacts and observed execution. They cannot enforce private model reasoning.
+
+## Implementation follow through
+
+PR 13 now contains the required proof command, domain glossary, governing ADRs, internal record contract, and CI integration.
+The implementation keeps whole-ADR supersession instead of a new clause resolver.
+It preserves CI-pin stops and review state during adoption.
+Remote required-check settings remain a separate owner action.
+
+[ADR 0005](../docs/adr/0005-every-change-carries-domain-and-formal-proof.md) states the admission invariant and its implementation relation.
+[ADR 0006](../docs/adr/0006-internal-composition-records-follow-domain-effects.md) gives the typed arrows and Result law explanation.
+Both link their formal claims to executable models, configurations, and controls.
+The checker rejects missing integrated sections and unresolved function or artifact references.
+
+The repository self-proof ran pinned TLC on current inputs.
+Its positive and restored runs each checked 45 distinct states.
+Removing the freshness guard produced the named `AdmitSafe` violation with a 10-state counterexample.
+The same model checks bounded left identity, right identity, and associativity for Result.
+The typed composition witness passed the repository compiler.
+The first integrated delivery check passed 3,761 tests, lint, types, validation, scans, client builds, and the required proof gate.
+Later delivery results remain in PR and CI evidence.
+
+These results do not remove the model/code boundary described above.
