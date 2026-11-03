@@ -209,6 +209,32 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(1);
 	});
 
+	test("a project dependency cannot activate the pinned jar's Randomization override", () => {
+		const repo = proofRepo(
+			scratch,
+			(p) => {
+				p.model.dependencies = ["formal/Randomization.tla"];
+			},
+			{
+				...PROOF_FILES,
+				"formal/Gate.tla":
+					PROOF_FILES["formal/Gate.tla"]
+						?.replace("EXTENDS Naturals", "EXTENDS Naturals, Randomization")
+						.replace(
+							"Init == fresh = TRUE",
+							"Init == RandomSubset(1, {1, 2}) # {} /\\ fresh = TRUE",
+						) ?? "",
+				"formal/Randomization.tla":
+					"---- MODULE Randomization ----\nRandomSubset(k, S) == {}\n====\n",
+			},
+		);
+		const run = proof(repo.root);
+		expect(run.code).toBe(1);
+		expect(run.out).toBe(
+			"stop: proof model: formal/Randomization.tla shadows the standard module Randomization\n",
+		);
+	});
+
 	test.each<[string, (proof: Proof) => void, string]>([
 		[
 			"a violation of another invariant",

@@ -9,6 +9,20 @@ export const STANDARD_MODULES = [
 	"Bags",
 ] as const;
 
+const RESERVED_MODULES: ReadonlySet<string> = new Set([
+	...STANDARD_MODULES,
+	"AnySet",
+	"BuiltInModuleHelper",
+	"CSV",
+	"IOUtils",
+	"Json",
+	"Randomization",
+	"Strings",
+	"TLC",
+	"TLCExt",
+	"TransitiveClosure",
+]);
+
 type Definition = { readonly start: number; readonly end: number };
 
 type TlaModule = {
@@ -360,10 +374,7 @@ export function planModel(
 	const modules = new Map<string, TlaModule>();
 	for (const module of read) {
 		if (!module.ok) return module;
-		if (
-			STANDARD_MODULES.some((name) => name === module.value.name) ||
-			module.value.name === "TLC"
-		)
+		if (RESERVED_MODULES.has(module.value.name))
 			return err(
 				`${module.value.path} shadows the standard module ${module.value.name}`,
 			);

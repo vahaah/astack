@@ -71,6 +71,7 @@ export const PROOF_FILES: Files = {
 };
 
 export function validProof(base: string) {
+	const dependencies: string[] = [];
 	const carrier: Record<string, string> = {
 		kind: "result",
 		error: "Rejection",
@@ -155,7 +156,7 @@ export function validProof(base: string) {
 		model: {
 			module: "formal/Gate.tla",
 			config: "formal/Gate.cfg",
-			dependencies: [],
+			dependencies,
 			bounds: ["one gate with two variables"],
 			fairness: ["weak fairness on Next"],
 			invariants: ["TypeOK", "AdmitFresh"],
