@@ -118,7 +118,7 @@ describe("astack check proof", () => {
 		expect(run.out).toContain(` over ${tracked + 1} files, tla2tools `);
 	});
 
-	test("an index-only change during model execution makes the proof stale", async () => {
+	test("[control:proof-index-binding] an index-only change during model execution makes the proof stale", async () => {
 		const repo = proofRepo(scratch);
 		const path = join(repo.root, "formal/Gate.tla");
 		const original = readFileSync(path, "utf8");
@@ -159,7 +159,7 @@ describe("astack check proof", () => {
 		).toContain("-Admit ==");
 	});
 
-	test("a glossary cannot hide unbound input bytes behind an in-repo symlink", () => {
+	test("[control:proof-symlink-reference] a glossary cannot hide unbound input bytes behind an in-repo symlink", () => {
 		const context = PROOF_FILES["CONTEXT.md"];
 		if (context === undefined)
 			throw new Error("the context fixture is missing");
@@ -281,7 +281,7 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(1);
 	});
 
-	test("a project dependency cannot activate the pinned jar's Randomization override", () => {
+	test("[control:proof-reserved-module] a project dependency cannot activate the pinned jar's Randomization override", () => {
 		const repo = proofRepo(
 			scratch,
 			(p) => {
@@ -307,7 +307,7 @@ describe("astack check proof", () => {
 		);
 	});
 
-	test("a mutation cannot comment out and replace protected model definitions", () => {
+	test("[control:proof-mutation-boundary] a mutation cannot comment out and replace protected model definitions", () => {
 		const original = PROOF_FILES["formal/Gate.tla"];
 		if (original === undefined) throw new Error("the model fixture is missing");
 		const replacement = [

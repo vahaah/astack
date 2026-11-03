@@ -21,15 +21,27 @@
 		},
 		{
 			"criterion": "CP-04",
-			"controls": ["proof-scope-hole", "proof-stale-digest"]
+			"controls": [
+				"proof-scope-hole",
+				"proof-stale-digest",
+				"proof-index-binding"
+			]
 		},
 		{
 			"criterion": "CP-05",
-			"controls": ["proof-mutation-scope"]
+			"controls": [
+				"proof-mutation-scope",
+				"proof-reserved-module",
+				"proof-mutation-boundary"
+			]
 		},
 		{
 			"criterion": "CP-06",
-			"controls": ["proof-domain-reference", "proof-adr-contract"]
+			"controls": [
+				"proof-domain-reference",
+				"proof-adr-contract",
+				"proof-symlink-reference"
+			]
 		},
 		{
 			"criterion": "CP-07",
