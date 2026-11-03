@@ -1,11 +1,11 @@
 # astack
 
-**Skills, rules and hooks for the path from a goal to a merged pull request.**
+**From goal to merged PR, with you at every decision.**
 
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
-    <img alt="Goal to merged PR: plan, build from a failing test, gates, review, PR, harden, merge with a grant." src="docs/hero-light.svg" width="760">
+    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant." src="docs/hero-light.svg" width="720">
   </picture>
 </p>
 
@@ -17,12 +17,14 @@ astack is one plugin for AI coding agents. It gives the agent a planning method 
 - **Read-only reviewer agents** for TypeScript and PostgreSQL
 - **Hooks** that guard the workflow and check reply language, types and comments
 - **A CLI** (`astack`) for sessions, plan checks, the board and `doctor`
+- **Required change proof**: every change carries a domain contract and current TLA+ evidence, checked by `astack check proof`
 
 
 ## Contents
 
 - [Quickstart](#quickstart)
 - [How it works](#how-it-works)
+- [Foundations](#foundations)
 - [Why astack](#why-astack)
 - [Install by client](#install-by-client)
 - [The CLI](#the-cli)
@@ -38,7 +40,9 @@ astack is one plugin for AI coding agents. It gives the agent a planning method 
 
 Install the signed release `v0.1.0`. See [the release list](https://github.com/vahaah/astack/releases).
 
-You need Node 22 or later, or Bun.
+You need Node 22 or later, or Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
+
+> **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
 
 ```sh
 ASTACK_TAG=v0.1.0
@@ -89,6 +93,21 @@ flowchart TD
   class gates,review,harden,land gate
 ```
 
+<details>
+<summary>Text version of the daily path chart</summary>
+
+You name the work.
+The rule card selects the route.
+New work starts with `/astack:plan`, then a build.
+One clear change goes straight to a build on a branch.
+A bug report shows the failure, then you write the root cause, then you build.
+The build runs the gates.
+You clean the diff, review the branch and open the pull request.
+You harden when the profile asks.
+You land with a merge grant, then plan the next session.
+
+</details>
+
 1. **Plan.** `/astack:plan` asks for the goal and the one decision the work drives. Later rounds ask only for choices that belong to you, each with one recommendation and lettered options.
 2. **Build.** On a branch or worktree, never on the default branch. A feature grows one slice at a time, and each slice starts with a test that fails. A bug fix starts with `Root cause: X because Y`.
 3. **Run the gates.** Lint, type check, tests and doc checks, matching CI. Run them again after the clean-up and after each fix. Report the counts in the PR.
@@ -120,6 +139,16 @@ flowchart TB
   classDef cmd font-family:monospace
   class startNode,point cmd
 ```
+
+<details>
+<summary>Text version of the session chart</summary>
+
+`astack session start` starts one wave of steps.
+That wave lands the commits in order.
+When more waves remain, the session starts another wave.
+When no wave remains, `astack session checkpoint` records the point.
+
+</details>
 
 Start a session with `astack session start <plan>`. The steps sit in waves, workers build them in worktrees, and the main thread lands the commits in plan order. `astack session checkpoint` writes the checkpoint on the PR. `astack board <plan>` shows the PRs to merge first, the active sessions and the work you can start. The board is a view, so do not commit it.
 
@@ -198,6 +227,31 @@ What astack adds on top:
 
 The trade-off is that astack is opinionated. If its path does not fit, the projects above are good places to start.
 
+## Foundations
+
+### Formal verification
+
+Each change needs a domain contract and a current TLA+ model run.
+`astack check proof` admits the change only when both are present and current.
+TLC checks the model `formal/ProofAdmission.tla`.
+[ADR 0005](docs/adr/0005-every-change-carries-domain-and-formal-proof.md) makes this gate mandatory for code, configuration and documents.
+The model checks admission safety, terminal failure and progress under weak fairness.
+A model pass does not prove that the implementation matches the model.
+Tests and the other gates remain mandatory.
+
+### Composition
+
+The proof gate composes two steps and keeps one error type, `Rejection`.
+`parseChangeProof` reads the manifest.
+`admitChangeProof` admits that value for fixed facts.
+A failed parse does not run admission.
+[ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) records the identity law and the associativity law for this composition.
+TLC checks those laws on a finite set of values.
+The types rules ask you to build small functions that compose.
+A gate is the typed check between two steps.
+Category names stay in contracts, models, law tests and reviews.
+The steps of the workflow are not a formal category.
+
 ## Install by client
 
 All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#quickstart)).
@@ -243,16 +297,23 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 | `astack session start\|checkpoint\|handoff\|resume` | Run one plan session |
 | `astack board <plan>` | Show what to merge, what is active and what can start |
 | `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
+| `astack check pr-head` | Run the PR head checks with one command |
+| `astack check review-growth` | Report advisory diff growth since the fixed first-review commits |
+| `astack check spec-drift` | Check declared acceptance criteria against test-control links |
+| `astack check proof [--summary]` | Admit a change only with a domain contract, current TLA+ evidence and composition records. Needs Java 17+ |
 | `astack init` | Write `.astack/profile.json` for a repo |
 | `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
 | `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
 Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
 
-`astack check review-growth` reports advisory diff growth from fixed first-review commits.
-`astack check spec-drift` checks declared acceptance criteria against test-control links.
-The [review checks runbook](docs/runbooks/review-checks.md) gives their commands and limits.
-`astack check proof` requires a domain contract, current TLA+ evidence, and internal composition records for every change.
+The [review checks runbook](docs/runbooks/review-checks.md) gives the commands for `review-growth` and `spec-drift`.
+
+### Change proof
+
+`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract: glossary, aggregate, terms and invariants. The check fails when any part is missing or stale. Fetch enough git history in CI to resolve `base`.
+
+`apply` adds one mandatory gate named `change-proof`. It cannot be optional, path-filtered or suppressed. `review-growth` and `spec-drift` are advisory. The `interrogate` adversarial review is opt-in: add it to the profile only when you want it.
 The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
 The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption in existing repositories.
 
@@ -282,6 +343,8 @@ bun install --frozen-lockfile
 bun run check:drift
 bun run check
 ```
+
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof.
 
 `check:drift` compares fresh build output with the committed files without rewriting them. `check` builds every target and runs validation, neutrality and secret scans, STE checks, tests, formatting, lint and type checks. The authenticated Claude load test needs an API key or OAuth token and is reported as skipped without one.
 
