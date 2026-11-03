@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "mandatory-domain-proof",
-	"base": "76d4ed73392516f1b23db56bd57392ba75579a79",
+	"base": "1dee0a1c84dcf103aa094853e4c5c87fbaeb0ec3",
 	"scope": [
 		{
 			"path": "**",
