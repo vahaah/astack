@@ -124,6 +124,90 @@ function facts(
 	};
 }
 
+function admitAdr(adr: string) {
+	const original = facts(SNAPSHOT);
+	const files = new Map(original.view.files);
+	files.set("docs/adr/0001-gate.md", { kind: "text", text: adr });
+	return admitChangeProof(validChangeProof(), {
+		...original,
+		view: { ...original.view, files },
+	});
+}
+
+describe("ADR format admission", () => {
+	const adr = PROOF_FILES["docs/adr/0001-gate.md"];
+	if (adr === undefined) throw new Error("the ADR fixture is missing");
+
+	test.each(["docs PR", "B01"])(
+		"[control:proof-adr-format] accepts bold metadata and a numbered decision with a provenance stamp %s",
+		(stamp) => {
+			const native = adr
+				.replace("Status: Accepted", `- **Status:** Accepted · ${stamp}`)
+				.replace("### D1. ", "### D1 — ")
+				.replace(
+					"parseGate >=> admitGate preserves rejection.",
+					"```text\nparseGate >=> admitGate preserves rejection.\n```",
+				);
+			expect(admitAdr(native)).toEqual(
+				ok({
+					change: "gate-admission",
+					base: BASE,
+					head: SNAPSHOT.head,
+					digest: SNAPSHOT.digest,
+					files: 13,
+					positive: COUNTS,
+					negative: { name: "AdmitFresh", states: 3 },
+					action: "Admit",
+					restored: COUNTS,
+				}),
+			);
+		},
+	);
+
+	test.each([
+		["Proposed · lands B01", 'has status "Proposed · lands B01", not Accepted'],
+		["AcceptedWhatever", 'has status "AcceptedWhatever", not Accepted'],
+		["Accepted ·", 'has status "Accepted ·", not Accepted'],
+	])("[control:proof-adr-status] refuses the status %s", (status, message) => {
+		expect(
+			admitAdr(adr.replace("Status: Accepted", `- **Status:** ${status}`)),
+		).toEqual({
+			ok: false,
+			error: { stage: "domain", message: `docs/adr/0001-gate.md ${message}` },
+		});
+	});
+
+	test("[control:proof-adr-duplicate] refuses conflicting metadata instead of selecting its first accepted value", () => {
+		expect(
+			admitAdr(
+				adr.replace(
+					"Status: Accepted",
+					"Status: Accepted\n- **Status:** Proposed",
+				),
+			),
+		).toEqual({
+			ok: false,
+			error: {
+				stage: "domain",
+				message: "docs/adr/0001-gate.md has multiple Status lines",
+			},
+		});
+	});
+
+	test("[control:proof-adr-examples] fenced metadata and headings cannot supply a missing decision", () => {
+		const example =
+			"~~~~text\nStatus: Accepted\n### D1. Example\n~~~\n```\n~~~~\n";
+		const actual = adr.replace("### D1. ", "### D10. ");
+		expect(admitAdr(`${example}\n${actual}`)).toEqual({
+			ok: false,
+			error: {
+				stage: "domain",
+				message: "docs/adr/0001-gate.md has no ### D1. decision heading",
+			},
+		});
+	});
+});
+
 describe("admitChangeProof", () => {
 	test("admits fresh evidence with unchanged inputs", () => {
 		expect(admitChangeProof(validChangeProof(), facts(SNAPSHOT))).toEqual(

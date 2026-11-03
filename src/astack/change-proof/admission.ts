@@ -142,6 +142,26 @@ function headings(text: string): readonly string[] {
 	);
 }
 
+function adrProse(text: string): string {
+	let closing: RegExp | undefined;
+	return text
+		.split("\n")
+		.map((line) => {
+			if (closing !== undefined) {
+				if (closing.test(line)) closing = undefined;
+				return line.replace(/[^\r]/g, " ");
+			}
+			const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
+			if (marker === undefined) return line;
+			const character = marker.startsWith("`") ? "`" : "~";
+			closing = new RegExp(
+				`^ {0,3}${character}{${marker.length},}[ \\t]*\\r?$`,
+			);
+			return line.replace(/[^\r]/g, " ");
+		})
+		.join("\n");
+}
+
 function adrCheck(
 	proof: ChangeProof,
 	files: ReadonlyMap<string, FileRead>,
@@ -150,11 +170,21 @@ function adrCheck(
 ): Check {
 	const text = textOf(files, file);
 	if (!text.ok) return fail(text.error);
-	const status = /^Status:\s*(.*?)\s*$/m.exec(text.value)?.[1];
+	const prose = adrProse(text.value);
+	const statuses = [
+		...prose.matchAll(/^(?:Status:|-\s+\*\*Status:\*\*)[ \t]*(.*?)[ \t]*$/gm),
+	].map((match) => match[1] ?? "");
+	const [status] = statuses;
 	if (status === undefined) return fail(`${file} has no Status line`);
-	if (status !== "Accepted")
+	if (statuses.length !== 1) return fail(`${file} has multiple Status lines`);
+	if (!/^Accepted(?:[ \t]+·[ \t]+\S(?:.*\S)?)?$/.test(status))
 		return fail(`${file} has status ${JSON.stringify(status)}, not Accepted`);
-	if (!new RegExp(`^###\\s+${decision}\\.\\s`, "m").test(text.value))
+	if (
+		!new RegExp(
+			`^###[ \\t]+${decision}(?:\\.[ \\t]+|[ \\t]+—[ \\t]+)\\S`,
+			"m",
+		).test(prose)
+	)
 		return fail(`${file} has no ### ${decision}. decision heading`);
 	const sections = new Map<string, string>();
 	for (const title of [
@@ -163,15 +193,13 @@ function adrCheck(
 		"Implementation correspondence",
 		"Verification",
 	]) {
-		const heading = new RegExp(`^#{3,6} ${title}\\s*$`, "m").exec(text.value);
+		const heading = new RegExp(`^#{3,6} ${title}[ \\t]*\\r?$`, "m").exec(prose);
+		const start = heading === null ? 0 : heading.index + heading[0].length;
+		const next = prose.slice(start).search(/^#{1,6}[ \t]+/m);
 		const body =
 			heading === null
 				? ""
-				: (
-						text.value
-							.slice(heading.index + heading[0].length)
-							.split(/\n#{1,6}\s/)[0] ?? ""
-					).trim();
+				: text.value.slice(start, next < 0 ? undefined : start + next).trim();
 		if (body === "")
 			return fail(`${file} has no nonempty ${title} proof section`);
 		sections.set(title, body);

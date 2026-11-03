@@ -1,11 +1,11 @@
 {
 	"version": 1,
 	"change": "mandatory-domain-proof",
-	"base": "d82152aeae564f671484d93d70881e293cae0056",
+	"base": "76d4ed73392516f1b23db56bd57392ba75579a79",
 	"scope": [
 		{
 			"path": "**",
-			"obligation": "CP-01",
+			"obligation": "CP-06",
 			"modelRefs": ["AdmitSafe", "FailureIsTerminal", "EventuallyTerminal"]
 		}
 	],
