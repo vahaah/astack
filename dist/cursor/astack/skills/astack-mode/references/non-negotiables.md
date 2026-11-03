@@ -1,5 +1,9 @@
 # Non-negotiables
 
+Every change follows [the required proof contract](change-proof.md).
+Read it before implementation and include its domain and composition record in internal briefs.
+Run its gate before a delivery claim, including docs, configuration, and hotfixes.
+
 Read `astack-principles` (`astack skill-path astack:principles`) for the principles behind every trigger.
 In your reply, name each principle that shaped a decision.
 Name the specific choice that it changed.

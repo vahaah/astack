@@ -16,6 +16,16 @@ push: when-authorised
 guardrails:
   - Run each script with bun.
 gates:
+  - name: change-proof
+    command: astack check proof
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
   - name: typecheck
     command: bun run typecheck
     env: []

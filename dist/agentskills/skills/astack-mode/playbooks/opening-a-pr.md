@@ -47,6 +47,10 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 ## Review
 
+Run `astack check proof` on the current candidate before opening or updating its PR.
+Require exit 0 and a final line that starts with `ok: proof `.
+Keep its input digest and implementation controls with the verification.
+
 With astack installed, the agent that opens the PR runs `/astack-code-review` against the branch base.
 Run it after the slop and `/astack-no-comments` passes, before `gh pr create`.
 Without that skill, review the diff against repository standards and the ticket yourself.

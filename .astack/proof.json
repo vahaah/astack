@@ -1,0 +1,263 @@
+{
+	"version": 1,
+	"change": "mandatory-domain-proof",
+	"base": "d82152aeae564f671484d93d70881e293cae0056",
+	"scope": [
+		{
+			"path": "**",
+			"obligation": "CP-01",
+			"modelRefs": ["AdmitSafe", "FailureIsTerminal", "EventuallyTerminal"]
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/astack/change-proof/contract.ts",
+			"symbol": "ChangeProof"
+		},
+		"terms": [
+			"ChangeProof",
+			"Proof admission",
+			"Candidate inputs",
+			"Composition record",
+			"Model control",
+			"ReviewRun"
+		],
+		"invariants": [
+			{
+				"name": "Admission requires current complete evidence",
+				"modelRef": "AdmitSafe"
+			},
+			{
+				"name": "A rejected stage cannot admit the change",
+				"modelRef": "FailureIsTerminal"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"decision": "D2"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"CP-01",
+				"CP-02",
+				"CP-03",
+				"CP-04",
+				"CP-05",
+				"CP-06",
+				"CP-07",
+				"CP-08",
+				"CP-09",
+				"CP-10",
+				"CP-11",
+				"CP-12"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "result",
+			"error": "Rejection"
+		},
+		"objects": [
+			{
+				"name": "ProofText",
+				"link": {
+					"path": "tests/astack/proof-composition.ts",
+					"symbol": "ProofText"
+				}
+			},
+			{
+				"name": "ChangeProof",
+				"link": {
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "ChangeProof"
+				}
+			},
+			{
+				"name": "Admitted",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "Admitted"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "parse",
+				"from": "ProofText",
+				"to": "ChangeProof",
+				"link": {
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
+				},
+				"effects": []
+			},
+			{
+				"name": "admitForFacts",
+				"from": "ChangeProof",
+				"to": "Admitted",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"effects": []
+			}
+		],
+		"composites": [
+			{
+				"arrows": ["parse", "admitForFacts"],
+				"op": ">=>"
+			}
+		],
+		"equality": "Structural equality of returned values and Rejection for one fixed RepoView and AdmissionFacts.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "witnessed",
+				"witness": "model:ResultLeftIdentity"
+			},
+			{
+				"law": "id-right",
+				"status": "witnessed",
+				"witness": "model:ResultRightIdentity"
+			},
+			{
+				"law": "assoc",
+				"status": "witnessed",
+				"witness": "model:ResultAssociativity"
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "No runtime map is introduced or changed. The derived mathematical map is explained in ADR 0006."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "No runtime map is introduced or changed. The derived mathematical map is explained in ADR 0006."
+			},
+			{
+				"law": "monad-left",
+				"status": "witnessed",
+				"witness": "model:ResultLeftIdentity"
+			},
+			{
+				"law": "monad-right",
+				"status": "witnessed",
+				"witness": "model:ResultRightIdentity"
+			},
+			{
+				"law": "monad-assoc",
+				"status": "witnessed",
+				"witness": "model:ResultAssociativity"
+			}
+		],
+		"typedWitness": "tests/astack/proof-composition.ts"
+	},
+	"abstraction": {
+		"hides": "Reference validation, model-control interpretation, and snapshot comparison for proof admission.",
+		"callersKnow": [
+			"The base is an immutable ancestor.",
+			"Tool evidence comes from the pinned runner and its output judges.",
+			"All ordinary implementation gates remain required."
+		],
+		"deletionTest": "Each delivery caller would otherwise repeat the same admission rules.",
+		"alternatives": [
+			{
+				"name": "Hook-only enforcement",
+				"rejectedBecause": "Current client event and error paths can allow a change."
+			},
+			{
+				"name": "An optional profile switch",
+				"rejectedBecause": "It would disable the required policy."
+			},
+			{
+				"name": "A saved pass receipt",
+				"rejectedBecause": "It cannot establish a current model run."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
+				},
+				"modelAction": "ValidationPass"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"modelAction": "Admit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "judgeNegative"
+				},
+				"modelAction": "RunNegative"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/runner.ts",
+					"symbol": "runModel"
+				},
+				"modelAction": "RunRestored"
+			}
+		],
+		"omitted": [
+			"Validator internals and arbitrary implementation behavior.",
+			"Host compromise and external owner authorization."
+		]
+	},
+	"model": {
+		"module": "formal/ProofAdmission.tla",
+		"config": "formal/ProofAdmission.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Four ordered validation stages.",
+			"Finite positive, negative, and restored outcome classes.",
+			"One possible current-to-stale input change before admission.",
+			"Two abstract values and two error values for the Result laws."
+		],
+		"fairness": ["Weak fairness of Next establishes eventual terminal status."],
+		"invariants": [
+			"TypeOK",
+			"AdmitSafe",
+			"FailureIsTerminal",
+			"ResultLeftIdentity",
+			"ResultRightIdentity",
+			"ResultAssociativity"
+		],
+		"properties": ["EventuallyTerminal"]
+	},
+	"negative": {
+		"file": "formal/ProofAdmission.tla",
+		"action": "Admit",
+		"original": "/\\ current\n",
+		"replacement": "",
+		"defect": "Admission loses the current-input guard and can accept stale evidence.",
+		"expect": {
+			"kind": "invariant",
+			"name": "AdmitSafe"
+		}
+	},
+	"limits": [
+		"The model abstracts validators into declared outcome classes.",
+		"Finite Result law encoding does not prove arbitrary TypeScript correspondence.",
+		"Reference and arrow checks validate declarations, not semantic truth.",
+		"Implementation controls and semantic review remain separate.",
+		"The host and Java runtime are trusted.",
+		"The record cannot establish private model reasoning."
+	]
+}

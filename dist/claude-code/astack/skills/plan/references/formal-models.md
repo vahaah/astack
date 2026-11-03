@@ -1,40 +1,46 @@
-# Optional formal models
+# Required formal models
 
-Use a formal model when a state or concurrency property is hard to test through selected examples.
-Examples include ownership, bounded retries, cancellation, and ordering across failed writes.
-Use the smallest model that can find a counterexample.
-Keep this path optional unless the owner or repo profile requires its gate.
+Every change workflow requires a change-specific TLA+ contract and current execution evidence.
+This includes code, docs, configuration, hotfixes, review fixes, and migration changes.
+Read-only questions have no delivery change to prove.
+Use the [ChangeProof contract](../../pr-review-hardening/references/proof-contract.md).
 
-## Define the contract
+## Define the domain contract
 
-Name the states, transitions, actors, and allowed inputs.
-State each safety invariant and liveness property separately.
-Record the fairness assumptions and finite bounds.
-Map each property to a criterion ID and an implementation test.
-Explain which production behavior the model leaves out.
+Name the affected contexts, aggregate ownership, terms, invariants, and current ADR decisions.
+State the changed procedure, transition, or selected contract data.
+Map concrete functions and document transformations to model actions.
+State the abstraction relation and excluded behavior.
+An unrelated stock model never satisfies the obligation.
 
-## Run the model
+## Define lawful composition
 
-Use a tool that the repo already has when possible.
-For TLA+, use a pinned TLC release and its required Java version.
-Record the tool version, config, command, exit code, and explored states.
-Run the checker on the unchanged model.
-Plant a defect that violates one required property.
-Run it again.
-Make sure the checker reports that violation.
-Restore the model before the normal checks.
-Keep generated states and counterexample files outside the checkout.
+Name objects, typed arrows, identity, composition, effects, equality, and law witnesses.
+Use plain composition for pure total work.
+Use the declared error carrier for Result composition.
+Record rejection and observation policies for async effects.
+Do not call every function a monad.
+Keep domain names in production interfaces.
 
-Use one TLC worker for the small example and a fixed model config.
-The repo's `examples/formal/RetryBudget.tla` and `.cfg` show a bounded retry model.
-The repo's `docs/runbooks/formal-models.md` gives its commands.
-Those example files are optional project material, not installed plugin dependencies.
+The governing ADR includes the function contract, formal claim, category explanation, correspondence, and control links.
+Executable models and tests stay in their own files.
+A proof sketch does not replace current checker execution.
 
-## Check the implementation
+## Run the required gate
 
-A passing model establishes its properties only under its recorded assumptions and bounds.
-It does not prove that the implementation matches the model.
-Run a test for each mapped implementation transition and failure case.
-Keep runtime checks and existing gates.
-When a required model gate cannot run, report the missing tool or input.
-Never replace its result with a prose review.
+Run `astack check proof` before delivery.
+Require exit 0 and a final line that starts with `ok: proof `.
+The checker runs positive, named negative, and unchanged positive models on current inputs.
+It binds the model, configuration, dependencies, and candidate source.
+Missing tools, unsupported inputs, incomplete runs, wrong violations, or stale inputs fail.
+Keep model state and temporary mutations outside the checkout.
+
+## Keep the claims separate
+
+State finite bounds, assumptions, and fairness.
+Add progress properties when the change claims progress.
+The model result establishes only its selected claims under those limits.
+Run implementation and document controls through the existing gates.
+Use removal controls for critical behavior.
+Semantic review still checks meaning and correspondence.
+Repository records do not establish private model reasoning.

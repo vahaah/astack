@@ -49,4 +49,5 @@ Run the controls through the repo's existing gates.
 Check a critical control by removing its implementation and seeing the control fail.
 Links prove declared traceability only.
 
-For a state machine or concurrency contract, read [formal-models.md](formal-models.md).
+Every change requires [formal-models.md](formal-models.md), including docs and configuration.
+Link the changed contract, typed composition, governing ADR, model claim, and implementation control in one ChangeProof.

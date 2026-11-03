@@ -72,6 +72,9 @@ Use the interrupted-run resume rule only when a new run starts after an interrup
 
 The config is frozen for the run. Never edit the profile, package scripts, linter or compiler config, or CI config to make the run pass.
 
+The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.
+A missing gate or unverified summary stops the run with principled incompletion.
+
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it. `references/gate.md` says when a gate applies and when it cannot start. Each gate runs with `CI=true`, the `env` values of its CI jobs and the bun and Supabase CLI versions that CI pins, as `references/gate.md` says.
 
 ## Rules for the whole run

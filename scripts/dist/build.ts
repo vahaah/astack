@@ -11,7 +11,7 @@ import { type Components, componentsOf } from "./skills.ts";
 import { type ByPlugin, ofPlugin, type Source } from "./source.ts";
 import { type FileTree, textFile, textOf } from "./tree.ts";
 
-export const PUBLIC_REPO = "vahaah/astack";
+export { PUBLIC_REPO } from "../../src/astack/public-repo.ts";
 export const HOOKS_PATH = "hooks/hooks.json";
 
 export type Build = {

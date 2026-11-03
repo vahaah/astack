@@ -5,6 +5,7 @@ import { command as migrations } from "./migrations.ts";
 import { command as plan } from "./plan.ts";
 import { command as pr } from "./pr.ts";
 import { command as prHead } from "./pr-head.ts";
+import { command as proof } from "./proof.ts";
 import { command as reviewGrowth } from "./review-growth.ts";
 import { command as specDrift } from "./spec-drift.ts";
 import { command as stackConfig } from "./stack-config.ts";
@@ -12,7 +13,7 @@ import { command as ste } from "./ste.ts";
 import { command as ticket } from "./ticket.ts";
 import { command as types } from "./types.ts";
 
-export const CHECKS: readonly Command[] = [
+export const CHECKS: readonly Command<number | Promise<number>>[] = [
 	comments,
 	types,
 	ticket,
@@ -25,4 +26,5 @@ export const CHECKS: readonly Command[] = [
 	prHead,
 	reviewGrowth,
 	specDrift,
+	proof,
 ];

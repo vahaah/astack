@@ -3444,6 +3444,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 
 	const loadRows: readonly Counterpart[] = [
 		stubbed(
+			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
+			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
+		),
+		stubbed(
+			"A missing gate or unverified summary stops the run with principled incompletion.",
+			"A missing gate or unverified summary stops the run with principled incompletion.",
+		),
+		stubbed(
 			"read `.claude/pr-review-hardening.profile.md` there",
 			"Read the YAML block in the profile.",
 		),

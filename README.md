@@ -252,7 +252,9 @@ Keep the plugin folder beside the launcher so reference discovery works. The sta
 `astack check review-growth` reports advisory diff growth from fixed first-review commits.
 `astack check spec-drift` checks declared acceptance criteria against test-control links.
 The [review checks runbook](docs/runbooks/review-checks.md) gives their commands and limits.
-The [formal-model runbook](docs/runbooks/formal-models.md) adds an optional TLA+ example for bounded retries.
+`astack check proof` requires a domain contract, current TLA+ evidence, and internal composition records for every change.
+The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
+The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption in existing repositories.
 
 ## Hook profiles
 

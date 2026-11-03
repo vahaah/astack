@@ -32,4 +32,5 @@ export const COMMANDS: readonly Command<number | Promise<number>>[] = [
 	watchPr,
 ];
 
-export const ALIASES: readonly Command[] = CHECKS.map(checkAlias);
+export const ALIASES: readonly Command<number | Promise<number>>[] =
+	CHECKS.map(checkAlias);

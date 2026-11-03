@@ -53,4 +53,4 @@ The [upstream change](https://github.com/cursor/plugins/commit/ab1f702ce8e8b6557
 astack adopts this behavior by hand under ADR 0001.
 The frozen snapshots and their pins remain unchanged.
 
-For state and concurrency properties, use the [optional formal-model runbook](formal-models.md).
+Every change also follows the [required formal-model runbook](formal-models.md).

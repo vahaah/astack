@@ -17,7 +17,9 @@ Compose small functions with readonly data.
 These conventions need no FP library.
 Use Effect only where the repo already uses it.
 Then follow `references/effect.md`.
-Use category theory for property names and laws, never for higher-kinded encodings.
+Use category theory in internal contracts, typed notation, laws, and witnesses.
+Keep production names in the domain language.
+Do not add higher-kinded encodings to repeat the notation.
 A stricter repo rule takes priority.
 
 Each rule identifies its enforcement.
@@ -157,7 +159,7 @@ Keep functional conventions within these limits.
 7. Use no `Option` type outside Effect. Under `strictNullChecks`, `T | undefined` is the option type.
 8. Add no Result helpers, such as `map`, `chain` or `traverse`, before 3 call sites chain results. Use early return first.
 9. Give a type-level program of more than approximately 10 lines a type test. Prefer a runtime parse to a clever type.
-10. Keep category theory names in tests and reviews, such as "monoid law" and "round trip". Names in production code follow the domain.
+10. Keep category names in internal contracts, models, law tests, and reviews. Names in production code follow the domain.
 11. Prefer a `switch` over a union to visitor, strategy or registry objects. Change only when 3 call sites dispatch on the same union.
 12. Local mutation inside one function is allowed. Purity is a property of the interface of a function, not of each line.
 

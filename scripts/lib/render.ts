@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
+import { proofGateIssues } from "../../src/astack/change-proof/profile.ts";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
 import {
 	MANAGED_PATHS,
@@ -233,6 +234,8 @@ export function renderReviewCopies(
 			problems.push(`${profileLabel}: ${mismatch}`);
 		}
 		const data = parseProfile(profile).data;
+		for (const issue of proofGateIssues(data))
+			problems.push(`${profileLabel}: ${issue.path}: ${issue.message}`);
 		const missing = missingFallbackKeys(data);
 		if (missing.length > 0) {
 			problems.push(

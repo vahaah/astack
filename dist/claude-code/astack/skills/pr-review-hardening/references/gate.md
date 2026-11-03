@@ -1,5 +1,10 @@
 # Deterministic gate
 
+Every change requires the unrestricted, nonoptional `change-proof` gate.
+It accepts only exit 0 with a final line that starts with `ok: proof `.
+An unverified summary, skipped proof, saved receipt, or unavailable tool cannot satisfy it.
+Implementation and document gates remain separate from the model result.
+
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it. A gate that a CI job needs must run here with the same command, the same setup and the same services. A run that cannot give it those stops and says why.
 
 ## CI environment

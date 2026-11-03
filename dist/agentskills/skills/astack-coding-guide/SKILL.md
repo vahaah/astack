@@ -63,6 +63,8 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Name it in the PR's Verification.
    For a plan session, follow "Build from the plan" below.
 3. Run the repo's gates for lint, typecheck, tests and doc checks where they exist.
+   Every change also follows `astack-mode references/change-proof.md`.
+   Require current `astack check proof` output before delivery.
    Run them again after step 4 and after each fix commit.
    Put the last run's counts in the PR's Verification.
 4. After the build and before step 5, run `/astack-deslop` on the branch diff against its base.

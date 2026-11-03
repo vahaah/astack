@@ -57,6 +57,9 @@ Print these rules at the start of every iteration, followed by the profile's `gu
 
 Preflight:
 
+The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.
+A missing gate or unverified summary stops the run with principled incompletion.
+
 1. Read the arguments, `$ARGUMENTS`. A bare word is the base branch. `--pr <number>` names the pull request. Without `--pr`, the PR is the one that the head check finds for the current branch, if any. With `--pr`, the base branch is the bare word, else the PR's `baseRefName`, whatever `base.from_pr` says. Without `--pr`, the base branch is the bare word, else the PR's base when `base.from_pr` is true and a PR exists, else `base.default`. Read the PR's base with `gh pr view <n> --json baseRefName`.
 2. The working tree must be clean. If it is not, stop and ask what to do with the changes.
 3. Run `git fetch origin <base>`. When it fails, or when `git rev-parse --verify origin/<base>` fails, stop with principled incompletion. The local base branch can be behind, so the run never diffs against it.

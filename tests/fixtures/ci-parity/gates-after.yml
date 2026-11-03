@@ -1,4 +1,14 @@
 gates:
+  - name: change-proof
+    command: astack check proof
+    env: []
+    requires: []
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
   - name: lint
     command: bun run lint
     env: []

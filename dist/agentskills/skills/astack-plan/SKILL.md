@@ -148,6 +148,10 @@ Then stop.
 
 ## Run the stages
 
+Every change follows `astack-mode references/change-proof.md`, including quick work and docs.
+DDD terms and internal composition records start before implementation.
+Each governing ADR links its function contract, category laws, formal claims, and executable controls.
+
 S0 runs first.
 S1 runs in the background while S2 asks round 1.
 S3 runs during each round.

@@ -10,6 +10,8 @@ metadata:
 # Domain modeling
 
 Build the domain model during design work.
+Every change records its affected context, aggregate ownership, invariants, and governing decisions in its ChangeProof.
+The governing ADR connects function contracts to formal claims, category composition, correspondence, and executable controls.
 Challenge unclear terms.
 Test relationships with concrete edge cases.
 Record each resolved term and qualifying decision when the discussion settles it.

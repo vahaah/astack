@@ -38,6 +38,12 @@ The review stub that astack apply writes into a repo has a fallback for a sessio
 
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it.
 
+Every profile requires one gate named `change-proof` that runs the pinned astack CLI's `check proof` command.
+It cannot be optional, filtered by paths, suppressed, redirected, or replaced by `--summary`.
+Apply refuses a profile that omits or weakens this gate.
+The CI job must require the same check for every candidate change.
+Java 17 or later is a prerequisite.
+
 Give each blocking CI job a gate that runs the same command. When the job starts services or seeds data first, the gate names them in `setup` and `requires`. When the job runs only for some paths, the gate names them in `when_changed`. When the job runs on every pull request, keep `when_changed` empty.
 
 astack apply compares the gates with the repo's pull request workflows. It refuses a profile that leaves a blocking job with no gate. It also refuses a gate that skips a path on which its job runs. An excluded job needs proof in the workflow that it is advisory or never runs on a pull request.
@@ -318,6 +324,19 @@ iterations:
 after_create_pr: none
 push: when-authorised
 gates:
+  - name: change-proof
+    command: astack check proof
+    env: []
+    requires:
+      - name: Java 17 or later
+        check: java -version
+        on_missing: stop
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
   - name: typecheck
     command: <typecheck command>
     env: []
