@@ -156,6 +156,8 @@ export function snapshot(
 		"--exclude-standard",
 	]);
 	if (!listed.ok) return listed;
+	const index = runGit(root, ["ls-files", "--stage", "-z"]);
+	if (!index.ok) return err("git cannot read the candidate index");
 	const paths = [
 		...new Set([
 			...listed.value,
@@ -164,6 +166,9 @@ export function snapshot(
 		]),
 	].sort();
 	const hash = createHash("sha256");
+	hash.update("index\0");
+	hash.update(index.stdout);
+	hash.update("\0worktree\0");
 	for (const path of paths)
 		hash.update(`${path}\0${entryLine(root, base, path)}\n`);
 	return ok({

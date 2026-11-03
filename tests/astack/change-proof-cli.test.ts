@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
 	mkdirSync,
 	readdirSync,
@@ -115,6 +115,47 @@ describe("astack check proof", () => {
 		const run = proof(repo.root);
 		expect(run.code).toBe(0);
 		expect(run.out).toContain(` over ${tracked + 1} files, tla2tools `);
+	});
+
+	test("an index-only change during model execution makes the proof stale", async () => {
+		const repo = proofRepo(scratch);
+		const path = join(repo.root, "formal/Gate.tla");
+		const original = readFileSync(path, "utf8");
+		let changed = false;
+		const run = await new Promise<Run>((done) => {
+			const child = spawn(process.execPath, [CLI, "check", "proof"], {
+				cwd: repo.root,
+				env: proofEnv({}),
+			});
+			let out = "";
+			let err = "";
+			child.stdout.on("data", (chunk: Buffer) => {
+				out += chunk.toString();
+				if (!changed && out.includes("positive:")) {
+					changed = true;
+					writeFileSync(
+						path,
+						original.replace("/\\ fresh /\\ status'", "/\\ status'"),
+					);
+					git(repo.root, "add", "formal/Gate.tla");
+					writeFileSync(path, original);
+				}
+			});
+			child.stderr.on("data", (chunk: Buffer) => {
+				err += chunk.toString();
+			});
+			child.on("close", (code) => done({ code, out, err }));
+		});
+		expect(changed).toBe(true);
+		expect(run.err).toBe("");
+		expect(run.code).toBe(1);
+		expect(run.out).toContain(
+			"stop: proof stale: the candidate inputs changed during the proof",
+		);
+		expect(readFileSync(path, "utf8")).toBe(original);
+		expect(
+			git(repo.root, "diff", "--cached", "--", "formal/Gate.tla"),
+		).toContain("-Admit ==");
 	});
 
 	test.each<[string, (proof: Proof) => void, string]>([
