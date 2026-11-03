@@ -204,7 +204,7 @@ Drive it through the control skill from the Control skill paragraph.
 
 ## Appendix D. Links and reading list
 
-<Docs to read before editing. Which PRs get the **how** and **interrogate** skills. The trail per the **show-me-your-work** skill.>
+<Docs to read before editing. Which PRs need **how**. Any explicit request for optional code **interrogate**. The trail per **show-me-your-work**.>
 ````
 
 #### Reply

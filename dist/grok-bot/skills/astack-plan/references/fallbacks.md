@@ -30,7 +30,7 @@ Install or update astack to restore missing skills for the full stage.
 | `astack-why` | A read-only subagent reads `git log -S`, blame, the linked tickets and ADRs. It returns what to preserve, change and avoid |
 | `astack-recall` | Search the tracker and `git log` for earlier attempts at the same work |
 | `astack-architect` | Two subagents each design the shape independently, with types and `not implemented` bodies. Compare them on interface depth. Ratify one with the owner |
-| `astack-interrogate` | Two read-only reviewers on different models attack the plan and the sketch. Sort each finding into Act on, Consider, Noted or Dismissed |
+| `astack-interrogate` | For an explicitly requested code review, reviewers run reproductions in isolated worktrees. Keep only failures that the lead confirms by a rerun |
 | `astack-principles` and its references | Use the gate table in `stages.md` |
 | `astack-show-me-your-work` | Use the trail rules in `template.md` |
 

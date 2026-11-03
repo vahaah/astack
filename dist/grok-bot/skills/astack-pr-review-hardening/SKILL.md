@@ -114,7 +114,7 @@ If a gate is red at baseline, say which failures sit in files the PR changed. Re
 For each iteration `n` up to `iterations.max`, from 1 or from the first iteration of a resumed run:
 
 1. Print `ITERATION <n>` and the rules.
-2. Review. Print `REVIEWED_HEAD` as the output of `git rev-parse HEAD`. It is the `<HEAD>` of the diff that the reviewers get. Launch the reviewers over `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out, and paste each one's output unmodified. Then run the checklist pass, with the files in `reviewers.checklists` and the review checklist `references/checklist.md`. `references/review.md` says how.
+2. Review. Print `REVIEWED_HEAD` as the output of `git rev-parse HEAD`. It is the `<HEAD>` of the diff that the reviewers get. Record the fixed first-review SHAs and print `REVIEW_GROWTH` as `references/review.md` says. Launch the reviewers over `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out, and paste each one's output unmodified. Then run the checklist pass, with the files in `reviewers.checklists` and the review checklist `references/checklist.md`. `references/review.md` says how.
 3. Triage. Give each candidate an id `R<n>.<k>`, or `K<n>.<k>` for a checklist finding, and a ledger entry. Reproduce it, then classify it as blocking, advisory, out-of-scope or recurring.
 4. Fix. Fix every open blocking finding in the ledger, including gate findings left open by the previous iteration. Commit each finding as the rules above say, inside the fix fence, and push as the profile says. Before each fix, read the item of `references/checklist.md` for the class of the finding. `references/fix.md` holds the rules, and `references/typescript.md` applies when `typescript.rules` is true.
 5. Comment gate. Run it over `git diff <BASE_SHA>...HEAD` (`references/comments.md`). Each accepted deletion set and each in-fence `MUST KILL` fix is a finding `C<n>.<k>` with its own commits.
@@ -150,6 +150,7 @@ The iteration is clean when the gate is green and steps 3, 5 and 6 produced no f
 ## After the stop
 
 1. When this run loaded the ledger, set its `stopped` to the decision. Then print the final report (`references/gate.md`).
+   Run the final review-growth comparison from `references/review.md` before that report.
 2. If the stop is not clean and `proof.on_unclean` is set, do what it says.
 3. If `threads.answer` is true, answer the PR's review-bot threads (`references/review.md`).
 4. If the stop is clean and `merge.after_clean_stop` is `merge`, compare each line of `merge.conditions` with git and GitHub. In mode `ci_proof`, also do the CI read-back of `references/gate.md`, and merge only when it passes. Print the evidence, then run `merge.command`. Otherwise never merge.

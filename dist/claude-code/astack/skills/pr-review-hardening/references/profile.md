@@ -207,7 +207,7 @@ With no `metrics`, the run reports `METRICS=UNAVAILABLE` and has no budget check
 
 The default agents are `code-reviewer`, `silent-failure-hunter`, `pr-test-analyzer`, `comment-analyzer` and `type-design-analyzer`. `code-simplifier` is never allowed, because it edits code.
 
-Two astack extras, as `references/review.md` describes:
+An optional Standards and Spec extra, as `references/review.md` describes:
 
 ```yaml
 reviewers:
@@ -215,10 +215,12 @@ reviewers:
     - name: standards-and-spec
       invoke: the Skill tool with astack:code-review, using the base branch as the fixed point
       when: always
-    - name: interrogate
-      invoke: read the SKILL.md that astack skill-path astack:interrogate prints, and run it on git diff <BASE_SHA>...HEAD
-      when: the diff changes a public API, adds or edits a database migration, or adds a dependency between workspace packages
 ```
+
+Add `astack:interrogate` only when the owner explicitly requests that review for a stated risk.
+Its `invoke` reads the SKILL.md from `astack skill-path astack:interrogate`.
+Its `when` names the requested scope.
+An existing profile entry remains an explicit request until the owner changes it.
 
 ## ledger
 

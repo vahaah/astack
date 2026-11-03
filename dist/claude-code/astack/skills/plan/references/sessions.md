@@ -52,9 +52,11 @@ The checker enforces this rule.
    Under `approve`, wait.
 2. Build the step. Write the failing test first.
 3. Run the scoped gates: format, lint, tests and the type check for the touched packages.
-4. Run parallel review lenses, such as correctness, security, UX and test gaps.
-   Fix the findings.
-   Run the lenses again until a round finds nothing.
+4. Run one focused review of correctness, security, UX and test gaps where they apply.
+   Reproduce each blocking candidate before a fix.
+   Recheck a confirmed fix with its failing control and scoped gates.
+   Keep the full PR review inside the profile's iteration cap.
+   Never repeat a whole review because a pass found nothing.
 5. Prove each key assertion.
    Put back the defect it guards.
    Confirm that the test fails.

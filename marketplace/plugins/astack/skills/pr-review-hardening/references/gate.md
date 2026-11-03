@@ -203,6 +203,7 @@ When the run ends in `stop_recurring` or `stop_principled_incompletion` and `pro
 14. Confirmation that no gate wrote a tracked file outside its `rewrites`, and each file that the run restored.
 15. The ledger path.
 16. Lesson candidates: each finding whose `class` is `none`, with its id and claim.
+17. Review growth: the fixed baseline, command output, warnings, and any unavailable comparison with its reason.
 
 ## Drive the loop with /goal
 

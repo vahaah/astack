@@ -161,7 +161,7 @@ Run S7 and S8 last.
 | S3 Words | main | `astack:domain-modeling` writes each term at once | Each `terms:` entry is in the glossary |
 | S4 Design | lead subagent | `astack:architect` phases A and B with checkpoint | A sketch branch that compiles, and its open questions sorted |
 | S5 Sequence | main | Sessions, steps, waves, lanes and hot-file regions | The checker passes, and the first session can start now |
-| S6 Stress | lead subagent | `astack:interrogate` on the sketch, or a premise attack | No Act-on finding is open |
+| S6 Spec review | lead subagent | `references/spec-review.md` on the plan, plus a premise check when needed | Each required property has a verification obligation and no owner choice is open |
 | S7 Tracker | main | The footprint of the tier | The standard tier writes no new object |
 | S8 Hand-off | main | The final round, the execution grant, the plan commit | The reply below |
 
@@ -232,6 +232,7 @@ Before `status: active`, run it with `--strict`.
 Never split a session to clear a note.
 
 Log each gate verdict as a trail row. The pass of interrogate and of exhaust the design space needs the result of a subagent as its evidence. A gate that fails, does not apply or has a waiver gets one line under `## Gates`.
+The historical `interrogate` gate now records the S6 spec review.
 
 ## Round format
 

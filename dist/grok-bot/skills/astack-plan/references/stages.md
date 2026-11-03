@@ -41,7 +41,7 @@ S1 search  subagent_type "astack-explorer", model "sonnet", run_in_background tr
 S4 lead    subagent_type "astack-delegate", model "opus", isolation "worktree"
            prompt: Run `astack skill-path astack:architect`, Read that file, and run phases A and B with checkpoint on <fork>, given <facts brief> and <decisions>. Stop after Phase B. Leave branch sketch/<slug> whose types compile, and return the branch, the rationale path and the open questions.
 S6 lead    subagent_type "astack-delegate", model "opus"
-           prompt: Read-only. With branch <sketch branch>, run `astack skill-path astack:interrogate`, Read that file, and run it on the branch with this intent: <goal and decision>, planned in <plan path>. With no sketch, run `astack skill-path astack:principles references/attack-the-premise.md`, Read that file, and attack the premises and the sessions of <plan path>. Return each Act-on finding in one line with its kind.
+           prompt: Read-only. Read references/spec-review.md beside this file. Review <plan path> against <goal and decision>. Return each missing contract as a criterion ID, a reachable failure scenario, an observable property, and a verification obligation. Use <sketch branch> only to probe an assumption. Keep code style out of this review. Name each unresolved owner choice.
 ```
 
 In an unattended run, each Agent call runs in the foreground.
@@ -168,14 +168,19 @@ Read the slicing rules of `astack-to-tickets` by path.
 
 Exit. `astack check-plan` passes, and the first session can start now.
 
-## S6. Stress test, lead subagent
+## S6. Spec review, lead subagent
 
-1. Start the S6 lead with its brief. With a sketch from S4, it reads `astack-interrogate` by path and follows it on that branch. With no sketch, it attacks the premises of the plan instead. End the brief with the same line as the S4 lead: "Run every nested agent and command in the foreground, never end your turn to wait, and make your final message the report."
+1. Start one S6 lead with its brief and `references/spec-review.md`.
+   It reviews the spec and returns testable properties for reachable failure scenarios.
+   It uses a sketch only to probe an assumption.
+   End its brief with the same foreground instruction as the S4 lead.
 2. Write `## Premises` when the plan rests on beliefs. Each premise names the observation that falsifies it.
 3. When recall found failed attempts, run `astack skill-path astack:principles references/attack-the-premise.md`.
    Read the path it prints.
    Take the census that the principle describes.
-4. Sort each Act-on finding by kind. Apply the facts and agent calls yourself. Send the owner calls to the final round.
+4. Add each required property and its verification obligation to the spec.
+   Apply facts yourself.
+   Send unresolved product and risk choices to the final round.
 5. Judge the nine gates. Log each pass as a `gate` trail row. Write each fail, n/a or waiver under `## Gates`. The pass of interrogate and of exhaust the design space cites a subagent result as `agent:<id>` or `branch:<sketch>`.
 
 | Gate | Passes when |
@@ -188,9 +193,9 @@ Exit. `astack check-plan` passes, and the first session can start now.
 | exhaust the design space | Each design fork had two or more candidates of different structure |
 | prove it works | Each Proof runs on the real artifact, not a proxy |
 | attack the premise | Each premise has a falsifier, and earlier failed attempts were counted |
-| interrogate | No Act-on finding of the S6 lead is open |
+| interrogate | Each required spec property has a verification obligation and no owner choice is open |
 
-Exit. No Act-on finding is open, and `astack check-plan` passes.
+Exit. The spec review passes, and `astack check-plan` passes.
 
 ## S7. Tracker, main
 

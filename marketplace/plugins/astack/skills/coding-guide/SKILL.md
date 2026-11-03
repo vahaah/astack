@@ -71,12 +71,11 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Commit messages follow `astack:write-docs`.
 5. Review the branch against its base with `/astack:code-review`.
    It checks the Standards and Spec axes.
-   For a public API change, read `astack:interrogate` by path with `astack skill-path astack:interrogate`.
-   The public API definition is in `astack:coding-rules`.
-   Follow the skill on the diff.
-   A diff that adds or edits a database migration also needs interrogate.
-   So does a new dependency between workspace packages, or a design that the user contests.
-   Fix each hard Standards violation, each Spec finding and each interrogate finding marked Act on in a new commit.
+   Run `astack:interrogate` only when the user or the repo profile requests it.
+   Read its SKILL.md by path with `astack skill-path astack:interrogate`.
+   Its reviewers run reproductions, and the lead confirms each failure by a rerun.
+   Keep targeted checks for migration recovery, retry limits, and other reachable behavior that the spec omits.
+   Fix each hard Standards violation, each Spec finding and each verified interrogate finding in a new commit.
    A smell needs judgment.
    Fix one only when its fix stays inside the scope fence.
    File a finding whose fix lies outside the fence with `/astack:write-ticket`.
