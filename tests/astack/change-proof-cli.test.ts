@@ -235,6 +235,37 @@ describe("astack check proof", () => {
 		);
 	});
 
+	test("a mutation cannot comment out and replace protected model definitions", () => {
+		const original = PROOF_FILES["formal/Gate.tla"];
+		if (original === undefined) throw new Error("the model fixture is missing");
+		const replacement = [
+			'/\\ fresh /\\ status\' = "admitted" /\\ UNCHANGED fresh',
+			'Reject == status = "open" /\\ ~fresh /\\ status\' = "rejected" /\\ UNCHANGED fresh',
+			'Done == status # "open" /\\ UNCHANGED vars',
+			"Next == Expire \\/ Admit \\/ Reject \\/ Done",
+			"Spec == Init /\\ [][Next]_vars /\\ WF_vars(Next)",
+			'TypeOK == fresh \\in BOOLEAN /\\ status \\in {"open", "admitted", "rejected"}',
+			'AdmitFresh == status # "admitted"',
+			'Ends == <>(status # "open")',
+			"(*",
+		].join("\n");
+		const repo = proofRepo(
+			scratch,
+			(p) => {
+				p.negative.replacement = replacement;
+			},
+			{
+				...PROOF_FILES,
+				"formal/Gate.tla": original.replace("====", "\\* *)\n===="),
+			},
+		);
+		const run = proof(repo.root);
+		expect(run.code).toBe(1);
+		expect(run.out).toBe(
+			"stop: proof model: the negative replacement changes code outside action Admit\n",
+		);
+	});
+
 	test.each<[string, (proof: Proof) => void, string]>([
 		[
 			"a violation of another invariant",

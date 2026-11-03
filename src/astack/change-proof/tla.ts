@@ -357,9 +357,25 @@ function mutate(
 			`the negative original ${JSON.stringify(original)} occurs ${offsets.length} times in action ${action}, not once`,
 		);
 	const start = definition.start + offset;
-	return ok(
-		`${module.text.slice(0, start)}${replacement}${module.text.slice(start + original.length)}`,
-	);
+	const text = `${module.text.slice(0, start)}${replacement}${module.text.slice(start + original.length)}`;
+	const changed = readModule(module.path, text);
+	if (!changed.ok)
+		return err(
+			`the negative replacement does not preserve the module: ${changed.error}`,
+		);
+	const changedAction = changed.value.definitions.get(action);
+	if (changedAction === undefined || !isAction(changed.value, changedAction))
+		return err(`the negative replacement does not preserve action ${action}`);
+	const outside = (source: TlaModule, body: Definition): string =>
+		`${source.blanked.slice(0, body.start)}\0${source.blanked.slice(body.end)}`;
+	if (
+		outside(module, definition) !== outside(changed.value, changedAction) ||
+		!sameSet(module.imports, changed.value.imports)
+	)
+		return err(
+			`the negative replacement changes code outside action ${action}`,
+		);
+	return ok(text);
 }
 
 export function planModel(
