@@ -289,6 +289,16 @@ describe("proofGateIssues", () => {
 			[],
 		],
 		[
+			"an ampersand in a quoted manifest path",
+			[
+				{
+					name: "change-proof",
+					command: 'astack check proof ".astack/a&b.json"',
+				},
+			],
+			[],
+		],
+		[
 			"a pinned bunx proof gate with an empty when_changed",
 			[
 				{
@@ -323,6 +333,16 @@ describe("proofGateIssues", () => {
 					path: "gates[1].when_changed",
 					message:
 						"must be absent or empty, because the proof gate covers every path",
+				},
+			],
+		],
+		[
+			"a backgrounded proof gate",
+			[{ name: "change-proof", command: `${PROOF_COMMAND} &` }],
+			[
+				{
+					path: "gates[1].command",
+					message: "must run the proof command in the foreground",
 				},
 			],
 		],

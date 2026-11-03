@@ -70,6 +70,8 @@ function commandProblem(command: unknown): string | undefined {
 	const [only] = simple;
 	if (simple.length !== 1 || only === undefined)
 		return "must be one direct astack check proof command, with no &&, ||, ;, pipe or second command";
+	if (only.background === true)
+		return "must run the proof command in the foreground";
 	if (
 		only.redirects.length > 0 ||
 		only.stdin !== undefined ||
