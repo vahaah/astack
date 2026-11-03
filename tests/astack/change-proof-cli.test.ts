@@ -62,23 +62,22 @@ const lastLine = (text: string): string =>
 	text.trimEnd().split("\n").at(-1) ?? "";
 
 describe("astack check proof", () => {
-	test("[control:proof-valid-triple] admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run", () => {
-		const repo = proofRepo(scratch);
-		const run = proof(repo.root, ["--base", repo.base]);
-		expect(run.err).toBe("");
-		expect(run.out).toStartWith(
-			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt: change gate-admission base ",
-		);
-		expect(lastLine(run.out)).toStartWith(
-			"ok: proof gate-admission admitted at ",
-		);
-		expect(run.code).toBe(0);
-		const alias = proof(repo.root, [], {}, ["check-proof"]);
-		expect(lastLine(alias.out)).toStartWith(
-			"ok: proof gate-admission admitted at ",
-		);
-		expect(alias.code).toBe(0);
-	});
+	test.each(["check proof", "check-proof"])(
+		"[control:proof-valid-triple] %s admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run",
+		(name) => {
+			const repo = proofRepo(scratch);
+			const args = name === "check proof" ? ["--base", repo.base] : [];
+			const run = proof(repo.root, args, {}, name.split(" "));
+			expect(run.err).toBe("");
+			expect(run.out).toStartWith(
+				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt: change gate-admission base ",
+			);
+			expect(lastLine(run.out)).toStartWith(
+				"ok: proof gate-admission admitted at ",
+			);
+			expect(run.code).toBe(0);
+		},
+	);
 
 	test("[control:proof-missing-manifest] a repo with no proof manifest fails", () => {
 		const root = join(scratch, "empty");
