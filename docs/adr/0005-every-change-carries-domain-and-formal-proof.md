@@ -99,6 +99,10 @@ A populated submodule without a readable checkout blocks admission.
 The model's `InputChange` represents a change to any of those inputs.
 
 Let `D(R)` denote the digest of the index and recorded worktree entries of repository `R`.
+Git path records must be valid UTF-8.
+Link targets use base64 so their bytes cannot insert entry delimiters.
+Each entry separates its path with NUL and ends its metadata with a line break.
+
 For a child checkout `C`, its parent entry records `(Head(C), D(C))`.
 Each initialized child uses the same rule.
 Under the no-collision assumption, equal snapshots preserve the recorded data at every finite depth.

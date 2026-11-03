@@ -1,3 +1,4 @@
+import { isUtf8 } from "node:buffer";
 import { createHash } from "node:crypto";
 import {
 	lstatSync,
@@ -29,6 +30,8 @@ function gitLines(
 ): Result<readonly string[], string> {
 	const result = runGit(root, [...args]);
 	if (!result.ok) return err(`git ${args.join(" ")} failed`);
+	if (!isUtf8(result.stdout))
+		return err(`git ${args.join(" ")} returned a path that is not UTF-8`);
 	return ok(
 		result.stdout
 			.toString("utf8")
@@ -127,7 +130,8 @@ function entryLine(root: string, base: string, path: string): string {
 		]);
 		return `absent ${blob ?? "none"}`;
 	}
-	if (stat.isSymbolicLink()) return `link ${readlinkSync(full)}`;
+	if (stat.isSymbolicLink())
+		return `link ${readlinkSync(full, { encoding: "buffer" }).toString("base64")}`;
 	if (stat.isFile()) {
 		const gitMode = (stat.mode & 0o100) !== 0 ? "100755" : "100644";
 		return `file ${gitMode} ${createHash("sha256").update(readFileSync(full)).digest("hex")}`;
