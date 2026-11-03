@@ -4,6 +4,10 @@ export type Upstream = {
 	readonly repo: string;
 	readonly path: string;
 	readonly commit: string;
+	readonly adoptions?: readonly {
+		readonly path: string;
+		readonly commit: string;
+	}[];
 };
 
 export const UPSTREAMS = {
@@ -13,6 +17,12 @@ export const UPSTREAMS = {
 		repo: "https://github.com/cursor/plugins",
 		path: "pstack",
 		commit: "1e5c90a4b6f249917bd21fe361b3a2a7deb741b8",
+		adoptions: [
+			{
+				path: "pstack/skills/interrogate",
+				commit: "ab1f702ce8e8b6557edb56b09f52cde8bfb83f17",
+			},
+		],
 	},
 	"mattpocock-skills": {
 		label: "mattpocock/skills",
@@ -63,9 +73,12 @@ export function upstreamLicense(name: UpstreamName): string {
 }
 
 export function upstreamOrigin(name: UpstreamName): string {
-	const { repo, path, commit } = UPSTREAMS[name];
+	const { repo, path, commit, adoptions = [] }: Upstream = UPSTREAMS[name];
 	const place = path === "." ? "" : `, path ${path}`;
-	return `${repo}${place}, commit ${commit}`;
+	const adopted = adoptions
+		.map((item) => `, adopted ${item.path} from commit ${item.commit}`)
+		.join("");
+	return `${repo}${place}, commit ${commit}${adopted}`;
 }
 
 export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
