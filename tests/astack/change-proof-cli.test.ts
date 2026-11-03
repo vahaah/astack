@@ -14,6 +14,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isMap, isSeq, parseDocument } from "yaml";
+import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import {
 	git,
 	PROOF_FILES,
@@ -46,6 +47,9 @@ function proofEnv(
 		env.JAVA_HOME = process.env.JAVA_HOME;
 	return env;
 }
+
+const preparedTlc = await pinnedJar(proofEnv({}), scratch);
+if (!preparedTlc.ok) throw new Error(preparedTlc.error);
 
 function proof(
 	cwd: string,
