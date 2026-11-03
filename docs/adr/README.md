@@ -6,3 +6,5 @@
 | [0002](0002-the-public-repo-starts-from-a-new-first-commit.md) | The public repo starts from a new first commit | Accepted |
 | [0003](0003-the-public-repo-is-mit-with-a-notice-file.md) | The public repo is MIT, with a NOTICE file for each upstream | Accepted |
 | [0004](0004-portable-review-and-hook-profiles.md) | Portable review packs and explicit quality profiles | Accepted |
+| [0005](0005-every-change-carries-domain-and-formal-proof.md) | Every change carries domain and formal proof | Accepted |
+| [0006](0006-internal-composition-records-follow-domain-effects.md) | Internal composition records follow domain effects | Accepted |

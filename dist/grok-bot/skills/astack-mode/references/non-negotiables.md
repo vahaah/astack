@@ -1,5 +1,9 @@
 # Non-negotiables
 
+Every change follows [the required proof contract](change-proof.md).
+Read it before implementation and include its domain and composition record in internal briefs.
+Run its gate before a delivery claim, including docs, configuration, and hotfixes.
+
 Read `astack-principles` (`astack skill-path astack:principles`) for the principles behind every trigger.
 In your reply, name each principle that shaped a decision.
 Name the specific choice that it changed.
@@ -12,7 +16,7 @@ Cite only principles whose reference file you read this session.
 - For any code, name the data shape first. Choose its organizing structure with Model the Domain (`astack skill-path astack:principles references/model-the-domain.md`). When astack is installed, load `astack-coding-rules` once per session before the first edit. The chat that runs the playbook also loads `astack-coding-guide`. Tell each code delegate to load `astack-coding-rules` in its brief.
 - For code that crosses a function boundary, read `architect`. Explore designs in parallel before implementation.
 - For parallel fan-out, use `swarm` for coverage matrices, races, gauntlets, and exploration partitions. Use `arena` for design or code bakeoffs with base selection and grafting.
-- For a contested design, use `interrogate` for adversarial review with multiple models before shipping.
+- For a contested design, review the spec's failure scenarios and verification obligations. Run code `interrogate` only on a user or profile request.
 - For nontrivial work with several steps, write the throughput checkpoint from Feature step 3.
 - For any prose, including your reply, use `write-docs`. Follow "Writing the reply". Agent-facing prose also follows Anthropic's `skill-creator` skill, or `plugin-dev:skill-development` for a plugin skill.
 - For docs, RFCs, readmes, PR descriptions, or commit messages, use `write-docs` (`/astack-write-docs`).

@@ -61,3 +61,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: acme-tools/manifest-lint@v1
+
+  proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: astack check proof

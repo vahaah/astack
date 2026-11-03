@@ -2739,6 +2739,18 @@ describe("a clean iteration commits no fix", () => {
 	);
 });
 
+test.each([
+	["the engine", read(`${engine}/references/gate.md`)],
+	["the fallback", stub],
+])(
+	"[control:proof-fallback-marker] %s requires exit 0 and the proof success line together",
+	(_name, text) => {
+		expect(text).toMatch(
+			/(?:accepts|require)[^\n]*exit 0[^\n]*final (?:stdout )?line[^\n]*`ok: proof `/,
+		);
+	},
+);
+
 describe("the proof of a clean stop", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
@@ -3444,6 +3456,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 
 	const loadRows: readonly Counterpart[] = [
 		stubbed(
+			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
+			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
+		),
+		stubbed(
+			"A missing gate or unverified summary stops the run with principled incompletion.",
+			"A missing gate or unverified summary stops the run with principled incompletion.",
+		),
+		stubbed(
 			"read `.claude/pr-review-hardening.profile.md` there",
 			"Read the YAML block in the profile.",
 		),
@@ -3924,6 +3944,11 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"It is the `<HEAD>` of the diff that the reviewers get.",
 		),
 		stubbed(
+			"Record the fixed first-review SHAs and print `REVIEW_GROWTH` as `references/review.md` says.",
+			"Before its first reviewer launch, keep `<branch>.review.json` beside the findings ledger.",
+			"Print its output as `REVIEW_GROWTH`.",
+		),
+		stubbed(
 			"Launch the reviewers over",
 			"Tell each one to review `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out.",
 			"Paste each output unmodified.",
@@ -4141,6 +4166,11 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 	];
 
 	const afterStopRows: readonly Counterpart[] = [
+		stubbed(
+			"Run the final review-growth comparison from `references/review.md` before that report.",
+			"Before each reviewer launch and after the final gate, run `astack check review-growth --base <baseSha> --first-reviewed <firstReviewedHead> --head <HEAD>`.",
+			"The final report includes `REVIEW_GROWTH`, its fixed baseline, and any unavailable comparison with its reason.",
+		),
 		stubbed(
 			"When this run loaded the ledger, set its `stopped` to the decision.",
 			"After the stop, when this run loaded the ledger, set its `stopped` to the decision.",
@@ -4475,6 +4505,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		stubbed(
 			"Run it in its own subshell from the root, and print `<NAME>_EXIT=<code>`",
 			"and its exit code and output.",
+		),
+		stubbed(
+			"For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.",
+			"For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.",
+		),
+		stubbed(
+			"A missing success line makes that gate red and stops the run with principled incompletion.",
+			"A missing success line makes that gate red and stops the run with principled incompletion.",
 		),
 		reasoned(
 			"For long output, save the full output to a file outside the tree",

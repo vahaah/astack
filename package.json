@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "bun scripts/build.ts",
 		"bundle": "bun scripts/bundle.ts",
-		"test": "bun test tests",
+		"test": "bun run check:proof && bun test tests",
 		"apply": "bun scripts/apply.ts",
 		"validate": "bun scripts/validate.ts",
 		"dist": "bun scripts/dist.ts",
@@ -15,7 +15,8 @@
 		"check:companion": "bun scripts/check-companion.ts",
 		"ste": "bun scripts/ste.ts",
 		"charts": "bun scripts/check-readme-charts.ts",
-		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run charts && bun test tests && biome ci . && tsc -p .",
+		"check:proof": "bun scripts/check-proof.ts",
+		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run charts && bun run test && biome ci . && tsc -p . && bun run check:proof",
 		"check:drift": "bun scripts/drift.ts"
 	},
 	"devDependencies": {

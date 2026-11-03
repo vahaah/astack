@@ -62,7 +62,7 @@ const complete = (patterns: string, extra: readonly string[] = []) =>
 		"iterations: {min: 1, max: 2}",
 		"push: never",
 		"guardrails: []",
-		"gates: []",
+		"gates: [{name: change-proof, command: astack check proof, env: [], requires: [], setup: [], when_changed: [], ci_env: [], after: [], tools: {}, rewrites: []}]",
 		"test: {name: test, command: bun run test, env: [], requires: [], setup: [], when_changed: [], ci_env: [], after: [], tools: {}, rewrites: []}",
 		"metrics: null",
 		"typescript: null",
@@ -87,8 +87,8 @@ const profileWith = (patterns: string) =>
 		"",
 		"```yaml",
 		"version: 1",
-		"comments:",
-		`  keep_patterns: ${patterns}`,
+		"gates: [{name: change-proof, command: astack check proof}]",
+		`comments: {keep_patterns: ${patterns}}`,
 		"```",
 		"",
 	].join("\n");
@@ -314,7 +314,10 @@ describe("review stub and profile copies", () => {
 		iterations: { min: 1, max: 2 },
 		push: "never",
 		guardrails: [],
-		gates: [gateOf("lint")],
+		gates: [
+			gateOf("lint"),
+			{ ...gateOf("change-proof"), command: "astack check proof" },
+		],
 		test: gateOf("test"),
 		metrics: { command: "bun run metrics", never_increase: [] },
 		typescript: { rules: true },
@@ -369,6 +372,8 @@ describe("review stub and profile copies", () => {
 		(key) => {
 			const data = completeData();
 			setAt(data, key, awayValues[key]);
+			if (key === "gates[].optional")
+				setAt({ gates: data.gates.slice(1) }, key, false);
 			writeFileSync(
 				join(dir, "pr-review-hardening.profile.md"),
 				`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,

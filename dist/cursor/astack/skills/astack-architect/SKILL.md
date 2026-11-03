@@ -78,8 +78,9 @@ Then show the synthesized design to the user.
 The synthesis can have its own commit with either route.
 This follows the "scaffold first" mode of **foundational-thinking**.
 Planned breakage within scope during implementation is allowed by **outcome-oriented-execution**.
-For an adversarial review before implementation, read **interrogate** at `../astack-interrogate/SKILL.md`.
-Follow it on the synthesized sketch.
+For a spec review before implementation, read `../astack-plan/references/spec-review.md`.
+Return testable properties and verification obligations.
+Run code **interrogate** only when the user or repo profile requests it.
 
 If the user rejects the shape at a checkpoint or later, treat that feedback as Phase A evidence.
 Repeat Phase A and Phase B before you write more code.

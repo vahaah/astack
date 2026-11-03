@@ -19,10 +19,16 @@ If a configured reviewer cannot be launched, stop with principled incompletion a
 
 ## Additional astack reviewers
 
-Two `reviewers.extra` entries fit most repos. Add them to the profile, never on the fly.
+`reviewers.extra` defaults to an empty list.
+Add an extra reviewer only through the profile, never on the fly.
 
 - `astack-code-review` reviews `<BASE_SHA>...HEAD` on two axes: Standards, against the repo's rules and `astack-coding-rules`, and Spec, against the ticket the branch delivers. It is model-invocable, so `invoke` names the skill and the base branch as its fixed point. Its two reports stay separate. Each finding is a candidate like any reviewer's, and it counts only after you reproduce it. It reviews committed work only, which matches the clean tree every iteration starts from.
-- `astack-interrogate` sends one reviewer per configured model, from more than one model family, to attack the diff. It sets `disable-model-invocation`, so `invoke` says to read its SKILL.md through `astack skill-path astack:interrogate`. Its Act on findings are candidates. Consider, Noted and Dismissed findings never block. It costs more than the default set, so use it only for some PRs. They are a PR that changes a public API, as `astack-coding-rules` defines it, and a PR that adds or edits a database migration. A PR that adds a dependency between workspace packages also gets it.
+- `astack-interrogate` is an optional review that the user or profile must request.
+  Read its SKILL.md through `astack skill-path astack:interrogate`.
+  Each configured reviewer runs a reproduction in an isolated worktree.
+  The lead reruns each command and keeps only confirmed failures.
+  Its verified findings remain candidates under the blocking rules below.
+  An API, migration, or package dependency change does not add this reviewer automatically.
 
 ## Tell each reviewer
 
@@ -100,6 +106,33 @@ Each entry holds:
 
 Print the entries this iteration touched as `FINDING_LEDGER`.
 
+## Review growth
+
+Keep a fixed first-review record beside the ledger at `<branch>.review.json`.
+It holds `baseSha` and `firstReviewedHead` as full commit SHAs.
+Create it immediately before the first reviewer launch, after the prepasses.
+Use the merge base of `BASE_SHA` and `REVIEWED_HEAD` as `baseSha`.
+Never replace this record during a resume or a new run, including runs that archive earlier findings.
+If a record exists but cannot be read, report an unavailable growth check.
+Do not create a new baseline to hide that failure.
+
+Run this command before each reviewer launch and after the final gate:
+
+```sh
+astack check review-growth --base <baseSha> --first-reviewed <firstReviewedHead> --head <HEAD>
+```
+
+Print its output as `REVIEW_GROWTH`.
+Copy its warning or unavailable result into the final report.
+Its default warning requires growth above both 200 lines and half the first diff's text changes.
+The command compares both tree diffs with the same fixed base.
+It reports binary files separately because line counts cannot measure them.
+A base update can add unrelated changes to this fixed-base comparison.
+State that limit when it applies.
+A warning is advisory and never starts another review by itself.
+An unavailable growth check is a reported limit, never a zero-growth result.
+The existing iteration cap remains binding.
+
 The preflight loads the ledger once per run, before the prepasses. A ledger whose `stopped` is `null` comes from a run that was cut off, so this run resumes it, whatever `ledger.carry_over` says. A resumed run keeps each entry, and its first iteration is the one after the highest `iteration` of the entries. So each id stays unique, and `iterations.max` bounds both runs. Otherwise, with `ledger.carry_over: true`, a new run starts from the existing ledger. An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since. With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty. Each run sets `stopped` to `null` at this load, and to its decision when it stops.
 
 A finding recurs when, after one fix attempt, a new candidate matches a `fixed` entry's `claim_hash`. It also recurs when the candidate names the same file with a materially similar claim. Mark it `recurring` and stop the run.
@@ -114,3 +147,9 @@ Prepasses run once, after preflight and before the baseline. Their commits are f
 
 - `contract-coverage`: build a clause-to-control matrix over the specs in `sources`. Plant a control for every uncovered clause. Check each control by removing the line that implements its clause, seeing the control fail, and restoring the line. Commit the controls and the matrix. Hardening starts from that matrix.
 - `claims-audit`: split the factual sentences that the diff adds to docs and comments by area. Give each area to one read-only auditor, which compares every sentence with the code or a run. Each false sentence is a finding. Fix it by cutting it back to what the code or a test proves.
+
+For new matrices, use [spec-links.md](spec-links.md) and run `astack check spec-drift <matrix.json>`.
+Read the criterion inventory from the declared spec sources, separately from the matrix links.
+Keep shared and regression controls with explicit reasons.
+Run the controls through the existing gates after the link check.
+Traceability does not replace the removal control above or prove that a test runs.

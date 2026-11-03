@@ -57,6 +57,9 @@ Print these rules at the start of every iteration, followed by the profile's `gu
 
 Preflight:
 
+The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.
+A missing gate or unverified summary stops the run with principled incompletion.
+
 1. Read the arguments, `$ARGUMENTS`. A bare word is the base branch. `--pr <number>` names the pull request. Without `--pr`, the PR is the one that the head check finds for the current branch, if any. With `--pr`, the base branch is the bare word, else the PR's `baseRefName`, whatever `base.from_pr` says. Without `--pr`, the base branch is the bare word, else the PR's base when `base.from_pr` is true and a PR exists, else `base.default`. Read the PR's base with `gh pr view <n> --json baseRefName`.
 2. The working tree must be clean. If it is not, stop and ask what to do with the changes.
 3. Run `git fetch origin <base>`. When it fails, or when `git rev-parse --verify origin/<base>` fails, stop with principled incompletion. The local base branch can be behind, so the run never diffs against it.
@@ -71,11 +74,30 @@ Preflight:
 
 Gate run: run `git fetch origin <base>`, and do preflight steps 6 and 7 again. When the run has a PR, read its `headRefOid` again and do the head check again. A push to the PR can move its head. Run the install of the preflight again. Print `git status --short` as `GIT_STATUS_BEFORE_GATE`. When `git -C <WORKTREE> status --porcelain --untracked-files=all` prints a line, stop with principled incompletion before the first gate, and name each path. CI tests the commit, so a gate never runs on a file that the commit does not hold. Run every gate that applies, then the test gate. When `metrics` is not `null`, run `metrics.command`. Never re-create a metrics script from memory. Run each gate in its own bash subshell, such as `bash -c '<gate script>'`, as GitHub Actions runs a `run` step. Start the gate script with `set +e`. zsh does not split an unquoted `${name:+...}` into words, and it has no `PIPESTATUS`. Put its tools first on `PATH` and export its CI environment there. Print `<NAME>_TOOLS` and `<NAME>_ENV`. `<NAME>_ENV` lists the names that the run exports as `<name>=<value>`, which are `CI` and each `ci_env` entry that has a `value`. It lists each other name of the `ci_env` and `env` of the gate as `<name>=set` or `<name>=unset`. Run each `check`, `start`, `setup` command and the gate command in its own subshell from the root, as `( cd <WORKTREE> && <entry> )`. Before each gate, check its `env` and prerequisites again and run its `setup` commands in order. Also make sure that the script or binary of the gate command exists on this branch. If one fails, print `NOT_STARTED` for the gate with the reason, and stop with principled incompletion. Print each command as the profile writes it, with no variable expanded, and its exit code and output. Print a gate that does not apply as `SKIPPED`, with its globs. Before the subshell of a gate opens, record `git -C <WORKTREE> diff --name-only`. Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list. It uses `git -C <WORKTREE> checkout -- <path>`. It prints `<NAME>_RESTORED=<path>` for each restored path that `git -C <WORKTREE> diff --name-only` showed before the restore. A `rewrites` path that changed before the gate stays as it is, so the status check after the gates shows it. Then print `git status --short` as `GIT_STATUS_AFTER_GATE`. If a tracked file changed after the restore, print its `git diff`. The gate is red, and the run stops with principled incompletion.
 
+For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.
+A missing success line makes that gate red and stops the run with principled incompletion.
+
 A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed. It is also a finding when the same command is green on the base branch. Name the files in the failure output. Otherwise it is a pre-existing red. List it, and never fix it. The run cannot stop clean while it stays red. In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red. The proof names the changed line of the CI diff that the gate does not mirror. It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0. The run gives the command what the changed line gives, such as an `env` value. When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change. Then stop with principled incompletion, and name the step. Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof. Each other red gate blocks, as in the mode `standard`. CI on `PR_HEAD` still gates the merge.
 
 Baseline: do the gate run once. Its metric values are the first budget. A `metrics` value of `null` means no metrics.
 
 Each iteration:
+
+Before its first reviewer launch, keep `<branch>.review.json` beside the findings ledger.
+Store `baseSha` as the merge base of `BASE_SHA` and `REVIEWED_HEAD`.
+Store `firstReviewedHead` as that first `REVIEWED_HEAD`.
+Both values are full commit SHAs.
+Keep the record across resumes and new runs, including runs that archive earlier findings.
+Never replace an unreadable record with a new baseline.
+Before each reviewer launch and after the final gate, run `astack check review-growth --base <baseSha> --first-reviewed <firstReviewedHead> --head <HEAD>`.
+Print its output as `REVIEW_GROWTH`.
+Report an unavailable command or record with its reason instead of zero growth.
+Its default warning requires growth above both 200 lines and half the first diff's text changes.
+The comparison uses the same fixed base, so a base update can add unrelated changes.
+Binary counts remain separate from line counts.
+Growth warnings stay advisory and never add a review round.
+The iteration cap still applies.
+
 
 1. Print `REVIEWED_HEAD` as the output of `git rev-parse HEAD`. It is the `<HEAD>` of the diff that the reviewers get. Launch the `pr-review-toolkit` review agents in parallel with the Agent tool. Tell each one to review `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out. Give each one every line of `reviewers.notes`. In mode `ci_proof`, also tell each one that the gates mirror the CI of the base. So only the review examines the CI files before CI runs. Also tell each one that `astack check ci-pins` does not read a tool that a `run` step or a script installs. A change to such an install is a blocking finding. With `reviewers.select` set to `all`, launch every agent in `reviewers.agents`. Otherwise launch `code-reviewer`, plus each agent in `reviewers.agents` that fits what the diff changes. Never run `/pr-review-toolkit:review-pr <base>`, which takes review aspects, not a branch. Never run `code-simplifier`, which edits code. Paste each output unmodified. Then examine the diff against each file in `reviewers.checklists`.
 2. Triage each finding by its label. A finding is a blocking candidate when its reviewer label is Critical, Blocker, High or Important. A `normal` label is the same when the reviewer's machine output uses it to mean Important. A finding with an unclear label is a candidate until you triage it. Nit, Style, Suggestion, Pre-existing, Advisory and Informational do not block, unless the finding shows a gate failure. A checklist violation is a candidate too, whatever its label.
@@ -83,9 +105,15 @@ Each iteration:
 4. Fix each blocking finding for real, with its commits as the rules say. The gate findings of the last gate run are blocking findings too.
 5. Comment gate. Invoke `astack:no-comments` over the diff if the Skill tool lists it. Otherwise delete every comment on an added or changed line unless it is on the keep list. The keep list is a license header, a note on behaviour that an external dependency forces, and `prettier-ignore` or a style-only suppression. It also holds a doc comment that defines a public API contract, and an issue or RFC link that explains a constraint. A comment stays too when it fits in 2 lines and one of its lines matches `comments.keep_patterns`, with or without its comment marker. A pattern that starts with a comment marker matches only a line with that marker. A pattern keeps only the lines that it matches. Delete the comment when another line, or the `rest` group of a pattern, holds a form that the hook denies. Those forms are provenance, narration, a `file:line` reference, the file's own path, a banner and commented-out code. Commit the deletions file by file.
 6. Do the gate run. When `metrics` is not `null`, no key in `metrics.never_increase` may rise.
+   For a new contract-coverage matrix, run `astack check spec-drift <matrix.json>` before the test gates.
+   Use criterion markers in spec prose and control markers in test names.
+   Keep shared and regression controls with explicit reasons.
+   Links do not prove that tests run or replace the removal controls of the prepass.
 7. In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`. Then read the `headRefOid` of the PR again and do the head check again. Print a gate summary and a decision. If `proof.pr_comment` is set, post a comment on the PR. The comment starts with its heading, with `<n>` replaced by the iteration number. It holds the head SHA that the iteration ended on, the iteration number and the blocking finding count. It holds each gate command as the profile writes it, with its exit code, `SKIPPED`, `UNAVAILABLE`, `NOT_STARTED` or `BLOCKED`. It also holds the mode, and each advisory gate of mode `ci_proof` with its proof. Then it holds the decision and each item of its `extra` list.
 
 Decide:
+
+The final report includes `REVIEW_GROWTH`, its fixed baseline, and any unavailable comparison with its reason.
 
 - `stop_clean`: the iteration found no blocking finding, the comment gate removed nothing and every gate exited 0 or is an advisory gate of mode `ci_proof`. Also, the metrics held, and at least `iterations.min` iterations have run. An iteration that commits a fix in step 4 is not clean, because no reviewer saw that commit. A clean stop also needs `REVIEWED_HEAD` to equal the output of `git rev-parse HEAD` after the last gate run. No reviewer saw a commit that comes after the review, such as the merge of a moved base in a gate run. A clean stop also needs a diff from the base that is not empty. In a run with a PR, a clean stop also needs `PR_HEAD` to equal `HEAD` after the push of step 7. CI tests only the head of the PR, so a review or a gate run of an unpushed commit proves nothing for the PR. In mode `ci_proof`, a clean stop also needs the mode in the gate summary, so the report names the mode. It also needs a CI read-back that passes on `PR_HEAD`, as the steps after the stop say, whatever `merge.after_clean_stop` says. A run of mode `ci_proof` without a PR stops with principled incompletion.
 - `stop_recurring`: a finding came back after one fix attempt. Print the ledger and the suspected root cause. Do not try again.

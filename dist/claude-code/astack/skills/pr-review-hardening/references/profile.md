@@ -38,6 +38,12 @@ The review stub that astack apply writes into a repo has a fallback for a sessio
 
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it.
 
+Every profile requires one gate named `change-proof` that runs the pinned astack CLI's `check proof` command.
+It cannot be optional, filtered by paths, suppressed, redirected, or replaced by `--summary`.
+Apply refuses a profile that omits or weakens this gate.
+The CI job must require the same check for every candidate change.
+Java 17 or later is a prerequisite.
+
 Give each blocking CI job a gate that runs the same command. When the job starts services or seeds data first, the gate names them in `setup` and `requires`. When the job runs only for some paths, the gate names them in `when_changed`. When the job runs on every pull request, keep `when_changed` empty.
 
 astack apply compares the gates with the repo's pull request workflows. It refuses a profile that leaves a blocking job with no gate. It also refuses a gate that skips a path on which its job runs. An excluded job needs proof in the workflow that it is advisory or never runs on a pull request.
@@ -207,7 +213,7 @@ With no `metrics`, the run reports `METRICS=UNAVAILABLE` and has no budget check
 
 The default agents are `code-reviewer`, `silent-failure-hunter`, `pr-test-analyzer`, `comment-analyzer` and `type-design-analyzer`. `code-simplifier` is never allowed, because it edits code.
 
-Two astack extras, as `references/review.md` describes:
+An optional Standards and Spec extra, as `references/review.md` describes:
 
 ```yaml
 reviewers:
@@ -215,10 +221,12 @@ reviewers:
     - name: standards-and-spec
       invoke: the Skill tool with astack:code-review, using the base branch as the fixed point
       when: always
-    - name: interrogate
-      invoke: read the SKILL.md that astack skill-path astack:interrogate prints, and run it on git diff <BASE_SHA>...HEAD
-      when: the diff changes a public API, adds or edits a database migration, or adds a dependency between workspace packages
 ```
+
+Add `astack:interrogate` only when the owner explicitly requests that review for a stated risk.
+Its `invoke` reads the SKILL.md from `astack skill-path astack:interrogate`.
+Its `when` names the requested scope.
+An existing profile entry remains an explicit request until the owner changes it.
 
 ## ledger
 
@@ -316,6 +324,19 @@ iterations:
 after_create_pr: none
 push: when-authorised
 gates:
+  - name: change-proof
+    command: astack check proof
+    env: []
+    requires:
+      - name: Java 17 or later
+        check: java -version
+        on_missing: stop
+    setup: []
+    when_changed: []
+    ci_env: []
+    after: []
+    tools: {}
+    rewrites: []
   - name: typecheck
     command: <typecheck command>
     env: []

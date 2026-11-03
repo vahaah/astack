@@ -47,14 +47,19 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 ## Review
 
+Run `astack check proof` on the current candidate before opening or updating its PR.
+Require exit 0 and a final line that starts with `ok: proof `.
+Keep its input digest and implementation controls with the verification.
+
 With astack installed, the agent that opens the PR runs `/astack:code-review` against the branch base.
 Run it after the slop and `/astack:no-comments` passes, before `gh pr create`.
 Without that skill, review the diff against repository standards and the ticket yourself.
-Read `astack:interrogate` by path for a contested design, then follow its process.
-Also use that process for public API changes, database migration changes, or new dependencies between workspace packages.
+Run `astack:interrogate` only when the user or the repo profile requests it.
+Read its SKILL.md by path and follow its reproduction process.
+Check reachable risks that the spec omits through a targeted test or probe.
 Fix each hard Standards violation in a separate commit.
 Fix each Spec finding in a separate commit.
-Fix each `interrogate` finding marked Act on in a separate commit.
+Fix each verified `interrogate` finding in a separate commit.
 A smell requires judgment.
 Fix it only when the fix stays inside the scope fence.
 Use `/astack:write-ticket` for a finding outside that fence.

@@ -1,0 +1,84 @@
+{
+	"version": 1,
+	"specs": ["docs/reference/change-proof-contract.md"],
+	"tests": [
+		"tests/astack/change-proof-cli.test.ts",
+		"tests/astack/change-proof-submodules.test.ts",
+		"tests/astack/change-proof-snapshot.test.ts",
+		"tests/astack/change-proof.test.ts",
+		"tests/astack/proof-migration.test.ts",
+		"tests/hardening-consistency.test.ts"
+	],
+	"links": [
+		{
+			"criterion": "CP-01",
+			"controls": ["proof-missing-manifest", "proof-summary-unverified"]
+		},
+		{
+			"criterion": "CP-02",
+			"controls": [
+				"proof-valid-triple",
+				"proof-restored-run",
+				"proof-release-history"
+			]
+		},
+		{
+			"criterion": "CP-03",
+			"controls": ["proof-wrong-countermodel"]
+		},
+		{
+			"criterion": "CP-04",
+			"controls": [
+				"proof-scope-hole",
+				"proof-stale-digest",
+				"proof-index-binding",
+				"proof-worktree-mode",
+				"proof-submodule-binding",
+				"proof-submodule-unreadable",
+				"proof-submodule-explicit",
+				"proof-entry-encoding",
+				"proof-path-encoding"
+			]
+		},
+		{
+			"criterion": "CP-05",
+			"controls": [
+				"proof-mutation-scope",
+				"proof-reserved-module",
+				"proof-mutation-boundary"
+			]
+		},
+		{
+			"criterion": "CP-06",
+			"controls": [
+				"proof-domain-reference",
+				"proof-adr-contract",
+				"proof-symlink-reference"
+			]
+		},
+		{
+			"criterion": "CP-07",
+			"controls": ["proof-category-arrows"]
+		},
+		{
+			"criterion": "CP-08",
+			"controls": ["proof-output-protocol"]
+		},
+		{
+			"criterion": "CP-09",
+			"controls": ["proof-bad-jar"]
+		},
+		{
+			"criterion": "CP-10",
+			"controls": ["proof-timeout-cleanup"]
+		},
+		{
+			"criterion": "CP-11",
+			"controls": ["proof-profile-gate", "proof-fallback-marker"]
+		},
+		{
+			"criterion": "CP-12",
+			"controls": ["proof-migration-stop"]
+		}
+	]
+}

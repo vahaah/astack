@@ -28,7 +28,8 @@ This includes the Multi-phase plan playbook, `figure-it-out`, and the start of a
 It also includes a Feature whose goal, scope, or one-way doors remain open.
 
 When the user is present, `astack-plan` asks only the calls that the user alone can make.
-It uses `how`, `architect`, and `interrogate` to settle facts and design forks.
+It uses `how` and `architect` to settle facts and design forks.
+Code `interrogate` runs only on an explicit user or profile request.
 It ends by asking for the execution grant.
 Run the playbook that it names only after the user grants execution.
 

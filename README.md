@@ -249,6 +249,13 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 
 Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
 
+`astack check review-growth` reports advisory diff growth from fixed first-review commits.
+`astack check spec-drift` checks declared acceptance criteria against test-control links.
+The [review checks runbook](docs/runbooks/review-checks.md) gives their commands and limits.
+`astack check proof` requires a domain contract, current TLA+ evidence, and internal composition records for every change.
+The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
+The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption in existing repositories.
+
 ## Hook profiles
 
 Strict is the default. Minimal turns off the STE, type and comment checks. Each group can be overridden with a Boolean, and the workflow guards stay on.

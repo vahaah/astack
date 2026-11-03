@@ -2,7 +2,7 @@ import type { Command } from "../command.ts";
 import { type Io, usageError } from "../io.ts";
 import { CHECKS } from "./check/index.ts";
 
-function run(args: readonly string[], io: Io): number {
+function run(args: readonly string[], io: Io): number | Promise<number> {
 	const [name, ...rest] = args;
 	const check = CHECKS.find((candidate) => candidate.name === name);
 	if (!check)
@@ -13,14 +13,16 @@ function run(args: readonly string[], io: Io): number {
 	return check.run(rest, io);
 }
 
-export const command: Command = {
+export const command: Command<number | Promise<number>> = {
 	name: "check",
 	summary: `Runs one check: ${CHECKS.map((check) => check.name).join(", ")}.`,
 	usage: CHECKS.map((check) => check.usage).join("\n"),
 	run,
 };
 
-export function checkAlias(check: Command): Command {
+export function checkAlias<Code extends number | Promise<number>>(
+	check: Command<Code>,
+): Command<Code> {
 	return {
 		name: `check-${check.name}`,
 		summary: `Runs check ${check.name}.`,

@@ -1,5 +1,15 @@
 # Subagents
 
+## Internal contract
+
+Every change brief includes the [ChangeProof record](change-proof.md), assigned scope, and permitted effects.
+Use the shared summary for domain terms, typed arrows, laws, abstraction, and ADR references.
+Every handoff states current proof and implementation evidence, with unfinished obligations.
+The summary remains unverified until the actual gate succeeds.
+Do not request or emit a private reasoning transcript.
+
+## Roles
+
 Use `subagent_type: "astack-delegate"` for every subagent that you spawn inside a playbook step.
 This includes delegates that write code and helpers for other tasks.
 The chat that receives `/astack-mode` runs the playbook.

@@ -1,5 +1,10 @@
 # Deterministic gate
 
+Every change requires the unrestricted, nonoptional `change-proof` gate.
+It accepts only exit 0 with a final line that starts with `ok: proof `.
+An unverified summary, skipped proof, saved receipt, or unavailable tool cannot satisfy it.
+Implementation and document gates remain separate from the model result.
+
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it. A gate that a CI job needs must run here with the same command, the same setup and the same services. A run that cannot give it those stops and says why.
 
 ## CI environment
@@ -79,6 +84,8 @@ In the subshell of the gate, run each entry in its own subshell from the root, a
    - Export its CI environment, and print `<NAME>_ENV`. `<NAME>_ENV` lists the names that the run exports as `<name>=<value>`, which are `CI` and each `ci_env` entry that has a `value`. It lists each other name of the `ci_env` and `env` of the gate as `<name>=set` or `<name>=unset`.
    - Check its `env` and its prerequisites as the preflight does. Then run each `setup` command in order, and print each one with its exit code. If the gate cannot start, print `<NAME>_EXIT=NOT_STARTED` as the section above says.
    - Otherwise print `<NAME>_CMD=<command>`, with the command as the profile writes it. Run it in its own subshell from the root, and print `<NAME>_EXIT=<code>` and the raw output. For long output, save the full output to a file outside the tree, print its path, and print the failing sections and the summary unmodified.
+   - For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.
+   - A missing success line makes that gate red and stops the run with principled incompletion.
    - Before the subshell of a gate opens, record `git -C <WORKTREE> diff --name-only`. Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list. It uses `git -C <WORKTREE> checkout -- <path>`. It prints `<NAME>_RESTORED=<path>` for each restored path that `git -C <WORKTREE> diff --name-only` showed before the restore. A `rewrites` path that changed before the gate stays as it is, so the status check after the gates shows it.
 3. If `metrics` is set, run `metrics.command`, or `metrics.fallback` when the command's script is missing on this branch. Print `METRICS_CMD`, `METRICS_EXIT` and the raw JSON. Without `metrics`, print `METRICS=UNAVAILABLE`. Never re-create a metrics script from memory. A re-created script measures something else, and a shared temporary path can be overwritten by another session.
 4. If `type_coverage` is set, run it and print `TYPE_COVERAGE_CMD`, `TYPE_COVERAGE_EXIT` and `TYPE_COVERAGE_PERCENT`.
@@ -203,6 +210,7 @@ When the run ends in `stop_recurring` or `stop_principled_incompletion` and `pro
 14. Confirmation that no gate wrote a tracked file outside its `rewrites`, and each file that the run restored.
 15. The ledger path.
 16. Lesson candidates: each finding whose `class` is `none`, with its id and claim.
+17. Review growth: the fixed baseline, command output, warnings, and any unavailable comparison with its reason.
 
 ## Drive the loop with /goal
 

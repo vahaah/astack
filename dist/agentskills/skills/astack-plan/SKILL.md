@@ -148,6 +148,10 @@ Then stop.
 
 ## Run the stages
 
+Every change follows `astack-mode references/change-proof.md`, including quick work and docs.
+DDD terms and internal composition records start before implementation.
+Each governing ADR links its function contract, category laws, formal claims, and executable controls.
+
 S0 runs first.
 S1 runs in the background while S2 asks round 1.
 S3 runs during each round.
@@ -164,7 +168,7 @@ Run S7 and S8 last.
 | S3 Words | main | `astack-domain-modeling` writes each term at once | Each `terms:` entry is in the glossary |
 | S4 Design | lead subagent | `astack-architect` phases A and B with checkpoint | A sketch branch that compiles, and its open questions sorted |
 | S5 Sequence | main | Sessions, steps, waves, lanes and hot-file regions | The checker passes, and the first session can start now |
-| S6 Stress | lead subagent | `astack-interrogate` on the sketch, or a premise attack | No Act-on finding is open |
+| S6 Spec review | lead subagent | `references/spec-review.md` on the plan, plus a premise check when needed | Each required property has a verification obligation and no owner choice is open |
 | S7 Tracker | main | The footprint of the tier | The standard tier writes no new object |
 | S8 Hand-off | main | The final round, the execution grant, the plan commit | The reply below |
 
@@ -187,7 +191,7 @@ When a stage runs inline with no subagent, the main thread reads the skills of t
 | S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
 | S4 | `astack-codebase-design` for the depth words. `astack-prototype` when a person must judge a prototype | The S4 lead reads `astack-architect` and `astack-arena`. A fork that a test settles reads `astack-mode playbooks/prototype.md` |
 | S5 | None | `astack-principles` and each reference that its index says applies. The slicing rules of `astack-to-tickets`. `astack-figure-it-out` for a large migration or an unattended run. The charting rules of `astack-wayfinder`, in a programme |
-| S6 | None | The S6 lead reads `astack-interrogate`, or `astack-principles references/attack-the-premise.md` |
+| S6 | None | The S6 lead reads `references/spec-review.md`. It reads `astack-principles references/attack-the-premise.md` when needed |
 | S7 | `astack-write-ticket` for each ticket | The rules of `astack-to-spec`, when the owner asks for a spec |
 | S8 | `astack-write-docs` for ADRs, the glossary and PR bodies | None |
 
@@ -235,6 +239,7 @@ Before `status: active`, run it with `--strict`.
 Never split a session to clear a note.
 
 Log each gate verdict as a trail row. The pass of interrogate and of exhaust the design space needs the result of a subagent as its evidence. A gate that fails, does not apply or has a waiver gets one line under `## Gates`.
+The historical `interrogate` gate now records the S6 spec review.
 
 ## Round format
 

@@ -259,6 +259,12 @@ describe("checkCiParity", () => {
 				job: "check.yml#manifests",
 				uncovered: ["uses acme-tools/manifest-lint@v1"],
 			},
+			{
+				kind: "mapped",
+				job: "check.yml#proof",
+				via: "command",
+				gates: ["change-proof"],
+			},
 		]);
 		expect(parityFailures(report)).toEqual([
 			"check.yml#validate has no gate for: bun install --frozen-lockfile; bun run lint; bun run db:test:setup; cd apps/tasks && bunx worker-cli@1.2.3 deploy --dry-run",
@@ -309,6 +315,12 @@ describe("checkCiParity", () => {
 				via: "config",
 				gates: ["manifest-lint"],
 				reason: "The gate runs the tool that the action wraps.",
+			},
+			{
+				kind: "mapped",
+				job: "check.yml#proof",
+				via: "command",
+				gates: ["change-proof"],
 			},
 		]);
 		expect(parityFailures(report)).toEqual([]);
@@ -520,9 +532,11 @@ describe("checkCiParity", () => {
 			"- check.yml#judge: excluded, because continue-on-error is true. Advisory: continue-on-error.",
 			"- check.yml#nightly: excluded, because its if condition is false on a pull request that has no label. Runs only on the schedule.",
 			"- check.yml#manifests: mapped by the project config to manifest-lint. The gate runs the tool that the action wraps.",
+			"- check.yml#proof: mapped by command to change-proof",
 			'- DIFFERS check.yml#browser-smoke step "Start the stack", mapped to layout-smoke. No mapped gate runs `supabase start`, `bun run dev &`. A prerequisite checks the stack, and the suite starts the app.',
 			'- DIFFERS check.yml#manifests step "acme-tools/manifest-lint@v1", mapped to manifest-lint. No mapped gate runs `uses acme-tools/manifest-lint@v1`. The gate runs the release of the tool that the action wraps.',
 			"- check.yml#validate runs the test gate test before worker-bundle, and the run always runs the test gate last.",
+			"- change-proof runs with the CI value of CI.",
 			"- lint runs with the CI value of CI.",
 			"- typecheck runs with the CI value of CI.",
 			"- worker-bundle runs with the CI value of CI.",

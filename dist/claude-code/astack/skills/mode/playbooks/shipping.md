@@ -43,6 +43,9 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 3. Make sure each verdict still covers the code.
 
+   Require current `astack check proof` evidence for the candidate that will land.
+   A changed input, unverified summary, or old receipt cannot satisfy the gate.
+
    A verdict covers a patch.
    A chain rebase changes each upper PR's SHA without necessarily failing a check.
    Compare `git patch-id` at the verdict SHA with the current head before carrying an older verdict.

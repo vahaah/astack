@@ -25,6 +25,11 @@ The link always runs the build of your clone.
 
 ## Install in a known repo
 
+Every adopted repo needs the [required ChangeProof capability](runbooks/change-proof-migration.md).
+Prepare its domain contract, integrated ADR, model, controls, and CI pin before the managed-file apply.
+The companion profile requires an unrestricted, nonoptional `change-proof` gate.
+Apply rejects a missing or weakened gate.
+
 A known repo has a config file, `projects/<name>.json`, in the companion. The companion is a private folder of the owner. Set `ASTACK_COMPANION_DIR` to it, or pass `--companion <dir>` to each command. With neither, apply reads the synthetic `examples/companion/`, and a write refuses it. First, preview the result in a temporary copy. Then write it on a new branch:
 
 ```sh
@@ -80,6 +85,7 @@ The command reads the tracker from the branch names and the commit subjects. It 
 | File | Purpose |
 |---|---|
 | `.astack/profile.json` | The settings that the astack hooks and the CLI read. These are the tracker, the merge grant, STE, the plan folders and the comment keep patterns. The `managed` list names each file that apply writes. |
+| `.astack/proof.json` | The repo-owned domain, composition, model, and control contract. Prepare it in the repo rather than generating unrelated proof through apply. |
 | `.astack/NOTICE` | The MIT notices of pstack and mattpocock/skills. It names each file that holds their text, and each of those files names it. |
 | `.claude/skills/pr-review-hardening/SKILL.md` | A stub that starts `astack:pr-review-hardening` in this repo. `skillMirrors` in the project config writes the same stub into a mirror such as `.agents/skills`. |
 | `.astack/pr-review-hardening/FALLBACK.md` | The fallback loop that each stub reads only when the plugin is absent. Primary and mirrored stubs link to this shared file. |

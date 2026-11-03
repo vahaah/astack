@@ -16,6 +16,7 @@ export interface SimpleCommand {
 	stdin: string | undefined;
 	redirects: Redirect[];
 	piped?: boolean;
+	background?: boolean;
 }
 
 const HEREDOC_SUBSTITUTION =
@@ -196,7 +197,14 @@ export function parseShell(src: string): SimpleCommand[] {
 			i++;
 			continue;
 		}
-		if (c === ";" || c === "&" || c === "(" || c === ")") {
+		if (c === "&") {
+			const paired = src[i + 1] === "&";
+			if (!paired) current.background = true;
+			endCommand();
+			i += paired ? 2 : 1;
+			continue;
+		}
+		if (c === ";" || c === "(" || c === ")") {
 			endCommand();
 			i++;
 			continue;
