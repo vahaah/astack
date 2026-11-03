@@ -16,7 +16,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-08] Tool exits, complete protocol output, state counts, and expected violations must agree.
 - [criterion:CP-09] A wrong jar or unavailable required Java runtime blocks admission.
 - [criterion:CP-10] Timeout or cleanup failure leaves no admitted result or live owned process.
-- [criterion:CP-11] Every adopted profile requires an unrestricted, nonoptional, unsuppressed executable proof gate.
+- [criterion:CP-11] Every adopted profile requires an unrestricted, nonoptional, unsuppressed executable proof gate with a checked success marker.
 - [criterion:CP-12] A blocked installation transition preserves review state and remains a visible principled stop.
 
 ## Claim boundary
