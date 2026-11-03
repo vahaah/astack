@@ -14,7 +14,6 @@ import {
 import {
 	changedPaths,
 	isAncestor,
-	readModelFile,
 	readRepoFile,
 	resolveCommit,
 	snapshot,
@@ -150,7 +149,7 @@ function repoView(
 		for (const path of matrixSourcePaths(matrix.text))
 			files.set(path, readRepoFile(root, path));
 	const modelFiles = new Map(
-		modelPaths(proof).map((path) => [path, readModelFile(root, path)]),
+		modelPaths(proof).map((path) => [path, readRepoFile(root, path)]),
 	);
 	return { files, modelFiles, changed };
 }

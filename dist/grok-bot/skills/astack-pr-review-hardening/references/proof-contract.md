@@ -21,6 +21,7 @@ The gate admits only a complete current run.
 
 Unknown fields, duplicate names, unresolved references, and empty required text fail.
 Paths stay inside the repo and outside `.git`.
+Proof references must resolve directly to regular files, without a symlink in the path.
 Scope includes tracked edits, staged edits, deletions, and nonignored untracked files.
 A scope row must cover a changed path.
 The checker binds current candidate files and model inputs before and after execution.

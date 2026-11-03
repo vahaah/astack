@@ -5,6 +5,7 @@ import {
 	readdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
@@ -156,6 +157,36 @@ describe("astack check proof", () => {
 		expect(
 			git(repo.root, "diff", "--cached", "--", "formal/Gate.tla"),
 		).toContain("-Admit ==");
+	});
+
+	test("a glossary cannot hide unbound input bytes behind an in-repo symlink", () => {
+		const context = PROOF_FILES["CONTEXT.md"];
+		if (context === undefined)
+			throw new Error("the context fixture is missing");
+		const repo = proofRepo(
+			scratch,
+			(p) => {
+				p.scope.push({
+					path: ".gitignore",
+					obligation: "P1",
+					modelRefs: ["AdmitFresh"],
+				});
+			},
+			{
+				...PROOF_FILES,
+				".gitignore": "private/\n",
+				"private/context.md": context,
+			},
+		);
+		unlinkSync(join(repo.root, "CONTEXT.md"));
+		symlinkSync("private/context.md", join(repo.root, "CONTEXT.md"));
+		git(repo.root, "add", "CONTEXT.md");
+		git(repo.root, "commit", "-q", "-m", "link the glossary");
+		const run = proof(repo.root);
+		expect(run.code).toBe(1);
+		expect(run.out).toBe(
+			"stop: proof domain: CONTEXT.md has a symbolic link in its path\n",
+		);
 	});
 
 	test.each<[string, (proof: Proof) => void, string]>([

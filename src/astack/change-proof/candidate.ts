@@ -105,6 +105,7 @@ export function readRepoFile(root: string, path: string): FileRead {
 		return { kind: "problem", problem: "missing" };
 	}
 	if (!isInside(root, real)) return { kind: "problem", problem: "outside" };
+	if (real !== join(root, path)) return { kind: "problem", problem: "symlink" };
 	try {
 		if (!statSync(real).isFile())
 			return { kind: "problem", problem: "not-a-file" };
@@ -112,14 +113,6 @@ export function readRepoFile(root: string, path: string): FileRead {
 	} catch {
 		return { kind: "problem", problem: "unreadable" };
 	}
-}
-
-export function readModelFile(root: string, path: string): FileRead {
-	const read = readRepoFile(root, path);
-	if (read.kind === "problem") return read;
-	return realpathSync(join(root, path)) === join(root, path)
-		? read
-		: { kind: "problem", problem: "symlink" };
 }
 
 function entryLine(root: string, base: string, path: string): string {
