@@ -1,4 +1,5 @@
 import { err, ok, type Result } from "../result.ts";
+import { parseMatrix } from "../spec-drift.ts";
 import { type FileRead, modelPaths, proofSections } from "./admission.ts";
 import type { ChangeProof } from "./contract.ts";
 
@@ -37,6 +38,15 @@ export function ciProofRecords(
 	for (const path of paths)
 		if (inputs.has(path))
 			return err(`${path} also supplies another proof input`);
+	const matrixPath = proof.domain.controls.matrix;
+	const matrixFile = files.get(matrixPath);
+	if (matrixFile?.kind !== "text")
+		return err(`${matrixPath} must supply the committed control matrix`);
+	const matrix = parseMatrix(matrixFile.text);
+	if (!matrix.ok) return err(`${matrixPath}: ${matrix.error}`);
+	const sources = new Set([...matrix.value.specs, ...matrix.value.tests]);
+	for (const path of paths)
+		if (sources.has(path)) return err(`${path} also supplies a matrix source`);
 	for (const path of records) {
 		if (!path.startsWith("formal/") || !path.endsWith(".md"))
 			return err(`${path} is not a Markdown proof record under formal/`);

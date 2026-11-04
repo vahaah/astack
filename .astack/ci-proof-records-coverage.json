@@ -11,6 +11,8 @@
 				"ci-proof-record-manifest",
 				"ci-proof-record-sections",
 				"ci-proof-record-role",
+				"ci-proof-matrix-source",
+				"ci-proof-matrix-read",
 				"ci-proof-record-blobs",
 				"ci-proof-manifest-mode",
 				"ci-proof-record-tool-pin",

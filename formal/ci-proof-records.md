@@ -11,7 +11,8 @@ ADR 0005 D3 keeps fresh model execution mandatory.
 The default manifest must parse completely and name the actual merge base.
 Its committed proof records must be regular UTF-8 Markdown files under `formal/`.
 They must contain the four required proof sections and valid references.
-The records cannot also serve authority, implementation, witness, glossary, matrix, or model roles.
+The records cannot also serve authority, implementation, witness, glossary, matrix, listed source, or model roles.
+The classifier reads the committed matrix and refuses missing or malformed data.
 Changed source, models, controls, arbitrary docs, and tool versions remain blocked.
 
 `formal/CiProofRecords.tla` models this classification under `formal/CiProofRecords.cfg`.

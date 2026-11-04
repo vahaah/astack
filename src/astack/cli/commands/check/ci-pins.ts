@@ -58,6 +58,10 @@ function proofRecordsAt(
 		if (!read.ok) return read;
 		files.set(record, { kind: "text", text: read.value });
 	}
+	const matrixPath = parsed.value.domain.controls.matrix;
+	const matrix = proofFileAt(root, matrixPath);
+	if (!matrix.ok) return matrix;
+	files.set(matrixPath, { kind: "text", text: matrix.value });
 	return ciProofRecords(parsed.value, base, files);
 }
 

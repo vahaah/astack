@@ -13,6 +13,7 @@ import { ciProofRecords } from "../../src/astack/change-proof/ci-records.ts";
 import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
 import {
 	git,
+	marker,
 	PROOF_FILES,
 	scratchDir,
 	validProof,
@@ -36,7 +37,7 @@ const record = (() => {
 	return text;
 })();
 
-function candidate() {
+function candidate(matrixRole?: "spec" | "control") {
 	const root = mkdtempSync(join(scratch, "repo-"));
 	git(root, "init", "-q", "-b", "main");
 	writeFiles(root, {
@@ -46,6 +47,17 @@ function candidate() {
 		[PROCESS]:
 			"# Process\n\nStatus: Accepted\n\n### D1. Ratify integrated proposals\n\nIntegrated proposals govern implementation.\n",
 		[WORKFLOW]: workflow("bun run check"),
+		...(matrixRole === undefined
+			? {}
+			: {
+					[RECORD]: `${record}\n${marker("criterion", "P1")} Fresh inputs only.\ntest ${marker("control", "C1")} admits fresh inputs\n`,
+					".astack/matrix.json": JSON.stringify({
+						version: 1,
+						specs: matrixRole === "spec" ? [RECORD] : ["spec/gate.md"],
+						tests: matrixRole === "control" ? [RECORD] : ["tests/gate.txt"],
+						links: [{ criterion: "P1", controls: ["C1"] }],
+					}),
+				}),
 	});
 	git(root, "add", "-A");
 	git(root, "commit", "-q", "-m", "base");
@@ -175,6 +187,35 @@ describe("CI changes with required proof records", () => {
 					error: `${RECORD} also supplies another proof input`,
 				});
 			}
+		},
+	);
+
+	test.each(["spec", "control"] as const)(
+		"[control:ci-proof-matrix-source] a proof record cannot also supply a matrix %s source",
+		(role) => {
+			const repo = candidate(role);
+			writeFileSync(
+				join(repo.root, RECORD),
+				`${record}\n${marker("criterion", "P1")} Any inputs.\ntest ${marker("control", "C1")} admits every input\n`,
+			);
+			save(repo);
+			refuses(repo, `${RECORD} also supplies a matrix source`);
+		},
+	);
+
+	test.each(["missing", "malformed"])(
+		"[control:ci-proof-matrix-read] an unreadable %s matrix cannot hide its listed source roles",
+		(defect) => {
+			const repo = candidate();
+			repo.proof.domain.controls.matrix =
+				defect === "missing" ? "missing-matrix.json" : "CONTEXT.md";
+			save(repo);
+			refuses(
+				repo,
+				defect === "missing"
+					? "missing-matrix.json is missing from the committed proof inputs"
+					: "CONTEXT.md: the matrix is not valid JSON",
+			);
 		},
 	);
 
