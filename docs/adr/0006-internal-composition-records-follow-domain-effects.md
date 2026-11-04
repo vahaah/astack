@@ -59,6 +59,9 @@ The model run checks its finite encoding.
 
 #### Category composition
 
+`ciProofRecords` also maps a parsed ChangeProof to permitted paths or a refusal, with fixed base and committed file observations.
+It adds no composition operator.
+
 For this gate, `parseChangeProof` maps text into `R_E(ChangeProof)`.
 `admitChangeProof` with fixed AdmissionFacts maps ChangeProof into `R_E(Admitted)`.
 Their Kleisli composition keeps the first rejection.
@@ -78,6 +81,10 @@ Runtime controls check rejection order and admission outcomes.
 They do not establish a law for an arbitrary uninspected function.
 
 #### Verification
+
+The [CI record contract](../../formal/ci-proof-records.md) defines the narrow metadata classification.
+`formal/CiProofRecords.tla` and `formal/CiProofRecords.cfg` check `CiRecordsSafe` and `CurrentProofRequired`.
+`.astack/ci-proof-records-coverage.json` binds its executable CLI controls.
 
 [The matrix](../../.astack/proof-coverage.json) names the applicable model laws and implementation controls.
 Pure or artifact composition must reject an unsupported monad claim.

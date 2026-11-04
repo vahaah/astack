@@ -68,6 +68,9 @@ It abstracts validator internals and treats judged tool evidence as inputs.
 
 #### Category composition
 
+`ciProofRecords` also maps a parsed ChangeProof to permitted paths or a refusal, with fixed base and committed file observations.
+It adds no composition operator.
+
 The pure arrows use a fixed error type `Rejection`.
 
 ```text
@@ -115,6 +118,10 @@ The [admission implementation](../../src/astack/change-proof/admission.ts) remai
 
 #### Verification
 
+The [CI record contract](../../formal/ci-proof-records.md) defines the narrow metadata classification.
+`formal/CiProofRecords.tla` and `formal/CiProofRecords.cfg` check `CiRecordsSafe` and `CurrentProofRequired`.
+`.astack/ci-proof-records-coverage.json` binds its executable CLI controls.
+
 [The proof matrix](../../.astack/proof-coverage.json) links the contract to implementation controls.
 The negative model control removes the freshness guard from `Admit` and must violate `AdmitSafe`.
 A parse error or another violation does not satisfy that obligation.
@@ -132,6 +139,9 @@ An active run keeps its frozen configuration.
 Migration preserves ledgers, recurrence history, cap use, and fixed growth baselines.
 An existing CI-pin stop stays visible until an authorized installation transition resolves it.
 Fresh required CI on the candidate head remains necessary.
+The CI classifier can admit the committed default proof manifest and declared separate proof records beside CI changes.
+It checks the actual base, strict file form, complete proof sections, references, and separate file roles.
+All other non-CI changes remain blocked. Classification does not make a failed current proof advisory.
 Remote required-check settings remain an owner action.
 
 ### D5. ADR history stays explicit

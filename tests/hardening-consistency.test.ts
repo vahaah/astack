@@ -2436,7 +2436,7 @@ describe("a PR that changes CI", () => {
 			sectionLines(ciPins, "What each exit code means").join(" "),
 		);
 	const ciCheck = [
-		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. When the diff also changes another file, the check exits 1, because a red gate can then come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. Exit 3 also permits `.astack/proof.json` and its declared `ratification.proofRecord` files under `formal/`. The committed manifest must pass the full schema and name the actual merge base. Each record must be non-executable UTF-8 Markdown with all required sections and references. Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs. Changed models, controls, authority, and all other non-CI files still stop the run. These records grant no proof result. The current proof gate stays blocking in every mode. A file outside CI and this checked proof metadata stops the run, because a red gate can come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
 		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
 		"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
 		"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
@@ -3624,6 +3624,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 
 	const preflightRows: readonly Counterpart[] = [
 		stubbed(
+			"The required current proof gate stays blocking.",
+			"The required current proof gate stays blocking.",
+		),
+		stubbed(
+			"No attribution makes a failed proof advisory.",
+			"No attribution makes a failed proof advisory.",
+		),
+		stubbed(
 			"Print `git branch --show-current` and `git status --short`.",
 			"Print `WORKTREE` as the output of `git rev-parse --show-toplevel`.",
 		),
@@ -4579,6 +4587,14 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 	];
 
 	const greenRows: readonly Counterpart[] = [
+		stubbed(
+			"The required current proof gate stays blocking.",
+			"The required current proof gate stays blocking.",
+		),
+		stubbed(
+			"No attribution makes a failed proof advisory.",
+			"No attribution makes a failed proof advisory.",
+		),
 		stubbed("The gate is green when all of these hold:", "every gate exited 0"),
 		stubbed(
 			"every gate that ran exited 0, or is an advisory gate of mode `ci_proof`.",
@@ -4766,6 +4782,34 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 
 	const ciPinsRows: readonly Counterpart[] = [
 		stubbed(
+			"Exit 3 also permits `.astack/proof.json` and its declared `ratification.proofRecord` files under `formal/`.",
+			"Exit 3 also permits `.astack/proof.json` and its declared `ratification.proofRecord` files under `formal/`.",
+		),
+		stubbed(
+			"The committed manifest must pass the full schema and name the actual merge base.",
+			"The committed manifest must pass the full schema and name the actual merge base.",
+		),
+		stubbed(
+			"Each record must be non-executable UTF-8 Markdown with all required sections and references.",
+			"Each record must be non-executable UTF-8 Markdown with all required sections and references.",
+		),
+		stubbed(
+			"Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs.",
+			"Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs.",
+		),
+		stubbed(
+			"Changed models, controls, authority, and all other non-CI files still stop the run.",
+			"Changed models, controls, authority, and all other non-CI files still stop the run.",
+		),
+		stubbed(
+			"These records grant no proof result.",
+			"These records grant no proof result.",
+		),
+		stubbed(
+			"The current proof gate stays blocking in every mode.",
+			"The current proof gate stays blocking in every mode.",
+		),
+		stubbed(
 			"It exits 3 when the diff changes only paths under",
 			"It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses.",
 		),
@@ -4782,8 +4826,8 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"It does not read a tool that a `run` step or a script installs, so the review examines such a change.",
 		),
 		stubbed(
-			"When the diff also changes another file, the check exits 1",
-			"When the diff also changes another file, the check exits 1, because a red gate can then come from that file.",
+			"A file outside CI and this checked proof metadata stops the run",
+			"A file outside CI and this checked proof metadata stops the run, because a red gate can come from that file.",
 		),
 		stubbed(
 			"A version file is a file that a workflow or an action names",

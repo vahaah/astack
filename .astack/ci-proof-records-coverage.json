@@ -1,0 +1,23 @@
+{
+	"version": 1,
+	"specs": ["formal/ci-proof-records.md"],
+	"tests": ["tests/astack/ci-proof-records.test.ts"],
+	"links": [
+		{
+			"criterion": "ci-proof-records",
+			"controls": [
+				"ci-proof-records",
+				"ci-proof-record-scope",
+				"ci-proof-record-manifest",
+				"ci-proof-record-sections",
+				"ci-proof-record-role",
+				"ci-proof-matrix-source",
+				"ci-proof-matrix-read",
+				"ci-proof-record-blobs",
+				"ci-proof-manifest-mode",
+				"ci-proof-record-tool-pin",
+				"ci-proof-committed-inputs"
+			]
+		}
+	]
+}
