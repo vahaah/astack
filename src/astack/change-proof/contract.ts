@@ -55,6 +55,8 @@ export type ScopeRow = {
 	readonly modelRefs: readonly string[];
 };
 
+export const GOVERNING_METADATA = ["landed-header-value"] as const;
+
 export type AdrRatification = {
 	readonly kind: "integrated-proposal";
 	readonly process: {
@@ -63,6 +65,7 @@ export type AdrRatification = {
 	};
 	readonly integratedAt: string;
 	readonly proofRecord: string;
+	readonly governingMetadata?: (typeof GOVERNING_METADATA)[number];
 };
 
 export type AdrReference = {
@@ -549,7 +552,13 @@ function readProof(fields: Fields): ChangeProof {
 							...reference,
 							ratification: row.object(
 								"ratification",
-								["kind", "process", "integratedAt", "proofRecord"],
+								[
+									"kind",
+									"process",
+									"integratedAt",
+									"proofRecord",
+									"governingMetadata",
+								],
 								(value) => ({
 									kind: value.oneOf("kind", ["integrated-proposal"]),
 									process: value.object(
@@ -570,6 +579,14 @@ function readProof(fields: Fields): ChangeProof {
 										"a full lowercase commit SHA",
 									),
 									proofRecord: value.path("proofRecord"),
+									...(value.value("governingMetadata") === undefined
+										? {}
+										: {
+												governingMetadata: value.oneOf(
+													"governingMetadata",
+													GOVERNING_METADATA,
+												),
+											}),
 								}),
 							),
 						};
