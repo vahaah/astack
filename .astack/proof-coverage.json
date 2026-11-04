@@ -2,7 +2,7 @@
 	"version": 1,
 	"specs": [
 		"docs/reference/change-proof-contract.md",
-		"docs/adr/0007-integrated-proposals-require-accepted-ratification.md"
+		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -11,7 +11,8 @@
 		"tests/astack/change-proof.test.ts",
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts",
-		"tests/astack/change-proof-ratification.test.ts"
+		"tests/astack/change-proof-ratification.test.ts",
+		"tests/astack/governing-authority.test.ts"
 	],
 	"links": [
 		{
@@ -113,6 +114,21 @@
 				"proof-ratification-binds-an-ignored-proof-record-across-model-execution",
 				"proof-ratification-fetch-witness",
 				"proof-ratification-no-lazy-fetch"
+			]
+		},
+		{
+			"criterion": "proof-landing",
+			"controls": [
+				"proof-landing-selected-header",
+				"proof-landing-default-strict",
+				"proof-landing-closed-schema",
+				"proof-landing-process-strict",
+				"proof-landing-historical-authority",
+				"proof-landing-preservation",
+				"proof-landing-protected-bytes",
+				"proof-landing-fixed-base",
+				"proof-landing-structure",
+				"proof-landing-historical-grammar"
 			]
 		}
 	]

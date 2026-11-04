@@ -9,6 +9,7 @@ import {
 	rejection,
 	type Stage,
 } from "./contract.ts";
+import { compareLandedAuthority } from "./governing-authority.ts";
 import { type ModelPlan, planModel } from "./tla.ts";
 import type { Counts, Violation } from "./tlc.ts";
 
@@ -288,16 +289,56 @@ function adrCheck(
 	for (const reference of [adr, ratification.process]) {
 		const current = textOf(view.files, reference.file);
 		if (!current.ok) return fail(current.error);
-		for (const [commit, files] of [
-			[ratification.integratedAt, history.value.files],
-			[proof.base, history.value.baseFiles],
-		] satisfies readonly (readonly [string, ReadonlyMap<string, FileRead>])[]) {
-			const integrated = textOf(files, reference.file);
-			if (!integrated.ok) return fail(`${integrated.error} at ${commit}`);
-			if (integrated.value !== current.value)
-				return fail(
-					`${reference.file} differs from its ratified bytes at ${commit}`,
-				);
+		const governingMetadata =
+			reference === adr ? ratification.governingMetadata : undefined;
+		switch (governingMetadata) {
+			case undefined:
+				for (const [commit, files] of [
+					[ratification.integratedAt, history.value.files],
+					[proof.base, history.value.baseFiles],
+				] satisfies readonly (readonly [
+					string,
+					ReadonlyMap<string, FileRead>,
+				])[]) {
+					const integrated = textOf(files, reference.file);
+					if (!integrated.ok) return fail(`${integrated.error} at ${commit}`);
+					if (integrated.value !== current.value)
+						return fail(
+							`${reference.file} differs from its ratified bytes at ${commit}`,
+						);
+				}
+				break;
+			case "landed-header-value": {
+				const integrated = textOf(history.value.files, reference.file);
+				if (!integrated.ok)
+					return fail(`${integrated.error} at ${ratification.integratedAt}`);
+				const base = textOf(history.value.baseFiles, reference.file);
+				if (!base.ok) return fail(`${base.error} at ${proof.base}`);
+				const comparison = compareLandedAuthority({
+					candidate: current.value,
+					integration: integrated.value,
+					base: base.value,
+				});
+				if (!comparison.ok) {
+					const problem = comparison.error;
+					const commit =
+						problem.view === "integration"
+							? ratification.integratedAt
+							: problem.view === "base"
+								? proof.base
+								: undefined;
+					return fail(
+						problem.kind === "changed-authority"
+							? `${reference.file} differs from its ratified authority at ${commit}`
+							: `${reference.file} has an invalid Landed header${commit === undefined ? "" : ` at ${commit}`}: ${problem.reason}`,
+					);
+				}
+				break;
+			}
+			default: {
+				const unreachable: never = governingMetadata;
+				return unreachable;
+			}
 		}
 		const metadata = adrMetadata(
 			current.value,

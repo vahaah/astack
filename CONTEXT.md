@@ -57,10 +57,17 @@ _Avoid_: Deleted decision
 ### Ratified proposal
 
 A Proposed ADR integrated under a ratification process before the fixed implementation base.
-Its complete bytes remain unchanged through the candidate.
+Its governing authority remains bound to that integrated record.
 Its status does not claim completed implementation.
 _Avoid_: New self-approved proposal
 _Code_: `AdrRatification`
+
+### Landing metadata
+
+A factual lifecycle value whose permitted change leaves decision authority unchanged.
+Its selected Accepted process defines that duty.
+_Avoid_: Mutable decision authority
+_Code_: `AdrRatification.governingMetadata`
 
 ### Ratification process
 

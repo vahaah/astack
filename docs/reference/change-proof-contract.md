@@ -2,7 +2,7 @@
 
 [ADR 0005](../adr/0005-every-change-carries-domain-and-formal-proof.md) governs mandatory admission.
 [ADR 0006](../adr/0006-internal-composition-records-follow-domain-effects.md) governs typed composition and law evidence.
-[ADR 0007](../adr/0007-integrated-proposals-require-accepted-ratification.md) governs the explicit history-bound proposal route.
+[ADR 0008](../adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md) governs the explicit history-bound proposal route and its selected landing-value option.
 The [installed contract](../../marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) gives the format and runner limits.
 
 ## Acceptance criteria

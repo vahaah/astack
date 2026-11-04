@@ -42,7 +42,8 @@ It must declare `ratification` with `kind: integrated-proposal`, a `process` fil
 `integratedAt` must be a full commit identity ancestral to the fixed base.
 Historical reads ignore replacement refs and graft ancestry. Missing objects fail without a lazy fetch.
 The route requires Git's `--no-lazy-fetch` option and rejects unsupported Git commands.
-The governing and process records must be regular UTF-8 files with identical complete bytes in that commit, the base, and the candidate.
+Both records must be regular UTF-8 files in that commit, the base, and the candidate.
+By default, their complete bytes must match across those views.
 Both cited decisions must exist outside fences and have text.
 
 The process must already be Accepted in all three views. Its authority cannot come from another Proposed record.
@@ -52,6 +53,16 @@ Semantic review must make sure the Accepted process ratifies the selected propos
 Ancestry establishes integration, not human approval or process meaning.
 Without this explicit record, the Accepted-only rule remains unchanged.
 New or amended proposals need a separate authorised integration before this route can use them.
+
+The optional `governingMetadata: "landed-header-value"` selects one narrow lifecycle exception for the governing record.
+Each view must contain one unambiguous existing top-level Landed header.
+Only its nonblank single-line value can differ. Every byte outside that value remains protected.
+The Accepted process remains completely byte-identical and must authorize that lifecycle duty.
+Semantic review must check the landing statement's truth. This option never changes status or decision authority.
+The supported flat preamble accepts plain `Landed: value` and zero-indent `- **Landed:** value` forms.
+Fenced, nested, repeated, missing, multiline, or ambiguous headers fail even when unchanged.
+The selected value cannot introduce HTML, fences, control characters, line separators, or a Markdown continuation.
+Raw input freshness remains mandatory. A value change during model execution is still stale.
 
 The proof record connects the function contract to formal claims, category composition, implementation correspondence, and verification controls.
 The ADR explains the claim and its limits.

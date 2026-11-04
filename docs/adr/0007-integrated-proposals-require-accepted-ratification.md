@@ -1,6 +1,6 @@
 # 0007. Integrated proposals require accepted ratification
 
-Status: Accepted
+Status: Superseded by 0008
 Date: 2026-11-04
 Ticket: none
 Amends: 0005 D5

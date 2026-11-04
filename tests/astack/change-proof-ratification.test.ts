@@ -135,6 +135,43 @@ function reference(repo: Candidate) {
 	return adr;
 }
 
+function landingCandidate() {
+	const proposal = PROPOSAL.replace(
+		"Status: Proposed · lands B01\n",
+		"Status: Proposed · lands B01\nLanded: none yet\n",
+	);
+	const policy = POLICY.replace(
+		"Status: Accepted\n",
+		"Status: Accepted\nLanded: none yet\n",
+	);
+	return candidate(
+		proposal,
+		`${policy}\nImplementers update the factual Landed header value without changing decision authority.\n`,
+	);
+}
+
+function selectLanding(
+	repo: Candidate,
+	option: unknown = "landed-header-value",
+): void {
+	const adr = reference(repo);
+	writeFileSync(
+		join(repo.root, ".astack/proof.json"),
+		JSON.stringify({
+			...repo.manifest,
+			domain: {
+				...repo.manifest.domain,
+				adrs: [
+					{
+						...adr,
+						ratification: { ...adr.ratification, governingMetadata: option },
+					},
+				],
+			},
+		}),
+	);
+}
+
 function promisorCandidate() {
 	const repo = candidate();
 	git(repo.root, "config", "extensions.partialclone", "origin");
@@ -150,6 +187,101 @@ function promisorCandidate() {
 }
 
 describe("integrated ADR ratification", () => {
+	test("[control:proof-landing-selected-header] admits an explicit landing value update after the complete model triple", () => {
+		const repo = landingCandidate();
+		selectLanding(repo);
+		writeFileSync(
+			join(repo.root, GOVERNING),
+			readFileSync(join(repo.root, GOVERNING), "utf8").replace(
+				"Landed: none yet",
+				"Landed: fresh-input checks",
+			),
+		);
+		const result = run(repo.root);
+		expect(result.code).toBe(0);
+		expect(result.err).toBe("");
+		expect(result.out).toStartWith(
+			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
+		);
+		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+		);
+	});
+
+	test("[control:proof-landing-default-strict] retains whole-byte comparison without the option", () => {
+		const repo = landingCandidate();
+		writeFileSync(
+			join(repo.root, GOVERNING),
+			readFileSync(join(repo.root, GOVERNING), "utf8").replace(
+				"Landed: none yet",
+				"Landed: fresh-input checks",
+			),
+		);
+		refusal(
+			repo,
+			`${GOVERNING} differs from its ratified bytes at ${reference(repo).ratification.integratedAt}`,
+		);
+	});
+
+	test.each([null, "all-metadata", { field: "Landed" }])(
+		"[control:proof-landing-closed-schema] refuses unsupported metadata option %j",
+		(option) => {
+			const repo = landingCandidate();
+			selectLanding(repo, option);
+			refusal(
+				repo,
+				"domain.adrs[0].ratification.governingMetadata must be one of landed-header-value",
+				"schema",
+			);
+		},
+	);
+
+	test("[control:proof-landing-process-strict] keeps even process landing metadata byte-strict", () => {
+		const repo = landingCandidate();
+		selectLanding(repo);
+		writeFileSync(
+			join(repo.root, PROCESS),
+			readFileSync(join(repo.root, PROCESS), "utf8").replace(
+				"Landed: none yet",
+				"Landed: implementation",
+			),
+		);
+		refusal(
+			repo,
+			`${PROCESS} differs from its ratified bytes at ${reference(repo).ratification.integratedAt}`,
+		);
+	});
+
+	test.each(["integration", "base"])(
+		"[control:proof-landing-historical-authority] refuses protected authority drift in %s",
+		(view) => {
+			const repo = landingCandidate();
+			const original = readFileSync(join(repo.root, GOVERNING), "utf8");
+			writeFileSync(
+				join(repo.root, GOVERNING),
+				original.replace(
+					"The gate admits fresh input.",
+					"The gate admits other input.",
+				),
+			);
+			if (view === "base") {
+				git(repo.root, "add", "-A");
+				git(repo.root, "commit", "-q", "-m", "amend protected authority");
+				repo.manifest.base = git(repo.root, "rev-parse", "HEAD");
+				writeFileSync(join(repo.root, GOVERNING), original);
+			}
+			selectLanding(repo);
+			const commit =
+				view === "base"
+					? repo.manifest.base
+					: reference(repo).ratification.integratedAt;
+			refusal(
+				repo,
+				`${GOVERNING} differs from its ratified authority at ${commit}`,
+			);
+		},
+	);
+
 	test("[control:proof-ratification-fetch-witness] the local promisor fixture records an ordinary resolver fetch", () => {
 		const repo = promisorCandidate();
 		const trace = join(repo.root, "ordinary.trace");

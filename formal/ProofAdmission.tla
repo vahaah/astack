@@ -10,25 +10,36 @@ NegativeResults == {"pending", "expected", "parse", "other", "none"}
 AcceptedAuthority == [lifecycle |-> "accepted", optIn |-> FALSE,
                       history |-> TRUE, ancestor |-> TRUE, unchanged |-> TRUE,
                       processAccepted |-> TRUE, regular |-> TRUE,
-                      decisions |-> TRUE, proofRecord |-> TRUE]
+                      decisions |-> TRUE, proofRecord |-> TRUE,
+                      landingOptIn |-> FALSE, headerValid |-> TRUE,
+                      outsideEqual |-> TRUE, processWholeEqual |-> TRUE]
 ProposalAuthority == [AcceptedAuthority EXCEPT !.lifecycle = "proposed", !.optIn = TRUE]
+LandingAuthority == [ProposalAuthority EXCEPT !.landingOptIn = TRUE, !.unchanged = FALSE]
 AuthorityChecks == {"history", "ancestor", "unchanged", "processAccepted",
-                    "regular", "decisions", "proofRecord"}
-AuthorityCases == {AcceptedAuthority, ProposalAuthority}
+                    "regular", "decisions", "proofRecord", "processWholeEqual"}
+LandingChecks == {"history", "ancestor", "processAccepted", "regular", "decisions",
+                  "proofRecord", "headerValid", "outsideEqual", "processWholeEqual"}
+AuthorityCases == {AcceptedAuthority, ProposalAuthority, LandingAuthority,
+                   [LandingAuthority EXCEPT !.unchanged = TRUE]}
                   \cup {[ProposalAuthority EXCEPT ![key] = FALSE] : key \in AuthorityChecks}
+                  \cup {[LandingAuthority EXCEPT ![key] = FALSE] : key \in LandingChecks}
+                  \cup {[LandingAuthority EXCEPT !.unchanged = TRUE, !.headerValid = FALSE]}
                   \cup {[ProposalAuthority EXCEPT !.optIn = FALSE],
                         [ProposalAuthority EXCEPT !.lifecycle = "superseded"],
                         [AcceptedAuthority EXCEPT !.optIn = TRUE],
                         [AcceptedAuthority EXCEPT !.regular = FALSE],
                         [AcceptedAuthority EXCEPT !.decisions = FALSE],
                         [AcceptedAuthority EXCEPT !.proofRecord = FALSE]}
-AuthorityAllowed(a) == /\ a.regular
+LandingAllowed(a) == ~a.landingOptIn \/ (a.headerValid /\ a.outsideEqual)
+AuthorityEligible(a) == /\ a.regular
                        /\ a.decisions
                        /\ a.proofRecord
                        /\ ((a.lifecycle = "accepted" /\ ~a.optIn)
                            \/ (a.lifecycle = "proposed" /\ a.optIn
-                               /\ a.history /\ a.ancestor /\ a.unchanged
-                               /\ a.processAccepted))
+                               /\ a.history /\ a.ancestor
+                               /\ (a.landingOptIn \/ a.unchanged)
+                               /\ a.processAccepted /\ a.processWholeEqual))
+AuthorityAllowed(a) == AuthorityEligible(a) /\ LandingAllowed(a)
 
 VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority
 vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority>>
@@ -45,7 +56,8 @@ Init == /\ stage = 1
 
 ValidationPass == /\ status = "validating"
                   /\ stage <= Len(Stages)
-                  /\ (Stages[stage] # "domain" \/ AuthorityAllowed(authority))
+                  /\ (Stages[stage] # "domain" \/ AuthorityEligible(authority))
+                  /\ (Stages[stage] # "domain" \/ LandingAllowed(authority))
                   /\ verified' = verified \cup {Stages[stage]}
                   /\ stage' = stage + 1
                   /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority>>
@@ -129,6 +141,10 @@ AdmitSafe == status = "admitted" =>
 
 FailureIsTerminal == firstFailure # "none" => status = "rejected"
 RatifiedAuthority == status = "admitted" => AuthorityAllowed(authority)
+StrictDefault == status = "admitted" /\ authority.optIn /\ ~authority.landingOptIn => authority.unchanged
+LandingAuthoritySafe == status = "admitted" /\ authority.landingOptIn => authority.headerValid /\ authority.outsideEqual
+ProcessAuthoritySafe == status = "admitted" /\ authority.optIn => authority.processWholeEqual
+HistoryBound == status = "admitted" /\ authority.optIn => authority.history /\ authority.ancestor
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
 
 Values == {0, 1}
