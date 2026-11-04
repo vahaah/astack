@@ -14,6 +14,7 @@ import {
 } from "../../../change-proof/admission.ts";
 import {
 	changedPaths,
+	historyGit,
 	isAncestor,
 	readIntegrationHistory,
 	readRepoFile,
@@ -243,14 +244,17 @@ async function prove(
 	baseRef: string | undefined,
 	manifest: ManifestInput,
 ): Promise<number> {
-	if (resolveCommit(root, proof.base) !== proof.base)
+	const reader = proof.domain.adrs.some((adr) => adr.ratification !== undefined)
+		? historyGit
+		: undefined;
+	if (resolveCommit(root, proof.base, reader) !== proof.base)
 		return stopAt(
 			io,
 			"stale",
 			`the base ${proof.base} is not a commit in this repository`,
 		);
 	if (baseRef !== undefined) {
-		const resolved = resolveCommit(root, baseRef);
+		const resolved = resolveCommit(root, baseRef, reader);
 		if (resolved !== proof.base)
 			return stopAt(
 				io,
@@ -258,7 +262,7 @@ async function prove(
 				`--base ${baseRef} resolves to ${resolved ?? "no commit"}, not the manifest base ${proof.base}`,
 			);
 	}
-	if (!isAncestor(root, proof.base, "HEAD"))
+	if (!isAncestor(root, proof.base, "HEAD", reader))
 		return stopAt(
 			io,
 			"stale",

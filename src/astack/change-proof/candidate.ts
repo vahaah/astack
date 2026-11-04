@@ -50,23 +50,31 @@ function gitLines(
 export function gitText(
 	root: string,
 	args: readonly string[],
+	reader: typeof runGit = runGit,
 ): string | undefined {
-	const result = runGit(root, [...args]);
+	const result = reader(root, [...args]);
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
 }
 
-export function resolveCommit(root: string, ref: string): string | undefined {
-	return gitText(root, [
-		"rev-parse",
-		"--verify",
-		"--quiet",
-		"--end-of-options",
-		`${ref}^{commit}`,
-	]);
+export function resolveCommit(
+	root: string,
+	ref: string,
+	reader: typeof runGit = runGit,
+): string | undefined {
+	return gitText(
+		root,
+		["rev-parse", "--verify", "--quiet", "--end-of-options", `${ref}^{commit}`],
+		reader,
+	);
 }
 
-export function isAncestor(root: string, base: string, head: string): boolean {
-	return runGit(root, ["merge-base", "--is-ancestor", base, head]).ok;
+export function isAncestor(
+	root: string,
+	base: string,
+	head: string,
+	reader: typeof runGit = runGit,
+): boolean {
+	return reader(root, ["merge-base", "--is-ancestor", base, head]).ok;
 }
 
 export function changedPaths(
@@ -153,12 +161,16 @@ function readCommittedFile(
 		: { kind: "problem", problem: "unreadable" };
 }
 
-function historyGit(root: string, args: readonly string[]): GitResult {
-	const result = spawnSync("git", ["--no-replace-objects", ...args], {
-		cwd: root,
-		maxBuffer: 256 * 1024 * 1024,
-		env: { ...process.env, GIT_GRAFT_FILE: "", GIT_NO_LAZY_FETCH: "1" },
-	});
+export function historyGit(root: string, args: readonly string[]): GitResult {
+	const result = spawnSync(
+		"git",
+		["--no-replace-objects", "--no-lazy-fetch", ...args],
+		{
+			cwd: root,
+			maxBuffer: 256 * 1024 * 1024,
+			env: { ...process.env, GIT_GRAFT_FILE: "" },
+		},
+	);
 	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
 }
 
@@ -169,7 +181,7 @@ export function readIntegrationHistory(
 	paths: readonly string[],
 ): Result<IntegrationHistory, string> {
 	if (
-		resolveCommit(root, integratedAt) !== integratedAt ||
+		resolveCommit(root, integratedAt, historyGit) !== integratedAt ||
 		historyGit(root, ["cat-file", "-t", integratedAt])
 			.stdout.toString("utf8")
 			.trim() !== "commit"
@@ -178,7 +190,7 @@ export function readIntegrationHistory(
 			`ratification ${integratedAt} is not a full commit in this repository`,
 		);
 	if (
-		resolveCommit(root, base) !== base ||
+		resolveCommit(root, base, historyGit) !== base ||
 		!historyGit(root, ["merge-base", "--is-ancestor", base, "HEAD"]).ok
 	)
 		return err(`the fixed proof base ${base} is not an ancestor of HEAD`);

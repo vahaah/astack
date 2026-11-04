@@ -41,6 +41,7 @@ An explicit integrated-proposal reference can use a previously ratified Proposed
 It must declare `ratification` with `kind: integrated-proposal`, a `process` file and decision, `integratedAt`, and `proofRecord`.
 `integratedAt` must be a full commit identity ancestral to the fixed base.
 Historical reads ignore replacement refs and graft ancestry. Missing objects fail without a lazy fetch.
+The route requires Git's `--no-lazy-fetch` option and rejects unsupported Git commands.
 The governing and process records must be regular UTF-8 files with identical complete bytes in that commit, the base, and the candidate.
 Both cited decisions must exist outside fences and have text.
 

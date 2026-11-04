@@ -110,7 +110,9 @@
 				"proof-ratification-refuses-a-historical-s",
 				"proof-ratification-requires-the-separate-proof-record-s-s",
 				"proof-ratification-binds-history-availability-again-after-model-execution",
-				"proof-ratification-binds-an-ignored-proof-record-across-model-execution"
+				"proof-ratification-binds-an-ignored-proof-record-across-model-execution",
+				"proof-ratification-fetch-witness",
+				"proof-ratification-no-lazy-fetch"
 			]
 		}
 	]

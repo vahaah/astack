@@ -135,7 +135,90 @@ function reference(repo: Candidate) {
 	return adr;
 }
 
+function promisorCandidate() {
+	const repo = candidate();
+	git(repo.root, "config", "extensions.partialclone", "origin");
+	git(repo.root, "config", "remote.origin.promisor", "true");
+	git(
+		repo.root,
+		"config",
+		"remote.origin.url",
+		"file:///nonexistent-proof-fixture-origin",
+	);
+	git(repo.root, "config", "remote.origin.partialclonefilter", "blob:none");
+	return repo;
+}
+
 describe("integrated ADR ratification", () => {
+	test("[control:proof-ratification-fetch-witness] the local promisor fixture records an ordinary resolver fetch", () => {
+		const repo = promisorCandidate();
+		const trace = join(repo.root, "ordinary.trace");
+		const module = resolve(
+			import.meta.dir,
+			"../../src/astack/change-proof/candidate.ts",
+		);
+		const script = `import { resolveCommit } from ${JSON.stringify(module)}; console.log(JSON.stringify({resolved:resolveCommit(${JSON.stringify(repo.root)},${JSON.stringify("a".repeat(40))}) ?? null}));`;
+		const result = spawnSync(process.execPath, ["--eval", script], {
+			env: { ...environment(), GIT_TRACE: trace },
+			encoding: "utf8",
+		});
+		expect(result.status).toBe(0);
+		expect(result.stdout).toBe('{"resolved":null}\n');
+		expect(/\bfetch origin\b/.test(readFileSync(trace, "utf8"))).toBe(true);
+	});
+
+	test.each(["integration", "base", "cli-base", "cli-option"])(
+		"[control:proof-ratification-no-lazy-fetch] rejects missing %s history without a promisor fetch",
+		(mode) => {
+			const repo = promisorCandidate();
+			const missing = "a".repeat(40);
+			const trace = join(repo.root, "history.trace");
+			const module = resolve(
+				import.meta.dir,
+				"../../src/astack/change-proof/candidate.ts",
+			);
+			const base = mode === "base" ? missing : repo.base;
+			const integrated =
+				mode === "integration"
+					? missing
+					: reference(repo).ratification.integratedAt;
+			if (mode === "cli-base") {
+				repo.manifest.base = missing;
+				save(repo);
+			}
+			const script = `import { readIntegrationHistory } from ${JSON.stringify(module)}; console.log(JSON.stringify(readIntegrationHistory(${JSON.stringify(repo.root)},${JSON.stringify(base)},${JSON.stringify(integrated)},[])));`;
+			const args = mode.startsWith("cli-")
+				? [
+						CLI,
+						"check",
+						"proof",
+						...(mode === "cli-option" ? ["--base", missing] : []),
+					]
+				: ["--eval", script];
+			const result = spawnSync(process.execPath, args, {
+				cwd: repo.root,
+				env: { ...environment(), GIT_TRACE: trace },
+				encoding: "utf8",
+			});
+			if (mode.startsWith("cli-")) {
+				expect(result.status).toBe(1);
+				const message =
+					mode === "cli-base"
+						? `the base ${missing} is not a commit in this repository`
+						: `--base ${missing} resolves to no commit, not the manifest base ${repo.base}`;
+				expect(result.stdout).toBe(`stop: proof stale: ${message}\n`);
+			} else {
+				expect(result.status).toBe(0);
+				const error =
+					mode === "integration"
+						? `ratification ${missing} is not a full commit in this repository`
+						: `the fixed proof base ${missing} is not an ancestor of HEAD`;
+				expect(result.stdout).toBe(`${JSON.stringify({ ok: false, error })}\n`);
+			}
+			expect(/\bfetch origin\b/.test(readFileSync(trace, "utf8"))).toBe(false);
+		},
+	);
+
 	test("[control:proof-ratification] ignores grafted ancestry supplied through the environment", () => {
 		const repo = candidate();
 		const sibling = git(

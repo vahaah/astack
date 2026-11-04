@@ -28,6 +28,7 @@ The fixed base must remain an ancestor of the candidate head.
 Both ADRs must exist as regular UTF-8 files in the integrated commit, base, and candidate.
 Their complete bytes must match across those views.
 Historical reads ignore replacement refs and graft ancestry. They do not fetch missing objects.
+They require Git's `--no-lazy-fetch` option. An unsupported option fails before object access.
 
 The governing record must have one Proposed status and the cited nonempty decision.
 The process must have one Accepted status and its cited nonempty decision.
