@@ -1,4 +1,5 @@
 import { isUtf8 } from "node:buffer";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	lstatSync,
@@ -10,9 +11,15 @@ import {
 	statSync,
 } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
-import { runGit } from "../git.ts";
+import { type GitResult, runGit } from "../git.ts";
 import { err, ok, type Result } from "../result.ts";
-import type { ChangedPath, FileRead, Snapshot } from "./admission.ts";
+import type {
+	ChangedPath,
+	FileRead,
+	IntegrationHistory,
+	Snapshot,
+} from "./admission.ts";
+import { isRepoPath } from "./contract.ts";
 
 export function isInside(root: string, path: string): boolean {
 	const rel = relative(root, path);
@@ -112,10 +119,83 @@ export function readRepoFile(root: string, path: string): FileRead {
 	try {
 		if (!statSync(real).isFile())
 			return { kind: "problem", problem: "not-a-file" };
-		return { kind: "text", text: readFileSync(real, "utf8") };
+		const bytes = readFileSync(real);
+		return isUtf8(bytes)
+			? { kind: "text", text: bytes.toString("utf8") }
+			: { kind: "problem", problem: "unreadable" };
 	} catch {
 		return { kind: "problem", problem: "unreadable" };
 	}
+}
+
+function readCommittedFile(
+	root: string,
+	commit: string,
+	path: string,
+): FileRead {
+	if (!isRepoPath(path)) return { kind: "problem", problem: "outside" };
+	const tree = historyGit(root, ["ls-tree", "-z", commit, "--", path]);
+	if (!tree.ok || !isUtf8(tree.stdout))
+		return { kind: "problem", problem: "unreadable" };
+	if (tree.stdout.length === 0) return { kind: "problem", problem: "missing" };
+	const entry = tree.stdout.toString("utf8");
+	const tab = entry.indexOf("\t");
+	if (tab < 0 || entry.slice(tab + 1) !== `${path}\0`)
+		return { kind: "problem", problem: "unreadable" };
+	const [mode, type, object] = entry.slice(0, tab).split(" ");
+	if (mode === "120000") return { kind: "problem", problem: "symlink" };
+	if ((mode !== "100644" && mode !== "100755") || type !== "blob")
+		return { kind: "problem", problem: "not-a-file" };
+	if (object === undefined) return { kind: "problem", problem: "unreadable" };
+	const bytes = historyGit(root, ["cat-file", "blob", object]);
+	return bytes.ok && isUtf8(bytes.stdout)
+		? { kind: "text", text: bytes.stdout.toString("utf8") }
+		: { kind: "problem", problem: "unreadable" };
+}
+
+function historyGit(root: string, args: readonly string[]): GitResult {
+	const result = spawnSync("git", ["--no-replace-objects", ...args], {
+		cwd: root,
+		maxBuffer: 256 * 1024 * 1024,
+		env: { ...process.env, GIT_GRAFT_FILE: "", GIT_NO_LAZY_FETCH: "1" },
+	});
+	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
+}
+
+export function readIntegrationHistory(
+	root: string,
+	base: string,
+	integratedAt: string,
+	paths: readonly string[],
+): Result<IntegrationHistory, string> {
+	if (
+		resolveCommit(root, integratedAt) !== integratedAt ||
+		historyGit(root, ["cat-file", "-t", integratedAt])
+			.stdout.toString("utf8")
+			.trim() !== "commit"
+	)
+		return err(
+			`ratification ${integratedAt} is not a full commit in this repository`,
+		);
+	if (
+		resolveCommit(root, base) !== base ||
+		!historyGit(root, ["merge-base", "--is-ancestor", base, "HEAD"]).ok
+	)
+		return err(`the fixed proof base ${base} is not an ancestor of HEAD`);
+	if (!historyGit(root, ["merge-base", "--is-ancestor", integratedAt, base]).ok)
+		return err(
+			`ratification ${integratedAt} is not an ancestor of the fixed proof base ${base}`,
+		);
+	return ok({
+		integratedAt,
+		base,
+		files: new Map(
+			paths.map((path) => [path, readCommittedFile(root, integratedAt, path)]),
+		),
+		baseFiles: new Map(
+			paths.map((path) => [path, readCommittedFile(root, base, path)]),
+		),
+	});
 }
 
 function entryLine(root: string, base: string, path: string): string {
@@ -194,6 +274,7 @@ export function snapshot(
 	base: string,
 	changed: readonly ChangedPath[],
 	explicit: readonly string[],
+	history = "",
 ): Result<Snapshot, string> {
 	const head = gitText(root, ["rev-parse", "--verify", "HEAD"]);
 	if (head === undefined) return err("the repository has no HEAD commit");
@@ -222,6 +303,8 @@ export function snapshot(
 		]),
 	].sort();
 	const hash = createHash("sha256");
+	if (history !== "")
+		hash.update("ratification\0").update(history).update("\0");
 	hash.update("index\0");
 	hash.update(index.stdout);
 	hash.update("\0worktree\0");

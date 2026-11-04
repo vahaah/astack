@@ -30,11 +30,29 @@ The manifest never stores its own digest or its containing commit's hash.
 ## Domain and decisions
 
 Use the affected context's glossary and aggregate symbol.
-Each governing ADR must be accepted and contain the cited decision.
+Each ordinary governing ADR reference must be accepted and contain the cited decision.
 Metadata uses `Status: Accepted` or `- **Status:** Accepted · <stamp>`.
 Decision headings use `### D<n>. <claim>` or `### D<n> — <claim>`.
 Fenced examples and duplicate Status fields cannot provide governing metadata.
-It also connects the function contract to formal claims, category composition, implementation correspondence, and verification controls.
+
+### Integrated proposals
+
+An explicit integrated-proposal reference can use a previously ratified Proposed record under an unchanged Accepted process.
+It must declare `ratification` with `kind: integrated-proposal`, a `process` file and decision, `integratedAt`, and `proofRecord`.
+`integratedAt` must be a full commit identity ancestral to the fixed base.
+Historical reads ignore replacement refs and graft ancestry. Missing objects fail without a lazy fetch.
+The governing and process records must be regular UTF-8 files with identical complete bytes in that commit, the base, and the candidate.
+Both cited decisions must exist outside fences and have text.
+
+The process must already be Accepted in all three views. Its authority cannot come from another Proposed record.
+The separate `proofRecord` supplies the four proof sections and their required links and arrow explanations.
+The checker binds those records and actual history facts before and after model execution.
+Semantic review must make sure the Accepted process ratifies the selected proposal.
+Ancestry establishes integration, not human approval or process meaning.
+Without this explicit record, the Accepted-only rule remains unchanged.
+New or amended proposals need a separate authorised integration before this route can use them.
+
+The proof record connects the function contract to formal claims, category composition, implementation correspondence, and verification controls.
 The ADR explains the claim and its limits.
 Models and tests remain executable files linked from that explanation.
 Do not copy a transient pass log into an ADR.

@@ -1,12 +1,17 @@
 {
 	"version": 1,
-	"change": "mandatory-domain-proof",
-	"base": "1dee0a1c84dcf103aa094853e4c5c87fbaeb0ec3",
+	"change": "checked-integrated-proposal-authority",
+	"base": "2e6264676f2e390f27fe770dccebb83bc22d2c5c",
 	"scope": [
 		{
 			"path": "**",
-			"obligation": "CP-06",
-			"modelRefs": ["AdmitSafe", "FailureIsTerminal", "EventuallyTerminal"]
+			"obligation": "proof-ratification",
+			"modelRefs": [
+				"AdmitSafe",
+				"FailureIsTerminal",
+				"EventuallyTerminal",
+				"RatifiedAuthority"
+			]
 		}
 	],
 	"domain": {
@@ -22,7 +27,9 @@
 			"Candidate inputs",
 			"Composition record",
 			"Model control",
-			"ReviewRun"
+			"ReviewRun",
+			"Ratified proposal",
+			"Ratification process"
 		],
 		"invariants": [
 			{
@@ -32,6 +39,10 @@
 			{
 				"name": "A rejected stage cannot admit the change",
 				"modelRef": "FailureIsTerminal"
+			},
+			{
+				"name": "Proposal admission requires integrated unchanged authority",
+				"modelRef": "RatifiedAuthority"
 			}
 		],
 		"adrs": [
@@ -41,6 +52,10 @@
 			},
 			{
 				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
 				"decision": "D2"
 			}
 		],
@@ -58,7 +73,8 @@
 				"CP-09",
 				"CP-10",
 				"CP-11",
-				"CP-12"
+				"CP-12",
+				"proof-ratification"
 			]
 		}
 	},
@@ -168,7 +184,8 @@
 		"callersKnow": [
 			"The base is an immutable ancestor.",
 			"Tool evidence comes from the pinned runner and its output judges.",
-			"All ordinary implementation gates remain required."
+			"All ordinary implementation gates remain required.",
+			"Historical authority facts come from checked immutable Git objects and current regular UTF-8 files."
 		],
 		"deletionTest": "Each delivery caller would otherwise repeat the same admission rules.",
 		"alternatives": [
@@ -213,6 +230,13 @@
 					"symbol": "runModel"
 				},
 				"modelAction": "RunRestored"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "readIntegrationHistory"
+				},
+				"modelAction": "ValidationPass"
 			}
 		],
 		"omitted": [
@@ -228,7 +252,8 @@
 			"Four ordered validation stages.",
 			"Finite positive, negative, and restored outcome classes.",
 			"One possible current-to-stale input change before admission.",
-			"Two abstract values and two error values for the Result laws."
+			"Two abstract values and two error values for the Result laws.",
+			"Two valid ADR authority routes and one invalid authority class at a time. Combined faults are outside the finite case set."
 		],
 		"fairness": ["Weak fairness of Next establishes eventual terminal status."],
 		"invariants": [
@@ -237,19 +262,20 @@
 			"FailureIsTerminal",
 			"ResultLeftIdentity",
 			"ResultRightIdentity",
-			"ResultAssociativity"
+			"ResultAssociativity",
+			"RatifiedAuthority"
 		],
 		"properties": ["EventuallyTerminal"]
 	},
 	"negative": {
 		"file": "formal/ProofAdmission.tla",
-		"action": "Admit",
-		"original": "/\\ current\n",
-		"replacement": "",
-		"defect": "Admission loses the current-input guard and can accept stale evidence.",
+		"action": "ValidationPass",
+		"original": "/\\ (Stages[stage] # \"domain\" \\/ AuthorityAllowed(authority))",
+		"replacement": "/\\ TRUE",
+		"defect": "Domain validation admits an invalid proposal authority case.",
 		"expect": {
 			"kind": "invariant",
-			"name": "AdmitSafe"
+			"name": "RatifiedAuthority"
 		}
 	},
 	"limits": [
@@ -258,6 +284,7 @@
 		"Reference and arrow checks validate declarations, not semantic truth.",
 		"Implementation controls and semantic review remain separate.",
 		"The host and Java runtime are trusted.",
-		"The record cannot establish private model reasoning."
+		"The record cannot establish private model reasoning.",
+		"The authority cases abstract Git history, path decoding, byte comparison, and semantic ratification. Implementation controls and review establish those separately."
 	]
 }

@@ -55,6 +55,22 @@ export type ScopeRow = {
 	readonly modelRefs: readonly string[];
 };
 
+export type AdrRatification = {
+	readonly kind: "integrated-proposal";
+	readonly process: {
+		readonly file: string;
+		readonly decision: string;
+	};
+	readonly integratedAt: string;
+	readonly proofRecord: string;
+};
+
+export type AdrReference = {
+	readonly file: string;
+	readonly decision: string;
+	readonly ratification?: AdrRatification;
+};
+
 export type DomainContract = {
 	readonly context: string;
 	readonly glossary: string;
@@ -64,10 +80,7 @@ export type DomainContract = {
 		readonly name: string;
 		readonly modelRef: string;
 	}[];
-	readonly adrs: readonly {
-		readonly file: string;
-		readonly decision: string;
-	}[];
+	readonly adrs: readonly AdrReference[];
 	readonly controls: {
 		readonly matrix: string;
 		readonly criteria: readonly string[];
@@ -518,10 +531,50 @@ function readProof(fields: Fields): ChangeProof {
 						modelRef: row.text("modelRef", TLA_NAME, "a TLA+ name"),
 					}),
 				),
-				adrs: domain.objects("adrs", 1, ["file", "decision"], (row) => ({
-					file: row.path("file"),
-					decision: row.text("decision", DECISION, "a decision ID such as D1"),
-				})),
+				adrs: domain.objects(
+					"adrs",
+					1,
+					["file", "decision", "ratification"],
+					(row) => {
+						const reference = {
+							file: row.path("file"),
+							decision: row.text(
+								"decision",
+								DECISION,
+								"a decision ID such as D1",
+							),
+						};
+						if (row.value("ratification") === undefined) return reference;
+						return {
+							...reference,
+							ratification: row.object(
+								"ratification",
+								["kind", "process", "integratedAt", "proofRecord"],
+								(value) => ({
+									kind: value.oneOf("kind", ["integrated-proposal"]),
+									process: value.object(
+										"process",
+										["file", "decision"],
+										(process) => ({
+											file: process.path("file"),
+											decision: process.text(
+												"decision",
+												DECISION,
+												"a decision ID such as D1",
+											),
+										}),
+									),
+									integratedAt: value.text(
+										"integratedAt",
+										FULL_SHA,
+										"a full lowercase commit SHA",
+									),
+									proofRecord: value.path("proofRecord"),
+								}),
+							),
+						};
+					},
+				),
 				controls: domain.object(
 					"controls",
 					["matrix", "criteria"],

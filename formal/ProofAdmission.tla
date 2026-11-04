@@ -7,8 +7,31 @@ States == {"validating", "modeled", "checked", "restored", "admitted", "rejected
 PositiveResults == {"pending", "passed", "failed", "incomplete"}
 NegativeResults == {"pending", "expected", "parse", "other", "none"}
 
-VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure
-vars == <<stage, verified, positive, negative, restored, current, status, firstFailure>>
+AcceptedAuthority == [lifecycle |-> "accepted", optIn |-> FALSE,
+                      history |-> TRUE, ancestor |-> TRUE, unchanged |-> TRUE,
+                      processAccepted |-> TRUE, regular |-> TRUE,
+                      decisions |-> TRUE, proofRecord |-> TRUE]
+ProposalAuthority == [AcceptedAuthority EXCEPT !.lifecycle = "proposed", !.optIn = TRUE]
+AuthorityChecks == {"history", "ancestor", "unchanged", "processAccepted",
+                    "regular", "decisions", "proofRecord"}
+AuthorityCases == {AcceptedAuthority, ProposalAuthority}
+                  \cup {[ProposalAuthority EXCEPT ![key] = FALSE] : key \in AuthorityChecks}
+                  \cup {[ProposalAuthority EXCEPT !.optIn = FALSE],
+                        [ProposalAuthority EXCEPT !.lifecycle = "superseded"],
+                        [AcceptedAuthority EXCEPT !.optIn = TRUE],
+                        [AcceptedAuthority EXCEPT !.regular = FALSE],
+                        [AcceptedAuthority EXCEPT !.decisions = FALSE],
+                        [AcceptedAuthority EXCEPT !.proofRecord = FALSE]}
+AuthorityAllowed(a) == /\ a.regular
+                       /\ a.decisions
+                       /\ a.proofRecord
+                       /\ ((a.lifecycle = "accepted" /\ ~a.optIn)
+                           \/ (a.lifecycle = "proposed" /\ a.optIn
+                               /\ a.history /\ a.ancestor /\ a.unchanged
+                               /\ a.processAccepted))
+
+VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority
+vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority>>
 
 Init == /\ stage = 1
         /\ verified = {}
@@ -18,47 +41,49 @@ Init == /\ stage = 1
         /\ current = TRUE
         /\ status = "validating"
         /\ firstFailure = "none"
+        /\ authority \in AuthorityCases
 
 ValidationPass == /\ status = "validating"
                   /\ stage <= Len(Stages)
+                  /\ (Stages[stage] # "domain" \/ AuthorityAllowed(authority))
                   /\ verified' = verified \cup {Stages[stage]}
                   /\ stage' = stage + 1
-                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure>>
+                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority>>
 
 ValidationFail == /\ status = "validating"
                   /\ stage <= Len(Stages)
                   /\ firstFailure' = Stages[stage]
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
 
 RunPositive == /\ status = "validating"
                /\ stage > Len(Stages)
                /\ positive' \in PositiveResults \ {"pending"}
                /\ status' = "modeled"
-               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure>>
+               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure, authority>>
 
 RejectPositive == /\ status = "modeled"
                   /\ positive # "passed"
                   /\ firstFailure' = "model"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
 
 RunNegative == /\ status = "modeled"
                /\ positive = "passed"
                /\ negative' \in NegativeResults \ {"pending"}
                /\ status' = "checked"
-               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure>>
+               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure, authority>>
 
 InputChange == /\ status \in {"modeled", "checked", "restored"}
                /\ current
                /\ current' = FALSE
-               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure>>
+               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure, authority>>
 
 RunRestored == /\ status = "checked"
                /\ negative = "expected"
                /\ restored' \in PositiveResults \ {"pending"}
                /\ status' = "restored"
-               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure>>
+               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure, authority>>
 
 Admit == /\ status = "restored"
          /\ verified = Required
@@ -67,7 +92,7 @@ Admit == /\ status = "restored"
          /\ restored = "passed"
          /\ current
          /\ status' = "admitted"
-         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure>>
+         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure, authority>>
 
 RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ IF status = "checked"
@@ -76,7 +101,7 @@ RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ firstFailure' = IF status = "checked" THEN "countermodel"
                                       ELSE IF restored # "passed" THEN "restore" ELSE "stale"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
 
 Finished == /\ status \in {"admitted", "rejected"}
             /\ UNCHANGED vars
@@ -86,6 +111,7 @@ Next == ValidationPass \/ ValidationFail \/ RunPositive \/ RejectPositive
 Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
 TypeOK == /\ stage \in 1..(Len(Stages) + 1)
+          /\ authority \in AuthorityCases
           /\ verified \subseteq Required
           /\ positive \in PositiveResults
           /\ negative \in NegativeResults
@@ -102,6 +128,7 @@ AdmitSafe == status = "admitted" =>
             /\ current = TRUE
 
 FailureIsTerminal == firstFailure # "none" => status = "rejected"
+RatifiedAuthority == status = "admitted" => AuthorityAllowed(authority)
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
 
 Values == {0, 1}
