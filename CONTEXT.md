@@ -50,6 +50,21 @@ _Avoid_: Proof admission
 
 ### Effective decision
 
-An accepted ADR decision that remains current for its stated scope.
+A current accepted ADR decision or a ratified proposal with checked authority and history.
 Its history remains available after a later ADR replaces it.
 _Avoid_: Deleted decision
+
+### Ratified proposal
+
+A Proposed ADR integrated under a ratification process before the fixed implementation base.
+Its complete bytes remain unchanged through the candidate.
+Its status does not claim completed implementation.
+_Avoid_: New self-approved proposal
+_Code_: `AdrRatification`
+
+### Ratification process
+
+An accepted decision that defines when an integrated proposal has authority for implementation.
+Review must examine its meaning and the actual owner grant.
+Git history alone cannot establish that grant.
+_Avoid_: Automatic approval from ancestry

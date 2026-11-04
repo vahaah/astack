@@ -2,6 +2,7 @@ import { anyGlob, globMatches } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
 import {
+	type AdrReference,
 	type ChangeProof,
 	type FileLink,
 	type Rejection,
@@ -28,6 +29,17 @@ export type RepoView = {
 	readonly files: ReadonlyMap<string, FileRead>;
 	readonly modelFiles: ReadonlyMap<string, FileRead>;
 	readonly changed: readonly ChangedPath[];
+	readonly ratifications?: ReadonlyMap<
+		string,
+		Result<IntegrationHistory, string>
+	>;
+};
+
+export type IntegrationHistory = {
+	readonly integratedAt: string;
+	readonly base: string;
+	readonly files: ReadonlyMap<string, FileRead>;
+	readonly baseFiles: ReadonlyMap<string, FileRead>;
 };
 
 export type Snapshot = {
@@ -83,6 +95,11 @@ export function referencedPaths(proof: ChangeProof): readonly string[] {
 			domain.controls.matrix,
 			category.typedWitness,
 			...domain.adrs.map((adr) => adr.file),
+			...domain.adrs.flatMap((adr) =>
+				adr.ratification === undefined
+					? []
+					: [adr.ratification.process.file, adr.ratification.proofRecord],
+			),
 			...links.map((link) => link.path),
 		]),
 	];
@@ -162,30 +179,50 @@ function adrProse(text: string): string {
 		.join("\n");
 }
 
-function adrCheck(
-	proof: ChangeProof,
-	files: ReadonlyMap<string, FileRead>,
+function adrMetadata(
+	text: string,
 	file: string,
 	decision: string,
+	expected: "Accepted" | "Proposed",
+	requireBody = false,
 ): Check {
-	const text = textOf(files, file);
-	if (!text.ok) return fail(text.error);
-	const prose = adrProse(text.value);
+	const prose = adrProse(text);
 	const statuses = [
 		...prose.matchAll(/^(?:Status:|-\s+\*\*Status:\*\*)[ \t]*(.*?)[ \t]*$/gm),
 	].map((match) => match[1] ?? "");
 	const [status] = statuses;
 	if (status === undefined) return fail(`${file} has no Status line`);
 	if (statuses.length !== 1) return fail(`${file} has multiple Status lines`);
-	if (!/^Accepted(?:[ \t]+·[ \t]+\S(?:.*\S)?)?$/.test(status))
-		return fail(`${file} has status ${JSON.stringify(status)}, not Accepted`);
 	if (
-		!new RegExp(
-			`^###[ \\t]+${decision}(?:\\.[ \\t]+|[ \\t]+—[ \\t]+)\\S`,
-			"m",
-		).test(prose)
+		!new RegExp(`^${expected}(?:[ \\t]+·[ \\t]+\\S(?:.*\\S)?)?$`).test(status)
 	)
+		return fail(
+			`${file} has status ${JSON.stringify(status)}, not ${expected}`,
+		);
+	const heading = new RegExp(
+		`^###[ \\t]+${decision}(?:\\.[ \\t]+|[ \\t]+—[ \\t]+)\\S`,
+		"m",
+	).exec(prose);
+	if (heading === null)
 		return fail(`${file} has no ### ${decision}. decision heading`);
+	if (requireBody) {
+		const lineEnd = prose.indexOf("\n", heading.index);
+		const tail = lineEnd < 0 ? "" : prose.slice(lineEnd + 1);
+		const end = tail.search(/^#{1,6}[ \t]+/m);
+		if ((end < 0 ? tail : tail.slice(0, end)).trim() === "")
+			return fail(`${file} has no nonempty ${decision} decision text`);
+	}
+	return PASS;
+}
+
+function proofSections(
+	proof: ChangeProof,
+	files: ReadonlyMap<string, FileRead>,
+	file: string,
+): Check {
+	const text = textOf(files, file);
+	if (!text.ok) return fail(text.error);
+	const prose = adrProse(text.value);
 	const sections = new Map<string, string>();
 	for (const title of [
 		"Formal claim",
@@ -220,11 +257,67 @@ function adrCheck(
 	return PASS;
 }
 
-function domainCheck(
+function adrCheck(
 	proof: ChangeProof,
-	files: ReadonlyMap<string, FileRead>,
+	view: RepoView,
+	adr: AdrReference,
 ): Check {
+	const text = textOf(view.files, adr.file);
+	if (!text.ok) return fail(text.error);
+	const ratification = adr.ratification;
+	if (ratification === undefined) {
+		const metadata = adrMetadata(
+			text.value,
+			adr.file,
+			adr.decision,
+			"Accepted",
+		);
+		return metadata.ok ? proofSections(proof, view.files, adr.file) : metadata;
+	}
+	const history = view.ratifications?.get(ratification.integratedAt);
+	if (history === undefined)
+		return fail(
+			`ratification history ${ratification.integratedAt} was not read`,
+		);
+	if (!history.ok) return fail(history.error);
+	if (
+		history.value.base !== proof.base ||
+		history.value.integratedAt !== ratification.integratedAt
+	)
+		return fail("ratification history does not match the fixed proof base");
+	for (const reference of [adr, ratification.process]) {
+		const current = textOf(view.files, reference.file);
+		if (!current.ok) return fail(current.error);
+		for (const [commit, files] of [
+			[ratification.integratedAt, history.value.files],
+			[proof.base, history.value.baseFiles],
+		] satisfies readonly (readonly [string, ReadonlyMap<string, FileRead>])[]) {
+			const integrated = textOf(files, reference.file);
+			if (!integrated.ok) return fail(`${integrated.error} at ${commit}`);
+			if (integrated.value !== current.value)
+				return fail(
+					`${reference.file} differs from its ratified bytes at ${commit}`,
+				);
+		}
+		const metadata = adrMetadata(
+			current.value,
+			reference.file,
+			reference.decision,
+			reference === adr ? "Proposed" : "Accepted",
+			true,
+		);
+		if (!metadata.ok) return metadata;
+	}
+	if ([adr.file, ratification.process.file].includes(ratification.proofRecord))
+		return fail(
+			"ratification proofRecord must be separate from its governing and process ADRs",
+		);
+	return proofSections(proof, view.files, ratification.proofRecord);
+}
+
+function domainCheck(proof: ChangeProof, view: RepoView): Check {
 	const { domain } = proof;
+	const { files } = view;
 	const glossary = textOf(files, domain.glossary);
 	if (!glossary.ok) return fail(glossary.error);
 	const titles = headings(glossary.value);
@@ -245,9 +338,7 @@ function domainCheck(
 					fail(`${domain.glossary} defines no term "${term}"`),
 				)[0] ?? PASS,
 		() => linkCheck(files, domain.aggregate),
-		...domain.adrs.map(
-			(adr) => () => adrCheck(proof, files, adr.file, adr.decision),
-		),
+		...domain.adrs.map((adr) => () => adrCheck(proof, view, adr)),
 	]);
 }
 
@@ -409,7 +500,7 @@ export function checkReferences(
 	proof: ChangeProof,
 	view: RepoView,
 ): Result<ModelPlan, Rejection> {
-	const domain = stageOf("domain", domainCheck(proof, view.files));
+	const domain = stageOf("domain", domainCheck(proof, view));
 	if (!domain.ok) return domain;
 	const linked = linkedControls(proof, view.files);
 	const category = stageOf(

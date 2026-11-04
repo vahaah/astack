@@ -5,6 +5,7 @@ import {
 	admitChangeProof,
 	checkReferences,
 	type FileRead,
+	type IntegrationHistory,
 	matrixSourcePaths,
 	modelPaths,
 	type RepoView,
@@ -13,7 +14,9 @@ import {
 } from "../../../change-proof/admission.ts";
 import {
 	changedPaths,
+	historyGit,
 	isAncestor,
+	readIntegrationHistory,
 	readRepoFile,
 	resolveCommit,
 	snapshot,
@@ -140,6 +143,7 @@ function repoView(
 	root: string,
 	proof: ChangeProof,
 	changed: RepoView["changed"],
+	ratifications: ReadonlyMap<string, Result<IntegrationHistory, string>>,
 ): RepoView {
 	const files = new Map<string, FileRead>();
 	for (const path of referencedPaths(proof))
@@ -151,7 +155,57 @@ function repoView(
 	const modelFiles = new Map(
 		modelPaths(proof).map((path) => [path, readRepoFile(root, path)]),
 	);
-	return { files, modelFiles, changed };
+	return { files, modelFiles, changed, ratifications };
+}
+
+function ratificationHistories(
+	root: string,
+	proof: ChangeProof,
+): ReadonlyMap<string, Result<IntegrationHistory, string>> {
+	const histories = new Map<string, Result<IntegrationHistory, string>>();
+	for (const adr of proof.domain.adrs) {
+		const ratification = adr.ratification;
+		if (ratification === undefined || histories.has(ratification.integratedAt))
+			continue;
+		const paths = [
+			...new Set(
+				proof.domain.adrs.flatMap((reference) =>
+					reference.ratification?.integratedAt === ratification.integratedAt
+						? [reference.file, reference.ratification.process.file]
+						: [],
+				),
+			),
+		].sort();
+		histories.set(
+			ratification.integratedAt,
+			readIntegrationHistory(
+				root,
+				proof.base,
+				ratification.integratedAt,
+				paths,
+			),
+		);
+	}
+	return histories;
+}
+
+function historyState(
+	histories: ReadonlyMap<string, Result<IntegrationHistory, string>>,
+): string {
+	if (histories.size === 0) return "";
+	return JSON.stringify(
+		[...histories].map(([commit, read]) => [
+			commit,
+			read.ok
+				? {
+						base: read.value.base,
+						integratedAt: read.value.integratedAt,
+						files: [...read.value.files],
+						baseFiles: [...read.value.baseFiles],
+					}
+				: { error: read.error },
+		]),
+	);
 }
 
 function countsLine(label: RunLabel, counts: Counts): string {
@@ -190,14 +244,17 @@ async function prove(
 	baseRef: string | undefined,
 	manifest: ManifestInput,
 ): Promise<number> {
-	if (resolveCommit(root, proof.base) !== proof.base)
+	const reader = proof.domain.adrs.some((adr) => adr.ratification !== undefined)
+		? historyGit
+		: undefined;
+	if (resolveCommit(root, proof.base, reader) !== proof.base)
 		return stopAt(
 			io,
 			"stale",
 			`the base ${proof.base} is not a commit in this repository`,
 		);
 	if (baseRef !== undefined) {
-		const resolved = resolveCommit(root, baseRef);
+		const resolved = resolveCommit(root, baseRef, reader);
 		if (resolved !== proof.base)
 			return stopAt(
 				io,
@@ -205,7 +262,7 @@ async function prove(
 				`--base ${baseRef} resolves to ${resolved ?? "no commit"}, not the manifest base ${proof.base}`,
 			);
 	}
-	if (!isAncestor(root, proof.base, "HEAD"))
+	if (!isAncestor(root, proof.base, "HEAD", reader))
 		return stopAt(
 			io,
 			"stale",
@@ -220,9 +277,16 @@ async function prove(
 		...modelPaths(proof),
 		...(matrix.kind === "text" ? matrixSourcePaths(matrix.text) : []),
 	];
-	const before = snapshot(root, proof.base, changed.value, inputs);
+	const histories = ratificationHistories(root, proof);
+	const before = snapshot(
+		root,
+		proof.base,
+		changed.value,
+		inputs,
+		historyState(histories),
+	);
 	if (!before.ok) return stopAt(io, "stale", before.error);
-	const view = repoView(root, proof, changed.value);
+	const view = repoView(root, proof, changed.value, histories);
 	const plan = checkReferences(proof, view);
 	if (!plan.ok) return stop(io, plan.error);
 	const timeoutMs = deadlineMs(io.env);
@@ -286,6 +350,7 @@ async function prove(
 		proof.base,
 		changedAfter.value,
 		inputs,
+		historyState(ratificationHistories(root, proof)),
 	);
 	if (!after.ok) return stopAt(io, "stale", after.error);
 	const currentManifest = readRepoFile(root, manifest.path);

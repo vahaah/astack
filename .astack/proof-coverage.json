@@ -1,13 +1,17 @@
 {
 	"version": 1,
-	"specs": ["docs/reference/change-proof-contract.md"],
+	"specs": [
+		"docs/reference/change-proof-contract.md",
+		"docs/adr/0007-integrated-proposals-require-accepted-ratification.md"
+	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
 		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof-snapshot.test.ts",
 		"tests/astack/change-proof.test.ts",
 		"tests/astack/proof-migration.test.ts",
-		"tests/hardening-consistency.test.ts"
+		"tests/hardening-consistency.test.ts",
+		"tests/astack/change-proof-ratification.test.ts"
 	],
 	"links": [
 		{
@@ -83,6 +87,33 @@
 		{
 			"criterion": "CP-12",
 			"controls": ["proof-migration-stop"]
+		},
+		{
+			"criterion": "proof-ratification",
+			"controls": [
+				"proof-ratification",
+				"proof-ratification-does-not-accept-replacement-trees-as-integrated-history",
+				"proof-ratification-keeps-bare-proposed-records-rejected-by-default",
+				"proof-ratification-refuses-an-authority-first-added-after-the-integrated-base",
+				"proof-ratification-requires-the-accepted-process-decision",
+				"proof-ratification-refuses-an-invalid-ratification-s-declaration",
+				"proof-ratification-cannot-reuse-the-governing-adr-as-its-proof-record",
+				"proof-ratification-admits-an-unchanged-integrated-proposal-only-after-the-full-model-triple",
+				"proof-ratification-refuses-changed-bytes-in-s",
+				"proof-ratification-compares-the-fixed-base-even-when-current-bytes-match-the-older-integration",
+				"proof-ratification-refuses-a-proposal-first-added-after-the-integrated-base",
+				"proof-ratification-refuses-a-newly-accepted-process-rather-than-trusting-its-current-stamp",
+				"proof-ratification-refuses-integrated-s",
+				"proof-ratification-refuses-a-s-as-integration-history",
+				"proof-ratification-refuses-real-history-from-another-branch",
+				"proof-ratification-rejects-a-s-while-parsing-the-manifest",
+				"proof-ratification-refuses-a-historical-s",
+				"proof-ratification-requires-the-separate-proof-record-s-s",
+				"proof-ratification-binds-history-availability-again-after-model-execution",
+				"proof-ratification-binds-an-ignored-proof-record-across-model-execution",
+				"proof-ratification-fetch-witness",
+				"proof-ratification-no-lazy-fetch"
+			]
 		}
 	]
 }

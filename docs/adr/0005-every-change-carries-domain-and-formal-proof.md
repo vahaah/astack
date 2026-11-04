@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-11-03
 Ticket: none
 Supersedes: none
+Amended by: 0007 D2 for checked integrated proposals
 
 ## Context
 
