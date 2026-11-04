@@ -68,3 +68,10 @@ An accepted decision that defines when an integrated proposal has authority for 
 Review must examine its meaning and the actual owner grant.
 Git history alone cannot establish that grant.
 _Avoid_: Automatic approval from ancestry
+
+### CI proof record
+
+A separate current proof explanation used beside a CI change.
+It supplies no authority, implementation, model, or control input.
+_Avoid_: Arbitrary formal document
+_Code_: `ciProofRecords`

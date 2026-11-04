@@ -1,17 +1,12 @@
 {
 	"version": 1,
-	"change": "checked-integrated-proposal-authority",
-	"base": "2e6264676f2e390f27fe770dccebb83bc22d2c5c",
+	"change": "ci-proof-record-classification",
+	"base": "e1aba42105434f60af302fa95270c48e1345c06a",
 	"scope": [
 		{
 			"path": "**",
-			"obligation": "proof-ratification",
-			"modelRefs": [
-				"AdmitSafe",
-				"FailureIsTerminal",
-				"EventuallyTerminal",
-				"RatifiedAuthority"
-			]
+			"obligation": "ci-proof-records",
+			"modelRefs": ["CiRecordsSafe", "CurrentProofRequired"]
 		}
 	],
 	"domain": {
@@ -25,72 +20,38 @@
 			"ChangeProof",
 			"Proof admission",
 			"Candidate inputs",
-			"Composition record",
-			"Model control",
-			"ReviewRun",
-			"Ratified proposal",
-			"Ratification process"
+			"CI proof record"
 		],
 		"invariants": [
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "CI mode admits only checked metadata beside CI",
+				"modelRef": "CiRecordsSafe"
 			},
 			{
-				"name": "A rejected stage cannot admit the change",
-				"modelRef": "FailureIsTerminal"
-			},
-			{
-				"name": "Proposal admission requires integrated unchanged authority",
-				"modelRef": "RatifiedAuthority"
+				"name": "Classification cannot replace current proof",
+				"modelRef": "CurrentProofRequired"
 			}
 		],
 		"adrs": [
 			{
 				"file": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
-				"decision": "D3"
+				"decision": "D4"
 			},
 			{
 				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
 				"decision": "D2"
-			},
-			{
-				"file": "docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
-				"decision": "D2"
 			}
 		],
 		"controls": {
-			"matrix": ".astack/proof-coverage.json",
-			"criteria": [
-				"CP-01",
-				"CP-02",
-				"CP-03",
-				"CP-04",
-				"CP-05",
-				"CP-06",
-				"CP-07",
-				"CP-08",
-				"CP-09",
-				"CP-10",
-				"CP-11",
-				"CP-12",
-				"proof-ratification"
-			]
+			"matrix": ".astack/ci-proof-records-coverage.json",
+			"criteria": ["ci-proof-records"]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "result",
-			"error": "Rejection"
+			"kind": "pure"
 		},
 		"objects": [
-			{
-				"name": "ProofText",
-				"link": {
-					"path": "tests/astack/proof-composition.ts",
-					"symbol": "ProofText"
-				}
-			},
 			{
 				"name": "ChangeProof",
 				"link": {
@@ -99,192 +60,147 @@
 				}
 			},
 			{
-				"name": "Admitted",
+				"name": "RecordPathsResult",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "Admitted"
+					"path": "src/astack/result.ts",
+					"symbol": "Result"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "parse",
-				"from": "ProofText",
-				"to": "ChangeProof",
-				"link": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "parseChangeProof"
-				},
-				"effects": []
-			},
-			{
-				"name": "admitForFacts",
+				"name": "ciProofRecords",
 				"from": "ChangeProof",
-				"to": "Admitted",
+				"to": "RecordPathsResult",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "src/astack/change-proof/ci-records.ts",
+					"symbol": "ciProofRecords"
 				},
 				"effects": []
 			}
 		],
-		"composites": [
-			{
-				"arrows": ["parse", "admitForFacts"],
-				"op": ">=>"
-			}
-		],
-		"equality": "Structural equality of returned values and Rejection for one fixed RepoView and AdmissionFacts.",
+		"composites": [],
+		"equality": "Structural equality of permitted ordered paths or the first refusal for fixed base and committed file observations.",
 		"laws": [
 			{
 				"law": "id-left",
-				"status": "witnessed",
-				"witness": "model:ResultLeftIdentity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "id-right",
-				"status": "witnessed",
-				"witness": "model:ResultRightIdentity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "assoc",
-				"status": "witnessed",
-				"witness": "model:ResultAssociativity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "No runtime map is introduced or changed. The derived mathematical map is explained in ADR 0006."
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "No runtime map is introduced or changed. The derived mathematical map is explained in ADR 0006."
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "monad-left",
-				"status": "witnessed",
-				"witness": "model:ResultLeftIdentity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "monad-right",
-				"status": "witnessed",
-				"witness": "model:ResultRightIdentity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			},
 			{
 				"law": "monad-assoc",
-				"status": "witnessed",
-				"witness": "model:ResultAssociativity"
+				"status": "not_applicable",
+				"reason": "This change declares one pure arrow with fixed file observations. It introduces no custom composition operator, map, functor, or monad."
 			}
 		],
-		"typedWitness": "tests/astack/proof-composition.ts"
+		"typedWitness": "tests/astack/ci-proof-records.test.ts"
 	},
 	"abstraction": {
-		"hides": "Reference validation, model-control interpretation, and snapshot comparison for proof admission.",
+		"hides": "The narrow metadata role inventory and shared proof-section validation, separate from Git I/O and CI tool checks.",
 		"callersKnow": [
-			"The base is an immutable ancestor.",
-			"Tool evidence comes from the pinned runner and its output judges.",
-			"All ordinary implementation gates remain required.",
-			"Historical authority facts come from checked immutable Git objects and current regular UTF-8 files."
+			"The manifest is parsed from the committed default path.",
+			"The fixed base equals the actual merge base.",
+			"File observations come from strict non-executable regular UTF-8 Git blobs.",
+			"Every other changed path and every tool comparison remains subject to the existing CI guard.",
+			"Classification grants no proof success, review result, or merge authority."
 		],
-		"deletionTest": "Each delivery caller would otherwise repeat the same admission rules.",
+		"deletionTest": "Deleting ciProofRecords repeats metadata validation among the CLI effects and couples it to Git access.",
 		"alternatives": [
 			{
-				"name": "Hook-only enforcement",
-				"rejectedBecause": "Current client event and error paths can allow a change."
+				"name": "Reject every file outside CI",
+				"rejectedBecause": "Mandatory current proof records cannot accompany the CI adoption that needs them."
 			},
 			{
-				"name": "An optional profile switch",
-				"rejectedBecause": "It would disable the required policy."
+				"name": "Permit all declared proof inputs",
+				"rejectedBecause": "Models, controls, and implementation code can cause gate failures outside the CI change."
 			},
 			{
-				"name": "A saved pass receipt",
-				"rejectedBecause": "It cannot establish a current model run."
+				"name": "Permit every formal Markdown file",
+				"rejectedBecause": "An unrelated document is not required proof metadata."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "parseChangeProof"
+					"path": "src/astack/change-proof/ci-records.ts",
+					"symbol": "ciProofRecords"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Classify"
 			},
 			{
 				"concrete": {
 					"path": "src/astack/change-proof/admission.ts",
 					"symbol": "admitChangeProof"
 				},
-				"modelAction": "Admit"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "judgeNegative"
-				},
-				"modelAction": "RunNegative"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/change-proof/runner.ts",
-					"symbol": "runModel"
-				},
-				"modelAction": "RunRestored"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "readIntegrationHistory"
-				},
-				"modelAction": "ValidationPass"
+				"modelAction": "CheckProof"
 			}
 		],
 		"omitted": [
-			"Validator internals and arbitrary implementation behavior.",
-			"Host compromise and external owner authorization."
+			"Arbitrary file contents and the separate parser internals collapse to seven truthful observations.",
+			"One record fault at a time is modeled. Combined faults remain implementation-control obligations.",
+			"The independent proof triple collapses to its successful admission result.",
+			"Semantic authority, host integrity, full review, exact-head CI, and merge conditions remain external obligations."
 		]
 	},
 	"model": {
-		"module": "formal/ProofAdmission.tla",
-		"config": "formal/ProofAdmission.cfg",
+		"module": "formal/CiProofRecords.tla",
+		"config": "formal/CiProofRecords.cfg",
 		"dependencies": [],
 		"bounds": [
-			"Four ordered validation stages.",
-			"Finite positive, negative, and restored outcome classes.",
-			"One possible current-to-stale input change before admission.",
-			"Two abstract values and two error values for the Result laws.",
-			"Two valid ADR authority routes and one invalid authority class at a time. Combined faults are outside the finite case set."
+			"Four diff classes and eight record cases: valid or one of seven failed guards.",
+			"Tool equality, moved base, and independent proof validity are Boolean.",
+			"One classification followed by one independent proof decision."
 		],
-		"fairness": ["Weak fairness of Next establishes eventual terminal status."],
-		"invariants": [
-			"TypeOK",
-			"AdmitSafe",
-			"FailureIsTerminal",
-			"ResultLeftIdentity",
-			"ResultRightIdentity",
-			"ResultAssociativity",
-			"RatifiedAuthority"
-		],
-		"properties": ["EventuallyTerminal"]
+		"fairness": [],
+		"invariants": ["TypeOK", "CiRecordsSafe", "CurrentProofRequired"],
+		"properties": []
 	},
 	"negative": {
-		"file": "formal/ProofAdmission.tla",
-		"action": "ValidationPass",
-		"original": "/\\ (Stages[stage] # \"domain\" \\/ AuthorityAllowed(authority))",
-		"replacement": "/\\ TRUE",
-		"defect": "Domain validation admits an invalid proposal authority case.",
+		"file": "formal/CiProofRecords.tla",
+		"action": "Classify",
+		"original": "/\\ (input.kind = \"ci\" \\/ RecordAllowed(input.records))",
+		"replacement": "/\\ (input.kind = \"ci\" \\/ RecordAllowed([input.records EXCEPT !.roles = TRUE]))",
+		"defect": "Ignoring role separation admits a record that also supplies an implementation or authority input.",
 		"expect": {
 			"kind": "invariant",
-			"name": "RatifiedAuthority"
+			"name": "CiRecordsSafe"
 		}
 	},
 	"limits": [
-		"The model abstracts validators into declared outcome classes.",
-		"Finite Result law encoding does not prove arbitrary TypeScript correspondence.",
-		"Reference and arrow checks validate declarations, not semantic truth.",
-		"Implementation controls and semantic review remain separate.",
-		"The host and Java runtime are trusted.",
-		"The record cannot establish private model reasoning.",
-		"The authority cases abstract Git history, path decoding, byte comparison, and semantic ratification. Implementation controls and review establish those separately."
+		"Finite classification safety only. No liveness or eventual successful delivery claim.",
+		"The model assumes truthful schema, byte, role, tool, and base observations.",
+		"CLI controls establish selected implementation correspondence independently.",
+		"A CI mode result never supplies fresh TLC execution, a clean review stop, hosted success, or merge authority.",
+		"Existing proof admission and all exact-head review and CI requirements remain mandatory."
 	]
 }

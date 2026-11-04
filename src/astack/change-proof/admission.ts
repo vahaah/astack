@@ -215,7 +215,7 @@ function adrMetadata(
 	return PASS;
 }
 
-function proofSections(
+export function proofSections(
 	proof: ChangeProof,
 	files: ReadonlyMap<string, FileRead>,
 	file: string,
