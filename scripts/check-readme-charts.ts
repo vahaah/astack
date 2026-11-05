@@ -1,6 +1,10 @@
 import { readFileSync } from "node:fs";
 
-const charts = ["docs/charts/daily-path.mmd", "docs/charts/session-waves.mmd"];
+const charts = [
+	"docs/charts/checked-path.mmd",
+	"docs/charts/daily-path.mmd",
+	"docs/charts/session-waves.mmd",
+];
 const readme = readFileSync("README.md", "utf8");
 const blocks = [...readme.matchAll(/```mermaid\n([\s\S]*?)```/g)].map(
 	(m) => m[1],
