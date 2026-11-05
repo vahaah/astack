@@ -1,0 +1,17 @@
+flowchart TD
+  goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
+  plan --> spec["Spec and tickets (to-spec, to-tickets)"]
+  spec --> build["Build on a branch, failing test first (implement, tdd)"]
+  build --> gates{"Gates: lint, types, tests, astack check …"}
+  gates -->|fail| build
+  gates --> proof{"change-proof: contract, ADRs, TLC positive, negative and restored runs"}
+  proof -->|fail| build
+  proof --> review["/astack:code-review: standards and spec"]
+  review --> pr[Open the PR]
+  pr --> ci{CI on the pushed head}
+  ci --> harden["/astack:pr-review-hardening: reproduce each finding"]
+  harden --> grant{Your merge grant}
+  grant --> merge[Merge]
+  hooks[["Hooks: merge guard, destructive-command guard, reply, type and comment checks"]] -.-> build
+  hooks -.-> pr
+  hooks -.-> merge

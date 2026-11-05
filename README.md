@@ -5,29 +5,78 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
-    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant." src="docs/hero-light.svg" width="720">
+    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant. Caption: Composition as analogy. Only proof parse→admit is typed." src="docs/hero-light.svg" width="720">
   </picture>
 </p>
 
 <p align="center"><a href="#quickstart">Install</a> · <a href="#how-it-works">Workflow</a> · <a href="marketplace/plugins/astack/skills/mode/references/card.md">Rule card</a></p>
 
-astack is one plugin for AI coding agents. It gives the agent a planning method and a build loop that starts from a failing test. It adds review and hardening passes, and it stops before each decision that is yours. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
+astack is a plugin for AI coding agents. Its skills and rules give the agent one path from a goal to a merged pull request. The path is plan, build test-first on a branch, run the gates, review, open the PR, harden and merge. The agent stops before each decision that belongs to you. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-- **52 skills** for plans, code, review, the domain model, research, tickets, documents and tool control
-- **Read-only reviewer agents** for TypeScript and PostgreSQL
-- **Hooks** that guard the workflow and check reply language, types and comments
-- **A CLI** (`astack`) for sessions, plan checks, the board and `doctor`
-- **Required change proof**: every change carries a domain contract and current TLA+ evidence, checked by `astack check proof`
+- **52 skills** in the plugin for plans, code, review, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 54.
+- **Six agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `researcher`, `delegate` and `comment-judge` are used by the skills. Those four are not limited to Read, Grep and Glob.
+- **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
+- **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
+- **A CLI** (`astack`) for sessions, the board, `doctor` and repository checks, including `astack check proof`.
+- **A required change proof.** A repo that applies the astack profile gets a mandatory `change-proof` gate. The gate admits a change only with a domain contract, accepted ADR decisions and a passing TLC run of a bounded TLA+ model. The run includes a mutated model that must fail.
 
+## What is checked, and where
+
+| Layer | What runs | Where | What it guarantees |
+|---|---|---|---|
+| Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
+| Hooks | `astack hook <client> <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Blocks some actions, such as a merge with no grant or a destructive command. Fails open on a thrown handler. Grok Bot has no hooks |
+| CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
+| CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate still requires the manifest `base` |
+| You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
+
+```mermaid
+flowchart TD
+  goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
+  plan --> spec["Spec and tickets (to-spec, to-tickets)"]
+  spec --> build["Build on a branch, failing test first (implement, tdd)"]
+  build --> gates{"Gates: lint, types, tests, astack check …"}
+  gates -->|fail| build
+  gates --> proof{"change-proof: contract, ADRs, TLC positive, negative and restored runs"}
+  proof -->|fail| build
+  proof --> review["/astack:code-review: standards and spec"]
+  review --> pr[Open the PR]
+  pr --> ci{CI on the pushed head}
+  ci --> harden["/astack:pr-review-hardening: reproduce each finding"]
+  harden --> grant{Your merge grant}
+  grant --> merge[Merge]
+  hooks[["Hooks: merge guard, destructive-command guard, reply, type and comment checks"]] -.-> build
+  hooks -.-> pr
+  hooks -.-> merge
+```
+
+<details>
+<summary>Text version of the flow chart</summary>
+
+You name the goal. `/astack:plan` asks for your choices.
+Spec and ticket skills split the work. The agent builds on a branch, starting from a failing test.
+The gates run lint, types, tests and the astack checks. A failure returns to the build.
+The `change-proof` gate checks the contract and ADRs and runs TLC. A failure returns to the build.
+The agent reviews the branch and opens the PR.
+CI runs on the pushed head. A pull request workflow tests the merge into the base.
+Hardening reproduces each finding. The merge happens only with your grant.
+Hooks watch the build, the PR and the merge in clients that support hooks.
+
+</details>
 
 ## Contents
 
 - [Quickstart](#quickstart)
+- [What is checked, and where](#what-is-checked-and-where)
 - [How it works](#how-it-works)
 - [Foundations](#foundations)
 - [Why astack](#why-astack)
 - [Install by client](#install-by-client)
 - [The CLI](#the-cli)
+- [Hooks in detail](#hooks-in-detail)
+- [Applying astack to a repo](#applying-astack-to-a-repo)
+- [Runtimes, files and environment](#runtimes-files-and-environment)
+- [Releases](#releases)
 - [Hook profiles](#hook-profiles)
 - [Language review packs](#language-review-packs)
 - [Build and verify](#build-and-verify)
@@ -40,9 +89,9 @@ astack is one plugin for AI coding agents. It gives the agent a planning method 
 
 Install the signed release `v0.1.0`. See [the release list](https://github.com/vahaah/astack/releases).
 
-You need Node 22 or later, or Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
+The CLI runs on Node 22 or later, or on Bun. `bun run check` and `bun run apply` need Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
 
-> **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
+> **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `bun run apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
 
 ```sh
 ASTACK_TAG=v0.1.0
@@ -118,7 +167,7 @@ You land with a merge grant, then plan the next session.
 8. **Merge** only with a grant in the profile or in that turn.
 9. **Plan the next session.**
 
-The full guide is [docs/workflow.md](docs/workflow.md). When the README and the rule card differ, the rule card wins: `marketplace/plugins/astack/skills/mode/references/card.md`.
+The full guide is [docs/workflow.md](docs/workflow.md). The rule card routes each session. This page states the limits of each check. The card is [marketplace/plugins/astack/skills/mode/references/card.md](marketplace/plugins/astack/skills/mode/references/card.md).
 
 ### One plan session is one pull request
 
@@ -150,7 +199,7 @@ When no wave remains, `astack session checkpoint` records the point.
 
 </details>
 
-Start a session with `astack session start <plan>`. The steps sit in waves, workers build them in worktrees, and the main thread lands the commits in plan order. `astack session checkpoint` writes the checkpoint on the PR. `astack board <plan>` shows the PRs to merge first, the active sessions and the work you can start. The board is a view, so do not commit it.
+Start a session with `astack session start <plan>`. The steps sit in waves. Workers build them in worktrees, and the main thread lands the commits in plan order. `astack session checkpoint` prints a package. The session skill posts that package on the PR. `astack board <plan>` shows the PRs to merge first, the active sessions and the work you can start. The board is a view. Do not commit it.
 
 ### Words that select a route
 
@@ -170,18 +219,18 @@ Start a session with `astack session start <plan>`. The steps sit in waves, work
 | You say | astack does |
 |---|---|
 | "comments" | Triages each PR comment, then fixes failing checks |
-| UI polish, or a mobile check | `astack:control-ui` walks the journey as a real person |
+| UI polish, or a mobile check | `astack:control-ui` walks the journey as a real persona |
 | "pause" | Hard stop with a hand-off prompt |
 
 #### Ship
 
 | You say | astack does |
 |---|---|
-| "create pr" | Gates, deslop, comment check, PR text, then one hardening run if the profile asks |
-| "update from main" | Merges the base branch and runs the gates again |
+| "create pr" | Gates, deslop, the comment check and the PR text. One hardening run follows when the profile sets `after_create_pr` to `harden` |
+| "update from main" | Merges the PR base, or `main`, and runs the gates again |
 | "merge when green" | Ships, if a grant exists |
 
-A rule of yours can add a route. It cannot remove one.
+A user rule in the rules folder can add a route. It cannot remove one.
 
 ### Rules that always apply
 
@@ -197,7 +246,7 @@ A rule of yours can add a route. It cannot remove one.
 - One plan is one pull request.
 - Put follow-up work in the open pull request.
 - Report the gate counts.
-- Walk the journey as a real person.
+- Walk the journey as a real persona.
 - Measure a claim before you make it.
 - Keep the state in the plan, the tracker and git.
 - Write each reply in ASD-STE100 Simplified Technical English.
@@ -208,7 +257,7 @@ A rule of yours can add a route. It cannot remove one.
 
 ## Why astack
 
-astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own, and the right choice depends on what you need.
+astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own. The right choice depends on what you need.
 
 | Option | What it gives you | When to choose it |
 |---|---|---|
@@ -220,37 +269,50 @@ astack stands on other people's work. It adapts text from three MIT projects, li
 
 What astack adds on top:
 
-- **Enforcement, not only guidance.** Hooks check reply language, types and comments, and workflow guards stay on in every profile.
+- **Checks as well as guidance.** Hooks check reply language, types and comments. The workflow guards stay on in every profile. Hooks can fail open, and Grok Bot has none. A gate runs in CI only when a workflow runs it.
 - **Owner stops.** The agent stops before merges with no grant, money, accounts, secrets and destructive resets.
-- **CI parity.** The hardening gates mirror the repo's CI jobs, and a check keeps them in step.
+- **CI parity.** The companion config lists `ciOnlyGates` and `ciParity`. Apply compares the hardening gates with the repo workflows and writes those gates into the hardening profile.
 - **One source, many clients.** A capability map decides what each client build receives.
 
 The trade-off is that astack is opinionated. If its path does not fit, the projects above are good places to start.
 
 ## Foundations
 
-### Formal verification
+### What ChangeProof proves, and what it does not
 
-Each change needs a domain contract and a current TLA+ model run.
-`astack check proof` admits the change only when both are present and current.
-TLC checks the model `formal/ProofAdmission.tla`.
-[ADR 0005](docs/adr/0005-every-change-carries-domain-and-formal-proof.md) makes this gate mandatory for code, configuration and documents.
-The model checks admission safety, terminal failure and progress under weak fairness.
-A model pass does not prove that the implementation matches the model.
-Tests and the other gates remain mandatory.
+`astack check proof` reads `.astack/proof.json` and admits the change only when all of these hold:
 
-### Composition
+1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit and an ancestor of `HEAD`. When you pass `--base`, that ref resolves to the same commit.
+2. Its `scope` rows cover every changed, staged, removed and untracked path.
+3. The domain contract resolves. That is the glossary, the aggregate symbol, the terms and invariants, and each cited ADR decision. A cited ADR must have status Accepted, unless the reference has an `integrated-proposal` ratification. Then the governing ADR stays Proposed and the process ADR stays Accepted. ADR 0007 is superseded by ADR 0008. The code does not limit that route to those two files. `governingMetadata` set to `landed-header-value` is the ADR 0008 option. It allows one `Landed` header value to differ.
+4. The spec-drift matrix passes, and each named criterion has a links row.
+5. TLC (`tla2tools.jar` 1.7.4, SHA-256 pinned) passes the model, then finds the named violation in the declared negative mutation, then passes the restored model. Each run uses a temporary copy. Each run has a deadline of at most 60 seconds. The candidate inputs are hashed before and after the runs. The check does not read a stored receipt.
 
-The proof gate composes two steps and keeps one error type, `Rejection`.
-`parseChangeProof` reads the manifest.
-`admitChangeProof` admits that value for fixed facts.
-A failed parse does not run admission.
-[ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) records the identity law and the associativity law for this composition.
-TLC checks those laws on a finite set of values.
-The types rules ask you to build small functions that compose.
-A gate is the typed check between two steps.
-Category names stay in contracts, models, law tests and reviews.
-The steps of the workflow are not a formal category.
+Exit 0 means admitted. Exit 1 means missing or invalid evidence, or a tool failure. Exit 2 means wrong arguments or a schema failure. `--summary` prints the intent as `UNVERIFIED` and runs nothing, so it is never a proof.
+
+The manifest fields are `version`, `change`, `base`, `scope`, `domain`, `category`, `abstraction`, `model`, `negative` and `limits`. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
+
+In this repository the positive run explores 276 distinct states. The negative mutation violates `LandingAuthoritySafe` with a counterexample of 9 states. The receipt names the head commit and a digest of the candidate inputs. Those inputs are the index, the worktree files and any ratification history.
+
+What it does **not** prove:
+
+- **That the code matches the model.** Each `relation` row names a function and a model action. The check requires that symbol to occur in the named file. It does not check that the function implements the action. Tests and review cover that link.
+- **Anything beyond the model's bounds.** TLC explores a finite state space under the stated assumptions.
+- **That the model is about the change.** A `**` scope with one model admits any path, so the coverage is only as specific as the manifest.
+- **Facts outside the model,** such as the truth of an ADR's `Landed` value. ADR 0008 leaves that to human review.
+
+### Category theory: what is real and what is analogy
+
+What the code does:
+
+- **One typed composition, checked on a model.** `parseChangeProof` maps text to `Result<ChangeProof, Rejection>`. `admitChangeProof` maps that value to `Result<Admitted, Rejection>`. `astack check proof` parses first. A bad parse stops before the model runs. Admission runs after the three TLC runs. `tests/astack/proof-composition.ts` defines `proofForSnapshot`, which returns the first rejection and does not admit a bad parse. There is no generic `bind` helper. [ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) gives the identity and associativity argument on paper. TLC checks `ResultLeftIdentity`, `ResultRightIdentity` and `ResultAssociativity` on a finite encoding of the Result carrier. That encoding uses two values, two errors and all total functions between them. TLC does not check the TypeScript functions. The manifest field `typedWitness` is a separate file. This repository names `tests/astack/governing-authority.test.ts`. Admission checks that this file names each arrow symbol.
+- **Composition records in each manifest.** The `category` section names objects, arrows, effects, equality and, for each law, either a witness or a reason it does not apply. `readLaw` in `src/astack/change-proof/contract.ts` requires a reason when a law is `not_applicable`. A pure carrier cannot witness a monad law. `lawProblem` in that file rejects the claim. ADR 0006 states the same rule. The manifest in this repository marks every law not applicable. It names no witness.
+
+What is only analogy:
+
+- **The workflow.** Plan, build, review and merge are not a category. The skills are not morphisms with checked types. Skills pass work through files and git, not through typed interfaces.
+- **Gates.** A gate is a command in the hardening profile that exits zero or not. It is not a typed arrow.
+- **The hero image.** `f ∘ g` on the return arrow, `⊢` and `∎` are notation for the idea, not claims about the code. The caption is "Composition as analogy. Only proof parse→admit is typed."
 
 ## Install by client
 
@@ -294,14 +356,24 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 
 | Command | Purpose |
 |---|---|
-| `astack session start\|checkpoint\|handoff\|resume` | Run one plan session |
-| `astack board <plan>` | Show what to merge, what is active and what can start |
+| `astack session start\|checkpoint\|handoff\|resume` | Run one plan session. Checkpoint prints a package for the skill to post on the PR |
+| `astack board <plan>` | Show what to merge, what is active and what can start. Do not commit the board |
 | `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
-| `astack check pr-head` | Run the PR head checks with one command |
-| `astack check review-growth` | Report advisory diff growth since the fixed first-review commits |
-| `astack check spec-drift` | Check declared acceptance criteria against test-control links |
-| `astack check proof [--summary]` | Admit a change only with a domain contract, current TLA+ evidence and composition records. Needs Java 17+ |
-| `astack init` | Write `.astack/profile.json` for a repo |
+| `astack check pr-head` | Check that HEAD equals or descends from the PR head fetched with `gh` |
+| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line when the versions stay the same. A changed tool version exits 1 |
+| `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
+| `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
+| `astack check proof [--summary]` | Admit a change only with a domain contract, accepted ADRs, composition records and passing TLC runs. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
+| `astack check comments\|types [--staged\|--base <ref>]` | Fail when an added comment is in a class that no keep rule covers, or when an unsafe type-pattern count rises in a file |
+| `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
+| `astack check stack-config` | Compare watched files with the record from `astack stack start`. It prints a restart command and never runs it |
+| `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
+| `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export, import, move and drift. These print write plans and never call a tracker |
+| `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
+| `astack orch` | Read and write the plain-file store of an orchestrate run. A missing record exits 2 |
+| `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
+| `astack print codex-agents\|cursor-install` | Print install text from the repository build |
+| `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
 | `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
 | `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
@@ -311,15 +383,60 @@ The [review checks runbook](docs/runbooks/review-checks.md) gives the commands f
 
 ### Change proof
 
-`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract: glossary, aggregate, terms and invariants. The check fails when any part is missing or stale. Fetch enough git history in CI to resolve `base`.
+`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract. That contract is the glossary, the aggregate, the terms and the invariants. The check fails when any part is missing or stale. Fetch enough git history in CI for `base` to resolve.
 
-`apply` adds one mandatory gate named `change-proof`. It cannot be optional, path-filtered or suppressed. `review-growth` and `spec-drift` are advisory. The `interrogate` adversarial review is opt-in: add it to the profile only when you want it.
+`bun run apply` requires one gate named `change-proof`. That gate cannot be optional or limited to some paths. Its command runs `astack check proof`. `review-growth` warns and still exits 0. `spec-drift` exits 1 when a link is missing. Neither replaces the proof gate. Add `interrogate` only when you want that review.
 The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
 The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption in existing repositories.
 
+## Hooks in detail
+
+Claude Code, Codex and Grok Build call `astack hook <client> <event>`. Their events are session start, prompt submit, tool use and stop. Cursor calls `astack hook cursor <event>` and uses its own event names for the same handlers. The command exits 2 to deny, and writes the reason on stderr. If a handler throws, the dispatcher allows the action (`src/astack/hook/dispatch.ts`). If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
+
+| Handler | Runs on | What it does | Off under `minimal` |
+|---|---|---|---|
+| `merge-guard` | prompt, shell, MCP | Denies a merge with no grant in the profile or the turn. It reads the pull request with `gh` | No |
+| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify` | No |
+| `duplicate-pr` | shell, MCP | Denies `gh pr create` for a branch that already has an open PR, or a body that shares a ticket key with an open PR | No |
+| `pr-body`, `ticket` | shell, MCP | Check PR headings and issue text, including `Part of` links | No |
+| `plan-file` | write and edit | Denies a plan write over the byte cap, or a new checkbox, `Status:` line or register table | No |
+| `plan-pointer` | session start | Adds a note that points the session at its plan. It does not deny | No |
+| `turn` | prompt, reply | Keeps per-turn state in the state folder. The STE follow-up note is skipped when `ste` is off | No |
+| `ste-reply`, `ste-artifact` | reply; write, edit, shell, MCP | ASD-STE100 checks | Yes |
+| `types` | write, edit, shell | Denies a rise in unsafe type patterns | Yes |
+| `comments` | write, edit, shell | Denies a comment that no keep rule covers | Yes |
+
+## Applying astack to a repo
+
+`bun run apply` is a script in this checkout, not an `astack` command. It reads `projects/<name>.json` from the [private companion](#private-companion). It writes the managed files, `.astack/profile.json` and the hardening profile. The gates live in the hardening profile. Apply does not write `.astack/proof.json`. Run a dry run first. See [the repository install guide](docs/install-repo.md). `astack init` writes only a starter `.astack/profile.json` and never makes a commit.
+
+## Runtimes, files and environment
+
+| Need | Used for |
+|---|---|
+| Node 22 or later (`engines`) | The CLI and hooks. CI uses Node 24.13.1 |
+| Bun (CI pins 1.4.3) | `bun run check`, `bun run apply` and the other repo scripts |
+| Java 17 or later | `astack check proof` and the `change-proof` gate |
+| `gh`, authenticated | `check pr-head`, `watch-pr`, and the merge and duplicate-PR guards |
+
+| File or variable | Meaning |
+|---|---|
+| `.astack/profile.json` | Tracker, merge grant, hook profile, STE mode, plan folders, `commentKeep`, `managed`, `neutral`, `types` and `maxCommentLines`. Gates are not in this file |
+| `.astack/proof.json` | The ChangeProof manifest. Prepare it in the repo. Apply does not write it |
+| `.claude/pr-review-hardening.profile.md` | The hardening profile. Its gates mirror CI, including the mandatory `change-proof` gate |
+| `ASTACK_TLC_JAR` | Absolute path of a pinned `tla2tools.jar` outside the repo |
+| `ASTACK_PROOF_TIMEOUT_MS` | Whole number from 1 to 60000. It can only lower the 60 second deadline of each TLC run |
+| `ASTACK_STATE_DIR` | State folder. Else `$XDG_STATE_HOME/astack`, else `~/.local/state/astack` |
+| `ASTACK_COMPANION_DIR` | The private companion folder |
+| `ASTACK_RUNTIME` | Optional path to `node` or `bun` for the launcher. `astack doctor --save-runtime` writes the current runtime to `~/.local/state/astack/runtime` |
+
+## Releases
+
+A push of a `v*` tag runs `.github/workflows/release.yml`. `scripts/release.ts` accepts only an annotated tag whose name is `v` plus the package version. GitHub must report the signature as verified, with reason `valid`. The job runs `check:drift`, `check` and a clean-tree check. It then creates a draft release with no assets. The owner reviews that draft and publishes it. Install from the tag source.
+
 ## Hook profiles
 
-Strict is the default. Minimal turns off the STE, type and comment checks. Each group can be overridden with a Boolean, and the workflow guards stay on.
+Strict is the default. Minimal turns off the STE, type and comment checks. Each group can be overridden with a Boolean. The workflow guards stay on. An invalid `hooks` object keeps the strict policy.
 
 ```json
 {
@@ -344,9 +461,9 @@ bun run check:drift
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof. `bun run check` runs that proof twice. The `test` script runs it, and `check` runs it again at the end.
 
-`check:drift` compares fresh build output with the committed files without rewriting them. `check` builds every target and runs validation, neutrality and secret scans, STE checks, tests, formatting, lint and type checks. The authenticated Claude load test needs an API key or OAuth token and is reported as skipped without one.
+`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` builds every target. It runs validation, neutrality and secret scans, STE checks, tests, formatting, lint and type checks. The authenticated Claude load test needs an API key or OAuth token. It is reported as skipped without one.
 
 ## Source layout
 
