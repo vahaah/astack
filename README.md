@@ -5,7 +5,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
-    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant. Caption: Composition as analogy. Only proof parse→admit is typed." src="docs/hero-light.svg" width="720">
+    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant. Caption: composition as analogy; only the proof parse→admit composition is checked." src="docs/hero-light.svg" width="720">
   </picture>
 </p>
 
@@ -18,14 +18,14 @@ astack is a plugin for AI coding agents. Its skills and rules give the agent one
 - **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
 - **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
 - **A CLI** (`astack`) for sessions, the board, `doctor` and repository checks, including `astack check proof`.
-- **A required change proof.** A repo that applies the astack profile gets a mandatory `change-proof` gate. The gate admits a change only with a domain contract, accepted ADR decisions and a passing TLC run of a bounded TLA+ model. The run includes a mutated model that must fail.
+- **A required change proof.** A repo that applies the astack profile gets a mandatory `change-proof` gate. The gate admits a change only with a domain contract, cited ADR decisions and a passing TLC run of a bounded TLA+ model. A cited ADR is Accepted, or Proposed with an integrated-proposal ratification. The run includes a mutated model that must fail.
 
 ## What is checked, and where
 
 | Layer | What runs | Where | What it guarantees |
 |---|---|---|---|
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
-| Hooks | `astack hook <client> <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Blocks some actions, such as a merge with no grant or a destructive command. Fails open on a thrown handler. Grok Bot has no hooks |
+| Hooks | `astack hook <client> <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
 | CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate still requires the manifest `base` |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
@@ -296,7 +296,7 @@ In this repository the positive run explores 276 distinct states. The negative m
 
 What it does **not** prove:
 
-- **That the code matches the model.** Each `relation` row names a function and a model action. The check requires that symbol to occur in the named file. It does not check that the function implements the action. Tests and review cover that link.
+- **That the code matches the model.** Each `relation` row names a function and a model action. The check requires that symbol to occur in the named file. Admission also requires each `modelAction` to be an action of the model. It does not check that the function implements the action. Tests and review cover that link.
 - **Anything beyond the model's bounds.** TLC explores a finite state space under the stated assumptions.
 - **That the model is about the change.** A `**` scope with one model admits any path, so the coverage is only as specific as the manifest.
 - **Facts outside the model,** such as the truth of an ADR's `Landed` value. ADR 0008 leaves that to human review.
@@ -312,7 +312,7 @@ What is only analogy:
 
 - **The workflow.** Plan, build, review and merge are not a category. The skills are not morphisms with checked types. Skills pass work through files and git, not through typed interfaces.
 - **Gates.** A gate is a command in the hardening profile that exits zero or not. It is not a typed arrow.
-- **The hero image.** `f ∘ g` on the return arrow, `⊢` and `∎` are notation for the idea, not claims about the code. The caption is "Composition as analogy. Only proof parse→admit is typed."
+- **The hero image.** `f ∘ g` on the return arrow, `⊢` and `∎` are notation for the idea, not claims about the code. The caption is "composition as analogy; only the proof parse→admit composition is checked". The manifest also names `compareLandedAuthority` as a typed arrow. That arrow is a pure comparison, not the checked composition.
 
 ## Install by client
 
@@ -360,10 +360,10 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 | `astack board <plan>` | Show what to merge, what is active and what can start. Do not commit the board |
 | `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
 | `astack check pr-head` | Check that HEAD equals or descends from the PR head fetched with `gh` |
-| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line when the versions stay the same. A changed tool version exits 1 |
+| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus `.astack/proof.json` or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
 | `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
-| `astack check proof [--summary]` | Admit a change only with a domain contract, accepted ADRs, composition records and passing TLC runs. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
+| `astack check proof [--summary]` | Admit a change only with a domain contract, composition records and passing TLC runs. A cited ADR is Accepted, or Proposed with an integrated-proposal ratification. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
 | `astack check comments\|types [--staged\|--base <ref>]` | Fail when an added comment is in a class that no keep rule covers, or when an unsafe type-pattern count rises in a file |
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
 | `astack check stack-config` | Compare watched files with the record from `astack stack start`. It prints a restart command and never runs it |
@@ -391,7 +391,13 @@ The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption
 
 ## Hooks in detail
 
-Claude Code, Codex and Grok Build call `astack hook <client> <event>`. Their events are session start, prompt submit, tool use and stop. Cursor calls `astack hook cursor <event>` and uses its own event names for the same handlers. The command exits 2 to deny, and writes the reason on stderr. If a handler throws, the dispatcher allows the action (`src/astack/hook/dispatch.ts`). If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
+Claude Code, Codex and Grok Build call `astack hook <client> <event>`. Their events are session start, prompt submit, tool use and stop. On those clients a deny exits 2 and writes the reason on stderr.
+
+Cursor calls `astack hook cursor <event>`. `encodeCursor` always exits 0 and writes JSON on stdout. A deny before a shell, an MCP call or a tool is `{"permission":"deny"}`. A deny of the prompt is `{"continue":false}`.
+
+`afterFileEdit` and `afterAgentResponse` do not block. An edit saves a type, comment or STE finding. The reply event saves the reply text. At `stop`, a saved finding comes back as `followup_message`.
+
+In Cursor, deny means a follow-up prompt, unless the change goes through `preToolUse` on Write. That event can refuse the write before it lands. A shell or MCP deny still blocks through the permission JSON. If a handler throws, the action is allowed. If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
 
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|
