@@ -122,7 +122,10 @@ They also cover `any`, casts, `!`, total functions, errors as values and a pure 
 They cover laws as property tests and limits against over-engineering too.
 Load it before you write or review TypeScript or Swift.
 Each rule names the tool that enforces it.
+
 The astack type hook denies a change that adds an `any`, an unsafe cast, a `!` or a compiler suppression.
+It also reads a temp file and a lint control.
+Make a lint positive control with a rule such as `no-debugger`, never with `any`, a cast or `!`.
 
 Use `type` for unions, intersections, mapped types and anything derived with `z.infer`.
 Use `interface` for a plain object contract, especially one that other code extends or implements.
