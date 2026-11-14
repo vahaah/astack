@@ -15,37 +15,43 @@ export type MergeGrant =
 
 export const NO_GRANT: MergeGrant = { kind: "none" };
 
-const BLOCKERS = new Set([
-	"a",
-	"after",
-	"an",
-	"any",
+const NEGATIONS = new Set([
 	"avoid",
-	"before",
 	"can't",
 	"cannot",
 	"cant",
 	"don't",
 	"dont",
-	"how",
 	"never",
 	"no",
 	"not",
 	"prevent",
+	"shouldn't",
+	"stop",
+	"without",
+	"won't",
+	"wont",
+]);
+
+const OWNER_MERGES = new Set([...NEGATIONS, "i", "i'll", "leave"]);
+
+const BLOCKERS = new Set([
+	...OWNER_MERGES,
+	"a",
+	"after",
+	"an",
+	"any",
+	"before",
+	"how",
 	"ready",
 	"safe",
 	"shall",
 	"should",
-	"shouldn't",
-	"stop",
 	"the",
 	"till",
 	"until",
 	"wait",
 	"whether",
-	"without",
-	"won't",
-	"wont",
 	"would",
 ]);
 
@@ -111,14 +117,31 @@ function prNumbers(tokens: readonly string[]): number[] {
 }
 
 const FULL_SEND_COMMAND = /^(?:\/(?:astack:)?)?full-send$/;
+const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
+const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
-function clauseGrant(clause: string): MergeGrant {
-	const tokens = words(clause);
+function withholdsFullSend(tokens: readonly string[]): boolean {
+	return tokens.some(
+		(token, index) =>
+			FULL_STOP_COMMAND.test(token) ||
+			(token === "full" && tokens[index + 1] === "stop") ||
+			(MERGE_WORD.test(token) &&
+				tokens
+					.slice(Math.max(0, index - 3), index)
+					.some((word) => OWNER_MERGES.has(word))),
+	);
+}
+
+function clauseGrant(
+	tokens: readonly string[],
+	fullSendAllowed: boolean,
+): MergeGrant {
 	for (let index = 0; index < tokens.length; index++) {
 		const token = tokens[index] ?? "";
 		const fullSend =
-			FULL_SEND_COMMAND.test(token) ||
-			(token === "full" && tokens[index + 1] === "send");
+			fullSendAllowed &&
+			(FULL_SEND_COMMAND.test(token) ||
+				(token === "full" && tokens[index + 1] === "send"));
 		if (!fullSend && token !== "merge" && token !== "squash-merge") continue;
 		const before = tokens.slice(Math.max(0, index - 3), index);
 		if (before.some((word) => BLOCKERS.has(word))) continue;
@@ -142,9 +165,12 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 }
 
 export function mergeGrantIn(prompt: string): MergeGrant {
-	return prose(prompt)
+	const clauses = prose(prompt)
 		.split(/[!?;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
-		.map(clauseGrant)
+		.map(words);
+	const fullSendAllowed = !clauses.some(withholdsFullSend);
+	return clauses
+		.map((tokens) => clauseGrant(tokens, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
 }
 

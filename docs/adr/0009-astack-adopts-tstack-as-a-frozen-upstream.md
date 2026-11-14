@@ -46,6 +46,7 @@ The port of the useful `pr-wait` features to `astack watch-pr` is a follow-up.
 The merge guard reads a "full send" clause with no negation as a merge grant of kind `any`.
 The grant holds for the current prompt only, as each other merge grant does.
 The words "full stop" never give a merge grant.
+A prompt with "full stop" or a no-merge clause, such as "do not merge" or "I will merge", gives no full-send grant.
 
 ### D5. Skill text names no vendor model
 

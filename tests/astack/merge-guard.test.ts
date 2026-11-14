@@ -178,6 +178,14 @@ describe("the merge grant in a human prompt", () => {
 		["no full send", { kind: "none" }],
 		["don't full send", { kind: "none" }],
 		["not a full send", { kind: "none" }],
+		["full send, but do not merge", { kind: "none" }],
+		["full send, no merge", { kind: "none" }],
+		["Full send it. I will merge it myself.", { kind: "none" }],
+		["full send, leave the merge to me", { kind: "none" }],
+		["full stop: same as full send", { kind: "none" }],
+		["/astack:full-stop run full send steps", { kind: "none" }],
+		["full send but no merging", { kind: "none" }],
+		["full send, then merge #12", { kind: "any" }],
 	] as const)("full send: %p grants %p", (text, grant) => {
 		expect(mergeGrantIn(text)).toEqual(grant);
 	});
