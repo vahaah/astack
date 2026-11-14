@@ -22,13 +22,14 @@ When the owner did, each rule below applies.
 An un-negated "full send" in the prompt of the owner gives these permissions:
 
 - Merge the PR when the merge gate passes. The astack merge guard reads that clause as a merge grant for this prompt.
-- Update the branch of this PR with `--force-with-lease` after a rebase. Pin the lease to the SHA that you last pushed. Never do this on a shared branch.
 - Use the test methods that the proof needs, with no question first.
 
-Update the branch with a merge from `origin/<base>` by default, as `references/refresh.md` of `astack-mode` says.
+Update the branch with a merge from `origin/<base>`, as `references/refresh.md` of `astack-mode` says.
+Never rebase or force-push the branch.
+
 The grant gives nothing else.
 It never covers a production change, a data delete, a change outside the repo or a close of a PR.
-It never covers a force-push of another branch, a forge approval or an `--admin` merge.
+It never covers a force-push, a forge approval or an `--admin` merge.
 It never passes an approval prompt of the harness or the system.
 Each owner gate of the rule card still applies.
 

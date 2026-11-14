@@ -33,7 +33,7 @@ When it has none, ask the owner what to deliver.
 ## No merge
 
 You can commit, push, update the branch and fix conflicts on the branch of this task.
-A forced update follows the rule of full-send.
+Update the branch with a merge, as full-send says. Never rebase or force-push it.
 
 Never do these things, and never ask another agent to do them:
 
