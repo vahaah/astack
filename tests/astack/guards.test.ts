@@ -217,11 +217,37 @@ describe("the clean selection of the work-loss guard", () => {
 		["git clean -fq", "deletes the untracked files keep.txt."],
 		["git clean -fd junk", "deletes the untracked files junk/a.txt."],
 		["git clean -fd -e keep.txt", "deletes the untracked files junk/a.txt."],
+		["git clean -f junk", "deletes the untracked files junk/a.txt."],
+		["git clean -nf --no-dry-run", "deletes the untracked files keep.txt."],
+		["git clean --forc", "deletes the untracked files keep.txt."],
+		["git clean -i", "deletes the untracked files keep.txt."],
+		["git clean -ffd", "deletes the untracked files junk/a.txt, keep.txt."],
 	])("%s is denied", (command, text) => {
 		const dir = untrackedRepo();
 		expect(
 			reason(destructive.run(shell(command, dir), context(dir))),
 		).toContain(`- ${command} ${text}`);
+	});
+
+	test("git clean -ffd is denied for a nested repo", () => {
+		const dir = untrackedRepo();
+		const nested = join(dir, "vendor/lib");
+		mkdirSync(nested, { recursive: true });
+		initRepo(nested);
+		write(nested, { "lib.ts": "export {};\n" });
+		git(nested, "add", "lib.ts");
+		git(nested, "commit", "-q", "-m", "lib");
+		expect(
+			reason(destructive.run(shell("git clean -ffd", dir), context(dir))),
+		).toContain("vendor/lib/");
+	});
+
+	test("git reset --ha is denied as git reset --hard is", () => {
+		const verdict = destructive.run(
+			shell("git reset --ha", dirty),
+			context(dirty),
+		);
+		expect(reason(verdict)).toContain("discards the uncommitted changes in");
 	});
 
 	test("the guard deletes no file when it reads git clean --no-dry-run", () => {

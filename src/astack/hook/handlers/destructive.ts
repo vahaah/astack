@@ -122,6 +122,7 @@ interface WorkLoss {
 	readonly pathspecs: readonly string[];
 	readonly excludes?: readonly string[];
 	readonly keepsUntrackedFolders?: boolean;
+	readonly removesNestedRepos?: boolean;
 }
 
 const WHOLE_TREE = [":/"];
@@ -150,6 +151,13 @@ function operands(
 	return { flags, plain, dashed: undefined };
 }
 
+function isLongForm(flag: string, long: string): boolean {
+	return (
+		flag === long ||
+		(long.startsWith("--") && flag.length >= 4 && long.startsWith(flag))
+	);
+}
+
 function hasFlag(
 	flags: readonly string[],
 	long: string,
@@ -157,7 +165,34 @@ function hasFlag(
 ): boolean {
 	return flags.some(
 		(flag) =>
-			flag === long || (/^-[A-Za-z]+$/.test(flag) && flag.includes(letter)),
+			isLongForm(flag, long) ||
+			(/^-[A-Za-z]+$/.test(flag) && flag.includes(letter)),
+	);
+}
+
+function letterCount(flags: readonly string[], long: string, letter: string) {
+	return flags.reduce(
+		(count, flag) =>
+			count +
+			(isLongForm(flag, long)
+				? 1
+				: /^-[A-Za-z]+$/.test(flag)
+					? flag.split(letter).length - 1
+					: 0),
+		0,
+	);
+}
+
+function dryRun(flags: readonly string[]): boolean {
+	return flags.reduce(
+		(dry, flag) =>
+			isLongForm(flag, "--no-dry-run")
+				? false
+				: isLongForm(flag, "--dry-run") ||
+						(/^-[A-Za-z]+$/.test(flag) && flag.includes("n"))
+					? true
+					: dry,
+		false,
 	);
 }
 
@@ -235,15 +270,17 @@ function cleanOperands(args: readonly string[]): CleanOperands {
 function cleanLoss(args: readonly string[]): WorkLoss | undefined {
 	const { flags, pathspecs, excludes } = cleanOperands(args);
 	const removesUntracked =
-		hasFlag(flags, "--force", "f") &&
-		!hasFlag(flags, "--dry-run", "n") &&
+		(hasFlag(flags, "--force", "f") || hasFlag(flags, "--interactive", "i")) &&
+		!dryRun(flags) &&
 		!hasFlag(flags, "-X", "X");
 	return removesUntracked
 		? {
 				lost: "untracked",
 				pathspecs: pathspecs.length > 0 ? pathspecs : ["."],
 				excludes,
-				keepsUntrackedFolders: !hasFlag(flags, "-d", "d"),
+				keepsUntrackedFolders:
+					pathspecs.length === 0 && !hasFlag(flags, "-d", "d"),
+				removesNestedRepos: letterCount(flags, "--force", "f") >= 2,
 			}
 		: undefined;
 }
@@ -251,7 +288,7 @@ function cleanLoss(args: readonly string[]): WorkLoss | undefined {
 function workLoss(git: GitInvocation): WorkLoss | undefined {
 	switch (git.sub) {
 		case "reset":
-			return git.args.includes("--hard")
+			return git.args.some((arg) => isLongForm(arg, "--hard"))
 				? { lost: "tracked", pathspecs: WHOLE_TREE }
 				: undefined;
 		case "checkout":
@@ -298,7 +335,8 @@ function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
 		if (entry.length < 4) continue;
 		const index = entry.charAt(0);
 		const path = entry.slice(3);
-		if (isLost(loss.lost, index, entry.charAt(1)) && !path.endsWith("/"))
+		const nestedRepo = path.endsWith("/") && !loss.removesNestedRepos;
+		if (isLost(loss.lost, index, entry.charAt(1)) && !nestedRepo)
 			paths.push(path);
 		if (index === "R" || index === "C") i++;
 	}
