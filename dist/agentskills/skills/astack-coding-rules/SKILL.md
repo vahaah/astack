@@ -14,7 +14,7 @@ The always-on coding rule is their short form.
 This skill adds the reasons and the edge cases.
 `astack-coding-guide` gives the owner's daily workflow from `/astack-plan` to the merged PR.
 A stricter repo rule wins.
-See "Per-repo overlays" below.
+`references/overlays.md` tells what a repo overlay can add and what it cannot change.
 
 ## Principles these rules build on
 
