@@ -73,9 +73,10 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 5. Land one PR at a time from bottom to top.
 
    Merge the run's lowest unmerged PR with `gh pr merge <pr> --squash`.
+   Run it as its own Bash call.
    A PR based on its parent's branch merges into that branch.
    It does not merge into trunk.
-   Read back the result with `gh pr view <pr> --json state,mergedAt,baseRefName`.
+   In the next Bash call, read back the result with `gh pr view <pr> --json state,mergedAt,baseRefName`.
    A successful merge command can mean that a merge queue accepted the PR.
    Requested auto-merge also leaves the PR unmerged until it lands.
    Confirm that the PR is merged and its base is trunk.
