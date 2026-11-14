@@ -101,14 +101,21 @@ git clone --branch "$ASTACK_TAG" --depth 1 https://github.com/vahaah/astack.git 
 
 Before you install, review the tag's commit and verified signature. Use a new folder for each release.
 
+Point a stable link at the release folder. Claude Code and the shared rules read the release through this link, so an [update](#update) only moves the link:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+```
+
 The generated builds under `dist/` are committed, so the checkout is ready to install. For Claude Code:
 
 ```sh
-claude plugin marketplace add "$ASTACK_RELEASE"
+claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-Then link the shared rules as [`dist/README.md`](dist/README.md) describes, and check the setup:
+Then link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Run `doctor` to examine the setup:
 
 ```sh
 "$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" doctor
@@ -328,12 +335,16 @@ All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#
 
 ### Claude Code and Grok Build
 
+Add the marketplace from the stable link `$ASTACK_CURRENT`, so that an [update](#update) only moves the link:
+
 ```sh
-claude plugin marketplace add "$ASTACK_RELEASE"
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes. Grok Build uses the Claude plugin build through its own marketplace install.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Grok Build uses the Claude plugin build through its own marketplace install from the same link.
 
 ### Codex
 
@@ -360,7 +371,7 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 
 Clone each new signed tag into a new folder, as the [Quickstart](#quickstart) does. Review the commit and the signature of the tag first. Then update each client.
 
-Claude Code reads the marketplace from the folder that you added. `claude plugin marketplace update astack` reads that folder again, and does not find a new release folder. So add the marketplace from a stable link. These commands point the link at the new release and update the plugin:
+Claude Code reads the marketplace from the folder that you added. `claude plugin marketplace update astack` reads that folder again, and does not find a new release folder. So the [Quickstart](#quickstart) adds the marketplace from the stable link `$ASTACK_CURRENT`. These commands point the link at the new release and update the plugin:
 
 ```sh
 ASTACK_CURRENT="$HOME/.local/share/astack/current"
@@ -369,15 +380,17 @@ claude plugin marketplace update astack
 claude plugin update astack@astack
 ```
 
-Then restart Claude Code. Link the shared rules through `$ASTACK_CURRENT` too, so that they follow each update. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
 
-A marketplace that you added from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the link and install the plugin again:
+An older install that added the marketplace from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the marketplace from the link and install the plugin again:
 
 ```sh
 claude plugin marketplace remove astack
 claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
+
+Link the shared rules of such an install through `$ASTACK_CURRENT` too.
 
 Codex keeps the real path of the marketplace folder, also when you add a link. These commands move the Codex marketplace to the new release folder and add the plugin again:
 
