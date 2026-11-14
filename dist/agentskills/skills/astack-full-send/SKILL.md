@@ -87,7 +87,7 @@ Each of these must be true on the latest commit:
 - The required checks are green.
 - The review bots finished. You fixed each finding, or you dismissed it with a written reason.
 - No human review still requests changes.
-- An independent verifier of another model family posted `PASS` or `PASS+NOTES`, as step 1 of Shipping says.
+- A verifier on a different model from the author posted `PASS` or `PASS+NOTES`, as step 1 of Shipping says.
 - Hardening stopped with `stop_clean`, when the repo has a hardening profile.
 - The branch is up to date with the base, and GitHub reports the PR as mergeable.
 
