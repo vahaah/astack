@@ -86,16 +86,21 @@ describe("our word list", () => {
 		}
 	});
 
-	test("the traps pass: approximately, about as concerned with, check as a noun", () => {
+	test("the traps pass: approximately, about as concerned with, check as a noun or an adjective at the end of a sentence", () => {
 		for (const text of [
 			"Approximately 40 files changed.",
 			"The note is about the cache.",
 			"Do a check of the logs.",
 			"The check runs in CI.",
 			"Production check: the build is green.",
+			"The PR lists the required checks.",
+			"The job marks the box as checked.",
 		])
 			expect(rules(text)).toEqual([]);
 		expect(rules("About 40 files changed.")).toEqual(["advise:word-broad"]);
+		expect(rules("The hook checks the file on each write.")).toEqual([
+			"advise:word-broad",
+		]);
 	});
 
 	test("the deny list is small and every basis is typed", () => {

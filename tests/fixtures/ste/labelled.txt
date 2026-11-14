@@ -379,6 +379,8 @@
 - Check: the build is green.
 - The email is verified.
 - The type check is slow.
+- The PR lists the required checks.
+- The job marks the box as checked.
 
 # rule: perfect
 + We have added the hook.

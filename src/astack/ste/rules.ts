@@ -265,7 +265,8 @@ function inVerbPosition(
 	if (BE.has(before)) return false;
 	if (AUXILIARIES.has(before)) return base;
 	if (SUBJECT_PRONOUNS.has(before)) return true;
-	if (/(?:s|ed)$/.test(form) && !base) return objectFollows;
+	if (/(?:s|ed)$/.test(form) && !base)
+		return next !== undefined && objectFollows;
 	if (["and", "then", "or", "also", "first"].includes(before))
 		return base && objectFollows;
 	return false;
