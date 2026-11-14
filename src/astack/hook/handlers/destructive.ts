@@ -16,6 +16,7 @@ const SHARED_BRANCH =
 const RUNNERS = new Set(["npx", "bunx", "pnpx"]);
 const PACKAGE_MANAGERS = new Set(["npm", "pnpm", "yarn", "bun"]);
 const OWNER_GATE = "This is an owner gate, so stop and ask the owner.";
+const READ_ONLY_GIT = ["--no-optional-locks", "-c", "core.fsmonitor=false"];
 
 function denial(reasons: readonly string[]): Verdict {
 	return reasons.length === 0
@@ -318,6 +319,7 @@ function isLost(lost: LostChange, index: string, worktree: string): boolean {
 
 function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
 	const status = runGit(dir, [
+		...READ_ONLY_GIT,
 		"status",
 		"--porcelain=v1",
 		"-z",
@@ -360,6 +362,7 @@ function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
 	const patterns = loss.excludes ?? [];
 	if (patterns.length === 0) return new Set();
 	const listed = runGit(dir, [
+		...READ_ONLY_GIT,
 		"ls-files",
 		"--others",
 		"--ignored",

@@ -4,7 +4,9 @@ import {
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
+	readFileSync,
 	rmSync,
+	utimesSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -248,6 +250,15 @@ describe("the clean selection of the work-loss guard", () => {
 			context(dirty),
 		);
 		expect(reason(verdict)).toContain("discards the uncommitted changes in");
+	});
+
+	test("the guard leaves the index file of the repo as it was", () => {
+		const dir = untrackedRepo();
+		const index = readFileSync(join(dir, ".git/index"));
+		const later = new Date(Date.now() + 60_000);
+		utimesSync(join(dir, "kept.md"), later, later);
+		destructive.run(shell("git reset --hard", dir), context(dir));
+		expect(readFileSync(join(dir, ".git/index")).equals(index)).toBe(true);
 	});
 
 	test("the guard deletes no file when it reads git clean --no-dry-run", () => {
