@@ -86,6 +86,7 @@ From tstack, https://github.com/t3dotgg/tstack, commit 11e37a74d0a6868c121cd0910
 - skills/file-pr
 - skills/leaving-pr-comments
 - skills/modernize
+- skills/sol-loop
 - skills/takeover
 
 Each project above is distributed under this license:
