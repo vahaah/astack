@@ -120,6 +120,7 @@ type LostChange = "unstaged" | "tracked" | "untracked";
 interface WorkLoss {
 	readonly lost: LostChange;
 	readonly pathspecs: readonly string[];
+	readonly cleanArgs?: readonly string[];
 }
 
 const WHOLE_TREE = [":/"];
@@ -203,8 +204,13 @@ function cleanLoss(args: readonly string[]): WorkLoss | undefined {
 		!hasFlag(flags, "--dry-run", "n") &&
 		!hasFlag(flags, "-X", "X");
 	const pathspecs = [...plain, ...(dashed ?? [])];
+	const interactive = hasFlag(flags, "--interactive", "i");
 	return removesUntracked
-		? { lost: "untracked", pathspecs: pathspecs.length > 0 ? pathspecs : ["."] }
+		? {
+				lost: "untracked",
+				pathspecs: pathspecs.length > 0 ? pathspecs : ["."],
+				...(interactive ? {} : { cleanArgs: args }),
+			}
 		: undefined;
 }
 
@@ -274,13 +280,34 @@ function rootRelative(pathspec: string, dir: string, root: string): string {
 		: canonicalRelative(root, resolve(dir, pathspec));
 }
 
+function cleanSelection(
+	dir: string,
+	root: string,
+	args: readonly string[],
+): readonly string[] | undefined {
+	const dryRun = runGit(dir, ["clean", "-n", ...args]);
+	if (!dryRun.ok) return undefined;
+	return dryRun.stdout
+		.toString("utf8")
+		.split("\n")
+		.flatMap((line) => {
+			const path = /^Would remove (.+)$/.exec(line)?.[1];
+			return path === undefined
+				? []
+				: [canonicalRelative(root, resolve(dir, path))];
+		});
+}
+
 function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const root = repoRoot(dir);
 	if (root === undefined) return [];
 	const namedFiles = loss.pathspecs
 		.filter(isLiteral)
 		.map((pathspec) => rootRelative(pathspec, dir, root));
-	return changedPaths(dir, loss).filter((path) => !namedFiles.includes(path));
+	const selected =
+		(loss.cleanArgs && cleanSelection(dir, root, loss.cleanArgs)) ??
+		changedPaths(dir, loss);
+	return selected.filter((path) => !namedFiles.includes(path));
 }
 
 function workLossReasons(step: ShellStep): readonly string[] {

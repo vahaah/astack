@@ -174,6 +174,7 @@ describe("the destructive command guard", () => {
 		"git checkout main",
 		"git clean -fdn",
 		"git clean -fX",
+		"git clean -fd -e scratch.txt",
 		"git stash",
 	])(
 		"[control:sg-explicit-discard-passes] %s passes on a dirty tree because it discards no work",
