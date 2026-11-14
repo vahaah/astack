@@ -22,6 +22,7 @@ Its role values override the astack skill defaults.
   Bare `codex` uses its configured default model.
 
 External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, `council members`, `sol-loop reviewer`, and `arena cross-judge pool`.
+The `sol-loop reviewer` role accepts only an external seat. Its line can also stay out of the rule.
 Every other role runs as a Claude subagent with the session's tools.
 The `why` and `reflect` roles need MCP access.
 Code roles need the astack agents.
@@ -41,7 +42,7 @@ Check each external CLI and record it only after a working run:
 
 If detection cannot find a requested model, ask the user for its name.
 Never write an external value without a successful run.
-`inherit-parent` and `auto` are always valid.
+`inherit-parent` and `auto` are valid for each role except `sol-loop reviewer`.
 
 ## 2. Read current choices
 
@@ -94,6 +95,7 @@ List every role that step 2 dropped.
 Ask whether to accept the map or change specific roles.
 Offer detected values, `inherit-parent`, and `auto`.
 Explain that both aliases use the parent chat model.
+For `sol-loop reviewer`, offer only the detected external seats and no line.
 Prefer AskUserQuestion.
 It accepts at most four options and adds Other for the rest.
 
@@ -111,7 +113,9 @@ Offer one entry from each of three model families when step 1 found them.
 
 Require each Claude value to appear in the Agent tool's `model` enum.
 Require each external value to have passed step 1.
-`inherit-parent` and `auto` always pass.
+`inherit-parent` and `auto` pass for each role except `sol-loop reviewer`.
+For `sol-loop reviewer`, accept only `codex`, `codex:<model>`, or `cursor-agent:<model>`.
+When the owner chooses no external seat, leave the `sol-loop reviewer` line out of the rule.
 If a choice is unavailable, stop and ask again.
 
 ## 5. Write the rule

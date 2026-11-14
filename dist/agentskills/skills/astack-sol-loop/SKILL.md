@@ -20,6 +20,7 @@ Watch for scope growth, and push back with evidence.
 - Read the `sol-loop reviewer` role in `astack-models.md`, which `astack-setup-models` writes. When the role is missing, use `codex`.
 - `codex:<model>` pins the model. Bare `codex` uses the default model of the codex CLI.
 - Run the reviewer in the read-only form of `../astack-arena/references/external-seats.md`.
+- The reviewer must be an external value that this reference lists. For any other value, report the blocker and stop.
 - When the CLI is missing or signed out, report the blocker and stop. Never put another model in its place.
 - Use one reviewer only. The reviewer never starts subagents or other reviewers.
 - Make no edit to the scoped files while a round runs.
