@@ -151,6 +151,13 @@ Then you can test them without the framework.
 
 Database rows count as an edge unless the repo generates row types from the schema and checks them in CI.
 
+A loop that calls a system edge on a timer, a poll or a retry needs a limit.
+Cap its attempts.
+Use a capped backoff.
+Read in bounded pages from a cursor, never the full log.
+Measure its calls and bytes per idle hour.
+State them in the PR.
+
 ## Keep reader load low
 
 A new reader traces layers to find where a value comes from and what can change it.
