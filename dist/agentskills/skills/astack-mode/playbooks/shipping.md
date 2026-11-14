@@ -25,6 +25,8 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    The verifier compares parent against head through the user journey.
    Use `/astack-control-ui` or `/astack-control-cli` when astack is installed.
    Otherwise use the repository driver.
+   Before you start the verifier, close each device, preview and browser session that you opened.
+   Give the verifier the id of each device that it can use.
    The verifier posts `PASS`, `PASS+NOTES`, or `FAIL` on that PR.
    Only an independent verifier's verdict counts.
    Green CI and an approving bot review supply no such verdict.
