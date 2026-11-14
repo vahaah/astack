@@ -356,6 +356,45 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 
 `dist/agentskills/` holds portable skills and a rules fragment. Use a project install and keep each skill's other files. Avoid duplicate global copies when a client already loads the plugin.
 
+### Update
+
+Clone each new signed tag into a new folder, as the [Quickstart](#quickstart) does. Review the commit and the signature of the tag first. Then update each client.
+
+Claude Code reads the marketplace from the folder that you added. `claude plugin marketplace update astack` reads that folder again, and does not find a new release folder. So add the marketplace from a stable link. These commands point the link at the new release and update the plugin:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+claude plugin marketplace update astack
+claude plugin update astack@astack
+```
+
+Then restart Claude Code. Link the shared rules through `$ASTACK_CURRENT` too, so that they follow each update. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+
+A marketplace that you added from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the link and install the plugin again:
+
+```sh
+claude plugin marketplace remove astack
+claude plugin marketplace add "$ASTACK_CURRENT"
+claude plugin install astack@astack
+```
+
+Codex keeps the real path of the marketplace folder, also when you add a link. These commands move the Codex marketplace to the new release folder and add the plugin again:
+
+```sh
+codex plugin marketplace remove astack
+codex plugin marketplace add "$ASTACK_RELEASE"
+codex plugin add astack@astack
+```
+
+Point the `astack` CLI link of the Codex install at the new release. Run step 4 of [`dist/codex/README.md`](dist/codex/README.md) again. It replaces the astack block in `~/.codex/AGENTS.md`. Trust each changed hook again in `/hooks`. Then start a new Codex session.
+
+For Cursor, move the old local copy to a backup. Copy the new build as [`dist/cursor/astack/README.md`](dist/cursor/astack/README.md) says. Then reload Cursor. Start a new cloud agent after an update.
+
+For Grok Bot and other Agent Skills clients, install the new files as their guides say.
+
+Then run `astack doctor`. It reports the installed copies and each Codex hook that you must trust again.
+
 ## The CLI
 
 ```sh
