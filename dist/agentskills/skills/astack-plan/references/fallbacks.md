@@ -2,7 +2,7 @@
 
 `astack-plan` composes skills from the single astack plugin.
 A client can omit a skill or lack a capability that the skill needs.
-`astack skill-path` exits 1 when the skill or reference is unavailable.
+`astack skill-path` exits with a nonzero code when the skill or reference is unavailable.
 The client can also report that a model-invocable skill is unavailable.
 Tell the owner once which skill or capability is missing.
 Name the steps that use these fallbacks.

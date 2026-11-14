@@ -206,7 +206,7 @@ Run each `astack` command as its own Bash call.
 Never chain it with `&&` or `cd`.
 Then one allow rule, `Bash(astack:*)`, covers them all.
 When `astack` is not on the PATH, run `"${CLAUDE_SKILL_DIR}/../../bin/astack"`.
-Exit 1 means that the skill or reference is unavailable.
+A nonzero exit means that the skill or reference is unavailable.
 Say so once.
 Use `references/fallbacks.md`.
 

@@ -21,7 +21,7 @@ Read the path it prints.
 For one principle, run `astack skill-path astack:principles references/fix-root-causes.md`, with the reference name you need.
 Read that reference in full.
 If `astack` is not on the Bash PATH, run `"${CLAUDE_SKILL_DIR}/../../bin/astack"`.
-Exit 1 means the skill or reference is unavailable.
+A nonzero exit means that the skill or reference is unavailable.
 Then the summary remains the rule.
 
 | Principle | Summary |
