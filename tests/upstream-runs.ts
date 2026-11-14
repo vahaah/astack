@@ -10,6 +10,7 @@ export const SCANNED_UPSTREAMS = [
 	"pstack",
 	"mattpocock-skills",
 	"cursor-team-kit",
+	"tstack",
 ] as const;
 
 export const UNSCANNED_UPSTREAMS: Readonly<Record<string, string>> = {
@@ -100,11 +101,15 @@ const GITHUB_REVIEW_REPLY_CALL =
 	"with `gh api --method POST repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies --input <file>`";
 const BASH_STRICT_MODE_HEADER =
 	"#!/usr/bin/env bash\n\nset -euo pipefail\n\nif";
+const GITHUB_PULL_REQUEST_SELECTION =
+	"repository(owner: $owner, name: $name) { pullRequest(number: $number)";
 
 export const SHARED_BOILERPLATE: ReadonlySet<string> = new Set(
-	[GITHUB_REVIEW_REPLY_CALL, BASH_STRICT_MODE_HEADER].flatMap((text) =>
-		runsOf(text),
-	),
+	[
+		GITHUB_REVIEW_REPLY_CALL,
+		BASH_STRICT_MODE_HEADER,
+		GITHUB_PULL_REQUEST_SELECTION,
+	].flatMap((text) => runsOf(text)),
 );
 
 export type OriginItem = {

@@ -41,6 +41,19 @@
 			]
 		},
 		{
+			"name": "tstack",
+			"repo": "https://github.com/t3dotgg/tstack",
+			"path": ".",
+			"commit": "11e37a74d0a6868c121cd0910ab2b3bd9873b92a",
+			"committed": "2026-11-11T03:33:02-08:00",
+			"license": "MIT",
+			"include": [
+				"skills",
+				"README.md",
+				"LICENSE"
+			]
+		},
+		{
 			"name": "cursor-plugin-schemas",
 			"repo": "https://github.com/cursor/plugins",
 			"path": ".",

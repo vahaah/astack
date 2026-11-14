@@ -38,6 +38,13 @@ export const UPSTREAMS = {
 		path: "cursor-team-kit",
 		commit: "1e5c90a4b6f249917bd21fe361b3a2a7deb741b8",
 	},
+	tstack: {
+		label: "tstack",
+		copyright: "Copyright (c) 2026 Theo Browne",
+		repo: "https://github.com/t3dotgg/tstack",
+		path: ".",
+		commit: "11e37a74d0a6868c121cd0910ab2b3bd9873b92a",
+	},
 } as const satisfies Readonly<Record<string, Upstream>>;
 
 export type UpstreamName = keyof typeof UPSTREAMS;
