@@ -539,7 +539,7 @@ Record local gates, authenticated loads, hosted CI, and live client installs as 
 A probe settles each experiment, not the owner.
 - E1. The Cursor preToolUse Write payload, and whether Cursor runs plugin hooks in its own format.
 - E2. Whether a workflow worker fires Stop or SubagentStop, and which field marks it.
-- E3. Whether Codex SessionStart context reaches the model, the Codex name of the Linear MCP tool, and the real skill-list budget with `model_context_window = 1000000`.
+- E3. The Codex name of the Linear MCP tool, and the real skill-list budget with `model_context_window = 1000000`. The [Codex hooks page](https://learn.chatgpt.com/docs/hooks) settles the SessionStart part. Codex adds the SessionStart output to the model as developer context.
 - E4. Whether Grok Build expands `${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}` and sends Write and MCP events.
 - E5. Which UserPromptSubmit field tells a human prompt from a `/loop` or scheduled prompt.
 - E6. Whether the Claude Code Stop hook continues the turn on exit 2 with stderr, proven end to end.

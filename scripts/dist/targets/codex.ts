@@ -105,7 +105,7 @@ function readme(build: Build, fragmentBytes: number): string {
 		"- Codex calls a skill with `$`, as in `$astack:plan`.",
 		`- Codex reads at most ${CODEX_AGENTS_LIMIT / 1024} KiB of AGENTS.md text in a session. The fragment has ${fragmentBytes} bytes, and the limit for it is ${FRAGMENT_LIMIT / 1024} KiB.`,
 		"- The Codex sandbox has no network access by default, so the tracker steps ask for approval.",
-		"- Codex sends a file edit as `apply_patch`. The astack CLI reads the patch and runs the edit checks on each file that it adds or changes. No live Codex session tested this path yet.",
+		"- Codex sends a file edit as `apply_patch`. The astack CLI reads the patch and runs the edit checks on each file that it adds or changes. Live Codex sessions run these checks and show their notes to the model.",
 		"",
 		`Version: ${build.version}.`,
 		"",
