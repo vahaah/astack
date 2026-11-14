@@ -56,7 +56,6 @@ A scheduled prompt does not become a human merge grant when STE is disabled.
 
 The type, comment, and doc STE hooks skip a write or an edit of a scratch file.
 A scratch file is outside the project, and no folder at or above it holds `.git` or `.astack/profile.json`.
-A file in the OS temp folder outside the project is a scratch file too, also in a git work tree.
 Commit, PR, ticket, and tracker comment checks still examine their text.
 To examine the files of a folder outside a repository, add `.astack/profile.json` to it.
 

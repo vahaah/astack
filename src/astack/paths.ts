@@ -1,5 +1,4 @@
 import { existsSync, readFileSync, realpathSync } from "node:fs";
-import { tmpdir } from "node:os";
 import {
 	basename,
 	dirname,
@@ -72,8 +71,5 @@ export function workTreeRoot(start: string): string | undefined {
 export function isScratchPath(projectDir: string, path: string): boolean {
 	const file = canonicalFile(resolve(path));
 	if (isWithin(canonical(projectDir), file)) return false;
-	return (
-		isWithin(canonical(tmpdir()), file) ||
-		workTreeRoot(dirname(file)) === undefined
-	);
+	return workTreeRoot(dirname(file)) === undefined;
 }

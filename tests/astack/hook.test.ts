@@ -601,7 +601,7 @@ describe("scratch files outside the project", () => {
 	afterAll(() => rmSync(base, { recursive: true, force: true }));
 
 	const cases: readonly [string, "allow" | "deny", () => string][] = [
-		["a git clone in the OS temp dir", "allow", () => join(temp(), "clone")],
+		["a git clone in the OS temp dir", "deny", () => join(temp(), "clone")],
 		["a folder with no work tree above it", "allow", () => join(base, "notes")],
 		["a sibling git work tree", "deny", () => join(base, "repo")],
 		["a folder with an astack profile", "deny", () => join(base, "opted")],
