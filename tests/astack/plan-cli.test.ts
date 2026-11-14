@@ -391,7 +391,11 @@ describe("plan hooks", () => {
 				};
 	}
 
-	function edit(oldString: string, newString: string): HookResult {
+	function edit(
+		oldString: string,
+		newString: string,
+		path = join(repo, EXPORT),
+	): HookResult {
 		const output = runHook(
 			"claude-code",
 			"PreToolUse",
@@ -400,7 +404,7 @@ describe("plan hooks", () => {
 				tool_name: "Edit",
 				cwd: repo,
 				tool_input: {
-					file_path: join(repo, EXPORT),
+					file_path: path,
 					old_string: oldString,
 					new_string: newString,
 				},
@@ -457,6 +461,24 @@ describe("plan hooks", () => {
 				].join("\n"),
 			),
 		);
+	});
+
+	test("a plan outside every work tree gets its STE findings from the plan hook", () => {
+		const outside = join(tempDir("astack-outside-"), "member-export.md");
+		writeFileSync(outside, readFileSync(join(repo, EXPORT), "utf8"));
+		expect(
+			edit(
+				"## Proof\n",
+				"## Proof\n\n- The bench is fast — it ends in 30 s.\n",
+				outside,
+			),
+		).toEqual({
+			context: [
+				`astack check-plan finds 1 new problem in ${outside} after this edit.`,
+				"67: STE dash: Use a comma, a colon or a new sentence, not a long dash.",
+				`Run astack check-plan ${outside} before the plan goes active.`,
+			].join("\n"),
+		});
 	});
 
 	test("an edit notes only the findings that it adds, keyed by group and message", () => {

@@ -1,4 +1,4 @@
-import { canonicalRelative } from "../../paths.ts";
+import { canonicalRelative, isScratchPath } from "../../paths.ts";
 import {
 	CHECKBOX,
 	checkPlan,
@@ -103,7 +103,8 @@ function planVerdict(
 	after: string,
 	context: Context,
 ): Verdict {
-	const relPath = canonicalRelative(projectDirOf(context), path);
+	const projectDir = projectDirOf(context);
+	const relPath = canonicalRelative(projectDir, path);
 	if (!/\.md$/i.test(relPath) || !hasPlanFrontmatter(after)) return ALLOW;
 	const plan = parsePlan(relPath, after);
 	const previous = new Set(
@@ -117,12 +118,13 @@ function planVerdict(
 	const env = envForFile(path, {
 		today: context.today,
 		trail: false,
-		fallbackRoot: projectDirOf(context),
+		fallbackRoot: projectDir,
 	});
+	const steHookSkips = isScratchPath(projectDir, path);
 	const check = (text: string | undefined): PlanFinding[] =>
 		text !== undefined && hasPlanFrontmatter(text)
 			? checkPlan(parsePlan(path, text), env).filter(
-					(finding) => finding.group !== "ste",
+					(finding) => steHookSkips || finding.group !== "ste",
 				)
 			: [];
 	const findings = check(after);
