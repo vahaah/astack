@@ -23,7 +23,7 @@ Its role values override the astack skill defaults.
   Follow `../astack-arena/references/external-seats.md` for that CLI.
   Bare `codex` uses its configured default model.
 
-External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, and `arena cross-judge pool`.
+External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, `council members`, `sol-loop reviewer`, and `arena cross-judge pool`.
 Every other role runs as a Claude subagent with the session's tools.
 The `why` and `reflect` roles need MCP access.
 Code roles need the astack agents.
@@ -84,6 +84,8 @@ If the result is not listed, use that family's highest listed effort at or below
 If none fits, mark the role as needing a choice.
 
 If step 1 found no working codex, replace each `codex` default with `sonnet`.
+The `sol-loop reviewer` role is the exception.
+Mark it as needing a choice, because the loop needs a reviewer from another model family.
 
 ### Show the role map
 
@@ -104,6 +106,9 @@ Arena chooses one entry from a different family than the parent when possible.
 For a Claude parent, choose an available external seat.
 `swarm workers` sets worker defaults unless a race or comparison assigns a model to an arm.
 
+`council members` is a panel list.
+Offer one entry from each of three model families when step 1 found them.
+
 ## 4. Validate choices
 
 Require each Claude value to appear in the Agent tool's `model` enum.
@@ -122,7 +127,7 @@ Replace the whole file on each run so repeated runs stay idempotent.
 # pstack model configuration. astack skills read these lines; nothing else does.
 # One line per role. Delete a line to fall back to the skill default.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Agent `model`). Alias entries in a panel list still count toward its fan-out.
-# External seats (codex, codex:<model>, cursor-agent:<model>) are valid only on the panel lines and the cross-judge pool.
+# External seats (codex, codex:<model>, cursor-agent:<model>) are valid only on the panel lines, the sol-loop reviewer and the cross-judge pool.
 # budget: large (xhigh)
 feature, refactoring: sonnet
 bug-fix: sonnet
@@ -141,6 +146,8 @@ arena cross-judge pool: codex, opus
 swarm workers: sonnet
 architect runners: opus, codex
 interrogate reviewers: opus, codex
+council members: opus, codex
+sol-loop reviewer: codex
 ```
 
 ## 6. Confirm the result

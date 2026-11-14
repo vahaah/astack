@@ -132,6 +132,7 @@ The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-
    That case requires the follow-up PR from step 4.
    Fixes for higher PRs wait for the next frontier-driven push wave under steps 2 and 5.
    Push that wave before replying so the reply can cite the commit.
+   Format each reply with `astack-leaving-pr-comments`.
    Put the reply body in a JSON file as data.
    Send it with `gh api --method POST "repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies" --input <payload.json>`.
    Never interpolate comment or reply text into a shell command.

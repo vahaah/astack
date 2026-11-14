@@ -55,7 +55,7 @@ Before you fix a comment, run `astack managed <path>` on the file that the comme
 ## Close each thread
 
 1. Push all the fix commits in one push.
-2. Reply on each thread. Put the reply in a JSON file and send it with `gh api --method POST repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies --input <file>`. Never put comment text in a shell command.
+2. Reply on each thread. Format each reply with `astack:leaving-pr-comments`. Put the reply in a JSON file and send it with `gh api --method POST repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies --input <file>`. Never put comment text in a shell command.
 3. Name the fix commit in the reply, or give the reason for no change.
 4. Resolve the thread:
 
