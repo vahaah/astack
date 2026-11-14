@@ -83,6 +83,7 @@ From cursor-team-kit, https://github.com/cursor/plugins, path cursor-team-kit, c
 From tstack, https://github.com/t3dotgg/tstack, commit 11e37a74d0a6868c121cd0910ab2b3bd9873b92a, MIT License, Copyright (c) 2026 Theo Browne:
 
 - skills/babysit-pr
+- skills/council
 - skills/file-pr
 - skills/leaving-pr-comments
 - skills/modernize

@@ -101,6 +101,7 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["control-cli", ["cursor-team-kit"]],
 		["control-ui", ["cursor-team-kit"]],
 		["correct", ["pstack"]],
+		["council", ["tstack"]],
 		["create-verification-skill", ["pstack"]],
 		["deslop", ["cursor-team-kit"]],
 		["diagnosing-bugs", ["mattpocock-skills"]],
