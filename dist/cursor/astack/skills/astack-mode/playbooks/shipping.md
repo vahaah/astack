@@ -74,6 +74,16 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 5. Land one PR at a time from bottom to top.
 
+   Right before each merge, run `git fetch origin`.
+   Then read `gh pr view <pr> --json mergeStateStatus`.
+   Do not merge when the state is `BEHIND` or `DIRTY`.
+   Compare the files of the PR with the base commits that came after its last green run.
+   `gh pr diff <pr> --name-only` lists the files of the PR.
+   Do not merge when one of those base commits changes a file of the PR.
+   In each of these cases, update the branch through `references/refresh.md`.
+   Then wait until its checks pass again.
+   Use step 3 to decide whether the verdict covers the new head.
+
    Merge the run's lowest unmerged PR with `gh pr merge <pr> --squash`.
    Run it as its own Bash call.
    A PR based on its parent's branch merges into that branch.
