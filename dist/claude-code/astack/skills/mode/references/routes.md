@@ -29,12 +29,12 @@ For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 | "full send" | Read `astack:full-send` by path | The owner does not watch. Take the change to a merged PR. The merge guard reads an un-negated "full send" as a merge grant for this prompt |
 | "sync upstream", "check new upstream commits", "update to the newest upstream version" | The `astack:mode` Fork sync playbook | Give each upstream commit a disposition. Show each skip group and defer group to the owner before you integrate. One plan is one PR |
 | "merge", "merge when green", "merge all", "merge and release" | The `astack:mode` Shipping playbook | The merge needs a grant in `.astack/profile.json` or the owner's merge words in this turn. `merge.authority: standing` covers each PR. `merge.standingBases` covers only a PR of the `origin` repo into a base branch that it names. Run `gh pr merge` as its own Bash call. The astack merge guard refuses a merge with open threads, CI that is not green on the head, or a closing word before a key |
-| "full stop" | Read `astack:full-stop` by path | Do the full-send work, but never merge. Stop with a readiness verdict. "full stop" is never a merge grant |
+| "pause", "stop", also beside "full stop", such as "Stop. Full stop." | The `astack:mode` Pause safely playbook | A hard stop. Do no other git or PR work. Give the hand-off prompt from `references/resume.md`. A prompt whose only instruction is "full stop" skips this row |
+| `/astack:full-stop`, a prompt whose only instruction is "full stop" | Read `astack:full-stop` by path | Do the full-send work, but never merge. Stop with a readiness verdict. "full stop" is never a merge grant |
 | "don't merge" | Stop at ready to merge | Report the PR as ready and stop |
 | "merged", "clean after yourself", "clean and settle" | The Settle step of the `astack:mode` Shipping playbook | Remove the worktrees, temporary folders and dev servers that the run made for the merged PR. Keep every branch ref |
 | UI polish | `astack:control-ui` | Walk the journey as a real persona, never as a superuser. Use the repo UI kit. Measure a layout before you change it |
 | Mobile, a device, a simulator | `astack:control-ui` and the device skills that are installed | Run the device QA matrix. Done means 2 full passes in a row |
-| "pause", "stop" | The `astack:mode` Pause safely playbook | A hard stop. Do no other git or PR work. Give the hand-off prompt from `references/resume.md` |
 | "prompt for next session" | The hand-off prompt | Use the format in `references/resume.md` |
 | "clean worktrees" | The `astack:mode` Worktree cleanup playbook | Record `git worktree list` first |
 | "look at <other codebase>" | Read-only research | Read it, and never copy it. Never name the source in a repo that forbids it |

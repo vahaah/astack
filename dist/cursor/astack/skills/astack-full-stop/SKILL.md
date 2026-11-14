@@ -19,6 +19,9 @@ A "full stop" request is the permission for the test methods that the proof need
 The merge grant of full-send does not apply.
 The astack merge guard never reads "full stop" as a merge grant.
 
+Start only on `/astack-full-stop` or on a prompt whose only instruction is "full stop".
+When the prompt also says "stop" or "pause", follow the Pause safely playbook of `astack-mode` instead.
+
 A "Full stop." at the end of a message can be only emphasis.
 So first make sure that the session has a change or a PR to deliver.
 When it has none, ask the owner what to deliver.
