@@ -164,6 +164,14 @@ describe("the destructive command guard", () => {
 			"discards the uncommitted changes in notes.txt.",
 		],
 		["git clean -fd", "deletes the untracked files scratch.txt."],
+		[
+			"git restore --pathspec-from-file=list.txt",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git checkout --pathspec-from-file list.txt",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
 	])(
 		"[control:sg-work-loss-denied] %s is denied when it discards uncommitted work",
 		(command, text) => {

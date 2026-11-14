@@ -201,6 +201,12 @@ function isTreeish(dir: string, name: string): boolean {
 	return runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
 }
 
+function readsPathspecFile(args: readonly string[]): boolean {
+	return args.some((arg) =>
+		isLongForm(arg.split("=")[0] ?? "", "--pathspec-from-file"),
+	);
+}
+
 function checkoutLoss(
 	args: readonly string[],
 	dir: string,
@@ -209,7 +215,9 @@ function checkoutLoss(
 	const [first, ...rest] = plain;
 	const hasSource =
 		first !== undefined && (dashed !== undefined || isTreeish(dir, first));
-	const pathspecs = dashed ?? (hasSource ? rest : plain);
+	const pathspecs = readsPathspecFile(args)
+		? WHOLE_TREE
+		: (dashed ?? (hasSource ? rest : plain));
 	if (pathspecs.length > 0)
 		return { lost: hasSource ? "tracked" : "unstaged", pathspecs };
 	return hasFlag(flags, "--force", "f")
@@ -228,7 +236,9 @@ function restoreLoss(args: readonly string[]): WorkLoss | undefined {
 	const { flags, plain, dashed } = operands(args, ["-s", "--source"]);
 	const staged = hasFlag(flags, "--staged", "S");
 	const worktree = !staged || hasFlag(flags, "--worktree", "W");
-	const pathspecs = [...plain, ...(dashed ?? [])];
+	const pathspecs = readsPathspecFile(args)
+		? WHOLE_TREE
+		: [...plain, ...(dashed ?? [])];
 	return worktree && pathspecs.length > 0
 		? { lost: staged ? "tracked" : "unstaged", pathspecs }
 		: undefined;
