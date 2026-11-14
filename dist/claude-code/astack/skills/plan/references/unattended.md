@@ -4,7 +4,7 @@ Run `astack plan attended` at S0, as its own Bash call. It prints `unattended` w
 
 A run is also unattended when the invocation says `--afk`, or when this skill runs inside a subagent or a workflow worker. A grill that nobody answers gives your opinion, not the owner's, so never simulate S2.
 
-A delegation grant is not an unattended run. Under a grant the owner is there, and the owner gates still stop the work.
+A delegation grant is not an unattended run. Under a grant the owner is there, and the owner gates still stop the work. A typed "full send" gives a merge grant for that turn.
 
 - An unattended run never ends at the quick tier. It writes a draft standard plan, even with one session, so the defaults and the queued round stay. Log a `tier` row that says why.
 - Run S0, S1, S4, S5 and S6 as usual. Run each subagent in the foreground, as the end of the agent briefs in `stages.md` says. The S4 and S6 leads also keep their own nested agents in the foreground. A headless session ends with your turn, so finish each stage and write the plan in that one turn.

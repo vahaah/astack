@@ -170,6 +170,17 @@ describe("the merge grant in a human prompt", () => {
 	])("%p grants nothing", (text) => {
 		expect(mergeGrantIn(text)).toEqual({ kind: "none" });
 	});
+
+	test.each([
+		["full send", { kind: "any" }],
+		["/astack:full-send", { kind: "any" }],
+		["full stop", { kind: "none" }],
+		["no full send", { kind: "none" }],
+		["don't full send", { kind: "none" }],
+		["not a full send", { kind: "none" }],
+	] as const)("full send: %p grants %p", (text, grant) => {
+		expect(mergeGrantIn(text)).toEqual(grant);
+	});
 });
 
 describe("machine prompts never change the grant", () => {

@@ -110,13 +110,19 @@ function prNumbers(tokens: readonly string[]): number[] {
 	return tokens.flatMap((token, index) => prNumber(token, tokens[index + 1]));
 }
 
+const FULL_SEND_COMMAND = /^(?:\/(?:astack:)?)?full-send$/;
+
 function clauseGrant(clause: string): MergeGrant {
 	const tokens = words(clause);
 	for (let index = 0; index < tokens.length; index++) {
 		const token = tokens[index] ?? "";
-		if (token !== "merge" && token !== "squash-merge") continue;
+		const fullSend =
+			FULL_SEND_COMMAND.test(token) ||
+			(token === "full" && tokens[index + 1] === "send");
+		if (!fullSend && token !== "merge" && token !== "squash-merge") continue;
 		const before = tokens.slice(Math.max(0, index - 3), index);
 		if (before.some((word) => BLOCKERS.has(word))) continue;
+		if (fullSend) return { kind: "any" };
 		const after = tokens
 			.slice(index + 1)
 			.filter((word) => !FILLER.has(word))

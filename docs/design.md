@@ -302,7 +302,7 @@ PR and ticket rules come from the repo profile.
 - STE runs on a kept comment after Sicko keeps it (section 9.3).
 
 Other guards are handlers on the same dispatcher.
-- Merge guard. Deny `gh pr merge` when threads are open or CI is not green on the exact head. Also deny it with a closing word, in a chain with other commands, with no grant, or with `--admin`. Deny a merge through `gh api` and through the GitHub MCP tool `merge_pull_request`. Only a prompt that a person types gives or ends a grant. A subagent hand-back, a teammate message and other harness text never do.
+- Merge guard. Deny `gh pr merge` when threads are open or CI is not green on the exact head. Also deny it with a closing word, in a chain with other commands, with no grant, or with `--admin`. Deny a merge through `gh api` and through the GitHub MCP tool `merge_pull_request`. Only a prompt that a person types gives or ends a grant. A subagent hand-back, a teammate message and other harness text never do. A typed "full send" clause or the `/astack:full-send` command grants a merge of each PR in that turn. A negated "full send", such as "no full send", and "full stop" give no grant.
 - PR body. The `Part of` line, the closing words and the headings apply to `gh pr create`, `gh pr edit` and the GitHub MCP tools `create_pull_request` and `update_pull_request`.
 - Duplicate PR. Deny `gh pr create` and the GitHub MCP create tool when an open PR of the same author has the same branch. Also deny it when that PR names the same `Part of` ticket. When `gh` cannot read the list, allow.
 - Destructive commands. Deny `supabase db reset` and its script forms, a force-push to a shared branch, and `--no-verify` on `git commit` or `git push`.
