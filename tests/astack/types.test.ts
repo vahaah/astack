@@ -362,6 +362,20 @@ describe("messages", () => {
 			expect(message).toContain(phrase);
 	});
 
+	test("a deny over many files lists the first 12 files and counts the rest", () => {
+		const reports = Array.from({ length: 400 }, (_, i) =>
+			report(undefined, "let x: any;\n", `src/f${i}.ts`),
+		);
+		const lines = typeDenyMessage("this commit", reports).split("\n");
+		expect(lines.slice(1, lines.indexOf("How to fix it:"))).toEqual([
+			...Array.from({ length: 12 }, (_, i) => [
+				`- src/f${i}.ts: \`any\` type, 1 now and 0 before.`,
+				"  - line 1: let x: any;",
+			]).flat(),
+			"- 388 more files are not shown.",
+		]);
+	});
+
 	test("advice lists the rises and the replacement forms", () => {
 		const message = typeAdviceMessage([
 			report(undefined, fixture("advice.ts")),
