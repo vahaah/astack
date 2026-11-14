@@ -234,7 +234,7 @@ describe("checkTypes compares counts, so old lines are not blamed", () => {
 			rises(
 				report(
 					undefined,
-					"class Live extends Effect.Service<Live>()('Live', {}) {}\nclass Tag extends Context.Tag('T')<Tag, number>() {}\nclass View extends React.Component<P> {}",
+					"class Live extends Effect.Service<Live>()('Live', {}) {}\nclass Tag extends Context.Tag('T')<Tag, number>() {}\nclass View extends React.Component<P> {}\nclass Svc extends Context.Service<Svc, number>()('Svc') {}\nclass Auth extends HttpApiMiddleware.Service<Auth>()('Auth', {}) {}",
 				),
 			),
 		).toEqual([]);

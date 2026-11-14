@@ -35,7 +35,7 @@ const loadInvite = (inviteId: InviteId) =>
 
 ## Dependencies and steps
 
-- Name each dependency with `Context.Tag` or `Effect.Service`. Provide it through a `Layer` rather than pass a client as a pipeline argument.
+- Name each dependency with `Context.Tag` or `Effect.Service`. In Effect 4, use `Context.Service`. Provide it through a `Layer` rather than pass a client as a pipeline argument.
 - Write sequential steps with `Effect.gen` and `yield*`. Use `pipe` normally within Effect code.
 - Match tagged unions with `Match.value(x).pipe(Match.tag("a", onA), Match.exhaustive)` or a `switch` ending in a `never` check.
 
@@ -69,6 +69,8 @@ The hook permits these class bases:
 
 - `Data.TaggedError`, `Data.TaggedClass` and `Data.Class`.
 - `Schema.TaggedError`, `Schema.TaggedClass`, `Schema.TaggedRequest` and `Schema.Class`.
-- `Context.Tag`, `Effect.Tag` and `Effect.Service`.
+- `Context.Tag`, `Context.Reference`, `Effect.Tag` and `Effect.Service`.
+- `Context.Service` in Effect 4.
+- The Effect 4 `.Service` helpers of `HttpApiMiddleware`, `RpcMiddleware`, `GraphQLMiddleware`, `LayerMap`, `LayerRef`, `AtomRpc` and `AtomHttpApi`.
 
 Effect code still cannot add `any`, unsafe casts or `!`.
