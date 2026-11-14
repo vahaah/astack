@@ -86,7 +86,11 @@ Use `astack orch` for bookkeeping.
 The text below abbreviates that command as `orch`.
 Its canonical plain TSV and JSON remain readable without the CLI.
 
-- `preferences.md` records the standing orders as numbered lines, with one constraint per line. Include model policy, stack shape and count, verification bar, forbidden paths, and escalation policy. Paste it verbatim into every spawn and resume. Instructions fade across resumes, and each lost instruction costs a human turn. Append an instruction before acting when you catch yourself repeating it. Follow Encode Lessons in Structure (`astack skill-path astack:principles references/encode-lessons-in-structure.md`).
+- `preferences.md` records the standing orders as numbered lines, with one constraint per line. Include model policy, stack shape and count, verification bar, forbidden paths, and escalation policy. Paste it verbatim into every spawn and resume. Instructions fade across resumes, and each lost instruction costs a human turn.
+  - Put only rules that bind future work in it. Never write a clock time, a PR state, a head SHA, a lane result or an event into it. Put PR facts in `overview.md`, and unit state in `units.tsv` and `ledger.tsv`.
+  - When a newer order replaces an older order, edit or delete the older order.
+  - Keep the file within 60 lines and 8 KB, so that one paste costs little. At that budget, move a stable order into the brief template, the repo profile or an ADR. Then delete it from the file.
+  - When you repeat a correction, encode it in structure first, such as the brief template or a check. Follow Encode Lessons in Structure (`astack skill-path astack:principles references/encode-lessons-in-structure.md`). Add an order before you act only when structure cannot hold the rule.
 - `overview.md` is the durable PR and issue database. Append to it. Never rewrite the whole file for each event.
 - `units.tsv` keeps one row per unit. Its fields are id, track, state, branch, PR, head SHA, and brief path. Update rows in place.
 - `frontier.json` holds the computed merge frontier from Stack safety.
@@ -121,7 +125,9 @@ Size the brief to the unit.
 For a unit with one command, reduce the template to one paragraph.
 Keep the goal, scope, verification command, and report shape.
 A 4KB template for a two-line edit costs more to write and follow than the edit.
-A local spawn can point to the standing-orders file by store path.
+
+A local spawn can point to the standing-orders file by store path only when the file is within its budget.
+Never name a subset of item numbers, because every spawn carries the orders verbatim.
 Paste the orders verbatim for remote spawns and every resume.
 
 A sub-coordinator brief also names its track boundary and unit list.
@@ -204,7 +210,7 @@ Work left only on a VM that dies was never done.
 - Record a silent death as a synthetic postmortem row in the inbox. Name the unit, failure mode, last evidence, and options. Replan as evidence arrives. Do not wait for every agent to become idle.
 - Retry according to the failure mode. For `cap-hit` or `oom`, spawn a replacement with less scope. For `Network-drop`, retry as-is. For `Tool-error`, retry on a different model. For `Unknown`, retry once. After two retries, abandon the unit. Replan around it.
 - Reconcile a zombie that returns hours late with the current frontier and ledger before you accept anything. Save unique findings through a fresh unit. Never merge its work blindly.
-- Stop spawning when bad upstream output, broken acceptance, or dead infrastructure would spread bad work through the tree. Write a stop line at the top of the standing orders. Let active work finish. Fix the cause. Then clear the stop line.
+- Stop spawning when bad upstream output, broken acceptance, or dead infrastructure would spread bad work through the tree. Write a stop line as item 1 of the standing orders, and number the other orders after it. Let active work finish. Fix the cause. Then delete the stop line.
 - Limit your own infrastructure retries as you limit a child's. Stop after a few consecutive tool aborts. Write a terminal handoff to durable state. State what is done, where it lives, and the exact command to resume. End the run.
 - After a Claude Code restart, local agents are dead. Remote work and kept worktrees survive. Read the standing orders and `units.tsv` again. Recompute the frontier. Reattach surviving work by PR and branch instead of agent id. Spawn one sub-coordinator per track from its stored brief and current state. Drain the queue. Resume the work. The dead session's store lock clears on the next write. `orch` replaces a lock when its holder pid is gone.
 
