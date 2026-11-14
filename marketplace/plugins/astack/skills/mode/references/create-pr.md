@@ -11,7 +11,7 @@ Use this playbook for "create pr". It follows the Opening a PR playbook in [`ope
    - When the profile sets `tracker.requirePartOf`, the first line is `Part of <key>`. One line can name more tickets, as in `Part of ABC-1, ABC-2`.
    - Never put a ticket key or `#n` after a closing word such as "Closes" or "Fixes".
    - List the in-scope defects and the hidden work that the PR fixes.
-5. Run `astack check-pr <file>`. When `astack check ste` exists, run `astack check ste <file>` too. Fix each finding.
+5. Run `astack check-pr <file>`. Run `astack check ste <file> --surface pr` too. Fix each finding.
 6. Write the title in the commit subject form of `astack:write-docs`. A plan handle such as `B07/S2` is allowed in the title.
 7. Push the branch. A run with no PR, or with a PR from the same repository, pushes a branch with no upstream with `git push -u origin <branch>`. When `isCrossRepository` is true, the run pushes with `git push <head repository URL> HEAD:<headRefName>`, and never pushes a branch to `origin`. To make the head repository URL, start from the URL of `origin`. Replace its owner with the `login` of `headRepositoryOwner`, and its repository name with the `name` of `headRepository`. Never force-push a shared branch.
 8. Run `gh pr create --title <title> --body-file <file>`. Open a draft only when the repo opens drafts first. For an open PR, run `gh pr edit <number> --body-file <file>`.
