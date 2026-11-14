@@ -111,7 +111,7 @@ ACCEPTANCE   checkable criteria, one per line
 VERIFY       exact commands or the control-skill path, plus known gotchas
 TIMEBOX      rough cap on runtime; on expiry, return partial findings and stop rather than run on
 FORBIDDEN    no PR retargets or merges, no rebase, no force-push, no fixes outside scope,
-             plus unit-specific bans
+             no pattern kill (stop only the PIDs the unit started), plus unit-specific bans
 REPORT       status, branch, head SHA, PRs, verdict, what you actually ran, deviations,
              suggested follow-ups
 STANDING     <preferences.md pasted verbatim>
