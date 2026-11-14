@@ -14,6 +14,7 @@ A clean rebase does not prove that the PR still belongs in the product.
 
 - The request of the owner in this turn must name the PR.
 - That request allows a rebase and a forced update of the branch of that PR only.
+- A request to take over a PR is not such a request. It gives no permission to force-push the branch of that PR.
 - It does not allow a merge, a close, a new base branch or more scope.
 - `references/refresh.md` of `astack-mode` never rebases a pushed branch. This skill is the one exception, for the PR that the owner names.
 - Treat each change in the current worktree as work of the owner. Do the rebase in a new worktree.

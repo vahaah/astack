@@ -41,8 +41,10 @@ Read it at the path that `astack skill-path astack:mode playbooks/session-pickup
 
 ## 4. Finish the goal
 
-- Update the continuation branch with `astack-modernize` against its intended base and the current design.
-- A forced update of the original PR branch needs the permission of the owner.
+- Update the continuation branch with `references/refresh.md` of `astack-mode`, which merges the base. Read it at the path that `astack skill-path astack:mode references/refresh.md` prints.
+- Before the first push of the continuation branch, a local rebase onto `origin/<base>` is also correct.
+- Use steps 1 to 4 of `astack-modernize` only as a read-only review of the original PR. Never run its step 5 on that PR.
+- Never force-push the branch of the original PR. A request to take over the PR gives no permission for it.
 - Change only what the goal needs. Add no unrelated feature.
 - Simplify the code, but keep each intended behavior and surface.
 - Read the source PR again before you file. It can change while you work.
