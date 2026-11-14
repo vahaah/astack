@@ -232,6 +232,10 @@ describe("the clean selection of the work-loss guard", () => {
 		["git clean --forc", "deletes the untracked files keep.txt."],
 		["git clean -i", "deletes the untracked files keep.txt."],
 		["git clean -ffd", "deletes the untracked files junk/a.txt, keep.txt."],
+		[
+			"git clean -fd --excl keep.txt",
+			"deletes the untracked files junk/a.txt.",
+		],
 	])("%s is denied", (command, text) => {
 		const dir = untrackedRepo();
 		expect(

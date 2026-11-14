@@ -257,14 +257,15 @@ function cleanOperands(args: readonly string[]): CleanOperands {
 	for (let i = 0; i < args.length; i++) {
 		const arg = args[i] ?? "";
 		const cluster = /^-([A-Za-z]*?)e(.*)$/.exec(arg);
+		const [name = "", value] = arg.split(/=(.*)/s);
 		if (arg === "--") {
 			pathspecs.push(...args.slice(i + 1));
 			break;
-		} else if (arg === "--exclude") {
+		} else if (isLongForm(name, "--exclude") && value !== undefined) {
+			excludes.push(value);
+		} else if (isLongForm(arg, "--exclude")) {
 			i++;
 			excludes.push(args[i] ?? "");
-		} else if (arg.startsWith("--exclude=")) {
-			excludes.push(arg.slice("--exclude=".length));
 		} else if (cluster && !arg.startsWith("--")) {
 			if (cluster[1]) flags.push(`-${cluster[1]}`);
 			if (cluster[2]) excludes.push(cluster[2]);
