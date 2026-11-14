@@ -321,6 +321,7 @@
 + Ensure each test has a name.
 + The migration utilized the old schema.
 + The guide leveraged the old examples.
++ Remove the cache layer that the old parser leveraged.
 + The flag facilitates local tests.
 + The rollout commences on Monday.
 + The cache stays warm whilst the server runs.

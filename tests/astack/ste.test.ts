@@ -103,6 +103,12 @@ describe("our word list", () => {
 		]);
 	});
 
+	test("a deny-tier verb form at the end of a sentence still fires, because it cannot be a noun", () => {
+		expect(
+			rules("Remove the cache layer that the old parser leveraged."),
+		).toEqual(["deny:word-list"]);
+	});
+
 	test("the deny list is small and every basis is typed", () => {
 		const deny = WORDS.filter((entry) => entry.tier === "deny");
 		expect(deny.length).toBeLessThanOrEqual(10);
