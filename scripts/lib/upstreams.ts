@@ -106,6 +106,7 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["diagnosing-bugs", ["mattpocock-skills"]],
 		["domain-modeling", ["mattpocock-skills"]],
 		["figure-it-out", ["pstack"]],
+		["file-pr", ["tstack"]],
 		["grilling", ["mattpocock-skills"]],
 		["how", ["pstack"]],
 		["implement", ["mattpocock-skills"]],
