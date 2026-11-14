@@ -124,6 +124,7 @@ interface WorkLoss {
 	readonly excludes?: readonly string[];
 	readonly keepsUntrackedFolders?: boolean;
 	readonly removesNestedRepos?: boolean;
+	readonly target?: string;
 }
 
 const WHOLE_TREE = [":/"];
@@ -221,14 +222,29 @@ function checkoutLoss(
 	if (pathspecs.length > 0)
 		return { lost: hasSource ? "tracked" : "unstaged", pathspecs };
 	return hasFlag(flags, "--force", "f")
-		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		? {
+				lost: "tracked",
+				pathspecs: WHOLE_TREE,
+				...(hasSource && first !== undefined ? { target: first } : {}),
+			}
 		: undefined;
 }
 
-function switchLoss(args: readonly string[]): WorkLoss | undefined {
-	const { flags } = operands(args, ["-c", "-C", "--orphan"]);
-	return hasFlag(flags, "--force", "f") || flags.includes("--discard-changes")
-		? { lost: "tracked", pathspecs: WHOLE_TREE }
+function switchLoss(
+	args: readonly string[],
+	dir: string,
+): WorkLoss | undefined {
+	const { flags, plain } = operands(args, ["-c", "-C", "--orphan"]);
+	const [first] = plain;
+	return hasFlag(flags, "--force", "f") ||
+		flags.some((flag) => isLongForm(flag, "--discard-changes"))
+		? {
+				lost: "tracked",
+				pathspecs: WHOLE_TREE,
+				...(first !== undefined && isTreeish(dir, first)
+					? { target: first }
+					: {}),
+			}
 		: undefined;
 }
 
@@ -297,16 +313,24 @@ function cleanLoss(args: readonly string[]): WorkLoss | undefined {
 		: undefined;
 }
 
+function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
+	if (!args.some((arg) => isLongForm(arg, "--hard"))) return undefined;
+	const [first] = operands(args, []).plain;
+	return {
+		lost: "tracked",
+		pathspecs: WHOLE_TREE,
+		...(first !== undefined && isTreeish(dir, first) ? { target: first } : {}),
+	};
+}
+
 function workLoss(git: GitInvocation): WorkLoss | undefined {
 	switch (git.sub) {
 		case "reset":
-			return git.args.some((arg) => isLongForm(arg, "--hard"))
-				? { lost: "tracked", pathspecs: WHOLE_TREE }
-				: undefined;
+			return resetLoss(git.args, git.dir);
 		case "checkout":
 			return checkoutLoss(git.args, git.dir);
 		case "switch":
-			return switchLoss(git.args);
+			return switchLoss(git.args, git.dir);
 		case "restore":
 			return restoreLoss(git.args);
 		case "clean":
@@ -389,6 +413,27 @@ function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
 	return new Set(listed.stdout.toString("utf8").split("\0").filter(Boolean));
 }
 
+function overwrittenPaths(dir: string, target: string): readonly string[] {
+	const untracked = new Set(
+		changedPaths(dir, { lost: "untracked", pathspecs: WHOLE_TREE }),
+	);
+	if (untracked.size === 0) return [];
+	const listed = runGit(dir, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-r",
+		"--name-only",
+		"-z",
+		"--full-tree",
+		target,
+	]);
+	if (!listed.ok) return [...untracked];
+	return listed.stdout
+		.toString("utf8")
+		.split("\0")
+		.filter((path) => untracked.has(path));
+}
+
 function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const root = repoRoot(dir);
 	if (root === undefined) return [];
@@ -396,7 +441,9 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 		.filter(isLiteral)
 		.map((pathspec) => rootRelative(pathspec, dir, root));
 	const excluded = excludedPaths(dir, loss);
-	return changedPaths(dir, loss).filter(
+	const overwritten =
+		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
+	return [...changedPaths(dir, loss), ...overwritten].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
 }

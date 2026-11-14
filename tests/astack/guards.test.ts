@@ -281,6 +281,26 @@ describe("the clean selection of the work-loss guard", () => {
 		).toBe("allow");
 	});
 
+	test.each(["git checkout -f main", "git reset --hard main"])(
+		"%s is denied when it overwrites an untracked file that main tracks",
+		(command) => {
+			const dir = untrackedRepo();
+			write(dir, { "a.txt": "main\n" });
+			git(dir, "add", "a.txt");
+			git(dir, "commit", "-q", "-m", "a");
+			git(dir, "checkout", "-q", "-b", "feature");
+			git(dir, "rm", "-q", "a.txt");
+			git(dir, "commit", "-q", "-m", "drop a");
+			write(dir, { "a.txt": "work\n" });
+			expect(
+				reason(destructive.run(shell(command, dir), context(dir))),
+			).toContain("a.txt");
+			expect(
+				destructive.run(shell("git reset --hard", dir), context(dir)).kind,
+			).toBe("allow");
+		},
+	);
+
 	test("the guard deletes no file when it reads git clean --no-dry-run", () => {
 		const dir = untrackedRepo();
 		const verdict = destructive.run(
