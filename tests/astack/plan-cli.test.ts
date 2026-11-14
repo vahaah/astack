@@ -14,6 +14,8 @@ import { command as checkPlan } from "../../src/astack/cli/commands/check/plan.t
 import { command as plan } from "../../src/astack/cli/commands/plan.ts";
 import { command as planTicket } from "../../src/astack/cli/commands/plan-ticket.ts";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
+import { note } from "../../src/astack/hook/events.ts";
+import { handler as planFile } from "../../src/astack/hook/handlers/plan-file.ts";
 import { TEMPLATES } from "../../src/astack/plan/template.ts";
 import { trailCell } from "../../src/astack/plan/trail.ts";
 import { loadProfile } from "../../src/astack/profile.ts";
@@ -108,6 +110,14 @@ describe("astack check-plan", () => {
 			expect(result.out).toContain("0 errors, 0 warnings");
 			expect(result.code).toBe(0);
 		}
+	});
+
+	test("a plan outside any git repo reads the ADRs and glossary of the cwd repo", () => {
+		const outside = join(tempDir("astack-outside-"), "member-export.md");
+		writeFileSync(outside, readFileSync(join(repo, EXPORT), "utf8"));
+		const result = run(checkPlan.run, [outside], repo);
+		expect(result.out).toBe("0 errors, 0 warnings, 0 notes in 1 plan\n");
+		expect(result.code).toBe(0);
 	});
 
 	test("the fixture plans pass with a summary line", () => {
@@ -414,6 +424,35 @@ describe("plan hooks", () => {
 			);
 			expect(result?.deny).toBeUndefined();
 		}
+	});
+
+	test("a plan outside any git repo reads the ADRs and glossary of the project dir", () => {
+		const outside = join(tempDir("astack-outside-"), "member-export.md");
+		const after = readFileSync(join(repo, EXPORT), "utf8").replace(
+			"## Proof",
+			"Fog. Revisit the 30 s budget.\n\n## Proof",
+		);
+		expect(
+			planFile.run(
+				{ kind: "write", path: outside, before: undefined, after },
+				{
+					tool: "claude-code",
+					event: "PreToolUse",
+					cwd: repo,
+					projectDir: repo,
+					env: {},
+					today: "2026-10-16",
+				},
+			),
+		).toEqual(
+			note(
+				[
+					`astack check-plan finds 1 problem in ${outside} after this edit.`,
+					"65: S2: Fog. appears twice",
+					`Run astack check-plan ${outside} before the plan goes active.`,
+				].join("\n"),
+			),
+		);
 	});
 
 	test("denies an added checkbox, an added Status line and an added register table", () => {

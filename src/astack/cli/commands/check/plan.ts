@@ -113,6 +113,7 @@ function run(args: readonly string[], io: Io): number {
 		const env = envForFile(absolute, {
 			today: io.today,
 			trail: !args.includes("--no-trail"),
+			fallbackRoot: repoRoot(io.cwd),
 		});
 		const found = checkPlan(plan, env);
 		if (base) {

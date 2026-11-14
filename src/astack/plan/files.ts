@@ -36,9 +36,9 @@ function isDirectory(path: string): boolean {
 	}
 }
 
-export function rootFor(path: string): string {
+function rootFor(path: string, fallback: string | undefined): string {
 	const dir = isDirectory(path) ? path : dirname(resolve(path));
-	return repoRoot(dir) ?? dir;
+	return repoRoot(dir) ?? fallback ?? dir;
 }
 
 export function planProfileFor(root: string): PlanProfile {
@@ -118,9 +118,15 @@ export function trailSlug(file: string, text: string | undefined): string {
 
 export function envForFile(
 	file: string,
-	options: { today: string; trail: boolean; root?: string; text?: string },
+	options: {
+		today: string;
+		trail: boolean;
+		root?: string;
+		fallbackRoot?: string;
+		text?: string;
+	},
 ): CheckEnv {
-	const root = options.root ?? rootFor(file);
+	const root = options.root ?? rootFor(file, options.fallbackRoot);
 	const principles = principleSkills(
 		defaultSkillPathEnv(process.env, process.argv[1], root),
 	);

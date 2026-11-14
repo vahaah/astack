@@ -84,7 +84,11 @@ function planVerdict(
 		);
 	const findings = checkPlan(
 		parsePlan(path, after),
-		envForFile(path, { today: context.today, trail: false }),
+		envForFile(path, {
+			today: context.today,
+			trail: false,
+			fallbackRoot: projectDirOf(context),
+		}),
 	).filter((finding) => finding.group !== "ste");
 	if (findings.length === 0) return ALLOW;
 	const shown = findings
