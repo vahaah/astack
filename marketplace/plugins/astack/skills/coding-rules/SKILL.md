@@ -10,7 +10,7 @@ The always-on coding rule is their short form.
 This skill adds the reasons and the edge cases.
 `astack:coding-guide` gives the owner's daily workflow from `/astack:plan` to the merged PR.
 A stricter repo rule wins.
-See "Per-repo overlays" below.
+`references/overlays.md` tells what a repo overlay can add and what it cannot change.
 
 ## Principles these rules build on
 
@@ -21,7 +21,7 @@ Read the path it prints.
 For one principle, run `astack skill-path astack:principles references/fix-root-causes.md`, with the reference name you need.
 Read that reference in full.
 If `astack` is not on the Bash PATH, run `"${CLAUDE_SKILL_DIR}/../../bin/astack"`.
-Exit 1 means the skill or reference is unavailable.
+A nonzero exit means that the skill or reference is unavailable.
 Then the summary remains the rule.
 
 | Principle | Summary |
@@ -118,7 +118,10 @@ They also cover `any`, casts, `!`, total functions, errors as values and a pure 
 They cover laws as property tests and limits against over-engineering too.
 Load it with the Skill tool before you write or review TypeScript or Swift.
 Each rule names the tool that enforces it.
+
 The astack type hook denies a change that adds an `any`, an unsafe cast, a `!` or a compiler suppression.
+It also reads a lint control inside the project.
+Make a lint positive control with a rule such as `no-debugger`, never with `any`, a cast or `!`.
 
 Use `type` for unions, intersections, mapped types and anything derived with `z.infer`.
 Use `interface` for a plain object contract, especially one that other code extends or implements.
@@ -148,6 +151,13 @@ Keep business rules in pure functions that the edge calls.
 Then you can test them without the framework.
 
 Database rows count as an edge unless the repo generates row types from the schema and checks them in CI.
+
+A loop that calls a system edge on a timer, a poll or a retry needs a limit.
+Cap its attempts.
+Use a capped backoff.
+Read in bounded pages from a cursor, never the full log.
+Measure its calls and bytes per idle hour.
+State them in the PR.
 
 ## Keep reader load low
 

@@ -81,7 +81,7 @@ Signing setup belongs to the owner.
 Run these commands only in the clean public checkout whose HEAD is the reviewed release commit:
 
 ```sh
-ASTACK_TAG=v0.1.0
+ASTACK_TAG=v0.2.0
 git tag -s -m "astack $ASTACK_TAG" -- "$ASTACK_TAG"
 git verify-tag -- "$ASTACK_TAG"
 git cat-file tag "$ASTACK_TAG"

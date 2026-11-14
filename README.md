@@ -13,7 +13,7 @@
 
 astack is a plugin for AI coding agents. Its skills and rules give the agent one path from a goal to a merged pull request. The path is plan, build test-first on a branch, run the gates, review, open the PR, harden and merge. The agent stops before each decision that belongs to you. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-- **52 skills** in the plugin for plans, code, review, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 54.
+- **61 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 63.
 - **Six agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `researcher`, `delegate` and `comment-judge` are used by the skills. Those four are not limited to Read, Grep and Glob.
 - **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
 - **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
@@ -87,28 +87,35 @@ Hooks watch the build, the PR and the merge in clients that support hooks.
 
 ## Quickstart
 
-Install the signed release `v0.1.0`. See [the release list](https://github.com/vahaah/astack/releases).
+Install the signed release `v0.2.0`. See [the release list](https://github.com/vahaah/astack/releases).
 
 The CLI runs on Node 22 or later, or on Bun. `bun run check` and `bun run apply` need Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
 
 > **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `bun run apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
 
 ```sh
-ASTACK_TAG=v0.1.0
+ASTACK_TAG=v0.2.0
 ASTACK_RELEASE="$HOME/.local/share/astack/releases/$ASTACK_TAG"
 git clone --branch "$ASTACK_TAG" --depth 1 https://github.com/vahaah/astack.git "$ASTACK_RELEASE"
 ```
 
 Before you install, review the tag's commit and verified signature. Use a new folder for each release.
 
+Point a stable link at the release folder. Claude Code and the shared rules read the release through this link, so an [update](#update) only moves the link:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+```
+
 The generated builds under `dist/` are committed, so the checkout is ready to install. For Claude Code:
 
 ```sh
-claude plugin marketplace add "$ASTACK_RELEASE"
+claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-Then link the shared rules as [`dist/README.md`](dist/README.md) describes, and check the setup:
+Then link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Run `doctor` to examine the setup:
 
 ```sh
 "$ASTACK_RELEASE/dist/claude-code/astack/bin/astack" doctor
@@ -219,6 +226,11 @@ Start a session with `astack session start <plan>`. The steps sit in waves. Work
 | You say | astack does |
 |---|---|
 | "comments" | Triages each PR comment, then fixes failing checks |
+| "babysit" | `astack:babysit-pr` watches the PR through CI and review bots, and stops at merge-ready |
+| "council" | `astack:council` gets a review from each model of the `council members` role and loops until they agree |
+| "sol loop" | `astack:sol-loop` gets a review from the `sol-loop reviewer` model in rounds |
+| "take over" | `astack:takeover` finishes the work of another person and keeps their credit |
+| "modernize" | `astack:modernize` brings an old PR up to date, or recommends a rework or a close |
 | UI polish, or a mobile check | `astack:control-ui` walks the journey as a real persona |
 | "pause" | Hard stop with a hand-off prompt |
 
@@ -226,9 +238,11 @@ Start a session with `astack session start <plan>`. The steps sit in waves. Work
 
 | You say | astack does |
 |---|---|
-| "create pr" | Gates, deslop, the comment check and the PR text. One hardening run follows when the profile sets `after_create_pr` to `harden` |
+| "create pr", or "file a pr" | Gates, deslop, the comment check and the PR text. One hardening run follows when the profile sets `after_create_pr` to `harden` |
 | "update from main" | Merges the PR base, or `main`, and runs the gates again |
 | "merge when green" | Ships, if a grant exists |
+| "full send" | `astack:full-send` takes the change to a merged PR while you are away. The words are a merge grant for that prompt |
+| "full stop" | `astack:full-stop` does the same work, but stops with the PR ready for you to merge |
 
 A user rule in the rules folder can add a route. It cannot remove one.
 
@@ -257,7 +271,7 @@ A user rule in the rules folder can add a route. It cannot remove one.
 
 ## Why astack
 
-astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own. The right choice depends on what you need.
+astack stands on other people's work. It adapts text from four MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own. The right choice depends on what you need.
 
 | Option | What it gives you | When to choose it |
 |---|---|---|
@@ -265,6 +279,7 @@ astack stands on other people's work. It adapts text from three MIT projects, li
 | [pstack](https://github.com/cursor/plugins/tree/main/pstack) | Lauren Tan's (poteto) skills, principles and multi-model mode for rigorous agent work in Cursor | You want that method as its author maintains it |
 | [Matt Pocock's skills](https://github.com/mattpocock/skills) | Small, composable engineering skills (grilling, TDD, review, triage) that work with any model | You want individual skills to pick from |
 | [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) | The Cursor team's skills for CI, PRs and review | You work mainly in Cursor and want its team's flow |
+| [tstack](https://github.com/t3dotgg/tstack) | Theo Browne's skills that take a change to a merged PR, watch it, and get reviews from several model families | You want those skills as their author maintains them |
 | astack | One opinionated path from goal to merge, built for several clients | You want the same workflow, hooks and stops across clients |
 
 What astack adds on top:
@@ -320,12 +335,16 @@ All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#
 
 ### Claude Code and Grok Build
 
+Add the marketplace from the stable link `$ASTACK_CURRENT`, so that an [update](#update) only moves the link:
+
 ```sh
-claude plugin marketplace add "$ASTACK_RELEASE"
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes. Grok Build uses the Claude plugin build through its own marketplace install.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Grok Build uses the Claude plugin build through its own marketplace install from the same link.
 
 ### Codex
 
@@ -347,6 +366,47 @@ Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ship
 ### Other Agent Skills clients
 
 `dist/agentskills/` holds portable skills and a rules fragment. Use a project install and keep each skill's other files. Avoid duplicate global copies when a client already loads the plugin.
+
+### Update
+
+Clone each new signed tag into a new folder, as the [Quickstart](#quickstart) does. Review the commit and the signature of the tag first. Then update each client.
+
+Claude Code reads the marketplace from the folder that you added. `claude plugin marketplace update astack` reads that folder again, and does not find a new release folder. So the [Quickstart](#quickstart) adds the marketplace from the stable link `$ASTACK_CURRENT`. These commands point the link at the new release and update the plugin:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+claude plugin marketplace update astack
+claude plugin update astack@astack
+```
+
+Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+
+An older install that added the marketplace from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the marketplace from the link and install the plugin again:
+
+```sh
+claude plugin marketplace remove astack
+claude plugin marketplace add "$ASTACK_CURRENT"
+claude plugin install astack@astack
+```
+
+Link the shared rules of such an install through `$ASTACK_CURRENT` too.
+
+Codex keeps the real path of the marketplace folder, also when you add a link. These commands move the Codex marketplace to the new release folder and add the plugin again:
+
+```sh
+codex plugin marketplace remove astack
+codex plugin marketplace add "$ASTACK_RELEASE"
+codex plugin add astack@astack
+```
+
+Point the `astack` CLI link of the Codex install at the new release. Run step 4 of [`dist/codex/README.md`](dist/codex/README.md) again. It replaces the astack block in `~/.codex/AGENTS.md`. Trust each changed hook again in `/hooks`. Then start a new Codex session.
+
+For Cursor, move the old local copy to a backup. Copy the new build as [`dist/cursor/astack/README.md`](dist/cursor/astack/README.md) says. Then reload Cursor. Start a new cloud agent after an update.
+
+For Grok Bot and other Agent Skills clients, install the new files as their guides say.
+
+Then run `astack doctor`. It reports the installed copies and each Codex hook that you must trust again.
 
 ## The CLI
 
@@ -402,7 +462,7 @@ In Cursor, deny means a follow-up prompt, unless the change goes through `preToo
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|
 | `merge-guard` | prompt, shell, MCP | Denies a merge with no grant in the profile or the turn. It reads the pull request with `gh` | No |
-| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify` | No |
+| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify`. It denies a git command that discards uncommitted work, such as `git reset --hard`, `git checkout -- .` or `git clean -f`. On a clean tree, it allows them | No |
 | `duplicate-pr` | shell, MCP | Denies `gh pr create` for a branch that already has an open PR, or a body that shares a ticket key with an open PR | No |
 | `pr-body`, `ticket` | shell, MCP | Check PR headings and issue text, including `Part of` links | No |
 | `plan-file` | write and edit | Denies a plan write over the byte cap, or a new checkbox, `Status:` line or register table | No |
@@ -503,4 +563,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately throug
 
 ## Licence and credits
 
-MIT, Copyright (c) 2026 Alex Vakhitov. astack adapts material from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock and the [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) by Cursor, all MIT. [NOTICE](NOTICE) lists the files that hold each project's material.
+MIT, Copyright (c) 2026 Alex Vakhitov. astack adapts material from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock, the [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) by Cursor and [tstack](https://github.com/t3dotgg/tstack) by Theo Browne, all MIT. [NOTICE](NOTICE) lists the files that hold each project's material.

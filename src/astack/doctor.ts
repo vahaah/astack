@@ -68,6 +68,7 @@ export type Snapshot = {
 	readonly agentsSkills: readonly string[];
 	readonly claudeSkills?: readonly SkillFolder[];
 	readonly profile: ProfileState;
+	readonly unattendedReason: string | undefined;
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -473,6 +474,20 @@ function profileFindings(profile: ProfileState): Finding[] {
 	}
 }
 
+function sessionFinding(unattendedReason: string | undefined): Finding {
+	return unattendedReason === undefined
+		? finding(
+				"session",
+				"ok",
+				"attended. A prompt that a person types can give a merge grant.",
+			)
+		: finding(
+				"session",
+				"note",
+				`unattended, because ${unattendedReason}. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.`,
+			);
+}
+
 export function diagnose(snapshot: Snapshot): Finding[] {
 	return [
 		...runtimeFindings(snapshot),
@@ -486,6 +501,7 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 		),
 		...duplicateFindings(snapshot),
 		...profileFindings(snapshot.profile),
+		sessionFinding(snapshot.unattendedReason),
 	];
 }
 

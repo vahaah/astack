@@ -1,17 +1,527 @@
 {
 	"version": 1,
-	"change": "explicit-governing-landing-value",
-	"base": "b1df0301b8a272d25e65b0ef3ddfcce85e37f57a",
+	"change": "session-guards-and-tstack",
+	"base": "675007a21f99d6c9cdd411f8348c83c1b4718cb5",
 	"scope": [
 		{
-			"path": "**",
-			"obligation": "proof-landing",
+			"path": "src/astack/pr/**",
+			"obligation": "SG-merge-grant",
+			"modelRefs": ["Prompt", "Merge", "GrantFromWords", "MergeNeedsAuthority"]
+		},
+		{
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-merge-grant",
+			"modelRefs": ["Prompt", "Merge", "GrantFromPerson", "MergeNeedsAuthority"]
+		},
+		{
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-merge-grant",
 			"modelRefs": [
-				"StrictDefault",
-				"LandingAuthoritySafe",
-				"ProcessAuthoritySafe",
-				"HistoryBound",
-				"AdmitSafe"
+				"Prompt",
+				"Merge",
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority"
+			]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-send/**",
+			"obligation": "SG-merge-grant",
+			"modelRefs": ["Prompt", "Merge", "GrantFromWords"]
+		},
+		{
+			"path": "docs/adr/0009-*.md",
+			"obligation": "SG-merge-grant",
+			"modelRefs": ["Prompt", "Merge", "GrantFromWords", "FullStopNeverMerges"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-stop/**",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Merge", "FullStopNeverMerges", "GrantFromWords"]
+		},
+		{
+			"path": "src/astack/attended.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/doctor.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/hook/handlers/plan-pointer.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/plan/brief.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
+			"obligation": "SG-unattended",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
+		},
+		{
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
+		},
+		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/paths.ts",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "WriteChecksKept", "ScratchSkipped"]
+		},
+		{
+			"path": "src/astack/hook/handlers/types.ts",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "Commit", "ScratchSkipped", "CommitSurfaceChecked"]
+		},
+		{
+			"path": "src/astack/hook/handlers/ste-artifact.ts",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "WriteChecksKept", "ScratchSkipped"]
+		},
+		{
+			"path": "src/astack/ste/profile.ts",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "WriteChecksKept"]
+		},
+		{
+			"path": "tests/astack/ste-hook.test.ts",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "WriteChecksKept", "ScratchSkipped"]
+		},
+		{
+			"path": "docs/runbooks/hook-profiles.md",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "ScratchSkipped", "CommitSurfaceChecked"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/types/references/hook.md",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "ScratchSkipped", "CommitSurfaceChecked"]
+		},
+		{
+			"path": "docs/adr/0010-*.md",
+			"obligation": "SG-scratch",
+			"modelRefs": [
+				"Write",
+				"Commit",
+				"RunGit",
+				"Prompt",
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/hook/handlers/comments.ts",
+			"obligation": "SG-commit-surface",
+			"modelRefs": ["Write", "Commit", "ScratchSkipped", "CommitSurfaceChecked"]
+		},
+		{
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "SG-commit-surface",
+			"modelRefs": [
+				"Write",
+				"Commit",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked"
+			]
+		},
+		{
+			"path": "src/astack/hook/handlers/destructive.ts",
+			"obligation": "SG-work-loss",
+			"modelRefs": ["RunGit", "BroadLossDenied", "DenialNeedsLoss"]
+		},
+		{
+			"path": "tests/astack/guards.test.ts",
+			"obligation": "SG-work-loss",
+			"modelRefs": ["RunGit", "BroadLossDenied", "DenialNeedsLoss"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "rules/astack.md",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "NOTICE",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "tests/drift.test.ts",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "package.json",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/change-proof/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/cli/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/hook/handlers/plan-file.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/plan/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/skill-path.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/ste/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "src/astack/types/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "scripts/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "tests/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "marketplace/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "docs/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "rules/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "upstream/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "CHANGELOG.md",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "formal/**",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"Prompt",
+				"Merge",
+				"Write",
+				"Commit",
+				"RunGit",
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
 			]
 		}
 	],
@@ -19,226 +529,421 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/change-proof/contract.ts",
-			"symbol": "ChangeProof"
+			"path": "src/astack/hook/events.ts",
+			"symbol": "Handler"
 		},
 		"terms": [
-			"ChangeProof",
-			"Proof admission",
-			"Candidate inputs",
-			"Landing metadata"
+			"Session guard",
+			"Merge grant",
+			"Unattended session",
+			"Scratch file",
+			"Work-loss command"
 		],
 		"invariants": [
 			{
-				"name": "The default preserves whole governing bytes",
-				"modelRef": "StrictDefault"
+				"name": "A grant covers only the PRs that merge words or a full send clause name",
+				"modelRef": "GrantFromWords"
 			},
 			{
-				"name": "The explicit option preserves protected authority",
-				"modelRef": "LandingAuthoritySafe"
+				"name": "Only a person's prompt sets a grant",
+				"modelRef": "GrantFromPerson"
 			},
 			{
-				"name": "The process remains completely unchanged",
-				"modelRef": "ProcessAuthoritySafe"
+				"name": "A merge needs a profile grant or a covering prompt of a person",
+				"modelRef": "MergeNeedsAuthority"
 			},
 			{
-				"name": "Both historical views remain bound",
-				"modelRef": "HistoryBound"
+				"name": "Full stop never merges",
+				"modelRef": "FullStopNeverMerges"
 			},
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "A write outside the scratch class keeps its write checks",
+				"modelRef": "WriteChecksKept"
+			},
+			{
+				"name": "A scratch write skips the write checks",
+				"modelRef": "ScratchSkipped"
+			},
+			{
+				"name": "Each commit keeps its commit checks",
+				"modelRef": "CommitSurfaceChecked"
+			},
+			{
+				"name": "A work-loss command on the tree or a folder never passes",
+				"modelRef": "BroadLossDenied"
+			},
+			{
+				"name": "Each denial names work that git discards",
+				"modelRef": "DenialNeedsLoss"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
-			"criteria": ["proof-landing"]
+			"criteria": [
+				"SG-merge-grant",
+				"SG-full-stop",
+				"SG-unattended",
+				"SG-scratch",
+				"SG-commit-surface",
+				"SG-work-loss",
+				"SG-generated",
+				"SG-preserve"
+			]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "pure"
+			"kind": "artifact",
+			"contract": "Each guard maps one decoded hook call to one Verdict. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
 		},
 		"objects": [
 			{
-				"name": "GoverningTexts",
+				"name": "PromptText",
 				"link": {
-					"path": "src/astack/change-proof/governing-authority.ts",
-					"symbol": "GoverningTexts"
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
 				}
 			},
 			{
-				"name": "AuthorityResult",
+				"name": "MergeGrant",
 				"link": {
-					"path": "src/astack/result.ts",
-					"symbol": "Result"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "MergeGrant"
+				}
+			},
+			{
+				"name": "HookCall",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
+				}
+			},
+			{
+				"name": "Verdict",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "Verdict"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "compareLandedAuthority",
-				"from": "GoverningTexts",
-				"to": "AuthorityResult",
+				"name": "mergeGrantIn",
+				"from": "PromptText",
+				"to": "MergeGrant",
 				"link": {
-					"path": "src/astack/change-proof/governing-authority.ts",
-					"symbol": "compareLandedAuthority"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
 				},
 				"effects": []
+			},
+			{
+				"name": "mergeGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"effects": ["fs-read", "fs-write", "spawn", "network"]
+			},
+			{
+				"name": "commentsGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/comments.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "fs-write", "spawn", "env"]
+			},
+			{
+				"name": "typesGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/types.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "spawn", "env"]
+			},
+			{
+				"name": "docSteGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/ste-artifact.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "fs-write", "env"]
+			},
+			{
+				"name": "workLossGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "spawn"]
 			}
 		],
 		"composites": [],
-		"equality": "Exact protected prefix and suffix equality across candidate, integration, and fixed base, or an exact structural refusal.",
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two merge grants are equal when their kind and their set of PR numbers are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change adds one pure Result-valued comparison and no custom composition operator, map, functor, or monad."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/astack/governing-authority.test.ts"
+		"typedWitness": "tests/astack/guard-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The narrow header grammar, exact value boundaries, and both historical comparisons.",
+		"hides": "The clause grammar of a prompt, the source and attended tests of a prompt, the scratch path test, and the git status reader with the pathspec scope of each git command.",
 		"callersKnow": [
-			"The explicit parsed option applies only to the governing proposal.",
-			"The Accepted process authorizes the lifecycle duty and stays byte-identical.",
-			"Git supplies regular validated UTF-8 historical and current inputs.",
-			"Semantic review judges factual landing truth and policy acceptance."
+			"A guard returns allow, note or deny for one hook call, and a deny blocks the call.",
+			"Only the repo profile or a person's prompt of the current turn gives a merge grant.",
+			"A write-time skip of a scratch file never skips the checks of a commit.",
+			"An agent names each file that it discards, or it asks the owner."
 		],
-		"deletionTest": "Deleting the comparator duplicates structural parsing and protected-slice decisions within admission orchestration.",
+		"deletionTest": "Deleting isScratchPath puts the same work-tree and temp-folder test in three hooks. Deleting workLossReasons puts git status parsing and pathspec scope in each caller that runs git.",
 		"alternatives": [
 			{
-				"name": "Strip metadata globally",
-				"rejectedBecause": "This changes the strict default and can hide authority or process edits."
+				"name": "Skip every file outside the project",
+				"rejectedBecause": "A sibling work tree is real work with its own settings."
 			},
 			{
-				"name": "General field selectors",
-				"rejectedBecause": "A caller could exclude decision text."
+				"name": "Deny each git command that discards work, also for a named file",
+				"rejectedBecause": "The agent then cannot undo its own edit of one file."
 			},
 			{
-				"name": "Patch certificates",
-				"rejectedBecause": "Duplicated values add coordination without authenticating factual truth."
+				"name": "Require full send with a merge word for a merge",
+				"rejectedBecause": "The owner says full send to mean the whole path to a merged PR."
+			},
+			{
+				"name": "Add an attended override variable",
+				"rejectedBecause": "Each child process inherits it, so a delegate can give itself a merge grant."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "parseChangeProof"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Prompt"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/governing-authority.ts",
-					"symbol": "compareLandedAuthority"
+					"path": "src/astack/ste/session.ts",
+					"symbol": "humanPrompt"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Prompt"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "src/astack/attended.ts",
+					"symbol": "unattendedReason"
 				},
-				"modelAction": "Admit"
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/merge.ts",
+					"symbol": "preflightReasons"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/merge.ts",
+					"symbol": "stateReasons"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "grantCovers"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/paths.ts",
+					"symbol": "isScratchPath"
+				},
+				"modelAction": "Write"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/comments.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "Write"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/types.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "Write"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/ste-artifact.ts",
+					"symbol": "docTarget"
+				},
+				"modelAction": "Write"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "commitScopes"
+				},
+				"modelAction": "Commit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "workLossReasons"
+				},
+				"modelAction": "RunGit"
 			}
 		],
 		"omitted": [
-			"Parser correctness and Git behavior require separate implementation controls.",
-			"The finite model composes truthful metadata, byte, status, and history observations.",
-			"Factual landing truth and source-policy acceptance remain external judgments.",
-			"The existing Result-law model and raw freshness protocol remain in force."
+			"The clause tokenizer, the blocker words and the PR number reader are abstracted to seven clause classes.",
+			"The shell parser, command wrappers and compound commands are abstracted to one git command for each step.",
+			"Renames, copies, submodules, ignored files and pathspecs outside the repo are not modeled.",
+			"The full-stop rule is a procedure of the skill text, and no function enforces it.",
+			"git restore --staged on a file with staged and unstaged changes drops the staged version, and ADR 0010 D3 allows it.",
+			"The host decides the prompt source and the attended variables, and the model takes them as true."
 		]
 	},
 	"model": {
-		"module": "formal/ProofAdmission.tla",
-		"config": "formal/ProofAdmission.cfg",
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
 		"dependencies": [],
 		"invariants": [
 			"TypeOK",
-			"AdmitSafe",
-			"FailureIsTerminal",
-			"StrictDefault",
-			"LandingAuthoritySafe",
-			"ProcessAuthoritySafe",
-			"HistoryBound",
-			"RatifiedAuthority",
-			"ResultLeftIdentity",
-			"ResultRightIdentity",
-			"ResultAssociativity"
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss"
 		],
-		"properties": ["EventuallyTerminal"],
+		"properties": [],
 		"bounds": [
-			"One fixed authority observation per run, with valid and one-fault authority cases.",
-			"Four validation stages and bounded positive, negative, restored and freshness results.",
-			"Finite Result laws use two values, two errors and all total functions between them."
+			"Attended and unattended sessions, three merge authorities, two PRs, and prompts of one or two of seven clause classes from three sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects."
 		],
-		"fairness": ["WF_vars(Next)"]
+		"fairness": []
 	},
 	"negative": {
-		"file": "formal/ProofAdmission.tla",
-		"action": "ValidationPass",
-		"original": "/\\ (Stages[stage] # \"domain\" \\/ LandingAllowed(authority))",
-		"replacement": "/\\ TRUE",
-		"defect": "Skipping the selected landing guard can admit malformed metadata or changed governing authority.",
+		"file": "formal/SessionGuards.tla",
+		"action": "Prompt",
+		"original": "UNION {ClauseGrant(c) : c \\in p}",
+		"replacement": "UNION {IF c = \"fullStop\" THEN PRs ELSE ClauseGrant(c) : c \\in p}",
+		"defect": "A full stop clause gives a merge grant of each PR, so an agent can merge a PR that the owner told it to stop before.",
 		"expect": {
 			"kind": "invariant",
-			"name": "LandingAuthoritySafe"
+			"name": "GrantFromWords"
 		}
 	},
 	"limits": [
-		"The finite model assumes truthful external parser, byte, path, history and tool observations.",
-		"The model does not establish factual landing truth or the human meaning of process authority.",
-		"Independent code review, exact-head CI, Shipping and every ordinary gate remain required."
+		"The finite model takes the clause grammar, the prompt source, the path facts and the git status entries as true observations.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The full-stop rule that a session never merges has no implementation control, because only the skill text holds it.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

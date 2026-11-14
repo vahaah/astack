@@ -2,7 +2,7 @@
 name: "astack-write-docs"
 description: "Write and place documents, PR bodies and commit messages. Use for documentation changes, ADRs and change descriptions."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Write docs
@@ -138,7 +138,7 @@ Delete empty optional sections instead of writing "n/a".
 - Name the ticket on the first line as `Part of ABC-123`. Multiple tickets can share that line, as in `Part of ABC-123, ABC-124`. The line is mandatory when `.astack/profile.json` sets `tracker.requirePartOf`.
 - Never put a ticket key or `#n` after a closing word such as `Closes`, `Fixes` or `Resolves`. That form triggers tracker completion at merge, so the astack hook refuses it. The reference explains GitHub issue and branch-name cases.
 - Describe behavior. Call out schema, API and migration changes rather than listing files.
-- Describe the final state. Keep review rounds, commit SHAs and owner rulings out of headings and body. Link logs and long tables.
+- Describe the final state. Keep review rounds, commit SHAs and owner rulings out of headings and body. Link logs and long tables. A local walk log or a table of each run has no link. Post such a run record in one PR comment, and link that comment from Verification.
 - Explain internal code and abbreviations in plain words, or omit them.
 - Always state rollback. Name the revert, flag or reversible migration that undoes the change.
 - Keep Why to one to three short sentences covering the problem, impact and approach.
@@ -152,6 +152,7 @@ Delete empty optional sections instead of writing "n/a".
 - Put the ticket key in a `Refs: ABC-123` trailer. Exclude it from the subject.
 - Explain the reason, behavior change and rejected alternatives in the body. Do not repeat the subject. Put discovery history and earlier attempts here rather than in code comments.
 - Keep agent-added trailers such as `Co-Authored-By` and session links.
+- Write the message to a file. Run `astack check ste <file> --surface commit`. Fix each deny finding, then run `git commit -F <file>`.
 - Apply the subject rules to PR titles, because a squash merge uses that title on the main branch.
 - Small ordered branch commits are valid. Put a fix and its test or script together so every commit passes its checks.
 

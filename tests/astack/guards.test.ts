@@ -1,6 +1,14 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	utimesSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -14,18 +22,28 @@ import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 
 let root = "";
 let repo = "";
+let dirty = "";
 
 function git(dir: string, ...args: string[]): void {
 	spawnSync("git", args, { cwd: dir });
+}
+
+function initRepo(dir: string): void {
+	git(dir, "init", "-q", "-b", "main");
+	git(dir, "config", "user.email", "t@example.com");
+	git(dir, "config", "user.name", "T");
+}
+
+function write(dir: string, files: Readonly<Record<string, string>>): void {
+	for (const [path, text] of Object.entries(files))
+		writeFileSync(join(dir, path), text);
 }
 
 beforeAll(() => {
 	root = mkdtempSync(join(tmpdir(), "astack-guards-"));
 	repo = join(root, "repo");
 	mkdirSync(repo);
-	git(repo, "init", "-q", "-b", "main");
-	git(repo, "config", "user.email", "t@example.com");
-	git(repo, "config", "user.name", "T");
+	initRepo(repo);
 	writeFileSync(
 		join(repo, "package.json"),
 		JSON.stringify({
@@ -39,6 +57,26 @@ beforeAll(() => {
 	git(repo, "add", ".");
 	git(repo, "commit", "-q", "-m", "base");
 	git(repo, "checkout", "-q", "-b", "dev/abc-1/export");
+
+	dirty = join(root, "dirty");
+	mkdirSync(join(dirty, "src"), { recursive: true });
+	mkdirSync(join(dirty, "docs"));
+	initRepo(dirty);
+	write(dirty, {
+		"notes.txt": "a\n",
+		"src/app.ts": "a\n",
+		"staged.txt": "a\n",
+		"docs/guide.md": "a\n",
+	});
+	git(dirty, "add", ".");
+	git(dirty, "commit", "-q", "-m", "base");
+	write(dirty, {
+		"notes.txt": "b\n",
+		"src/app.ts": "b\n",
+		"staged.txt": "b\n",
+	});
+	git(dirty, "add", "staged.txt");
+	write(dirty, { "scratch.txt": "x\n" });
 });
 
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -54,8 +92,8 @@ function context(cwd: string): Context {
 	};
 }
 
-function shell(command: string): HookEvent {
-	return { kind: "shell", command, cwd: repo };
+function shell(command: string, cwd = repo): HookEvent {
+	return { kind: "shell", command, cwd };
 }
 
 function reason(verdict: Verdict): string {
@@ -94,6 +132,193 @@ describe("the destructive command guard", () => {
 		"git commit --amend --no-edit",
 	])("%s passes", (command) => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+	});
+
+	const tracked = "notes.txt, src/app.ts, staged.txt";
+	test.each([
+		["git reset --hard", `discards the uncommitted changes in ${tracked}.`],
+		["git checkout -f main", `discards the uncommitted changes in ${tracked}.`],
+		[
+			"git switch --discard-changes main",
+			`discards the uncommitted changes in ${tracked}.`,
+		],
+		[
+			"git checkout HEAD -- .",
+			`discards the uncommitted changes in ${tracked}.`,
+		],
+		[
+			"git checkout -q .",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git restore :/",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		["git restore src", "discards the uncommitted changes in src/app.ts."],
+		[
+			"git restore *",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git checkout -- '*.txt'",
+			"discards the uncommitted changes in notes.txt.",
+		],
+		["git clean -fd", "deletes the untracked files scratch.txt."],
+		[
+			"git restore --pathspec-from-file=list.txt",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git checkout --pathspec-from-file list.txt",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+	])(
+		"[control:sg-work-loss-denied] %s is denied when it discards uncommitted work",
+		(command, text) => {
+			const verdict = destructive.run(shell(command, dirty), context(dirty));
+			expect(reason(verdict)).toContain(
+				`- ${command.replaceAll("'", "")} ${text}`,
+			);
+			expect(reason(verdict)).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"git checkout HEAD -- notes.txt",
+		"git restore docs",
+		"git restore --staged .",
+		"git checkout main",
+		"git clean -fdn",
+		"git clean -fX",
+		"git clean -fd -e scratch.txt",
+		"git stash",
+	])(
+		"[control:sg-explicit-discard-passes] %s passes on a dirty tree because it discards no work",
+		(command) => {
+			expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+				"allow",
+			);
+		},
+	);
+
+	test.each(["git reset --hard", "git checkout HEAD -- .", "git clean -fd"])(
+		"[control:sg-clean-tree-passes] %s passes on a clean tree",
+		(command) => {
+			expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+		},
+	);
+});
+
+describe("the clean selection of the work-loss guard", () => {
+	let count = 0;
+	function untrackedRepo(): string {
+		count++;
+		const dir = join(root, `clean-${count}`);
+		mkdirSync(join(dir, "junk"), { recursive: true });
+		initRepo(dir);
+		write(dir, { "kept.md": "kept\n" });
+		git(dir, "add", "kept.md");
+		git(dir, "commit", "-q", "-m", "init");
+		write(dir, { "keep.txt": "keep\n", "junk/a.txt": "a\n" });
+		return dir;
+	}
+
+	test.each([
+		["git clean -fq", "deletes the untracked files keep.txt."],
+		["git clean -fd junk", "deletes the untracked files junk/a.txt."],
+		["git clean -fd -e keep.txt", "deletes the untracked files junk/a.txt."],
+		["git clean -f junk", "deletes the untracked files junk/a.txt."],
+		["git clean -nf --no-dry-run", "deletes the untracked files keep.txt."],
+		["git clean --forc", "deletes the untracked files keep.txt."],
+		["git clean -i", "deletes the untracked files keep.txt."],
+		["git clean -ffd", "deletes the untracked files junk/a.txt, keep.txt."],
+		[
+			"git clean -fd --excl keep.txt",
+			"deletes the untracked files junk/a.txt.",
+		],
+	])("%s is denied", (command, text) => {
+		const dir = untrackedRepo();
+		expect(
+			reason(destructive.run(shell(command, dir), context(dir))),
+		).toContain(`- ${command} ${text}`);
+	});
+
+	test("git clean -ffd is denied for a nested repo", () => {
+		const dir = untrackedRepo();
+		const nested = join(dir, "vendor/lib");
+		mkdirSync(nested, { recursive: true });
+		initRepo(nested);
+		write(nested, { "lib.ts": "export {};\n" });
+		git(nested, "add", "lib.ts");
+		git(nested, "commit", "-q", "-m", "lib");
+		expect(
+			reason(destructive.run(shell("git clean -ffd", dir), context(dir))),
+		).toContain("vendor/lib/");
+	});
+
+	test("git reset --ha is denied as git reset --hard is", () => {
+		const verdict = destructive.run(
+			shell("git reset --ha", dirty),
+			context(dirty),
+		);
+		expect(reason(verdict)).toContain("discards the uncommitted changes in");
+	});
+
+	test("the guard leaves the index file of the repo as it was", () => {
+		const dir = untrackedRepo();
+		const index = readFileSync(join(dir, ".git/index"));
+		const later = new Date(Date.now() + 60_000);
+		utimesSync(join(dir, "kept.md"), later, later);
+		destructive.run(shell("git reset --hard", dir), context(dir));
+		expect(readFileSync(join(dir, ".git/index")).equals(index)).toBe(true);
+	});
+
+	test("git clean -ff passes when only an untracked folder exists", () => {
+		const dir = untrackedRepo();
+		rmSync(join(dir, "keep.txt"));
+		expect(
+			destructive.run(shell("git clean -ff", dir), context(dir)).kind,
+		).toBe("allow");
+	});
+
+	test.each(["git checkout -f main", "git reset --hard main"])(
+		"%s is denied when it overwrites an untracked file that main tracks",
+		(command) => {
+			const dir = untrackedRepo();
+			write(dir, { "a.txt": "main\n" });
+			git(dir, "add", "a.txt");
+			git(dir, "commit", "-q", "-m", "a");
+			git(dir, "checkout", "-q", "-b", "feature");
+			git(dir, "rm", "-q", "a.txt");
+			git(dir, "commit", "-q", "-m", "drop a");
+			write(dir, { "a.txt": "work\n" });
+			expect(
+				reason(destructive.run(shell(command, dir), context(dir))),
+			).toContain("a.txt");
+			expect(
+				destructive.run(shell("git reset --hard", dir), context(dir)).kind,
+			).toBe("allow");
+		},
+	);
+
+	test("the guard deletes no file when it reads git clean --no-dry-run", () => {
+		const dir = untrackedRepo();
+		const verdict = destructive.run(
+			shell("git clean -f --no-dry-run", dir),
+			context(dir),
+		);
+		expect(existsSync(join(dir, "keep.txt"))).toBe(true);
+		expect(reason(verdict)).toContain("deletes the untracked files keep.txt.");
+	});
+
+	test("git clean -fd -e keep.txt -e junk passes, because it deletes no file", () => {
+		const dir = untrackedRepo();
+		expect(
+			destructive.run(
+				shell("git clean -fd -e keep.txt -e junk", dir),
+				context(dir),
+			).kind,
+		).toBe("allow");
 	});
 });
 

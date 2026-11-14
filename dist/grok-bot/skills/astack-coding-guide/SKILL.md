@@ -2,7 +2,7 @@
 name: "astack-coding-guide"
 description: "Use when you own a ticket or a change, from planning it to the merged PR. The house daily workflow gives the commands from /astack-plan to the merged PR in order. It also says what to do when a step stops short, and which command starts each /astack-plan route. The rules for the code itself are in astack-coding-rules."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Coding guide
@@ -123,6 +123,7 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Under Shipping and either Autopilot playbook, keep `merge.after_clean_stop` at `report` in the hardening profile.
    Those playbooks verify each PR before the merge.
    Under any other route, the user merges after review or asks `/astack-mode` to use Shipping.
+   When the user merges and reports the merge, run the Settle step of the `astack-mode` Shipping playbook.
    Before the merge, update the Verification counts after the last fix commit.
    The counts must be true at the head that lands.
    When the profile sets `proof.pr_comment`, link to hardening's last PR comment instead of counting.

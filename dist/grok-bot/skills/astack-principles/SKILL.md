@@ -1,8 +1,8 @@
 ---
 name: "astack-principles"
-description: "Use this skill for engineering principles across core design, architecture, verification, delegation, and meta structure. Read the reference file of each principle that applies."
+description: "Use when you need an engineering principle for core design, architecture, verification, delegation or meta structure. Read the reference file of each principle that applies."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Principles

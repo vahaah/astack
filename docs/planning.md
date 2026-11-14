@@ -48,7 +48,7 @@ Synthetic fixtures with the size and shape of three real plans pass with no deny
 
 ## 5. The checker and the hook
 
-`astack check-plan` proves the frontmatter, the section order, the decision rows, the sessions and the steps. It also proves the hot-file rule, the milestones and blocks, the questions, the gates, the caps, the ledger rules and the prose. The prose rules include the exact ASD-STE100 rules as warnings. In a file whose frontmatter has `plan:`, the `plan-file` hook denies four edits only. These are a result over the deny cap, an added checkbox, an added `Status:` line and an added register table. Each other finding is a note.
+`astack check-plan` proves the frontmatter, the section order, the decision rows, the sessions and the steps. It also proves the hot-file rule, the milestones and blocks, the questions, the gates, the caps, the ledger rules and the prose. The prose rules include the exact ASD-STE100 rules as warnings. In a file whose frontmatter has `plan:`, the `plan-file` hook denies four edits only. These are a result over the deny cap, an added checkbox, an added `Status:` line and an added register table. Each other finding that the edit adds is a note.
 
 ## 6. The session CLI
 

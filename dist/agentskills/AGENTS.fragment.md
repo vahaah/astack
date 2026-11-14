@@ -1,4 +1,4 @@
-<!-- astack 0.1.0 -->
+<!-- astack 0.2.0 -->
 # astack
 
 These rules apply in every session. A stricter repo rule wins, then astack. `/astack-mode` routes the work and does the next step.
@@ -19,17 +19,18 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/pr-review-hardening` | `astack-pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
 | "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
 | "update from main" | Mode playbook `refresh.md` |
-| "merge", "merge when green" | The `astack-mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
+| "merge", "merge when green", "merge and release" | The `astack-mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
+| "full send", "full stop", "council", "sol loop" | That astack skill, read by path. Only "full send" grants a merge |
 | UI polish, mobile | `astack-control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack-mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack-mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Find a mode playbook with `astack skill-path astack:mode references/<name>.md`, and read it.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`.
 
 ## Standing rules
 
 - Autonomy. Push after green gates. Open and update PRs. Merge only with a grant from the repo profile or from this turn.
 - Owner gates. Stop for accounts, secrets, paid infrastructure, production data writes with no grant and destructive resets. Stop for a force-push to a shared branch, an `--admin` merge and a message to a client.
-- Questions. Ask only the calls that belong to the owner. Give each one a recommendation and lettered options. "agree" accepts all of them. Never ask for a fact. Ask for owner-only inputs one at a time.
+- Questions. Ask only the calls that belong to the owner. Ask each ready call in one round, with a recommendation and lettered options. "agree" accepts all of them. Never ask for a fact. Ask one at a time only for a value that the owner types, such as a secret.
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only when the owner says so. Put follow-ups in the open PR.
 - PR text. Write `Part of <key>` on the first line when the repo profile asks for it. Never put a key or `#n` after a closing word.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before you make a claim, and open each file that you cite. A zero result needs a positive control.
@@ -41,7 +42,7 @@ A user rule in the rules folder can add routes, and it never removes one. Find a
 
 # Coding
 
-When the astack plugin is installed, load `astack-coding-rules` before you write, change or review code. The session that owns the ticket also loads `astack-coding-guide` and runs its daily workflow in order, from `/astack-plan` to the merged PR.
+When the astack plugin is installed, load `astack-coding-rules` before you write, change or review code. If you cannot load it, read the SKILL.md that `astack skill-path astack:coding-rules` prints. The session that owns the ticket also loads `astack-coding-guide` and runs its daily workflow in order, from `/astack-plan` to the merged PR.
 
 These rules hold in every repo, with or without the astack plugin. A stricter repo rule wins. Tickets follow `/astack-write-ticket`, and docs and PR bodies follow `/astack-write-docs`.
 
@@ -104,4 +105,4 @@ Plan migrations around table locks and rollout order.
 Test tenant access with the affected roles.
 Use the PostgreSQL checklist in `astack-code-review` for reviews.
 
-<!-- /astack 0.1.0 -->
+<!-- /astack 0.2.0 -->

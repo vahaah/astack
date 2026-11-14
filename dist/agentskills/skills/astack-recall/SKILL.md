@@ -3,7 +3,7 @@ name: "astack-recall"
 description: "Rebuild recent work context from chat history, live state, and shared records. Use for recall, catch-up, or work resumption."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

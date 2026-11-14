@@ -3,7 +3,7 @@ name: "astack-implement"
 description: "Implement work from a spec or a set of tickets."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Implement

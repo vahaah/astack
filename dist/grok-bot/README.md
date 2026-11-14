@@ -1,6 +1,6 @@
 # astack for Grok Bot
 
-This folder holds 55 skills for Grok Bot: the astack skills, `astack-rules` and `astack-sync`.
+This folder holds 64 skills for Grok Bot: the astack skills, `astack-rules` and `astack-sync`.
 
 Grok Bot gets no hooks. Grok Bot has no hook support, and this plan has no team marketplace. So nothing enforces the astack rules in Grok Bot. Git hooks and CI that run the astack CLI are the only gates for its work.
 
@@ -20,9 +20,9 @@ Before publication, use the portable bundle route in `docs/runbooks/install-grok
 The skills run the `astack` CLI. The bot can run it from the published package:
 
 ```sh
-bunx github:vahaah/astack#v0.1.0 --help
+bunx github:vahaah/astack#v0.2.0 --help
 ```
 
-Version: 0.1.0.
+Version: 0.2.0.
 
 Source: https://docs.x.ai/grok-bot/skills-routines-and-automations

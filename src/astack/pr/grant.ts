@@ -15,37 +15,43 @@ export type MergeGrant =
 
 export const NO_GRANT: MergeGrant = { kind: "none" };
 
-const BLOCKERS = new Set([
-	"a",
-	"after",
-	"an",
-	"any",
+const NEGATIONS = new Set([
 	"avoid",
-	"before",
 	"can't",
 	"cannot",
 	"cant",
 	"don't",
 	"dont",
-	"how",
 	"never",
 	"no",
 	"not",
 	"prevent",
+	"shouldn't",
+	"stop",
+	"without",
+	"won't",
+	"wont",
+]);
+
+const OWNER_MERGES = new Set([...NEGATIONS, "i", "i'll", "leave"]);
+
+const BLOCKERS = new Set([
+	...OWNER_MERGES,
+	"a",
+	"after",
+	"an",
+	"any",
+	"before",
+	"how",
 	"ready",
 	"safe",
 	"shall",
 	"should",
-	"shouldn't",
-	"stop",
 	"the",
 	"till",
 	"until",
 	"wait",
 	"whether",
-	"without",
-	"won't",
-	"wont",
 	"would",
 ]);
 
@@ -93,7 +99,7 @@ function prose(prompt: string): string {
 function words(text: string): string[] {
 	return text
 		.split(/\s+/)
-		.map((word) => word.replace(/^[^\w#'/]+|[^\w#'/]+$/g, ""))
+		.map((word) => word.replace(/^[^\w#'/$]+|[^\w#'/]+$/g, ""))
 		.filter((word) => word !== "");
 }
 
@@ -110,12 +116,72 @@ function prNumbers(tokens: readonly string[]): number[] {
 	return tokens.flatMap((token, index) => prNumber(token, tokens[index + 1]));
 }
 
-function clauseGrant(clause: string): MergeGrant {
-	const tokens = words(clause);
+const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
+const FULL_SEND_FILLER = new Set([
+	"ahead",
+	"go",
+	"it",
+	"just",
+	"now",
+	"ok",
+	"okay",
+	"please",
+	"pr",
+	"the",
+	"this",
+	"yes",
+]);
+const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
+const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
+
+function withholdsFullSend(clause: Clause): boolean {
+	const { tokens } = clause;
+	const stops = tokens.some(
+		(token, index) =>
+			FULL_STOP_COMMAND.test(token) ||
+			(token === "full" && tokens[index + 1] === "stop"),
+	);
+	const grantsNoMerge = clauseGrant(clause, false).kind === "none";
+	const keepsTheMerge =
+		grantsNoMerge && tokens.some((token) => MERGE_WORD.test(token));
+	const refuses = grantsNoMerge && tokens.some((token) => NEGATIONS.has(token));
+	return stops || keepsTheMerge || refuses;
+}
+
+interface Clause {
+	readonly tokens: readonly string[];
+	readonly question: boolean;
+	readonly opensPrompt: boolean;
+}
+
+function clauseGrant(
+	{ tokens, question, opensPrompt }: Clause,
+	fullSendAllowed: boolean,
+): MergeGrant {
 	for (let index = 0; index < tokens.length; index++) {
 		const token = tokens[index] ?? "";
-		if (token !== "merge" && token !== "squash-merge") continue;
+		const fullSend =
+			fullSendAllowed &&
+			(FULL_SEND_COMMAND.test(token) ||
+				(token === "full" && tokens[index + 1] === "send"));
+		if (!fullSend && token !== "merge" && token !== "squash-merge") continue;
 		const before = tokens.slice(Math.max(0, index - 3), index);
+		if (fullSend) {
+			const command = FULL_SEND_COMMAND.test(token);
+			const invoked = opensPrompt && index === 0 && command;
+			const others = [
+				...tokens.slice(0, index),
+				...tokens.slice(index + (command ? 1 : 2)),
+			];
+			const bare =
+				!question &&
+				others.every(
+					(word) =>
+						FULL_SEND_FILLER.has(word) || prNumber(word, undefined).length > 0,
+				);
+			if (invoked || bare) return { kind: "any" };
+			continue;
+		}
 		if (before.some((word) => BLOCKERS.has(word))) continue;
 		const after = tokens
 			.slice(index + 1)
@@ -136,9 +202,21 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 }
 
 export function mergeGrantIn(prompt: string): MergeGrant {
-	return prose(prompt)
-		.split(/[!?;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
-		.map(clauseGrant)
+	const clauses = prose(prompt)
+		.split(/(?<=[!?\n])|(?<=[.:])(?=\s|$)/)
+		.flatMap((sentence) =>
+			sentence
+				.split(/[!?;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
+				.map((text) => ({
+					tokens: words(text),
+					question: sentence.trimEnd().endsWith("?"),
+				})),
+		)
+		.filter(({ tokens }) => tokens.length > 0)
+		.map((clause, index) => ({ ...clause, opensPrompt: index === 0 }));
+	const fullSendAllowed = !clauses.some(withholdsFullSend);
+	return clauses
+		.map((clause) => clauseGrant(clause, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
 }
 

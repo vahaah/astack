@@ -8,6 +8,7 @@ import {
 	bareSlashPattern,
 	buildCatalog,
 	checkBareSlashCommands,
+	checkHeadingPointers,
 	checkLinks,
 	checkLoadGate,
 	checkPaths,
@@ -585,6 +586,23 @@ describe("relative links", () => {
 		).toEqual([
 			"link ../skills/make-bot-ui/SKILL.md has no target",
 			`link ../../README.md points outside the ${P} plugin`,
+		]);
+	});
+});
+
+describe("heading pointers", () => {
+	test("a quoted pointer that names no heading of its own file is an error", () => {
+		const astack = plugin("astack", {
+			"skills/x/SKILL.md":
+				'See "Rules" below.\nSee "Per-repo overlays" below.\n\n```md\nSee "Fenced" above.\n```\n\n## Rules\n',
+		});
+		expect(checkHeadingPointers([astack]).findings).toEqual([
+			{
+				severity: "error",
+				file: "astack/skills/x/SKILL.md",
+				line: 2,
+				message: '"Per-repo overlays" names no heading of this file',
+			},
 		]);
 	});
 });

@@ -86,16 +86,27 @@ describe("our word list", () => {
 		}
 	});
 
-	test("the traps pass: approximately, about as concerned with, check as a noun", () => {
+	test("the traps pass: approximately, about as concerned with, check as a noun or an adjective at the end of a sentence", () => {
 		for (const text of [
 			"Approximately 40 files changed.",
 			"The note is about the cache.",
 			"Do a check of the logs.",
 			"The check runs in CI.",
 			"Production check: the build is green.",
+			"The PR lists the required checks.",
+			"The job marks the box as checked.",
 		])
 			expect(rules(text)).toEqual([]);
 		expect(rules("About 40 files changed.")).toEqual(["advise:word-broad"]);
+		expect(rules("The hook checks the file on each write.")).toEqual([
+			"advise:word-broad",
+		]);
+	});
+
+	test("a deny-tier verb form at the end of a sentence still fires, because it cannot be a noun", () => {
+		expect(
+			rules("Remove the cache layer that the old parser leveraged."),
+		).toEqual(["deny:word-list"]);
 	});
 
 	test("the deny list is small and every basis is typed", () => {
@@ -164,9 +175,14 @@ describe("sentence length", () => {
 		expect(rules(`# ${tail} ${tail}`)).toEqual([]);
 	});
 
-	test("a field label of the plan and ticket schema is exempt", () => {
+	test("a field label of the plan and ticket schema is exempt, also with a digit", () => {
 		expect(rules("Verify. `bun test` exits 0.")).toEqual([]);
 		expect(rules("Check: the build is green.")).toEqual([]);
+		expect(
+			rules(
+				"N1. The hook reads the file. The job writes the log. The tests pass. The owner merges it. The tool stops. The job ends.",
+			),
+		).toEqual([]);
 	});
 });
 
@@ -528,6 +544,11 @@ describe("precision fixes from real replies", () => {
 			"deny:word-list",
 		);
 	});
+
+	test("a negated could passes, and a plain could gets advice", () => {
+		expect(rules("The user could not tell which item was done.")).toEqual([]);
+		expect(rules("The job could stop early.")).toEqual(["advise:modal"]);
+	});
 });
 
 describe("chat replies", () => {
@@ -772,7 +793,7 @@ describe("chat replies", () => {
 		);
 	});
 
-	test("a human prompt is one from the composer, never a wakeup or a headless run", () => {
+	test("[control:sg-relayed-prompt] a human prompt is one from the composer, never a wakeup or a headless run", () => {
 		const attended = {
 			CLAUDE_CODE_ENTRYPOINT: "cli",
 			CLAUDE_CODE_SESSION_ATTENDED: "1",

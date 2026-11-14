@@ -144,14 +144,7 @@ The update needs the worktree of the setup branch, with no changes in it. It wri
 | `repo` | 1 | Fix the file in the repo. |
 | `unknown` | 2 | The profile has no `managed` list. Apply the repo again with `--update`. |
 
-To update the plugins in Claude Code, run `claude plugin marketplace update astack`. Then run `claude plugin update` for each plugin, and restart Claude Code. The dist README of each tool gives its update steps.
-
-```sh
-claude plugin marketplace update astack
-claude plugin update astack@astack
-claude plugin update pstack@astack
-claude plugin update flow@astack
-```
+To update astack in each client, follow [Update](../README.md#update) in the README.
 
 `bun run dist` adds a build stamp to the version of the astack plugin, such as `0.1.0+1a2b3c4d5e6f`. The stamp is a hash of the plugin files. So each new bundle or skill change is a new version, and `claude plugin update` installs it.
 

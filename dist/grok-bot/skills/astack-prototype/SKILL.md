@@ -2,7 +2,7 @@
 name: "astack-prototype"
 description: "Build a temporary prototype to answer a design question. Use to judge a state model, business logic or alternative UI designs."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Prototype

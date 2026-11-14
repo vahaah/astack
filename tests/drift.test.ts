@@ -98,7 +98,7 @@ test("fresh generated artifacts pass without changes to bytes, modes or mtimes",
 	expect(snapshot(dir)).toEqual(before);
 });
 
-test("fresh source rejects a stale CLI even when its dist copies match it", () => {
+test("[control:sg-stale-cli] fresh source rejects a stale CLI even when its dist copies match it", () => {
 	const dir = fixture();
 	appendFileSync(
 		join(dir, "src/astack/cli/bin.ts"),

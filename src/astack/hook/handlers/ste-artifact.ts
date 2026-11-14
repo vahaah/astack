@@ -1,6 +1,6 @@
-import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import { commitFlags, gitInvocation } from "../../git-command.ts";
-import { canonicalRelative, readOptional } from "../../paths.ts";
+import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import {
 	type FileWrite,
 	fileWrites,
@@ -34,12 +34,6 @@ function settingsNear(dir: string, context: Context): SteSettings {
 	return loadSettings(settingsRootFrom(dir, projectDirOf(context)));
 }
 
-function fallbackRoot(path: string, context: Context): string {
-	const projectDir = projectDirOf(context);
-	const rel = relative(projectDir, path);
-	return rel.startsWith("..") || isAbsolute(rel) ? dirname(path) : projectDir;
-}
-
 function docTarget(
 	path: string,
 	before: string | undefined,
@@ -51,7 +45,9 @@ function docTarget(
 	},
 ): Judged | undefined {
 	if (!PROSE_FILE.test(path)) return undefined;
-	const root = settingsRoot(path, fallbackRoot(path, context));
+	const projectDir = projectDirOf(context);
+	if (isScratchPath(projectDir, path)) return undefined;
+	const root = settingsRoot(path, projectDir);
 	const settings = loadSettings(root);
 	const relPath = canonicalRelative(root, path);
 	if (isExcluded(relPath, settings.profile)) return undefined;

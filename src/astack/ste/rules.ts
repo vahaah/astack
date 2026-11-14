@@ -265,7 +265,10 @@ function inVerbPosition(
 	if (BE.has(before)) return false;
 	if (AUXILIARIES.has(before)) return base;
 	if (SUBJECT_PRONOUNS.has(before)) return true;
-	if (/(?:s|ed)$/.test(form) && !base) return objectFollows;
+	if (/(?:s|ed)$/.test(form) && !base) {
+		const readsAsNoun = next === undefined && entry.tier === "advise";
+		return objectFollows && !readsAsNoun;
+	}
 	if (["and", "then", "or", "also", "first"].includes(before))
 		return base && objectFollows;
 	return false;
@@ -361,7 +364,8 @@ const modal: SentenceRule = (sentence) =>
 					`Use "must" for a rule or "can" for a possibility, not "${word}".`,
 				),
 			];
-		if (SOFT_MODALS.has(form))
+		const negated = ["not", "never"].includes(lower(sentence.words[index + 1]));
+		if (SOFT_MODALS.has(form) && !(form === "could" && negated))
 			return [
 				hit(
 					"modal",

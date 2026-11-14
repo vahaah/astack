@@ -1,5 +1,20 @@
-import { readFileSync, realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
+import {
+	existsSync,
+	lstatSync,
+	readFileSync,
+	readlinkSync,
+	realpathSync,
+} from "node:fs";
+import {
+	basename,
+	dirname,
+	isAbsolute,
+	join,
+	relative,
+	resolve,
+	sep,
+} from "node:path";
+import { PROFILE_PATH } from "./profile.ts";
 
 export function readOptional(path: string): string | undefined {
 	try {
@@ -21,6 +36,16 @@ export function canonical(dir: string): string {
 	}
 }
 
+function canonicalFile(path: string): string {
+	const dir = dirname(path);
+	if (dir === path) return path;
+	try {
+		return join(realpathSync(dir), basename(path));
+	} catch {
+		return join(canonicalFile(dir), basename(path));
+	}
+}
+
 export function projectRelative(projectDir: string, file: string): string {
 	const rel = relative(projectDir, file);
 	return toPosix(rel.startsWith("..") || isAbsolute(rel) ? file : rel);
@@ -30,8 +55,44 @@ export function canonicalRelative(
 	projectDir: string,
 	absolute: string,
 ): string {
-	return projectRelative(
-		canonical(projectDir),
-		join(canonical(dirname(absolute)), basename(absolute)),
-	);
+	return projectRelative(canonical(projectDir), canonicalFile(absolute));
+}
+
+function isWithin(dir: string, path: string): boolean {
+	const rel = relative(dir, path);
+	return rel !== ".." && !rel.startsWith(`..${sep}`) && !isAbsolute(rel);
+}
+
+export function workTreeRoot(start: string): string | undefined {
+	let dir = resolve(start);
+	for (;;) {
+		if (existsSync(join(dir, PROFILE_PATH)) || existsSync(join(dir, ".git")))
+			return dir;
+		const parent = dirname(dir);
+		if (parent === dir) return undefined;
+		dir = parent;
+	}
+}
+
+const MAX_LINK_HOPS = 40;
+
+function linkTarget(path: string, hops = 0): string {
+	const stat = lstatSync(path, { throwIfNoEntry: false });
+	if (!stat?.isSymbolicLink() || hops >= MAX_LINK_HOPS) return path;
+	const dir = dirname(canonicalFile(path));
+	return linkTarget(resolve(dir, readlinkSync(path)), hops + 1);
+}
+
+function resolvedFile(path: string): string | undefined {
+	try {
+		return canonicalFile(linkTarget(resolve(path)));
+	} catch {
+		return undefined;
+	}
+}
+
+export function isScratchPath(projectDir: string, path: string): boolean {
+	const file = resolvedFile(path);
+	if (file === undefined || isWithin(canonical(projectDir), file)) return false;
+	return workTreeRoot(dirname(file)) === undefined;
 }

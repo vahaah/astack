@@ -66,6 +66,7 @@ function snapshot(extra: Partial<Snapshot> = {}): Snapshot {
 		cursor: undefined,
 		agentsSkills: [],
 		profile: { kind: "present", repo: "/repo", keys: ["ste", "tracker"] },
+		unattendedReason: undefined,
 		...extra,
 	};
 }
@@ -223,6 +224,43 @@ describe("astack doctor", () => {
 			rmSync(home, { recursive: true, force: true });
 		}
 	});
+
+	test.each([
+		[
+			{},
+			"OK   session: attended. A prompt that a person types can give a merge grant.",
+		],
+		[
+			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
+			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.",
+		],
+	])(
+		"[control:sg-doctor-unattended] the command names the setting that makes the session unattended (%p)",
+		async (env, line) => {
+			const home = mkdtempSync(join(tmpdir(), "astack-doctor-session-"));
+			try {
+				let output = "";
+				await command.run([], {
+					out: (text) => {
+						output += text;
+					},
+					err: (text) => {
+						throw new Error(text);
+					},
+					cwd: home,
+					env: { HOME: home, ASTACK_RUNTIME: process.execPath, ...env },
+					today: "2026-01-01",
+					now: new Date("2026-01-01T00:00:00Z"),
+					scriptPath: undefined,
+				});
+				expect(
+					output.split("\n").filter((text) => text.includes(" session: ")),
+				).toEqual([line]);
+			} finally {
+				rmSync(home, { recursive: true, force: true });
+			}
+		},
+	);
 
 	test("reads missing and broken pack links from an isolated profile", () => {
 		const home = mkdtempSync(join(tmpdir(), "astack-doctor-packs-"));

@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { gitChanges } from "../../git.ts";
 import { commitScopes } from "../../git-command.ts";
-import { canonicalRelative, readOptional } from "../../paths.ts";
+import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import { fileWrites, shellSteps } from "../../shell.ts";
 import {
 	checkTypes,
@@ -48,6 +48,7 @@ function fileVerdict(
 	context: Context,
 ): Verdict {
 	const projectDir = projectDirOf(context);
+	if (isScratchPath(projectDir, path)) return ALLOW;
 	const report = reportOf(
 		{ relPath: canonicalRelative(projectDir, path), before, after },
 		typePolicy(projectDir),
@@ -63,6 +64,7 @@ function shellVerdict(command: string, cwd: string, context: Context): Verdict {
 	const writes = fileWrites(steps).flatMap((write) => {
 		if (write.target.dynamic) return [];
 		const path = resolve(write.step.dir, write.target.value);
+		if (isScratchPath(projectDir, path)) return [];
 		const before = readOptional(path);
 		const after = write.append ? `${before ?? ""}${write.body}` : write.body;
 		const report = reportOf(

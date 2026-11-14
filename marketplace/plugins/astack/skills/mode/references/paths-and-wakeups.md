@@ -40,6 +40,8 @@ Use `git worktree list` as the source of truth.
 Follow the current harness's waiting rules before using these mechanisms.
 Use its managed watcher when those rules require one.
 Do not add a second polling loop around a managed watcher.
+A host wake that carries only a deploy-preview comment or a review-bot status of `Running` needs no action.
+End the turn after such a wake.
 
 `/loop <interval> <prompt>` repeats a prompt at a fixed interval.
 `/loop <prompt>` without an interval is dynamic.
@@ -47,6 +49,10 @@ Where the harness permits it, use `ScheduleWakeup` to set the pace.
 A Bash watcher with `run_in_background: true` wakes you when it exits.
 `Monitor` can watch an until-loop where the harness permits that mechanism.
 A background agent sends a completion notification.
+
+To wait for the checks of a PR, run `astack watch-pr --pr <n> --timeout <seconds>` as a background Bash command.
+Its exit wakes you.
+Do not write a wait script of your own.
 
 ## CLI commands
 

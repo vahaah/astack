@@ -3,7 +3,7 @@ name: "astack-reflect"
 description: "Review the active transcript with three parallel lenses. Use reflect to find durable lessons and propose routed skill edits."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Reflect

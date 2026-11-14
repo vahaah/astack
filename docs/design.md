@@ -174,17 +174,21 @@ Model evidence does not establish private reasoning or full implementation corre
 | hotfix, "I need it fast" | quick tier, one grill round at most |
 | bug, a Sentry issue, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
 | "comments", "check github comments" | the full triage. The `astack:mode` Babysit playbook with a bugbot-triage posture. Decide who is right, fix or dismiss with a reason, resolve threads, fix CI |
+| "babysit", "watch the PR" | `astack:babysit-pr`, the entry point of the `astack:mode` Babysit playbook. One watcher, stop at merge-ready |
+| "council", "sol loop" | `astack:council` and `astack:sol-loop`, read by path. Reviewers from the `council members` or `sol-loop reviewer` role, in rounds with a cap |
+| "modernize", "take over" | `astack:modernize` picks MODERNIZE, REWORK or CLOSE for an old PR. `astack:takeover` finishes the work of another person and keeps their credit |
 | `/pr-review-hardening` | `astack:pr-review-hardening`. Cap and minimum from the profile, default cap 2. A blocking finding names a concrete failure |
-| "create pr" | gates, deslop, no-comments, an STE body, the profile PR rules, push. Then one hardening pass where the profile says so (Q6) |
+| "create pr", "file a pr" | `astack:file-pr`. Gates, deslop, no-comments, an STE body, the profile PR rules, push. Then one hardening pass where the profile says so (Q6) |
 | "update from main" | mode playbook `refresh.md`. Merge origin/main, rerun gates, read new ADRs and migrations, compare the D rows with the ticket intent |
 | "merge", "merge when green" | The `astack:mode` Shipping playbook. Authority from the profile or a grant in this turn |
+| "full send", "full stop" | `astack:full-send` and `astack:full-stop`, read by path. "full send" is a merge grant for its prompt. "full stop" never merges (ADR 0009) |
 | UI polish, mobile | control-ui, a persona walk, the repo UI kit, argent on mobile |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (hard stop), `astack session handoff`, Worktree cleanup |
 
 The card also holds the standing rules. They apply without the mode.
 - Autonomy. Push after green gates. Open and update PRs. Merge only with a grant from the profile or from this turn.
 - Owner gates. Stop for accounts, secrets, paid infrastructure, production data writes with no grant and destructive resets. Stop for a force-push to a shared branch, `--admin` merges and messages to clients.
-- Questions. Ask only human calls, each with a recommendation and lettered options. "agree" accepts all. Never ask for a fact. Ask for owner-only inputs one at a time.
+- Questions. Ask only human calls. Ask all ready calls in one round, each with a recommendation and lettered options. "agree" accepts all. Never ask for a fact. Ask one at a time only for a value that the owner types, such as a secret or an account.
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only on an owner call. Follow-ups update the open PR.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before a claim, and open each cited file first. A zero result needs a positive control.
 - State. The plan, the tracker and git hold state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
@@ -249,7 +253,7 @@ The caps fit the owner's real plans. Fixtures with the size and shape of three r
 | hand-off comment | over 5 lines | none |
 
 - The standard tier has no row cap. The byte cap controls bloat.
-- In a file with `plan:` frontmatter, the hook denies only four edits. These are a result over the deny cap, an added checkbox line, an added `Status:` line and a register table. Every other finding is a note.
+- In a file with `plan:` frontmatter, the hook denies only four edits. These are a result over the deny cap, an added checkbox line, an added `Status:` line and a register table. Each other finding that the edit adds is a note.
 - A hook note flags dates, PR numbers and a "Current wave" block in AGENTS.md and CLAUDE.md.
 
 ### 5.5 Lifecycle and the session CLI
@@ -296,12 +300,14 @@ PR and ticket rules come from the repo profile.
 - `@ts-expect-error` is legal only in `*.test-d.ts` type-test files, because type tests need it.
 - The hook also denies a `biome-ignore` of `noNonNullAssertion`, `noEnum`, `noBannedTypes` or `useExhaustiveSwitchCases` [fp-types].
 - STE runs on a kept comment after Sicko keeps it (section 9.3).
+- The comment hook and its STE check of kept comments skip a write or an edit of a scratch file. A scratch file is outside the project, and no folder at or above it holds `.git` or `.astack/profile.json`. A commit of the file still gets the check. To examine the files of a folder outside a repo, add `.astack/profile.json` to it.
 
 Other guards are handlers on the same dispatcher.
-- Merge guard. Deny `gh pr merge` when threads are open or CI is not green on the exact head. Also deny it with a closing word, in a chain with other commands, with no grant, or with `--admin`. Deny a merge through `gh api` and through the GitHub MCP tool `merge_pull_request`. Only a prompt that a person types gives or ends a grant. A subagent hand-back, a teammate message and other harness text never do.
+- Merge guard. Deny `gh pr merge` when threads are open or CI is not green on the exact head. Also deny it with a closing word, in a chain with other commands, with no grant, or with `--admin`. Deny a merge through `gh api` and through the GitHub MCP tool `merge_pull_request`. Only a prompt that a person types gives or ends a grant. A subagent hand-back, a teammate message and other harness text never do. A typed "full send" clause or the `/astack:full-send` command grants a merge of each PR in that turn. A negated "full send", such as "no full send", and "full stop" give no grant. A prompt with "full stop" gives no full-send grant. A prompt with a clause that names the merge but grants no merge, such as "do not merge" or "I will handle the merge", gives none too. The typed words grant only as a bare instruction, such as "ok, full send this PR". A question, other words in the clause or a negation in the prompt give no grant. The command form grants only at the start of the prompt.
 - PR body. The `Part of` line, the closing words and the headings apply to `gh pr create`, `gh pr edit` and the GitHub MCP tools `create_pull_request` and `update_pull_request`.
 - Duplicate PR. Deny `gh pr create` and the GitHub MCP create tool when an open PR of the same author has the same branch. Also deny it when that PR names the same `Part of` ticket. When `gh` cannot read the list, allow.
 - Destructive commands. Deny `supabase db reset` and its script forms, a force-push to a shared branch, and `--no-verify` on `git commit` or `git push`.
+- Work loss. Deny a git command that discards uncommitted work that `git status` shows. These are `git reset --hard`, `git checkout -f`, `git switch -f` or `--discard-changes`, and a `git checkout` or `git restore` of `.`, `:/`, a glob or a changed folder. Also deny `git clean -f` when untracked files exist. Allow the same commands on a clean tree, a single named file, `git restore --staged` and each `git stash` form.
 - Deferred. The `push-note` handler would add a note on Stop when the branch is ahead of its upstream after green gates. It is not built yet.
 
 ## 8. FP and types
@@ -318,11 +324,11 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 
 ### 8.1 The type hook
 
-- Files are `.ts`, `.tsx`, `.mts` and `.cts`. The hook skips `*.d.ts`, `*.gen.ts`, files marked `@generated` or "DO NOT EDIT" in their first 5 lines, the comment hook skip paths and the profile `types.skip` globs.
+- Files are `.ts`, `.tsx`, `.mts` and `.cts`. The hook skips `*.d.ts`, `*.gen.ts`, files marked `@generated` or "DO NOT EDIT" in their first 5 lines, the comment hook skip paths and the profile `types.skip` globs. It also skips a write or an edit of a scratch file (section 7).
 - The lexer masks strings, comments, templates and JSX text first. A lexer failure allows.
 - The hook denies new `any`, new unsafe `as` and new `!`. Unsafe `as` includes `as unknown as T` and angle-bracket casts in `.ts` and `.mts` files. `as const`, `satisfies` and a bare `as unknown` are legal. `!` includes `let x!: T`.
 - The type hook denies a new `@ts-ignore`, `@ts-nocheck` and `@ts-expect-error` by count. The type hook checks Edits, Writes, shell writes and commits of its files. The comment hook leaves these directives to it there. So each one gets one report. The comment hook still denies them in a JavaScript file.
-- The type hook advises on an `enum` declaration and a `class X extends Y` outside the allowlist. The default allowlist holds `Error` subclasses, `Component`, `PureComponent`, `Data.TaggedError`, `Data.TaggedClass`, `Data.Class`, `Schema.TaggedError`, `Schema.Class`, `Context.Tag`, `Effect.Tag` and `Effect.Service`.
+- The type hook advises on an `enum` declaration and a `class X extends Y` outside the allowlist. The default allowlist holds `Error` subclasses, `Component`, `PureComponent`, `Data.TaggedError`, `Data.TaggedClass`, `Data.Class`, `Schema.TaggedError`, `Schema.Class`, `Context.Tag`, `Context.Reference`, `Effect.Tag` and `Effect.Service`. It also holds the Effect 4 helpers `Context.Service` and `<Module>.Service` of the middleware, layer and atom modules.
 - The verdict comes from the change in the count of each pattern class. The hook compares the before and after text of an Edit, a Write or a shell write. For a `git commit`, it compares the old and new blobs of each file. It denies only when a count rises, and it points at the new occurrences. So the hook never blames a touched old line. A shell write is a `cat` or `tee` heredoc or a static `echo` or `printf` into a file. A static `echo` or `printf` piped into `tee` is one too.
 - The deny applies in source and in tests. The profile `types.allow` list names one kernel file per repo, with paths, kinds and a reason. That file holds the brand constructors, one `fake<T>()` test helper and DOM type guards. The pr-metrics ratchet still counts it.
 - The patterns for `any`, `as`, `!`, `enum` and `extends` measured precision and recall of 1.000 on 8,289 files [fp-types]. Angle-bracket casts have no measure, because every repo has 0 today.
@@ -364,6 +370,7 @@ STE is mandatory. Deny applies only to rules with proven precision. Judgment rul
 - Each list item is a paragraph. The text kind comes from each sentence.
 - A language guard skips a file or a message where more than 30% of the letters are not Latin. A chat reply gets a `language` finding in its place (9.4). A chat reply in another language with Latin letters gets it too. Spelling stays as the repo has it, and word-list entries hold both -ise and -ize forms.
 - When the checker skips more than 40% of a text and no client-draft route is active, quotes count as prose.
+- The doc check skips a write or an edit of a scratch file (section 7). A commit message, a PR, a ticket and a tracker comment keep their checks.
 
 Only new sentences count. The checker normalizes each sentence and drops every finding whose sentence is also in the old text. The old text is `old_string` for an Edit and the file on disk for a Write. A new ticket, a commit message and a PR create have no old text. Paragraph rules run only on a paragraph that is new as a whole. A fixture proves that an Edit with 3 old non-STE context sentences passes.
 
@@ -410,6 +417,10 @@ Loop guard. Each reply gets one rewrite at most.
 - When the rewrite still fails, the stop goes through. The next prompt gets a one-line count, not the list.
 
 The merge grant still reads only a human prompt. A prompt that starts with a harness tag, such as `<agent-message ...>` or `<task-notification>`, is not human. A prompt that equals a cron prompt from `session_crons` of the last Stop is not human either.
+
+On Claude Code and Codex, astack reads `CLAUDE_CODE_SESSION_ATTENDED` and `CLAUDE_CODE_ENTRYPOINT` to find an unattended session. `CLAUDE_CODE_SESSION_ATTENDED=0`, or an entrypoint that starts with `sdk`, makes the session unattended. Then a prompt with no `source` field is not human, so it gives no merge grant. The merge denial, the SessionStart note and `astack doctor` name the variable that makes the session unattended.
+
+This is the host contract. A host that relays the typed prompts of a person must not set `CLAUDE_CODE_SESSION_ATTENDED=0`, and must not use an `sdk` entrypoint. A host must set `CLAUDE_CODE_SESSION_ATTENDED=0` on a thread that carries an agent brief, because no person types its prompts. astack has no attended override, because each child process inherits an environment variable. In an unattended session, only `merge.authority` or `merge.standingBases` in `.astack/profile.json` gives a merge grant.
 
 Each tool uses its own shape. Claude Code and Codex get `{"decision":"block","reason":...}` with exit 0 from the same command. Cursor saves the `afterAgentResponse` text under `conversation_id` and `generation_id`, and `stop` returns `followup_message` with `loop_limit: 1`. A `loop_count` of 0 starts a new chain. A stop that did not complete, such as an abort, sends no follow-up. A Cursor background agent gets `ASTACK_ATTENDED=0` from the `sessionStart` env, so its replies get no rewrite. Grok Bot has no hook, so replies get only the rule card in skill text. The signals of `codex exec` and `cursor-agent -p` are not probed, so those runs can still get a rewrite (`docs/ste-targets.md`).
 
@@ -528,7 +539,7 @@ Record local gates, authenticated loads, hosted CI, and live client installs as 
 A probe settles each experiment, not the owner.
 - E1. The Cursor preToolUse Write payload, and whether Cursor runs plugin hooks in its own format.
 - E2. Whether a workflow worker fires Stop or SubagentStop, and which field marks it.
-- E3. Whether Codex SessionStart context reaches the model, the Codex name of the Linear MCP tool, and the real skill-list budget with `model_context_window = 1000000`.
+- E3. The Codex name of the Linear MCP tool, and the real skill-list budget with `model_context_window = 1000000`. The [Codex hooks page](https://learn.chatgpt.com/docs/hooks) settles the SessionStart part. Codex adds the SessionStart output to the model as developer context.
 - E4. Whether Grok Build expands `${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}` and sends Write and MCP events.
 - E5. Which UserPromptSubmit field tells a human prompt from a `/loop` or scheduled prompt.
 - E6. Whether the Claude Code Stop hook continues the turn on exit 2 with stderr, proven end to end.

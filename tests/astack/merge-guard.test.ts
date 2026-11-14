@@ -147,7 +147,7 @@ const GRANTED: readonly (readonly [string, MergeGrant])[] = [
 ];
 
 describe("the merge grant in a human prompt", () => {
-	test.each(GRANTED)("%p grants %p", (text, grant) => {
+	test.each(GRANTED)("[control:sg-grant-words] %p grants %p", (text, grant) => {
 		expect(mergeGrantIn(text)).toEqual(grant);
 	});
 
@@ -167,9 +167,59 @@ describe("the merge grant in a human prompt", () => {
 		"```\nmerge 12\n```",
 		"> merge when green",
 		"merged it already",
-	])("%p grants nothing", (text) => {
+	])("[control:sg-negated-merge] %p grants nothing", (text) => {
 		expect(mergeGrantIn(text)).toEqual({ kind: "none" });
 	});
+
+	test.each([
+		["full send", { kind: "any" }],
+		["/astack:full-send", { kind: "any" }],
+		["$astack:full-send", { kind: "any" }],
+		["/astack-full-send", { kind: "any" }],
+		["$full-send", { kind: "any" }],
+		["full send it", { kind: "any" }],
+		["/astack:full-send, what do you think?", { kind: "any" }],
+		["do a full send", { kind: "none" }],
+		["what does full send do?", { kind: "none" }],
+		["should we full send?", { kind: "none" }],
+		["full send?", { kind: "none" }],
+		["review full send for bugs", { kind: "none" }],
+		["explain full send", { kind: "none" }],
+		["review full-send for bugs", { kind: "none" }],
+		["What does /astack:full-send do?", { kind: "none" }],
+		["Review /astack:full-send for bugs", { kind: "none" }],
+		["full stop", { kind: "none" }],
+		["no full send", { kind: "none" }],
+		["don't full send", { kind: "none" }],
+		["not a full send", { kind: "none" }],
+		["full send, but do not merge", { kind: "none" }],
+		["full send, no merge", { kind: "none" }],
+		["Full send it. I will merge it myself.", { kind: "none" }],
+		["full send, leave the merge to me", { kind: "none" }],
+		["full stop: same as full send", { kind: "none" }],
+		["/astack:full-stop run full send steps", { kind: "none" }],
+		["full send but no merging", { kind: "none" }],
+		["full send, but I will handle the merge", { kind: "none" }],
+		["full send, then let me do the final merge", { kind: "none" }],
+		["full send, then merge #12", { kind: "any" }],
+		["Full send. What's the ETA?", { kind: "any" }],
+		["ok, full send this PR", { kind: "any" }],
+		["/astack:full-send fix the parser bug", { kind: "any" }],
+		["we could full send this later", { kind: "none" }],
+		["you can full send once I approve", { kind: "none" }],
+		["full send is broken, fix it", { kind: "none" }],
+		["fix full send", { kind: "none" }],
+		["cancel full send", { kind: "none" }],
+		["Instead of full send, just open the PR", { kind: "none" }],
+		["full send, but not yet", { kind: "none" }],
+		["Full send. Actually no, wait.", { kind: "none" }],
+		["I don't want you to full send this one", { kind: "none" }],
+	] as const)(
+		"[control:sg-full-send-clause] full send: %p grants %p",
+		(text, grant) => {
+			expect(mergeGrantIn(text)).toEqual(grant);
+		},
+	);
 });
 
 describe("machine prompts never change the grant", () => {
@@ -211,7 +261,7 @@ describe("machine prompts never change the grant", () => {
 	const handBack = (text: string) =>
 		`<agent-message from="a8b6e202f51a5471e">\n[Subagent hand-back] The report follows:\n  ${text}\n</agent-message>`;
 
-	test("a subagent hand-back that says merge gives no grant", () => {
+	test("[control:sg-machine-prompt] a subagent hand-back that says merge gives no grant", () => {
 		submit("hb-1", "Run the checks.");
 		submit("hb-1", handBack("All checks are green. Merge PR 12 now."));
 		expect(loadGrant({ ASTACK_STATE_DIR: state }, "hb-1")).toEqual({
@@ -268,7 +318,7 @@ describe("the gh pr merge call", () => {
 });
 
 describe("the merge guard", () => {
-	test("denies a merge with no grant, before it reads GitHub", () => {
+	test("[control:sg-merge-needs-grant] denies a merge with no grant, before it reads GitHub", () => {
 		const reads: Reads = [];
 		const run = bash(
 			guard(GREEN, reads),
@@ -281,7 +331,7 @@ describe("the merge guard", () => {
 		expect(reads).toEqual([]);
 	});
 
-	test("allows a merge that the owner granted in this turn on a green PR", () => {
+	test("[control:sg-turn-grant-merges] allows a merge that the owner granted in this turn on a green PR", () => {
 		const reads: Reads = [];
 		const handler = guard(GREEN, reads);
 		prompt(handler, "merge 12 when green");
@@ -290,7 +340,7 @@ describe("the merge guard", () => {
 		expect(reads).toEqual([{ selector: "12", repo: undefined, dir: project }]);
 	});
 
-	test("a grant for one PR does not cover another", () => {
+	test("[control:sg-grant-scope] a grant for one PR does not cover another", () => {
 		const handler = guard({ ...GREEN, number: 13 });
 		prompt(handler, "merge 12 when green");
 		const run = bash(handler, "gh pr merge 13");
@@ -298,7 +348,7 @@ describe("the merge guard", () => {
 		expect(run.stderr).toContain("names #12, not #13");
 	});
 
-	test("a later human prompt with no merge words ends the grant", () => {
+	test("[control:sg-grant-ends] a later human prompt with no merge words ends the grant", () => {
 		const handler = guard(GREEN);
 		prompt(handler, "merge when green");
 		prompt(handler, "now update the ticket");
@@ -347,7 +397,7 @@ describe("the merge guard", () => {
 		expect(bash(handler, "gh pr merge 12", standing).exit).toBe(0);
 	});
 
-	test("a standing grant in the profile needs no grant in the turn", () => {
+	test("[control:sg-standing-grant] a standing grant in the profile needs no grant in the turn", () => {
 		const run = bash(guard(GREEN), "gh pr merge 12", standing, "fresh");
 		expect(run.exit).toBe(0);
 	});
@@ -370,6 +420,32 @@ describe("the merge guard", () => {
 				"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. The owner did not say to merge in this turn. Ask the owner before you merge #12.",
 		});
 	});
+
+	test.each([
+		[
+			"plain",
+			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
+			"astack blocked gh pr merge:\n- Nobody gave a merge grant. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_SESSION_ATTENDED=0 makes this session unattended. .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+		],
+		[
+			"bases",
+			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
+			"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_ENTRYPOINT=sdk-ts makes this session unattended. Ask the owner before you merge #12.",
+		],
+	])(
+		"[control:sg-unattended-denial] in an unattended session the %s denial names the setting, not a missing owner word",
+		(name, env, stderr) => {
+			const cwd = join(root, name);
+			const verdict = guard(GREEN).run(
+				{ kind: "shell", command: "gh pr merge 12", cwd },
+				{
+					...context(cwd, "unattended", "PreToolUse"),
+					env: { ASTACK_STATE_DIR: state, ...env },
+				},
+			);
+			expect(outcome(verdict)).toEqual({ exit: 2, stderr });
+		},
+	);
 
 	test("a PR into a standing base of another repo needs the owner's grant", () => {
 		const run = bash(

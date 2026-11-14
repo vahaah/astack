@@ -182,6 +182,8 @@ export function validateSkillFrontmatter(
 	if (!KEBAB_CASE.test(dirName))
 		errors.push(`${path}: directory name is not kebab-case`);
 	checkCommon(values, path, errors);
+	if (typeof values.description === "string" && /[<>]/.test(values.description))
+		errors.push(`${path}: description must not hold '<' or '>'`);
 	for (const key of ["disable-model-invocation", "user-invocable"]) {
 		if (values[key] !== undefined && typeof values[key] !== "boolean") {
 			errors.push(`${path}: ${key} must be a boolean`);

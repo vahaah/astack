@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { main } from "../../src/astack/cli/main.ts";
 import {
 	defaultSkillPathEnv,
 	parseSkillRef,
@@ -152,6 +153,45 @@ describe("astack skill-path", () => {
 		expect(
 			find(`${sibling}:architect`, env, "../../../astack/skills/plan/SKILL.md"),
 		).toBeUndefined();
+	});
+
+	test.each([
+		[
+			"a file that an installed skill does not hold exits 3 and lists its references and playbooks",
+			"astack:mode",
+			3,
+			"astack skill-path: references/bug-fix.md is not in astack:mode\nIts references/ and playbooks/ folders hold:\n  playbooks/bug-fix.md\n  references/notes.md\n",
+		],
+		[
+			"a missing skill with a file argument exits 1 as not installed",
+			"astack:no-such",
+			1,
+			"astack skill-path: astack:no-such references/bug-fix.md not installed\n",
+		],
+	])("%s", (_name, ref, exitCode, stderr) => {
+		const dir = scratch();
+		const astack = plugin(join(dir, "plugins/astack"), "astack", ["mode"]);
+		mkdirSync(join(astack, "skills/mode/playbooks"));
+		writeFileSync(join(astack, "skills/mode/playbooks/bug-fix.md"), "x\n");
+		writeFileSync(join(astack, "skills/mode/playbooks/bug-fix.sh"), "x\n");
+		let out = "";
+		let err = "";
+		const code = main(["skill-path", ref, "references/bug-fix.md"], {
+			out: (text) => {
+				out += text;
+			},
+			err: (text) => {
+				err += text;
+			},
+			cwd: dir,
+			env: { CLAUDE_PLUGIN_ROOT: astack, HOME: dir },
+			today: "2026-11-14",
+			now: new Date("2026-11-14T09:00:00Z"),
+			scriptPath: undefined,
+		});
+		expect(code).toBe(exitCode);
+		expect(out).toBe("");
+		expect(err).toBe(stderr);
 	});
 
 	test("ignores a sibling directory whose manifest names another plugin", () => {

@@ -102,6 +102,15 @@ describe("schema", () => {
 		expect(agentErrors.join("\n")).toMatch(/color must be one of/);
 	});
 
+	test("rejects an angle bracket in a skill description, which a client reads as a tag", () => {
+		expect(
+			validateSkillFrontmatter(
+				{ name: "x", description: 'Use for "I am building <X>".' },
+				"x",
+			),
+		).toEqual(["skills/x/SKILL.md: description must not hold '<' or '>'"]);
+	});
+
 	test("checks the type of maxTurns, memory and color on an agent", () => {
 		expect(
 			validateAgentFrontmatter(

@@ -2,7 +2,7 @@
 name: "astack-writing-for-agents"
 description: "Write documents that agents read. Use for skills, AGENTS.md, CLAUDE.md and documents reached through context pointers."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Writing for agents

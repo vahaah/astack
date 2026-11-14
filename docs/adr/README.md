@@ -10,3 +10,5 @@
 | [0006](0006-internal-composition-records-follow-domain-effects.md) | Internal composition records follow domain effects | Accepted |
 | [0007](0007-integrated-proposals-require-accepted-ratification.md) | Integrated proposals require accepted ratification | Superseded by 0008 |
 | [0008](0008-ratified-landing-metadata-requires-an-explicit-opt-in.md) | Ratified landing metadata requires an explicit opt-in | Accepted |
+| [0009](0009-astack-adopts-tstack-as-a-frozen-upstream.md) | astack adopts tstack as a frozen upstream and owns the text of its nine skills | Accepted |
+| [0010](0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md) | Session guards skip scratch writes, keep commit checks and deny broad work loss | Accepted |

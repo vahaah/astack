@@ -67,12 +67,16 @@ function riseLines(
 	const notes = new Set<string>();
 	let listed = 0;
 	let hidden = 0;
-	for (const report of reports)
-		for (const rise of report.rises) {
-			if (rise.severity !== severity) continue;
+	let files = 0;
+	for (const report of reports) {
+		const rises = report.rises.filter((rise) => rise.severity === severity);
+		if (rises.length === 0) continue;
+		files++;
+		for (const rise of rises) {
 			kinds.add(rise.kind);
 			const note = shapeNote(rise);
 			if (note) notes.add(note);
+			if (files > MAX_LISTED) continue;
 			lines.push(
 				`- ${report.relPath}: ${LABELS[rise.kind]}, ${rise.after} now and ${rise.before} before.`,
 			);
@@ -85,7 +89,10 @@ function riseLines(
 				lines.push(`  - line ${found.line}: ${found.quote}`);
 			}
 		}
+	}
 	if (hidden > 0) lines.push(`- ${hidden} more lines are not shown.`);
+	if (files > MAX_LISTED)
+		lines.push(`- ${files - MAX_LISTED} more files are not shown.`);
 	return { lines, kinds, notes };
 }
 

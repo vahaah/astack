@@ -1,4 +1,4 @@
-import { canonicalRelative } from "../../paths.ts";
+import { canonicalRelative, isScratchPath } from "../../paths.ts";
 import {
 	CHECKBOX,
 	checkPlan,
@@ -9,7 +9,7 @@ import {
 } from "../../plan/check.ts";
 import { envForFile } from "../../plan/files.ts";
 import { hasPlanFrontmatter, parsePlan } from "../../plan/parse.ts";
-import type { Plan } from "../../plan/types.ts";
+import type { Plan, PlanFinding } from "../../plan/types.ts";
 import {
 	ALLOW,
 	type Context,
@@ -37,12 +37,9 @@ function addedRegister(plan: Plan, previous: ReadonlySet<string>): boolean {
 
 export function denyReasons(
 	plan: Plan,
-	before: string | undefined,
+	previous: ReadonlySet<string>,
 	after: string,
 ): string[] {
-	const previous = new Set(
-		(before ?? "").split(/\r?\n/).map((line) => line.trim()),
-	);
 	const added = plan.lines.filter(
 		(line) => !line.code && !previous.has(line.text.trim()),
 	);
@@ -68,41 +65,95 @@ export function denyReasons(
 	return reasons;
 }
 
+function findingKey(finding: PlanFinding): string {
+	const message =
+		finding.group === "ledger"
+			? finding.message.replace(/^\d+/, "N")
+			: finding.message;
+	return `${finding.group}\n${message}`;
+}
+
+function addedFindings(
+	after: readonly PlanFinding[],
+	before: readonly PlanFinding[],
+	isOldLine: (line: number) => boolean,
+): PlanFinding[] {
+	const left = new Map<string, number>();
+	for (const finding of before) {
+		const key = findingKey(finding);
+		left.set(key, (left.get(key) ?? 0) + 1);
+	}
+	const oldLinesFirst = [...after].sort(
+		(a, b) => Number(!isOldLine(a.line)) - Number(!isOldLine(b.line)),
+	);
+	const matched = new Set<PlanFinding>();
+	for (const finding of oldLinesFirst) {
+		const key = findingKey(finding);
+		const count = left.get(key) ?? 0;
+		if (count === 0) continue;
+		left.set(key, count - 1);
+		matched.add(finding);
+	}
+	return after.filter((finding) => !matched.has(finding));
+}
+
 function planVerdict(
 	path: string,
 	before: string | undefined,
 	after: string,
 	context: Context,
 ): Verdict {
-	const relPath = canonicalRelative(projectDirOf(context), path);
+	const projectDir = projectDirOf(context);
+	const relPath = canonicalRelative(projectDir, path);
 	if (!/\.md$/i.test(relPath) || !hasPlanFrontmatter(after)) return ALLOW;
 	const plan = parsePlan(relPath, after);
-	const reasons = denyReasons(plan, before, after);
+	const previous = new Set(
+		(before ?? "").split(/\r?\n/).map((line) => line.trim()),
+	);
+	const reasons = denyReasons(plan, previous, after);
 	if (reasons.length > 0)
 		return deny(
 			`astack blocked this plan edit. ${reasons.join(" Also, ")} The astack:plan skill has the rules in references/template.md.`,
 		);
-	const findings = checkPlan(
-		parsePlan(path, after),
-		envForFile(path, { today: context.today, trail: false }),
-	).filter((finding) => finding.group !== "ste");
-	if (findings.length === 0) return ALLOW;
-	const shown = findings
+	const env = envForFile(path, {
+		today: context.today,
+		trail: false,
+		fallbackRoot: projectDir,
+	});
+	const steHookSkips = isScratchPath(projectDir, path);
+	const check = (text: string | undefined): PlanFinding[] =>
+		text !== undefined && hasPlanFrontmatter(text)
+			? checkPlan(parsePlan(path, text), env).filter(
+					(finding) => steHookSkips || finding.group !== "ste",
+				)
+			: [];
+	const findings = check(after);
+	const afterLines = after.split(/\r?\n/);
+	const added = addedFindings(findings, check(before), (line) =>
+		previous.has(afterLines[line - 1]?.trim() ?? ""),
+	);
+	if (added.length === 0) return ALLOW;
+	const shown = added
 		.slice(0, PLAN_CONTEXT_LINES)
 		.map(
 			(finding) =>
 				`${finding.line}: ${finding.severity === "error" ? "" : `${finding.severity}: `}${finding.message}`,
 		);
 	const more =
-		findings.length > PLAN_CONTEXT_LINES
-			? [`and ${findings.length - PLAN_CONTEXT_LINES} more.`]
+		added.length > PLAN_CONTEXT_LINES
+			? [`and ${added.length - PLAN_CONTEXT_LINES} more.`]
 			: [];
+	const earlier = findings.length - added.length;
+	const remain =
+		earlier === 0
+			? ""
+			: `${earlier} earlier finding${earlier === 1 ? " remains" : "s remain"}. `;
 	return note(
 		[
-			`astack check-plan finds ${findings.length} problem${findings.length === 1 ? "" : "s"} in ${relPath} after this edit.`,
+			`astack check-plan finds ${added.length} new problem${added.length === 1 ? "" : "s"} in ${relPath} after this edit.`,
 			...shown,
 			...more,
-			`Run astack check-plan ${relPath} before the plan goes active.`,
+			`${remain}Run astack check-plan ${relPath} before the plan goes active.`,
 		].join("\n"),
 	);
 }

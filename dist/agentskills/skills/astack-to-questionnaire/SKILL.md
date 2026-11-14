@@ -3,7 +3,7 @@ name: "astack-to-questionnaire"
 description: "Create a questionnaire for someone whose knowledge the user needs to make a decision."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

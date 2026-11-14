@@ -1,8 +1,8 @@
 ---
 name: "astack-plan"
-description: "Use for /astack-plan, \"I am building <X>\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
+description: "Use for /astack-plan, \"I am building X\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Plan
@@ -206,8 +206,8 @@ Read that file.
 Run each `astack` command as its own Bash call.
 Never chain it with `&&` or `cd`.
 Then one allow rule, `Bash(astack:*)`, covers them all.
-When `astack` is not on the PATH, run `bunx github:vahaah/astack#v0.1.0`.
-Exit 1 means that the skill or reference is unavailable.
+When `astack` is not on the PATH, run `bunx github:vahaah/astack#v0.2.0`.
+A nonzero exit means that the skill or reference is unavailable.
 Say so once.
 Use `references/fallbacks.md`.
 
@@ -241,19 +241,11 @@ The historical `interrogate` gate now records the S6 spec review.
 
 ## Round format
 
-A round is plain text. Ask the whole frontier, at most 7 questions. Give each question lettered options and one recommendation:
-
-```text
-Q1. <Title>? <One paragraph.>
-a. <Option>. Recommended, because <evidence> (principle <name>).
-b. <Option>. <Its cost>.
-```
-
+A round is plain text. Ask the whole frontier, at most 7 questions.
+Use the round format of `astack-grilling`, and add `(principle <name>)` to the recommended option.
 `<name>` is a principle reference name from the `astack-principles` index, such as `fix-root-causes`.
 Run `astack skill-path astack:principles references/<name>.md` for its file.
 Read the path it prints.
-The owner answers in short codes, such as "Q1 a, Q2 b".
-"agree" accepts each recommendation.
 
 End the round with the veto list. It holds the agent calls that you wrote as `default` rows since the last round:
 
@@ -269,6 +261,9 @@ A default that the owner accepts becomes `user R<n>` too.
 Log one `answer` trail row for each decision.
 Then send a read-only subagent to test the answers' factual claims against the code.
 A contradiction becomes a question in the next round.
+
+When an answer settles a class of questions, such as who holds a role, write one decision row for the class.
+Apply it to each queued question before the next round.
 
 ## Reply
 

@@ -13,6 +13,9 @@ The checker enforces each rule on this page that a script can prove.
 - Commit plans so each agent in each tool can read them.
   A plan with `home: linear` or `home: github` lives in the tracker instead.
   `tracker.md` has the rules.
+- When the repo forbids committed plans, keep each plan in one folder outside the worktree.
+  Run `astack check-plan` and `astack plan trail` from the repo.
+  The checker then reads the ADRs, the glossary and the trail of that repo.
 
 ## Frontmatter
 
@@ -126,7 +129,7 @@ A date goes only in the frontmatter or a `Target.` line.
 
 For a file with `plan:` frontmatter, the astack hook denies four edits.
 They are a result over the deny cap, an added checkbox, an added `Status:` line and an added register table.
-Each other finding is a note.
+Each other finding that the edit adds is a note.
 
 ## Prose
 

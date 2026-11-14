@@ -1,3 +1,4 @@
+import { unattendedReason } from "../../attended.ts";
 import { originSlug, repoRoot } from "../../git.ts";
 import {
 	type ReadPullRequest,
@@ -128,6 +129,7 @@ function mergeVerdict(
 		profile: loadPrProfile(root ?? projectDirOf(context)),
 		profileRepo: root === undefined ? undefined : originSlug(root),
 		grant: loadGrant(context.env, context.session),
+		unattendedReason: unattendedReason(context.env),
 	};
 	const preflight = preflightReasons(inputs);
 	if (preflight.length > 0) return deny(mergeDenial(preflight));

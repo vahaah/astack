@@ -1,7 +1,7 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { repoRoot, runGit } from "../../git.ts";
-import { gitInvocation } from "../../git-command.ts";
-import { readOptional } from "../../paths.ts";
+import { type GitInvocation, gitInvocation } from "../../git-command.ts";
+import { canonicalRelative, readOptional } from "../../paths.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import {
 	ALLOW,
@@ -16,6 +16,7 @@ const SHARED_BRANCH =
 const RUNNERS = new Set(["npx", "bunx", "pnpx"]);
 const PACKAGE_MANAGERS = new Set(["npm", "pnpm", "yarn", "bun"]);
 const OWNER_GATE = "This is an owner gate, so stop and ask the owner.";
+const READ_ONLY_GIT = ["--no-optional-locks", "-c", "core.fsmonitor=false"];
 
 function denial(reasons: readonly string[]): Verdict {
 	return reasons.length === 0
@@ -115,6 +116,354 @@ function pushTargets(
 	});
 }
 
+type LostChange = "unstaged" | "tracked" | "untracked";
+
+interface WorkLoss {
+	readonly lost: LostChange;
+	readonly pathspecs: readonly string[];
+	readonly excludes?: readonly string[];
+	readonly keepsUntrackedFolders?: boolean;
+	readonly removesNestedRepos?: boolean;
+	readonly target?: string;
+}
+
+const WHOLE_TREE = [":/"];
+
+interface Operands {
+	readonly flags: readonly string[];
+	readonly plain: readonly string[];
+	readonly dashed: readonly string[] | undefined;
+}
+
+function operands(
+	args: readonly string[],
+	valueFlags: readonly string[],
+): Operands {
+	const flags: string[] = [];
+	const plain: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] ?? "";
+		if (arg === "--") return { flags, plain, dashed: args.slice(i + 1) };
+		if (!arg.startsWith("-")) plain.push(arg);
+		else {
+			flags.push(arg);
+			if (valueFlags.includes(arg)) i++;
+		}
+	}
+	return { flags, plain, dashed: undefined };
+}
+
+function isLongForm(flag: string, long: string): boolean {
+	return (
+		flag === long ||
+		(long.startsWith("--") && flag.length >= 4 && long.startsWith(flag))
+	);
+}
+
+function hasFlag(
+	flags: readonly string[],
+	long: string,
+	letter: string,
+): boolean {
+	return flags.some(
+		(flag) =>
+			isLongForm(flag, long) ||
+			(/^-[A-Za-z]+$/.test(flag) && flag.includes(letter)),
+	);
+}
+
+function letterCount(flags: readonly string[], long: string, letter: string) {
+	return flags.reduce(
+		(count, flag) =>
+			count +
+			(isLongForm(flag, long)
+				? 1
+				: /^-[A-Za-z]+$/.test(flag)
+					? flag.split(letter).length - 1
+					: 0),
+		0,
+	);
+}
+
+function dryRun(flags: readonly string[]): boolean {
+	return flags.reduce(
+		(dry, flag) =>
+			isLongForm(flag, "--no-dry-run")
+				? false
+				: isLongForm(flag, "--dry-run") ||
+						(/^-[A-Za-z]+$/.test(flag) && flag.includes("n"))
+					? true
+					: dry,
+		false,
+	);
+}
+
+function isTreeish(dir: string, name: string): boolean {
+	return runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
+}
+
+function readsPathspecFile(args: readonly string[]): boolean {
+	return args.some((arg) =>
+		isLongForm(arg.split("=")[0] ?? "", "--pathspec-from-file"),
+	);
+}
+
+function checkoutLoss(
+	args: readonly string[],
+	dir: string,
+): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-b", "-B", "--orphan"]);
+	const [first, ...rest] = plain;
+	const hasSource =
+		first !== undefined && (dashed !== undefined || isTreeish(dir, first));
+	const pathspecs = readsPathspecFile(args)
+		? WHOLE_TREE
+		: (dashed ?? (hasSource ? rest : plain));
+	if (pathspecs.length > 0)
+		return { lost: hasSource ? "tracked" : "unstaged", pathspecs };
+	return hasFlag(flags, "--force", "f")
+		? {
+				lost: "tracked",
+				pathspecs: WHOLE_TREE,
+				...(hasSource && first !== undefined ? { target: first } : {}),
+			}
+		: undefined;
+}
+
+function switchLoss(
+	args: readonly string[],
+	dir: string,
+): WorkLoss | undefined {
+	const { flags, plain } = operands(args, ["-c", "-C", "--orphan"]);
+	const [first] = plain;
+	return hasFlag(flags, "--force", "f") ||
+		flags.some((flag) => isLongForm(flag, "--discard-changes"))
+		? {
+				lost: "tracked",
+				pathspecs: WHOLE_TREE,
+				...(first !== undefined && isTreeish(dir, first)
+					? { target: first }
+					: {}),
+			}
+		: undefined;
+}
+
+function restoreLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-s", "--source"]);
+	const staged = hasFlag(flags, "--staged", "S");
+	const worktree = !staged || hasFlag(flags, "--worktree", "W");
+	const pathspecs = readsPathspecFile(args)
+		? WHOLE_TREE
+		: [...plain, ...(dashed ?? [])];
+	return worktree && pathspecs.length > 0
+		? { lost: staged ? "tracked" : "unstaged", pathspecs }
+		: undefined;
+}
+
+interface CleanOperands {
+	readonly flags: readonly string[];
+	readonly pathspecs: readonly string[];
+	readonly excludes: readonly string[];
+}
+
+function cleanOperands(args: readonly string[]): CleanOperands {
+	const flags: string[] = [];
+	const pathspecs: string[] = [];
+	const excludes: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] ?? "";
+		const cluster = /^-([A-Za-z]*?)e(.*)$/.exec(arg);
+		const [name = "", value] = arg.split(/=(.*)/s);
+		if (arg === "--") {
+			pathspecs.push(...args.slice(i + 1));
+			break;
+		} else if (isLongForm(name, "--exclude") && value !== undefined) {
+			excludes.push(value);
+		} else if (isLongForm(arg, "--exclude")) {
+			i++;
+			excludes.push(args[i] ?? "");
+		} else if (cluster && !arg.startsWith("--")) {
+			if (cluster[1]) flags.push(`-${cluster[1]}`);
+			if (cluster[2]) excludes.push(cluster[2]);
+			else {
+				i++;
+				excludes.push(args[i] ?? "");
+			}
+		} else if (arg.startsWith("-")) flags.push(arg);
+		else pathspecs.push(arg);
+	}
+	return { flags, pathspecs, excludes };
+}
+
+function cleanLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, pathspecs, excludes } = cleanOperands(args);
+	const removesUntracked =
+		(hasFlag(flags, "--force", "f") || hasFlag(flags, "--interactive", "i")) &&
+		!dryRun(flags) &&
+		!hasFlag(flags, "-X", "X");
+	return removesUntracked
+		? {
+				lost: "untracked",
+				pathspecs: pathspecs.length > 0 ? pathspecs : ["."],
+				excludes,
+				keepsUntrackedFolders:
+					pathspecs.length === 0 && !hasFlag(flags, "-d", "d"),
+				removesNestedRepos: letterCount(flags, "--force", "f") >= 2,
+			}
+		: undefined;
+}
+
+function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
+	if (!args.some((arg) => isLongForm(arg, "--hard"))) return undefined;
+	const [first] = operands(args, []).plain;
+	return {
+		lost: "tracked",
+		pathspecs: WHOLE_TREE,
+		...(first !== undefined && isTreeish(dir, first) ? { target: first } : {}),
+	};
+}
+
+function workLoss(git: GitInvocation): WorkLoss | undefined {
+	switch (git.sub) {
+		case "reset":
+			return resetLoss(git.args, git.dir);
+		case "checkout":
+			return checkoutLoss(git.args, git.dir);
+		case "switch":
+			return switchLoss(git.args, git.dir);
+		case "restore":
+			return restoreLoss(git.args);
+		case "clean":
+			return cleanLoss(git.args);
+		default:
+			return undefined;
+	}
+}
+
+function isLost(lost: LostChange, index: string, worktree: string): boolean {
+	const untracked = index === "?";
+	switch (lost) {
+		case "untracked":
+			return untracked;
+		case "tracked":
+			return !untracked;
+		case "unstaged":
+			return !untracked && worktree !== " ";
+	}
+}
+
+function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
+	const status = runGit(dir, [
+		...READ_ONLY_GIT,
+		"status",
+		"--porcelain=v1",
+		"-z",
+		loss.keepsUntrackedFolders
+			? "--untracked-files=normal"
+			: "--untracked-files=all",
+		"--",
+		...loss.pathspecs,
+	]);
+	if (!status.ok) return [];
+	const entries = status.stdout.toString("utf8").split("\0");
+	const paths: string[] = [];
+	for (let i = 0; i < entries.length; i++) {
+		const entry = entries[i] ?? "";
+		if (entry.length < 4) continue;
+		const index = entry.charAt(0);
+		const path = entry.slice(3);
+		const keptFolder =
+			path.endsWith("/") &&
+			(loss.keepsUntrackedFolders === true || !loss.removesNestedRepos);
+		if (isLost(loss.lost, index, entry.charAt(1)) && !keptFolder)
+			paths.push(path);
+		if (index === "R" || index === "C") i++;
+	}
+	return paths;
+}
+
+const GLOB_CHARACTER = /[*?[\\]/;
+const PATHSPEC_MAGIC = /^:(?!\/[^/!^:])/;
+
+function isLiteral(pathspec: string): boolean {
+	return !GLOB_CHARACTER.test(pathspec) && !PATHSPEC_MAGIC.test(pathspec);
+}
+
+function rootRelative(pathspec: string, dir: string, root: string): string {
+	return pathspec.startsWith(":/")
+		? pathspec.slice(2).replace(/\/+$/, "")
+		: canonicalRelative(root, resolve(dir, pathspec));
+}
+
+function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
+	const patterns = loss.excludes ?? [];
+	if (patterns.length === 0) return new Set();
+	const listed = runGit(dir, [
+		...READ_ONLY_GIT,
+		"ls-files",
+		"--others",
+		"--ignored",
+		"--full-name",
+		"-z",
+		...patterns.map((pattern) => `--exclude=${pattern}`),
+		"--",
+		...loss.pathspecs,
+	]);
+	if (!listed.ok) return new Set();
+	return new Set(listed.stdout.toString("utf8").split("\0").filter(Boolean));
+}
+
+function overwrittenPaths(dir: string, target: string): readonly string[] {
+	const untracked = new Set(
+		changedPaths(dir, { lost: "untracked", pathspecs: WHOLE_TREE }),
+	);
+	if (untracked.size === 0) return [];
+	const listed = runGit(dir, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-r",
+		"--name-only",
+		"-z",
+		"--full-tree",
+		target,
+	]);
+	if (!listed.ok) return [...untracked];
+	return listed.stdout
+		.toString("utf8")
+		.split("\0")
+		.filter((path) => untracked.has(path));
+}
+
+function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
+	const root = repoRoot(dir);
+	if (root === undefined) return [];
+	const namedFiles = loss.pathspecs
+		.filter(isLiteral)
+		.map((pathspec) => rootRelative(pathspec, dir, root));
+	const excluded = excludedPaths(dir, loss);
+	const overwritten =
+		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
+	return [...changedPaths(dir, loss), ...overwritten].filter(
+		(path) => !namedFiles.includes(path) && !excluded.has(path),
+	);
+}
+
+function workLossReasons(step: ShellStep): readonly string[] {
+	const git = gitInvocation(step.values, step.dir);
+	const loss = git === undefined ? undefined : workLoss(git);
+	if (git === undefined || loss === undefined) return [];
+	const lost = lostPaths(loss, git.dir);
+	if (lost.length === 0) return [];
+	const effect =
+		loss.lost === "untracked"
+			? "deletes the untracked files"
+			: "discards the uncommitted changes in";
+	const more = lost.length > 3 ? ` and ${lost.length - 3} more` : "";
+	return [
+		`${step.values.join(" ")} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
+	];
+}
+
 function gitReasons(step: ShellStep): readonly string[] {
 	const git = gitInvocation(step.values, step.dir);
 	if (!git) return [];
@@ -164,7 +513,11 @@ export const handler = defineHandler({
 			return ALLOW;
 		return combineAll(
 			shellSteps(event.command, event.cwd).map((step) =>
-				denial([...supabaseReasons(step), ...gitReasons(step)]),
+				denial([
+					...supabaseReasons(step),
+					...gitReasons(step),
+					...workLossReasons(step),
+				]),
 			),
 		);
 	},

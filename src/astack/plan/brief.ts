@@ -79,19 +79,21 @@ export function briefLines(
 	});
 }
 
-export const UNATTENDED_NOTE =
-	"Unattended session. Nobody answers questions here, so /astack:plan follows references/unattended.md and never asks a round.";
-
 export function sessionStartContext(
 	cwd: string,
 	projectDir: string | undefined,
 	today: string,
-	attended: boolean,
+	unattendedReason: string | undefined,
 ): string | undefined {
 	const root = projectDir || repoRoot(cwd) || cwd;
 	const dir = join(root, planProfileFor(root).dir);
 	const lines = briefLines(listPlanFiles(dir), today, root).slice(0, 20);
-	const parts = attended ? [] : [UNATTENDED_NOTE];
+	const parts =
+		unattendedReason === undefined
+			? []
+			: [
+					`Unattended session, because ${unattendedReason}. Nobody answers questions here, so /astack:plan follows references/unattended.md and never asks a round.`,
+				];
 	if (lines.length > 0)
 		parts.push(
 			"Plans in this repo (astack check-plan --brief):",

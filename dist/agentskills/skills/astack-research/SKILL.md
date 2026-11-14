@@ -3,7 +3,7 @@ name: "astack-research"
 description: "Research a question from primary sources and save cited findings. Use for background research, official docs, or API facts."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 

@@ -3,7 +3,7 @@ name: "astack-architect"
 description: "Sketch types, signatures and module structure before implementation. Use for /astack-architect, \"architect this\", \"design this\", or substantial work that needs a design first. Compare model perspectives, then follow the chosen sketch during implementation."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---
@@ -16,7 +16,7 @@ Principle references live at `../astack-principles/references/<title>.md`.
 Read each principle in full when you apply it.
 
 Sketch types, function signatures, class shapes and module boundaries before implementation.
-Use `not implemented` bodies and pseudocode.
+Use `not implemented` bodies, with pseudocode in the rationale.
 Compare perspectives from several models.
 Then implement the chosen sketch.
 
@@ -56,6 +56,7 @@ Follow arena Phase A for aliases, external runners and unknown entries.
 
 Require at least two candidates with different structures before synthesis.
 Do this even when the first candidate looks sufficient.
+When the caller skips arena, as plan S4 can, write the two candidates yourself.
 Apply **exhaust-the-design-space** to the whole shape rather than small fixes inside one shape.
 
 Screen every candidate against [references/design-red-flags.md](references/design-red-flags.md) before synthesis.

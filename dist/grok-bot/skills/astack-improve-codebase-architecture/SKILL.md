@@ -3,7 +3,7 @@ name: "astack-improve-codebase-architecture"
 description: "Find codebase deepening opportunities and present them in an HTML report. Then grill the candidate that the user chooses before planning implementation."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Improve Codebase Architecture

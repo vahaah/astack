@@ -2,7 +2,7 @@
 
 Take the first row that matches the owner's words. A user rule in the rules folder can add rows, and its rows come before the rows here. The owner may use other words for the same thing, such as "bucket" for a step or `W<n>` for a wave. Accept them, and never correct them.
 
-For the 23 execution playbooks in `playbooks/`, read `references/playbooks.md`.
+For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 
 ## Route table
 
@@ -18,14 +18,23 @@ For the 23 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 | A hotfix, "I need it fast" | Quick tier | One grill round at most. Keep the steps together in one run. Push and open the PR at once |
 | A bug, an error report, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs` | Reproduce first. Write `Root cause: X because Y` before the fix. Read a tester report critically before you accept its scope |
 | "comments", "check github comments", "fix CI" | `references/comments-triage.md` | Decide who is right for each comment, fix or answer it, resolve the thread, and fix CI |
+| "babysit", "watch the PR", "get it green" | `astack:babysit-pr` | It runs the Babysit playbook. Declare the mode before the first poll. Stop at merge-ready |
+| "council" | Read `astack:council` by path | One read-only reviewer for each entry of the `council members` role. Loop until each reviewer agrees or the round cap ends |
+| "sol loop" | Read `astack:sol-loop` by path | One reviewer from the `sol-loop reviewer` role reviews the change in rounds. Make the smallest changes that satisfy it |
 | `/pr-review-hardening` | `astack:pr-review-hardening` | The profile sets the cap and the minimum. The default cap is 2. A blocking finding names a concrete failure |
-| "create pr", "open a pr" | `references/create-pr.md` | Gates, deslop, no-comments, the PR body, push, then one hardening run when the profile sets `after_create_pr: harden` |
+| "create pr", "open a pr", "file a pr" | `astack:file-pr` and `references/create-pr.md` | Gates, deslop, no-comments, the PR body, push, then one hardening run when the profile sets `after_create_pr: harden` |
 | "update from main", "sync with main" | `references/refresh.md` | Merge `origin/main`, run the gates again, and keep the intent of the ticket |
-| "merge", "merge when green", "merge all" | The `astack:mode` Shipping playbook | The merge needs a grant in `.astack/profile.json` or the owner's merge words in this turn. `merge.authority: standing` covers each PR. `merge.standingBases` covers only a PR of the `origin` repo into a base branch that it names. Run `gh pr merge` as its own Bash call. The astack merge guard refuses a merge with open threads, CI that is not green on the head, or a closing word before a key |
+| "modernize", "rebase this PR" | `astack:modernize` | Read what changed on the base. Choose `MODERNIZE`, `REWORK` or `CLOSE` before any push. Rebase only the PR that the owner names |
+| "take over" | `astack:takeover` | Finish the PR, branch or thread of another person. Keep their authorship and credit |
+| "full send" | Read `astack:full-send` by path | The owner does not watch. Take the change to a merged PR. The merge guard reads an un-negated "full send" as a merge grant for this prompt |
+| "sync upstream", "check new upstream commits", "update to the newest upstream version" | The `astack:mode` Fork sync playbook | Give each upstream commit a disposition. Show each skip group and defer group to the owner before you integrate. One plan is one PR |
+| "merge", "merge when green", "merge all", "merge and release" | The `astack:mode` Shipping playbook | The merge needs a grant in `.astack/profile.json` or the owner's merge words in this turn. `merge.authority: standing` covers each PR. `merge.standingBases` covers only a PR of the `origin` repo into a base branch that it names. Run `gh pr merge` as its own Bash call. The astack merge guard refuses a merge with open threads, CI that is not green on the head, or a closing word before a key |
+| "pause", "stop", also beside "full stop", such as "Stop. Full stop." | The `astack:mode` Pause safely playbook | A hard stop. Do no other git or PR work. Give the hand-off prompt from `references/resume.md`. A prompt whose only instruction is "full stop" skips this row |
+| `/astack:full-stop`, a prompt whose only instruction is "full stop" | Read `astack:full-stop` by path | Do the full-send work, but never merge. Stop with a readiness verdict. "full stop" is never a merge grant |
 | "don't merge" | Stop at ready to merge | Report the PR as ready and stop |
+| "merged", "clean after yourself", "clean and settle" | The Settle step of the `astack:mode` Shipping playbook | Remove the worktrees, temporary folders and dev servers that the run made for the merged PR. Keep every branch ref |
 | UI polish | `astack:control-ui` | Walk the journey as a real persona, never as a superuser. Use the repo UI kit. Measure a layout before you change it |
 | Mobile, a device, a simulator | `astack:control-ui` and the device skills that are installed | Run the device QA matrix. Done means 2 full passes in a row |
-| "pause", "stop" | The `astack:mode` Pause safely playbook | A hard stop. Do no other git or PR work. Give the hand-off prompt from `references/resume.md` |
 | "prompt for next session" | The hand-off prompt | Use the format in `references/resume.md` |
 | "clean worktrees" | The `astack:mode` Worktree cleanup playbook | Record `git worktree list` first |
 | "look at <other codebase>" | Read-only research | Read it, and never copy it. Never name the source in a repo that forbids it |

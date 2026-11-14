@@ -4,7 +4,7 @@ astack holds house standards for plans, code comments, tickets, PR bodies and do
 
 `/astack:mode` selects the next step from the plan, tracker, and git state.
 `/astack:plan` plans the work.
-One `astack` plugin holds these skills and the kept pstack and flow material.
+One `astack` plugin holds these skills and the kept pstack, flow and tstack material.
 The rule card `rules/astack.md` carries the routes for ordinary user requests.
 
 ## Install
@@ -288,7 +288,7 @@ The hooks cover Claude's `Edit`, `Write` and `Bash` tools. They do not see files
 
 ## Run the checks yourself
 
-`bin/astack` is on the Bash tool's `PATH` while the plugin is enabled. Outside Claude Code, run it by path. `astack check <name>` and `astack check-<name>` run the same check.
+`bin/astack` is on the Bash tool's `PATH` while the plugin is enabled. Outside Claude Code, run it by path. `astack check <name>` and `astack check-<name>` run the same check. Add `--help` or `-h` to a command or a check to print its usage and summary.
 
 ```sh
 astack check-comments                 # working tree, staged and untracked files against HEAD
@@ -320,7 +320,7 @@ astack print codex-agents ~/.codex/AGENTS.md           # that file with the asta
 
 `check-comments` prints one line per finding and exits 1 when any finding is a deny. `check-types` prints each rise with its new lines and exits 1 when a deny count rises.
 
-`check-ticket` and `check-pr` exit 1 when a heading is missing. `check-plan` prints `file:line: message` per problem and exits 1 on errors, and on warnings under `--strict`. A note, such as the size of a plan or the step count of a session, never fails. `plan-ticket` prints ticket bodies that `check-ticket --no-template` accepts, and `--out` with no directory writes them under the git common directory. `plan trail` appends a row to the plan's decision trail under the git common directory, which every worktree shares. `skill-path` exits 1 when the skill is not installed. `check-ste` exits 1 when a deny rule fires. `check-migrations` reads `supabase_migrations.schema_migrations` through `psql`. It exits 1 when an applied body differs from its file. It also exits 1 on a version with no recorded statements, and on an applied version with no file. Without `--allow-pending`, a file that the stack did not apply also fails. It prints the `--reset` command for the owner and never resets the stack.
+`check-ticket` and `check-pr` exit 1 when a heading is missing. `check-plan` prints `file:line: message` per problem and exits 1 on errors, and on warnings under `--strict`. A note, such as the size of a plan or the step count of a session, never fails. `plan-ticket` prints ticket bodies that `check-ticket --no-template` accepts, and `--out` with no directory writes them under the git common directory. `plan trail` appends a row to the plan's decision trail under the git common directory, which every worktree shares. `skill-path` exits 1 when the skill is not installed. It exits 3 when the skill does not hold the file, and lists the `.md` files of its `references/` and `playbooks/` folders. `check-ste` exits 1 when a deny rule fires. `check-migrations` reads `supabase_migrations.schema_migrations` through `psql`. It exits 1 when an applied body differs from its file. It also exits 1 on a version with no recorded statements, and on an applied version with no file. Without `--allow-pending`, a file that the stack did not apply also fails. It prints the `--reset` command for the owner and never resets the stack.
 
 ## Build
 

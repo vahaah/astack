@@ -1,6 +1,6 @@
 # astack for Agent Skills clients
 
-This folder holds 52 astack skills in the Agent Skills format. Each SKILL.md keeps only `name`, `description`, `license` and `metadata`. A skill that only the user can start has `disable-model-invocation: "true"` in its `metadata`.
+This folder holds 61 astack skills in the Agent Skills format. Each SKILL.md keeps only `name`, `description`, `license` and `metadata`. A skill that only the user can start has `disable-model-invocation: "true"` in its `metadata`.
 
 ## Install
 
@@ -17,9 +17,9 @@ Add the text of `AGENTS.fragment.md` to the `AGENTS.md` file of the project. It 
 The skills run the `astack` CLI. Install it from the published package:
 
 ```sh
-bunx github:vahaah/astack#v0.1.0 --help
+bunx github:vahaah/astack#v0.2.0 --help
 ```
 
 No hooks run in this format. Put the CLI checks in git hooks and CI.
 
-Version: 0.1.0.
+Version: 0.2.0.

@@ -1,6 +1,6 @@
 ---
 name: "astack-codebase-design"
-description: "Use a shared vocabulary to design deep modules. Apply it to module interfaces, deepening candidates, seam placement, testability, and code that agents must navigate. Other skills use it as a design reference."
+description: "Use when you design a module interface, place a seam, or deepen a module for testability. It gives a shared vocabulary for deep modules, deepening candidates and code that agents must navigate. Other skills use it as a design reference."
 ---
 
 # Codebase Design

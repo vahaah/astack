@@ -51,6 +51,8 @@ export const DEFAULT_EXTENDS_ALLOW: readonly RegExp[] = [
 	/^(?:Data|Schema)\.Class$/,
 	/^(?:Context|Effect)\.Tag$/,
 	/^Effect\.Service$/,
+	/^Context\.(?:Service|Reference)$/,
+	/^(?:HttpApiMiddleware|RpcMiddleware|GraphQLMiddleware|LayerMap|LayerRef|AtomRpc|AtomHttpApi)\.Service$/,
 ];
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

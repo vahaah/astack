@@ -3,7 +3,7 @@ name: "astack-mode"
 description: "Use for /astack-mode, \"what next\", \"go\" or \"resume\". The owner's way of work as a router over astack playbooks and skills. With no argument, it reads the plan, the tracker and git and does the next frontier step. It handles the delegation grant and keeps replies in STE."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # astack mode
@@ -35,7 +35,7 @@ The mode playbooks are in `references/` and `playbooks/`:
 - `references/comments-triage.md` for "comments" and "check github comments".
 - `references/resume.md` for "resume" and a new session on old work.
 - `references/create-pr.md` for "create pr".
-- `references/playbooks.md` for the 23 execution playbooks in `playbooks/`. The router reads it when a route row or a state row names an execution playbook.
+- `references/playbooks.md` for the 24 execution playbooks in `playbooks/`. The router reads it when a route row or a state row names an execution playbook.
 
 ## With no argument, do the next step
 
@@ -84,3 +84,6 @@ Keep a checkpoint reply to 6 lines or fewer.
 Give the commit or PR link, gate counts, next step, and count of open questions in that order.
 
 Before a long written answer, run `astack check ste -` on the draft.
+Before a commit, a PR body, a PR comment, a ticket or a tracker comment, write the text to a file.
+Then run `astack check ste <file> --surface <commit|pr|ticket>` on it.
+Use `--surface pr` for a PR comment or a review reply, and `--surface ticket` for a tracker comment. The hooks judge them on those surfaces.

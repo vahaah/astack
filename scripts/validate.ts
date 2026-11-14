@@ -710,6 +710,45 @@ export function checkLinks(plugins: Plugin[]): CheckResult {
 	};
 }
 
+const HEADING = /^#{1,6}\s+(.+?)\s*$/;
+const HEADING_POINTER = /"([^"]+)" (?:below|above)\b/g;
+
+export function checkHeadingPointers(plugins: Plugin[]): CheckResult {
+	const findings: Finding[] = [];
+	let seen = 0;
+	for (const plugin of plugins) {
+		for (const relpath of markdownFiles(plugin.root)) {
+			const lines = outsideCodeFences(
+				linesOf(plugin.root, plugin.name, [relpath]),
+			);
+			const headings = new Set(
+				lines.flatMap((line) => {
+					const title = HEADING.exec(line.text)?.[1];
+					return title === undefined ? [] : [title];
+				}),
+			);
+			for (const line of lines) {
+				for (const [, title = ""] of line.text.matchAll(HEADING_POINTER)) {
+					seen++;
+					if (!headings.has(title))
+						findings.push({
+							severity: "error",
+							file: line.file,
+							line: line.line,
+							message: `"${title}" names no heading of this file`,
+						});
+				}
+			}
+		}
+	}
+	return {
+		id: "heading-pointers",
+		title: "quoted heading pointers resolve",
+		findings,
+		summary: [`${seen} heading pointers checked`],
+	};
+}
+
 const PLUGIN_NAME_REF =
 	/(?<![\w./-])\/?(pstack|astack|flow):([a-z0-9]+(?:-[a-z0-9]+)*)/g;
 const RETIRED_NAMESPACE =
@@ -1320,6 +1359,7 @@ export function validate(options: {
 	results.push(checkSubagentTypes(lines, catalog));
 	results.push(checkPaths(checked));
 	results.push(checkLinks(checked));
+	results.push(checkHeadingPointers(checked));
 	results.push(checkOldSkillNames(lines));
 	results.push(checkPluginNames(lines, catalog));
 	results.push(checkFrontmatter(checked));

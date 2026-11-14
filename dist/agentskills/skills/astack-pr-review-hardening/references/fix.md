@@ -18,6 +18,10 @@ When the finding is a false sentence in a doc or a comment, cut it back. Keep on
 
 When the finding is a missing test for one clause, look at the sibling clauses of the same function too. Do it in the same commit, so the next review does not find them one at a time.
 
+Before you fix a finding, search the lines that the PR adds for other instances of the same defect. Name each file that holds one in the finding. Fix each instance in the same commit.
+
+A fix can make a sentence false when it changes behaviour, or deletes or renames text. Search the diff from the base for comments, docs and contract lines that describe that code or point to that text. Name each file that holds such a sentence in the finding. Cut the sentence back in the same commit, as above.
+
 ## Lessons of earlier runs
 
 Before you fix a finding, read the item of `references/checklist.md` for its `class`. The item names the guard in the astack repo that enforces the class.
@@ -28,6 +32,8 @@ Before you fix a finding, read the item of `references/checklist.md` for its `cl
 ## Fix fence
 
 Edit only the files that the finding names. That is the reviewer's file, the failing file in the gate output or the file that the comment gate flagged.
+
+A file that you name in the finding under "Fix for real" is inside the fence too. Such a file holds another instance of the same defect, or a sentence that the fix makes false. It must be outside `forbidden.paths`, and `astack managed <path>` must return `repo` for it.
 
 A fix never:
 

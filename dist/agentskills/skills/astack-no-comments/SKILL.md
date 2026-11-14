@@ -3,7 +3,7 @@ name: "astack-no-comments"
 description: "Use before opening or updating a PR, after added code comments, or to remove, audit or review comments. Run Comment Sicko, delete accepted failures and fix their causes. Offer constraint enforcement and report constraints that remain open."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 

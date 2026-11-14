@@ -7,6 +7,7 @@ import {
 	readdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -27,12 +28,16 @@ interface HookRun {
 
 let project = "";
 
-function runHook(payload: unknown, raw?: string): HookRun {
+function runHook(
+	payload: unknown,
+	raw?: string,
+	env: Record<string, string> = {},
+): HookRun {
 	const started = performance.now();
 	const result = spawnSync(LAUNCHER, ["hook", "claude-code", "PreToolUse"], {
 		input: raw ?? JSON.stringify(payload),
 		encoding: "utf8",
-		env: { ...process.env, CLAUDE_PROJECT_DIR: project },
+		env: { ...process.env, CLAUDE_PROJECT_DIR: project, ...env },
 	});
 	const ms = performance.now() - started;
 	const stdout = result.stdout.trim();
@@ -432,7 +437,7 @@ describe("git commit", () => {
 	});
 	afterAll(() => rmSync(repo, { recursive: true, force: true }));
 
-	test("a commit whose staged diff adds a provenance tag is denied", () => {
+	test("[control:sg-commit-staged] a commit whose staged diff adds a provenance tag is denied", () => {
 		writeFileSync(
 			join(repo, "base.ts"),
 			"// Fixes ABC-123 from the review\nexport const base = 2;\n",
@@ -447,7 +452,7 @@ describe("git commit", () => {
 		git(repo, "reset", "-q", "--hard");
 	});
 
-	test("files added in the same command are checked", () => {
+	test("[control:sg-commit-added] files added in the same command are checked", () => {
 		writeFileSync(
 			join(repo, "fresh.ts"),
 			"// const old = legacy();\nexport const fresh = 1;\n",
@@ -577,6 +582,82 @@ describe("files written by cat and tee", () => {
 				}),
 			).stdout,
 		).toBe("");
+	});
+});
+
+describe("scratch files outside the project", () => {
+	const PROBE =
+		'// Usage: bun probe.ts <file>\n// Reads the file and prints the value.\n// Exits 1 when the parse fails.\nconst value: any = JSON.parse("1");\nexport { value };\n';
+	let base = "";
+	const temp = () => join(base, "tmp");
+
+	beforeAll(() => {
+		base = mkdtempSync(join(tmpdir(), "astack-scratch-"));
+		mkdirSync(join(temp(), "clone/.git"), { recursive: true });
+		mkdirSync(join(base, "notes"));
+		mkdirSync(join(base, "repo/.git"), { recursive: true });
+		mkdirSync(join(base, "opted/.astack"), { recursive: true });
+		writeFileSync(join(base, "opted/.astack/profile.json"), "{}\n");
+		writeFileSync(join(base, "repo/probe.ts"), "export {};\n");
+		mkdirSync(join(base, "linked"));
+		symlinkSync(join(project, "probe.ts"), join(base, "linked/probe.ts"));
+		mkdirSync(join(base, "linked-repo"));
+		symlinkSync(
+			join(base, "repo/probe.ts"),
+			join(base, "linked-repo/probe.ts"),
+		);
+	});
+	afterAll(() => rmSync(base, { recursive: true, force: true }));
+
+	const cases: readonly [string, "allow" | "deny", () => string][] = [
+		["a git clone in the OS temp dir", "deny", () => join(temp(), "clone")],
+		["a folder with no work tree above it", "allow", () => join(base, "notes")],
+		["a sibling git work tree", "deny", () => join(base, "repo")],
+		["a folder with an astack profile", "deny", () => join(base, "opted")],
+		["the project", "deny", () => project],
+		[
+			"a link in a scratch folder to a new project file",
+			"deny",
+			() => join(base, "linked"),
+		],
+		[
+			"a link in a scratch folder to a file of a work tree",
+			"deny",
+			() => join(base, "linked-repo"),
+		],
+	];
+
+	test.each(cases)(
+		"[control:sg-scratch-write] a probe with `any` and a long header in %s: %s",
+		(_, expected, dir) => {
+			const file = join(dir(), "probe.ts");
+			for (const payload of [
+				tool("Write", { file_path: file, content: PROBE }),
+				tool("Bash", { command: `cat > ${file} <<'EOF'\n${PROBE}EOF` }),
+			]) {
+				const run = runHook(payload, undefined, { TMPDIR: temp() });
+				if (expected === "allow") {
+					expect(run.status).toBe(0);
+					expect(run.stdout).toBe("");
+				} else {
+					expect(decision(run)).toBe("deny");
+					expect(reason(run)).toContain("It adds code that hides type errors");
+					expect(reason(run)).toContain(
+						"probe.ts:1 is a comment of 3 lines, over the 2-line limit",
+					);
+				}
+			}
+		},
+	);
+});
+
+describe("a write target that the hook cannot resolve", () => {
+	test("does not hide the type check of another write in the command", () => {
+		const file = join(project, "probe-unresolved.ts");
+		const command = `printf 'export const b: any = 1;\\n' > ${file}; echo x > /dev/null/x`;
+		const run = runHook(tool("Bash", { command }));
+		expect(decision(run)).toBe("deny");
+		expect(reason(run)).toContain("It adds code that hides type errors");
 	});
 });
 

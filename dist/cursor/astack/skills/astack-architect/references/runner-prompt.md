@@ -23,7 +23,7 @@ The orchestrator uses these axes to compare candidates and choose a base.
 - Start with data structures. Trace each dominant access pattern through the structure. If the design depends on adding a map, index or cache later, revise the structure now.
 - Judge interface depth. Compare hidden capability with interface size. Prefer an interface that moves complexity into the callee, even with a harder implementation. Keep transport and wire types out of the public API. Parse them into domain types behind it.
 - Examine shared state. If two actors can write it, ask what happens. Unless they have no effect on each other, default to separate state and merge at the read boundary. Apply **separate-before-serializing-shared-state**.
-- Make module boundaries visible. Use `not implemented` errors for bodies and `// TODO` pseudocode for difficult logic. Use doc comments for intent and invariants. Types and signatures alone must show data flow from input to output.
+- Make module boundaries visible. Use a `not implemented` error with no comment for each body. Write the pseudocode of difficult logic in the rationale, under the function name. Write a doc comment only on an export, as its contract, within the comment limits. Never put a plan, session or decision handle in code. Types and signatures alone must show data flow from input to output.
 - Encode invariants in types. Prefer types that prevent misuse, then runtime checks, then prose comments. Apply **encode-lessons-in-structure**.
 - Validate at system edges and trust internal types, per **boundary-discipline**. Keep business logic in pure functions. Keep the shell thin.
 - Keep one source of truth for each invariant. Derive other values instead of synchronizing copies.

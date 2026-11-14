@@ -1,9 +1,9 @@
 ---
 name: "astack-pr-review-hardening"
-description: "Harden a branch or pull request before merge. Reviewers propose findings. Each finding is reproduced before it counts, and each real one is fixed in its own commit. The run stops clean only when the repo's deterministic gates, its metric budget and the no-comments gate are green. Repo settings come from .claude/pr-review-hardening.profile.md. Use when asked to harden a PR, run the review-fix loop, or when a repo stub points here."
+description: "Use to harden a branch or PR before merge, or to run the review-fix loop. Also use it when a repo stub points here. It reproduces each reviewer finding, fixes each real one in its own commit, and stops clean only on green gates. Repo settings come from .claude/pr-review-hardening.profile.md."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 
