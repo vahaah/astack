@@ -31,12 +31,23 @@ A role with no line keeps its default.
 | Model | `model` accepts `opus`, `sonnet`, `haiku`, or `fable`. Code roles default to `sonnet`. Use `opus` for the hardest changes: cross-cutting design, difficult concurrency, or subtle algorithms. This holds for vague intent and for a precise sequence of steps. Use `haiku` for trivial mechanical edits. Prose and judgment default to `opus`. Omit `model` when the role says `inherit-parent` or `auto`. The agent then uses the parent model. |
 | Effort | `effort` accepts `low`, `medium`, `high`, `xhigh`, or `max`. The agent's frontmatter `effort:` sets its default. The per-call `effort` overrides it. When `CLAUDE_CODE_EFFORT_LEVEL` is set, every subagent uses that level. The Agent tool then has no `effort` parameter. Fast mode is a session setting (`/fast`), not a spawn parameter. |
 | Background | Use `run_in_background: true` by default. Run in the foreground only when the next step needs the result and nothing else can run meanwhile. A completion arrives as a notification. |
-| Isolation | `isolation: "worktree"` gives the agent its own git worktree under `.claude/worktrees/`. Use it for every writer that shares a checkout with another writer. Use it for every lane that needs the PR head. `isolation: "remote"` runs the agent in a cloud environment. Its availability is gated, so never require it. |
+| Isolation | `isolation: "worktree"` gives the agent its own git worktree under `.claude/worktrees/`. Use it for every writer that shares a checkout with another writer. Use it for every lane that needs the PR head. Give each isolated agent the rule in "Commands in a worktree" below. `isolation: "remote"` runs the agent in a cloud environment. Its availability is gated, so never require it. |
 | Prompt | Use file pointers instead of context pasted into the prompt. Every `astack-delegate` prompt must carry this file's absolute path. |
 | Follow-up | `name` makes a running agent addressable through `SendMessage`. Use `ListAgents` to see what is live. Use `TaskStop` to stop it. |
 | Nesting | Agents nest to depth 3. The main chat is depth 0. An agent at depth 3 has no Agent tool. Set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` before launch to raise the cap. Fit every tree inside the budget. State the depth of each role. |
 | Cross-family reviewer | Use Bash, not Agent, as `astack skill-path astack:arena references/external-seats.md` says. Run `codex exec --sandbox read-only "<prompt>"` when `command -v codex` succeeds. You can also use `cursor-agent -p --mode ask --model <model> "<prompt>"`. A role value of `codex`, `codex:<model>`, or `cursor-agent:<model>` names such a seat. Point the reviewer at the diff or a read-only checkout. |
 | Workflow tool | Never require Workflow. It runs only in the main thread after the user opts in. |
+
+## Commands in a worktree
+
+In a worktree, the harness refuses a Bash call when it cannot show that git stays in that worktree.
+Copy this rule into the brief of each isolated agent:
+
+- Run one plain command in each Bash call, from the worktree root.
+- Do not cd to another directory.
+- Do not chain git with `&&`, `;` or a pipe. Do not put git in `$( )`, `{ }` or a subshell.
+- Run `mktemp -d` as its own call. Use the path that it prints in later calls.
+- Capture a log with one call, `<cmd> > <log path> 2>&1`. Read the log in the next call.
 
 ## Choose effort
 

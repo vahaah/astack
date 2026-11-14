@@ -28,7 +28,7 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 The usual shape is one big PR for each session. Parallel step workers build it in worktrees, in waves. The main thread is the integrator lane.
 
 - With "ultracode", run the steps of the current wave as parallel step workers. Use the Workflow tool, or background agents with `isolation: "worktree"`. Each worker commits on its own step branch.
-- Give each worker its step with its `Files.`, `Exit.` and `Proof.` lines. Tell it to load `astack:coding-rules`.
+- Give each worker its step with its `Files.`, `Exit.` and `Proof.` lines. Tell it to load `astack:coding-rules`. Copy the rule of "Commands in a worktree" in `references/subagents.md` into its brief.
 - Let only one worker edit each region of a hot file in a wave.
 - Use the model that the profile names for the step workers. The judgment and the integrator run on the main model.
 - As the integrator, land the step commits on the session branch in plan order. Run the scoped gates after each commit, and resolve each conflict.

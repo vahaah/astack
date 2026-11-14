@@ -28,6 +28,8 @@ Never work on the default branch.
 2. Give each step worker one step, its Files, its Exit and the D rows it covers.
    Tell it to commit on its own step branch.
    Forbid changes outside its Files.
+   Copy the rule of "Commands in a worktree" into its brief.
+   Run `astack skill-path astack:mode references/subagents.md` to find that rule.
 3. Run the workers in parallel.
    With "ultracode", use the Workflow tool.
    Else use background agents with `isolation: "worktree"`.
