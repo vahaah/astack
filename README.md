@@ -410,7 +410,7 @@ In Cursor, deny means a follow-up prompt, unless the change goes through `preToo
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|
 | `merge-guard` | prompt, shell, MCP | Denies a merge with no grant in the profile or the turn. It reads the pull request with `gh` | No |
-| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify` | No |
+| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify`. It denies a git command that discards uncommitted work, such as `git reset --hard`, `git checkout -- .` or `git clean -f`. On a clean tree, it allows them | No |
 | `duplicate-pr` | shell, MCP | Denies `gh pr create` for a branch that already has an open PR, or a body that shares a ticket key with an open PR | No |
 | `pr-body`, `ticket` | shell, MCP | Check PR headings and issue text, including `Part of` links | No |
 | `plan-file` | write and edit | Denies a plan write over the byte cap, or a new checkbox, `Status:` line or register table | No |

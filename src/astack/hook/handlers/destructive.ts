@@ -1,7 +1,7 @@
-import { join } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { repoRoot, runGit } from "../../git.ts";
-import { gitInvocation } from "../../git-command.ts";
-import { readOptional } from "../../paths.ts";
+import { type GitInvocation, gitInvocation } from "../../git-command.ts";
+import { canonical, readOptional, toPosix } from "../../paths.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import {
 	ALLOW,
@@ -115,6 +115,188 @@ function pushTargets(
 	});
 }
 
+type LostChange = "unstaged" | "tracked" | "untracked";
+
+interface WorkLoss {
+	readonly lost: LostChange;
+	readonly pathspecs: readonly string[];
+}
+
+const WHOLE_TREE = [":/"];
+
+interface Operands {
+	readonly flags: readonly string[];
+	readonly plain: readonly string[];
+	readonly dashed: readonly string[] | undefined;
+}
+
+function operands(
+	args: readonly string[],
+	valueFlags: readonly string[],
+): Operands {
+	const flags: string[] = [];
+	const plain: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] ?? "";
+		if (arg === "--") return { flags, plain, dashed: args.slice(i + 1) };
+		if (!arg.startsWith("-")) plain.push(arg);
+		else {
+			flags.push(arg);
+			if (valueFlags.includes(arg)) i++;
+		}
+	}
+	return { flags, plain, dashed: undefined };
+}
+
+function hasFlag(
+	flags: readonly string[],
+	long: string,
+	letter: string,
+): boolean {
+	return flags.some(
+		(flag) =>
+			flag === long || (/^-[A-Za-z]+$/.test(flag) && flag.includes(letter)),
+	);
+}
+
+function isTreeish(dir: string, name: string): boolean {
+	return runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
+}
+
+function checkoutLoss(
+	args: readonly string[],
+	dir: string,
+): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-b", "-B", "--orphan"]);
+	const [first, ...rest] = plain;
+	const hasSource =
+		first !== undefined && (dashed !== undefined || isTreeish(dir, first));
+	const pathspecs = dashed ?? (hasSource ? rest : plain);
+	if (pathspecs.length > 0)
+		return { lost: hasSource ? "tracked" : "unstaged", pathspecs };
+	return hasFlag(flags, "--force", "f")
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function switchLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags } = operands(args, ["-c", "-C", "--orphan"]);
+	return hasFlag(flags, "--force", "f") || flags.includes("--discard-changes")
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function restoreLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-s", "--source"]);
+	const staged = hasFlag(flags, "--staged", "S");
+	const worktree = !staged || hasFlag(flags, "--worktree", "W");
+	const pathspecs = [...plain, ...(dashed ?? [])];
+	return worktree && pathspecs.length > 0
+		? { lost: staged ? "tracked" : "unstaged", pathspecs }
+		: undefined;
+}
+
+function cleanLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-e", "--exclude"]);
+	const removesUntracked =
+		hasFlag(flags, "--force", "f") &&
+		!hasFlag(flags, "--dry-run", "n") &&
+		!hasFlag(flags, "-X", "X");
+	const pathspecs = [...plain, ...(dashed ?? [])];
+	return removesUntracked
+		? { lost: "untracked", pathspecs: pathspecs.length > 0 ? pathspecs : ["."] }
+		: undefined;
+}
+
+function workLoss(git: GitInvocation): WorkLoss | undefined {
+	switch (git.sub) {
+		case "reset":
+			return git.args.includes("--hard")
+				? { lost: "tracked", pathspecs: WHOLE_TREE }
+				: undefined;
+		case "checkout":
+			return checkoutLoss(git.args, git.dir);
+		case "switch":
+			return switchLoss(git.args);
+		case "restore":
+			return restoreLoss(git.args);
+		case "clean":
+			return cleanLoss(git.args);
+		default:
+			return undefined;
+	}
+}
+
+function isLost(lost: LostChange, index: string, worktree: string): boolean {
+	const untracked = index === "?";
+	switch (lost) {
+		case "untracked":
+			return untracked;
+		case "tracked":
+			return !untracked;
+		case "unstaged":
+			return !untracked && worktree !== " ";
+	}
+}
+
+function changedPaths(root: string, lost: LostChange): readonly string[] {
+	const status = runGit(root, [
+		"status",
+		"--porcelain=v1",
+		"-z",
+		"--untracked-files=all",
+	]);
+	if (!status.ok) return [];
+	const entries = status.stdout.toString("utf8").split("\0");
+	const paths: string[] = [];
+	for (let i = 0; i < entries.length; i++) {
+		const entry = entries[i] ?? "";
+		if (entry.length < 4) continue;
+		const index = entry.charAt(0);
+		if (isLost(lost, index, entry.charAt(1))) paths.push(entry.slice(3));
+		if (index === "R" || index === "C") i++;
+	}
+	return paths;
+}
+
+function rootRelative(
+	pathspec: string,
+	dir: string,
+	root: string,
+): string | undefined {
+	if (pathspec.startsWith(":/")) return pathspec.slice(2).replace(/\/+$/, "");
+	const path = toPosix(relative(root, resolve(canonical(dir), pathspec)));
+	return path.startsWith("..") ? undefined : path;
+}
+
+function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
+	const root = repoRoot(dir);
+	if (root === undefined) return [];
+	const dirs = loss.pathspecs.flatMap((pathspec) => {
+		const path = rootRelative(pathspec, dir, root);
+		return path === undefined ? [] : [path];
+	});
+	return changedPaths(root, loss.lost).filter((path) =>
+		dirs.some((scope) => scope === "" || path.startsWith(`${scope}/`)),
+	);
+}
+
+function workLossReasons(step: ShellStep): readonly string[] {
+	const git = gitInvocation(step.values, step.dir);
+	const loss = git === undefined ? undefined : workLoss(git);
+	if (git === undefined || loss === undefined) return [];
+	const lost = lostPaths(loss, git.dir);
+	if (lost.length === 0) return [];
+	const effect =
+		loss.lost === "untracked"
+			? "deletes the untracked files"
+			: "discards the uncommitted changes in";
+	const more = lost.length > 3 ? ` and ${lost.length - 3} more` : "";
+	return [
+		`${step.values.join(" ")} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
+	];
+}
+
 function gitReasons(step: ShellStep): readonly string[] {
 	const git = gitInvocation(step.values, step.dir);
 	if (!git) return [];
@@ -164,7 +346,11 @@ export const handler = defineHandler({
 			return ALLOW;
 		return combineAll(
 			shellSteps(event.command, event.cwd).map((step) =>
-				denial([...supabaseReasons(step), ...gitReasons(step)]),
+				denial([
+					...supabaseReasons(step),
+					...gitReasons(step),
+					...workLossReasons(step),
+				]),
 			),
 		);
 	},

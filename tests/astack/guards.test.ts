@@ -14,18 +14,28 @@ import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 
 let root = "";
 let repo = "";
+let dirty = "";
 
 function git(dir: string, ...args: string[]): void {
 	spawnSync("git", args, { cwd: dir });
+}
+
+function initRepo(dir: string): void {
+	git(dir, "init", "-q", "-b", "main");
+	git(dir, "config", "user.email", "t@example.com");
+	git(dir, "config", "user.name", "T");
+}
+
+function write(dir: string, files: Readonly<Record<string, string>>): void {
+	for (const [path, text] of Object.entries(files))
+		writeFileSync(join(dir, path), text);
 }
 
 beforeAll(() => {
 	root = mkdtempSync(join(tmpdir(), "astack-guards-"));
 	repo = join(root, "repo");
 	mkdirSync(repo);
-	git(repo, "init", "-q", "-b", "main");
-	git(repo, "config", "user.email", "t@example.com");
-	git(repo, "config", "user.name", "T");
+	initRepo(repo);
 	writeFileSync(
 		join(repo, "package.json"),
 		JSON.stringify({
@@ -39,6 +49,26 @@ beforeAll(() => {
 	git(repo, "add", ".");
 	git(repo, "commit", "-q", "-m", "base");
 	git(repo, "checkout", "-q", "-b", "dev/abc-1/export");
+
+	dirty = join(root, "dirty");
+	mkdirSync(join(dirty, "src"), { recursive: true });
+	mkdirSync(join(dirty, "docs"));
+	initRepo(dirty);
+	write(dirty, {
+		"notes.txt": "a\n",
+		"src/app.ts": "a\n",
+		"staged.txt": "a\n",
+		"docs/guide.md": "a\n",
+	});
+	git(dirty, "add", ".");
+	git(dirty, "commit", "-q", "-m", "base");
+	write(dirty, {
+		"notes.txt": "b\n",
+		"src/app.ts": "b\n",
+		"staged.txt": "b\n",
+	});
+	git(dirty, "add", "staged.txt");
+	write(dirty, { "scratch.txt": "x\n" });
 });
 
 afterAll(() => rmSync(root, { recursive: true, force: true }));
@@ -54,8 +84,8 @@ function context(cwd: string): Context {
 	};
 }
 
-function shell(command: string): HookEvent {
-	return { kind: "shell", command, cwd: repo };
+function shell(command: string, cwd = repo): HookEvent {
+	return { kind: "shell", command, cwd };
 }
 
 function reason(verdict: Verdict): string {
@@ -95,6 +125,55 @@ describe("the destructive command guard", () => {
 	])("%s passes", (command) => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 	});
+
+	const tracked = "notes.txt, src/app.ts, staged.txt";
+	test.each([
+		["git reset --hard", `discards the uncommitted changes in ${tracked}.`],
+		["git checkout -f main", `discards the uncommitted changes in ${tracked}.`],
+		[
+			"git switch --discard-changes main",
+			`discards the uncommitted changes in ${tracked}.`,
+		],
+		[
+			"git checkout HEAD -- .",
+			`discards the uncommitted changes in ${tracked}.`,
+		],
+		[
+			"git checkout -q .",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git restore :/",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		["git restore src", "discards the uncommitted changes in src/app.ts."],
+		["git clean -fd", "deletes the untracked files scratch.txt."],
+	])("%s is denied when it discards uncommitted work", (command, text) => {
+		const verdict = destructive.run(shell(command, dirty), context(dirty));
+		expect(reason(verdict)).toContain(`- ${command} ${text}`);
+		expect(reason(verdict)).toContain("owner gate");
+	});
+
+	test.each([
+		"git checkout HEAD -- notes.txt",
+		"git restore docs",
+		"git restore --staged .",
+		"git checkout main",
+		"git clean -fdn",
+		"git clean -fX",
+		"git stash",
+	])("%s passes on a dirty tree because it discards no work", (command) => {
+		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+			"allow",
+		);
+	});
+
+	test.each(["git reset --hard", "git checkout HEAD -- .", "git clean -fd"])(
+		"%s passes on a clean tree",
+		(command) => {
+			expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+		},
+	);
 });
 
 describe("the duplicate PR guard", () => {
