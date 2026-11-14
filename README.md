@@ -13,7 +13,7 @@
 
 astack is a plugin for AI coding agents. Its skills and rules give the agent one path from a goal to a merged pull request. The path is plan, build test-first on a branch, run the gates, review, open the PR, harden and merge. The agent stops before each decision that belongs to you. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-- **52 skills** in the plugin for plans, code, review, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 54.
+- **61 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 63.
 - **Six agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `researcher`, `delegate` and `comment-judge` are used by the skills. Those four are not limited to Read, Grep and Glob.
 - **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
 - **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
@@ -219,6 +219,11 @@ Start a session with `astack session start <plan>`. The steps sit in waves. Work
 | You say | astack does |
 |---|---|
 | "comments" | Triages each PR comment, then fixes failing checks |
+| "babysit" | `astack:babysit-pr` watches the PR through CI and review bots, and stops at merge-ready |
+| "council" | `astack:council` gets a review from each model of the `council members` role and loops until they agree |
+| "sol loop" | `astack:sol-loop` gets a review from the `sol-loop reviewer` model in rounds |
+| "take over" | `astack:takeover` finishes the work of another person and keeps their credit |
+| "modernize" | `astack:modernize` brings an old PR up to date, or recommends a rework or a close |
 | UI polish, or a mobile check | `astack:control-ui` walks the journey as a real persona |
 | "pause" | Hard stop with a hand-off prompt |
 
@@ -226,9 +231,11 @@ Start a session with `astack session start <plan>`. The steps sit in waves. Work
 
 | You say | astack does |
 |---|---|
-| "create pr" | Gates, deslop, the comment check and the PR text. One hardening run follows when the profile sets `after_create_pr` to `harden` |
+| "create pr", or "file a pr" | Gates, deslop, the comment check and the PR text. One hardening run follows when the profile sets `after_create_pr` to `harden` |
 | "update from main" | Merges the PR base, or `main`, and runs the gates again |
 | "merge when green" | Ships, if a grant exists |
+| "full send" | `astack:full-send` takes the change to a merged PR while you are away. The words are a merge grant for that prompt |
+| "full stop" | `astack:full-stop` does the same work, but stops with the PR ready for you to merge |
 
 A user rule in the rules folder can add a route. It cannot remove one.
 
@@ -257,7 +264,7 @@ A user rule in the rules folder can add a route. It cannot remove one.
 
 ## Why astack
 
-astack stands on other people's work. It adapts text from three MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own. The right choice depends on what you need.
+astack stands on other people's work. It adapts text from four MIT projects, listed file by file in [NOTICE](NOTICE). Each is worth using on its own. The right choice depends on what you need.
 
 | Option | What it gives you | When to choose it |
 |---|---|---|
@@ -265,6 +272,7 @@ astack stands on other people's work. It adapts text from three MIT projects, li
 | [pstack](https://github.com/cursor/plugins/tree/main/pstack) | Lauren Tan's (poteto) skills, principles and multi-model mode for rigorous agent work in Cursor | You want that method as its author maintains it |
 | [Matt Pocock's skills](https://github.com/mattpocock/skills) | Small, composable engineering skills (grilling, TDD, review, triage) that work with any model | You want individual skills to pick from |
 | [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) | The Cursor team's skills for CI, PRs and review | You work mainly in Cursor and want its team's flow |
+| [tstack](https://github.com/t3dotgg/tstack) | Theo Browne's skills that take a change to a merged PR, watch it, and get reviews from several model families | You want those skills as their author maintains them |
 | astack | One opinionated path from goal to merge, built for several clients | You want the same workflow, hooks and stops across clients |
 
 What astack adds on top:
@@ -503,4 +511,4 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately throug
 
 ## Licence and credits
 
-MIT, Copyright (c) 2026 Alex Vakhitov. astack adapts material from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock and the [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) by Cursor, all MIT. [NOTICE](NOTICE) lists the files that hold each project's material.
+MIT, Copyright (c) 2026 Alex Vakhitov. astack adapts material from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan, [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock, the [Cursor team kit](https://github.com/cursor/plugins/tree/main/cursor-team-kit) by Cursor and [tstack](https://github.com/t3dotgg/tstack) by Theo Browne, all MIT. [NOTICE](NOTICE) lists the files that hold each project's material.

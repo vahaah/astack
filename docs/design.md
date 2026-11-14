@@ -174,10 +174,14 @@ Model evidence does not establish private reasoning or full implementation corre
 | hotfix, "I need it fast" | quick tier, one grill round at most |
 | bug, a Sentry issue, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
 | "comments", "check github comments" | the full triage. The `astack:mode` Babysit playbook with a bugbot-triage posture. Decide who is right, fix or dismiss with a reason, resolve threads, fix CI |
+| "babysit", "watch the PR" | `astack:babysit-pr`, the entry point of the `astack:mode` Babysit playbook. One watcher, stop at merge-ready |
+| "council", "sol loop" | `astack:council` and `astack:sol-loop`, read by path. Reviewers from the `council members` or `sol-loop reviewer` role, in rounds with a cap |
+| "modernize", "take over" | `astack:modernize` picks MODERNIZE, REWORK or CLOSE for an old PR. `astack:takeover` finishes the work of another person and keeps their credit |
 | `/pr-review-hardening` | `astack:pr-review-hardening`. Cap and minimum from the profile, default cap 2. A blocking finding names a concrete failure |
-| "create pr" | gates, deslop, no-comments, an STE body, the profile PR rules, push. Then one hardening pass where the profile says so (Q6) |
+| "create pr", "file a pr" | `astack:file-pr`. Gates, deslop, no-comments, an STE body, the profile PR rules, push. Then one hardening pass where the profile says so (Q6) |
 | "update from main" | mode playbook `refresh.md`. Merge origin/main, rerun gates, read new ADRs and migrations, compare the D rows with the ticket intent |
 | "merge", "merge when green" | The `astack:mode` Shipping playbook. Authority from the profile or a grant in this turn |
+| "full send", "full stop" | `astack:full-send` and `astack:full-stop`, read by path. "full send" is a merge grant for its prompt. "full stop" never merges (ADR 0009) |
 | UI polish, mobile | control-ui, a persona walk, the repo UI kit, argent on mobile |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (hard stop), `astack session handoff`, Worktree cleanup |
 

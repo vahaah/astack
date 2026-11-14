@@ -4,7 +4,7 @@ astack holds house standards for plans, code comments, tickets, PR bodies and do
 
 `/astack:mode` selects the next step from the plan, tracker, and git state.
 `/astack:plan` plans the work.
-One `astack` plugin holds these skills and the kept pstack and flow material.
+One `astack` plugin holds these skills and the kept pstack, flow and tstack material.
 The rule card `rules/astack.md` carries the routes for ordinary user requests.
 
 ## Install
