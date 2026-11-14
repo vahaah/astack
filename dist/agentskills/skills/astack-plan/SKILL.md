@@ -1,6 +1,6 @@
 ---
 name: "astack-plan"
-description: "Use for /astack-plan, \"I am building <X>\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
+description: "Use for /astack-plan, \"I am building X\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and moves a plan to Linear or GitHub on request."
 license: "MIT"
 metadata:
   astack-version: "0.1.0"
