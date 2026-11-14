@@ -54,7 +54,12 @@ Read it at the path that `astack skill-path astack:mode playbooks/session-pickup
 ## 5. File and watch
 
 - When the finish includes a PR, file or update it with `astack:file-pr`.
-- Then watch it with `astack:babysit-pr`. Do not stop when the PR opens.
+- The `## Why` section of the replacement PR names and links the original PR.
+- Step 1 of the Create PR playbook skips the original PR. It is not the open PR of this work, so never update it there.
+- The duplicate-pr hook can deny `gh pr create` while the original PR stays open. Then stop for the owner.
+- The owner can allow a second PR on purpose, or allow you to close the original PR first.
+- Never go around that denial with the REST call of `astack:file-pr`.
+- Then watch the PR with `astack:babysit-pr`. Do not stop when the PR opens.
 - Post each reply through `astack:leaving-pr-comments`.
 
 ## Report
