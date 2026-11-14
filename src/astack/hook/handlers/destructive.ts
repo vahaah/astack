@@ -1,7 +1,7 @@
-import { join, relative, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { repoRoot, runGit } from "../../git.ts";
 import { type GitInvocation, gitInvocation } from "../../git-command.ts";
-import { canonical, readOptional, toPosix } from "../../paths.ts";
+import { canonicalRelative, readOptional } from "../../paths.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import {
 	ALLOW,
@@ -239,12 +239,14 @@ function isLost(lost: LostChange, index: string, worktree: string): boolean {
 	}
 }
 
-function changedPaths(root: string, lost: LostChange): readonly string[] {
-	const status = runGit(root, [
+function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
+	const status = runGit(dir, [
 		"status",
 		"--porcelain=v1",
 		"-z",
 		"--untracked-files=all",
+		"--",
+		...loss.pathspecs,
 	]);
 	if (!status.ok) return [];
 	const entries = status.stdout.toString("utf8").split("\0");
@@ -253,32 +255,32 @@ function changedPaths(root: string, lost: LostChange): readonly string[] {
 		const entry = entries[i] ?? "";
 		if (entry.length < 4) continue;
 		const index = entry.charAt(0);
-		if (isLost(lost, index, entry.charAt(1))) paths.push(entry.slice(3));
+		if (isLost(loss.lost, index, entry.charAt(1))) paths.push(entry.slice(3));
 		if (index === "R" || index === "C") i++;
 	}
 	return paths;
 }
 
-function rootRelative(
-	pathspec: string,
-	dir: string,
-	root: string,
-): string | undefined {
-	if (pathspec.startsWith(":/")) return pathspec.slice(2).replace(/\/+$/, "");
-	const path = toPosix(relative(root, resolve(canonical(dir), pathspec)));
-	return path.startsWith("..") ? undefined : path;
+const GLOB_CHARACTER = /[*?[\\]/;
+const PATHSPEC_MAGIC = /^:(?!\/[^/!^:])/;
+
+function isLiteral(pathspec: string): boolean {
+	return !GLOB_CHARACTER.test(pathspec) && !PATHSPEC_MAGIC.test(pathspec);
+}
+
+function rootRelative(pathspec: string, dir: string, root: string): string {
+	return pathspec.startsWith(":/")
+		? pathspec.slice(2).replace(/\/+$/, "")
+		: canonicalRelative(root, resolve(dir, pathspec));
 }
 
 function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const root = repoRoot(dir);
 	if (root === undefined) return [];
-	const dirs = loss.pathspecs.flatMap((pathspec) => {
-		const path = rootRelative(pathspec, dir, root);
-		return path === undefined ? [] : [path];
-	});
-	return changedPaths(root, loss.lost).filter((path) =>
-		dirs.some((scope) => scope === "" || path.startsWith(`${scope}/`)),
-	);
+	const namedFiles = loss.pathspecs
+		.filter(isLiteral)
+		.map((pathspec) => rootRelative(pathspec, dir, root));
+	return changedPaths(dir, loss).filter((path) => !namedFiles.includes(path));
 }
 
 function workLossReasons(step: ShellStep): readonly string[] {

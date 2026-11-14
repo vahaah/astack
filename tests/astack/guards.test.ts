@@ -147,10 +147,20 @@ describe("the destructive command guard", () => {
 			"discards the uncommitted changes in notes.txt, src/app.ts.",
 		],
 		["git restore src", "discards the uncommitted changes in src/app.ts."],
+		[
+			"git restore *",
+			"discards the uncommitted changes in notes.txt, src/app.ts.",
+		],
+		[
+			"git checkout -- '*.txt'",
+			"discards the uncommitted changes in notes.txt.",
+		],
 		["git clean -fd", "deletes the untracked files scratch.txt."],
 	])("%s is denied when it discards uncommitted work", (command, text) => {
 		const verdict = destructive.run(shell(command, dirty), context(dirty));
-		expect(reason(verdict)).toContain(`- ${command} ${text}`);
+		expect(reason(verdict)).toContain(
+			`- ${command.replaceAll("'", "")} ${text}`,
+		);
 		expect(reason(verdict)).toContain("owner gate");
 	});
 
