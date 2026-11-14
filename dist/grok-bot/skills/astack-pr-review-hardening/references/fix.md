@@ -33,6 +33,8 @@ Before you fix a finding, read the item of `references/checklist.md` for its `cl
 
 Edit only the files that the finding names. That is the reviewer's file, the failing file in the gate output or the file that the comment gate flagged.
 
+A file that you name in the finding under "Fix for real" is inside the fence too. Such a file holds another instance of the same defect, or a sentence that the fix makes false. It must be outside `forbidden.paths`, and `astack managed <path>` must return `repo` for it.
+
 A fix never:
 
 - bumps a dependency or edits a lockfile;
