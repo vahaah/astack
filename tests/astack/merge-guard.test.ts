@@ -382,6 +382,32 @@ describe("the merge guard", () => {
 		});
 	});
 
+	test.each([
+		[
+			"plain",
+			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
+			"astack blocked gh pr merge:\n- Nobody gave a merge grant. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_SESSION_ATTENDED=0 makes this session unattended. .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+		],
+		[
+			"bases",
+			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
+			"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_ENTRYPOINT=sdk-ts makes this session unattended. Ask the owner before you merge #12.",
+		],
+	])(
+		"in an unattended session the %s denial names the setting, not a missing owner word",
+		(name, env, stderr) => {
+			const cwd = join(root, name);
+			const verdict = guard(GREEN).run(
+				{ kind: "shell", command: "gh pr merge 12", cwd },
+				{
+					...context(cwd, "unattended", "PreToolUse"),
+					env: { ASTACK_STATE_DIR: state, ...env },
+				},
+			);
+			expect(outcome(verdict)).toEqual({ exit: 2, stderr });
+		},
+	);
+
 	test("a PR into a standing base of another repo needs the owner's grant", () => {
 		const run = bash(
 			guard({

@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
+import { unattendedReason } from "../../attended.ts";
 import {
 	type ClaudeProfile,
 	type CodexState,
@@ -345,6 +346,7 @@ export function gather(io: Io): Snapshot {
 		agentsSkills: list(join(home, ".agents", "skills")),
 		claudeSkills: claudeSkillFolders(claude, home),
 		profile: profileState(io.cwd),
+		unattendedReason: unattendedReason(io.env),
 	};
 }
 

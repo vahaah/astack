@@ -486,9 +486,9 @@ describe("plan hooks", () => {
 			JSON.stringify({ cwd: none }),
 			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
 		);
-		expect(
-			JSON.parse(afk.stdout).hookSpecificOutput.additionalContext,
-		).toContain("Unattended session");
+		expect(JSON.parse(afk.stdout).hookSpecificOutput.additionalContext).toBe(
+			"Unattended session, because CLAUDE_CODE_SESSION_ATTENDED=0. Nobody answers questions here, so /astack:plan follows references/unattended.md and never asks a round.",
+		);
 	});
 });
 

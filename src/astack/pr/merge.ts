@@ -135,7 +135,14 @@ export type MergeInputs = {
 	readonly profile: PrProfile;
 	readonly profileRepo: string | undefined;
 	readonly grant: MergeGrant;
+	readonly unattendedReason: string | undefined;
 };
+
+function noTurnGrantText(unattendedReason: string | undefined): string {
+	return unattendedReason === undefined
+		? "The owner did not say to merge in this turn."
+		: `astack records no merge grant from prompts in an unattended session. ${unattendedReason} makes this session unattended.`;
+}
 
 function closingInCommitText(call: MergeCall): string[] {
 	return [call.subject, call.body].flatMap((text) =>
@@ -168,7 +175,7 @@ export function preflightReasons(inputs: MergeInputs): readonly string[] {
 		inputs.grant.kind === "none"
 	)
 		reasons.push(
-			"Nobody gave a merge grant. The owner did not say to merge in this turn, and .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+			`Nobody gave a merge grant. ${noTurnGrantText(inputs.unattendedReason)} .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.`,
 		);
 	if (inputs.call.dynamic)
 		reasons.push(
@@ -237,10 +244,11 @@ function standingBaseText(inputs: MergeInputs, pr: PullRequestState): string[] {
 	];
 }
 
-function turnGrantText(grant: MergeGrant, number: number): string {
+function turnGrantText(inputs: MergeInputs, number: number): string {
+	const { grant } = inputs;
 	return grant.kind === "prs"
 		? `The owner's merge grant in this turn names ${grant.numbers.map((granted) => `#${granted}`).join(", ")}, not #${number}.`
-		: "The owner did not say to merge in this turn.";
+		: noTurnGrantText(inputs.unattendedReason);
 }
 
 function grantReasons(inputs: MergeInputs, pr: PullRequestState): string[] {
@@ -252,7 +260,7 @@ function grantReasons(inputs: MergeInputs, pr: PullRequestState): string[] {
 	return [
 		[
 			...standingBaseText(inputs, pr),
-			turnGrantText(inputs.grant, pr.number),
+			turnGrantText(inputs, pr.number),
 			`Ask the owner before you merge #${pr.number}.`,
 		].join(" "),
 	];
