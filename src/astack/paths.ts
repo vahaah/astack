@@ -1,4 +1,10 @@
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import {
+	existsSync,
+	lstatSync,
+	readFileSync,
+	readlinkSync,
+	realpathSync,
+} from "node:fs";
 import {
 	basename,
 	dirname,
@@ -68,8 +74,17 @@ export function workTreeRoot(start: string): string | undefined {
 	}
 }
 
+const MAX_LINK_HOPS = 40;
+
+function linkTarget(path: string, hops = 0): string {
+	const stat = lstatSync(path, { throwIfNoEntry: false });
+	if (!stat?.isSymbolicLink() || hops >= MAX_LINK_HOPS) return path;
+	const dir = dirname(canonicalFile(path));
+	return linkTarget(resolve(dir, readlinkSync(path)), hops + 1);
+}
+
 export function isScratchPath(projectDir: string, path: string): boolean {
-	const file = canonicalFile(resolve(path));
+	const file = canonicalFile(linkTarget(resolve(path)));
 	if (isWithin(canonical(projectDir), file)) return false;
 	return workTreeRoot(dirname(file)) === undefined;
 }

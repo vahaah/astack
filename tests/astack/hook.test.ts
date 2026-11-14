@@ -7,6 +7,7 @@ import {
 	readdirSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -597,6 +598,14 @@ describe("scratch files outside the project", () => {
 		mkdirSync(join(base, "repo/.git"), { recursive: true });
 		mkdirSync(join(base, "opted/.astack"), { recursive: true });
 		writeFileSync(join(base, "opted/.astack/profile.json"), "{}\n");
+		writeFileSync(join(base, "repo/probe.ts"), "export {};\n");
+		mkdirSync(join(base, "linked"));
+		symlinkSync(join(project, "probe.ts"), join(base, "linked/probe.ts"));
+		mkdirSync(join(base, "linked-repo"));
+		symlinkSync(
+			join(base, "repo/probe.ts"),
+			join(base, "linked-repo/probe.ts"),
+		);
 	});
 	afterAll(() => rmSync(base, { recursive: true, force: true }));
 
@@ -606,6 +615,16 @@ describe("scratch files outside the project", () => {
 		["a sibling git work tree", "deny", () => join(base, "repo")],
 		["a folder with an astack profile", "deny", () => join(base, "opted")],
 		["the project", "deny", () => project],
+		[
+			"a link in a scratch folder to a new project file",
+			"deny",
+			() => join(base, "linked"),
+		],
+		[
+			"a link in a scratch folder to a file of a work tree",
+			"deny",
+			() => join(base, "linked-repo"),
+		],
 	];
 
 	test.each(cases)(
