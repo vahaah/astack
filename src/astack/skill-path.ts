@@ -214,6 +214,16 @@ export function resolveSkillPath(
 	return undefined;
 }
 
+export function skillFolderFiles(skillFile: string): string[] {
+	const skillDir = dirname(skillFile);
+	return ["playbooks", "references"].flatMap((folder) =>
+		listDir(join(skillDir, folder))
+			.filter((name) => name.endsWith(".md"))
+			.sort()
+			.map((name) => `${folder}/${name}`),
+	);
+}
+
 export function principleSkills(env: SkillPathEnv): Set<string> | undefined {
 	const skill = resolveSkillPath(
 		{ plugin: "astack", skill: "principles" },
