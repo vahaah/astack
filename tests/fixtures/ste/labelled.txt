@@ -441,6 +441,8 @@
 - The cache expires after one hour.
 - The client sends two requests.
 - The job stops on error.
+- The user could not tell which item was done.
+- The script could never find the file.
 
 # rule: passive
 + The file was deleted by the script.

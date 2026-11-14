@@ -533,6 +533,11 @@ describe("precision fixes from real replies", () => {
 			"deny:word-list",
 		);
 	});
+
+	test("a negated could passes, and a plain could gets advice", () => {
+		expect(rules("The user could not tell which item was done.")).toEqual([]);
+		expect(rules("The job could stop early.")).toEqual(["advise:modal"]);
+	});
 });
 
 describe("chat replies", () => {

@@ -362,7 +362,8 @@ const modal: SentenceRule = (sentence) =>
 					`Use "must" for a rule or "can" for a possibility, not "${word}".`,
 				),
 			];
-		if (SOFT_MODALS.has(form))
+		const negated = ["not", "never"].includes(lower(sentence.words[index + 1]));
+		if (SOFT_MODALS.has(form) && !(form === "could" && negated))
 			return [
 				hit(
 					"modal",
