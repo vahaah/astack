@@ -65,9 +65,13 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 4. Read what the merge starts.
 
-   Read the `on.push` filters of each workflow.
-   Find each workflow that a push of these changes to the base branch starts.
-   Name each job that publishes, deploys, or submits a build.
+   Read the triggers of each workflow to find each workflow that the merge starts.
+   A merge starts a workflow on `push` to the base branch with these changes.
+   It also starts a workflow on `pull_request` or `pull_request_target` with the type `closed`, and on `merge_group`.
+   A workflow on `workflow_run` of a started workflow starts too.
+   So does a workflow on a tag or a release that a job of a started workflow makes.
+
+   Name each job of each started workflow that publishes, deploys, or submits a build.
    A merge that starts such a job is a deployment under `references/autonomy.md`.
    Land it only when the owner's words in this turn name that release or deployment.
    Otherwise report the jobs and stop.
