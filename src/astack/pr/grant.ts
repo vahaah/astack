@@ -99,7 +99,7 @@ function prose(prompt: string): string {
 function words(text: string): string[] {
 	return text
 		.split(/\s+/)
-		.map((word) => word.replace(/^[^\w#'/]+|[^\w#'/]+$/g, ""))
+		.map((word) => word.replace(/^[^\w#'/$]+|[^\w#'/]+$/g, ""))
 		.filter((word) => word !== "");
 }
 
@@ -116,7 +116,7 @@ function prNumbers(tokens: readonly string[]): number[] {
 	return tokens.flatMap((token, index) => prNumber(token, tokens[index + 1]));
 }
 
-const FULL_SEND_COMMAND = /^(?:\/(?:astack:)?)?full-send$/;
+const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
@@ -144,8 +144,11 @@ function clauseGrant(
 				(token === "full" && tokens[index + 1] === "send"));
 		if (!fullSend && token !== "merge" && token !== "squash-merge") continue;
 		const before = tokens.slice(Math.max(0, index - 3), index);
+		if (fullSend) {
+			if (before.some((word) => NEGATIONS.has(word))) continue;
+			return { kind: "any" };
+		}
 		if (before.some((word) => BLOCKERS.has(word))) continue;
-		if (fullSend) return { kind: "any" };
 		const after = tokens
 			.slice(index + 1)
 			.filter((word) => !FILLER.has(word))

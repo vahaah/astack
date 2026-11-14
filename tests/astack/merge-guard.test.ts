@@ -174,6 +174,12 @@ describe("the merge grant in a human prompt", () => {
 	test.each([
 		["full send", { kind: "any" }],
 		["/astack:full-send", { kind: "any" }],
+		["$astack:full-send", { kind: "any" }],
+		["/astack-full-send", { kind: "any" }],
+		["$full-send", { kind: "any" }],
+		["do a full send", { kind: "any" }],
+		["what does full send do?", { kind: "any" }],
+		["review full-send for bugs", { kind: "none" }],
 		["full stop", { kind: "none" }],
 		["no full send", { kind: "none" }],
 		["don't full send", { kind: "none" }],
