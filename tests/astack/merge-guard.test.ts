@@ -199,6 +199,8 @@ describe("the merge grant in a human prompt", () => {
 		["full stop: same as full send", { kind: "none" }],
 		["/astack:full-stop run full send steps", { kind: "none" }],
 		["full send but no merging", { kind: "none" }],
+		["full send, but I will handle the merge", { kind: "none" }],
+		["full send, then let me do the final merge", { kind: "none" }],
 		["full send, then merge #12", { kind: "any" }],
 	] as const)(
 		"[control:sg-full-send-clause] full send: %p grants %p",

@@ -131,16 +131,17 @@ const FULL_SEND_MENTIONS = new Set([
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
-function withholdsFullSend(tokens: readonly string[]): boolean {
-	return tokens.some(
+function withholdsFullSend(clause: Clause): boolean {
+	const { tokens } = clause;
+	const stops = tokens.some(
 		(token, index) =>
 			FULL_STOP_COMMAND.test(token) ||
-			(token === "full" && tokens[index + 1] === "stop") ||
-			(MERGE_WORD.test(token) &&
-				tokens
-					.slice(Math.max(0, index - 3), index)
-					.some((word) => OWNER_MERGES.has(word))),
+			(token === "full" && tokens[index + 1] === "stop"),
 	);
+	const keepsTheMerge =
+		tokens.some((token) => MERGE_WORD.test(token)) &&
+		clauseGrant(clause, false).kind === "none";
+	return stops || keepsTheMerge;
 }
 
 interface Clause {
@@ -205,9 +206,7 @@ export function mergeGrantIn(prompt: string): MergeGrant {
 				opensPrompt: index === 0 && part === 0,
 			})),
 	);
-	const fullSendAllowed = !clauses.some(({ tokens }) =>
-		withholdsFullSend(tokens),
-	);
+	const fullSendAllowed = !clauses.some(withholdsFullSend);
 	return clauses
 		.map((clause) => clauseGrant(clause, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
