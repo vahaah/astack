@@ -479,6 +479,7 @@
 - The job starts. It reads the queue. It takes one item.\n\nIt runs the item. It writes the result. It logs the time. It stops.
 - - The job starts.\n- It reads the queue.\n- It takes one item.\n- It runs the item.\n- It writes the result.\n- It logs the time.\n- It stops.
 - One. Two. Three.
+- N1. The hook reads the file. The job writes the log. The tests pass. The owner merges it. The tool stops. The job ends.
 - The page loads. The chart loads.
 - The cache is cold. The first call is slow. The second call is fast. The cache warms. The latency drops. The user is happy.
 - # One. Two. Three. Four. Five. Six. Seven. Eight.

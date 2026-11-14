@@ -14,7 +14,7 @@ const HTML_BLOCK = /^\s{0,3}<\/?[A-Za-z][\w-]*(?:\s[^>]*)?\/?>/;
 const INDENTED = /^(?: {4}|\t)/;
 const SETEXT = /^\s{0,3}(?:=+|-+)\s*$/;
 const THEMATIC = /^\s{0,3}([-*_])(?:\s*\1){2,}\s*$/;
-const FIELD_LABEL = /^[A-Z][A-Za-z-]*[.:](?=\s|$)\s*/;
+const FIELD_LABEL = /^[A-Z][A-Za-z0-9-]*[.:](?=\s|$)\s*/;
 const HEADER_FIELD = /^\*\*[A-Z][^*\n]*:\*\*(?=\s|$)/;
 const SECTION = /^\s{0,3}#{2,6}(?:\s+|$)/;
 

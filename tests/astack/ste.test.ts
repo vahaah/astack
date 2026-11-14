@@ -169,9 +169,14 @@ describe("sentence length", () => {
 		expect(rules(`# ${tail} ${tail}`)).toEqual([]);
 	});
 
-	test("a field label of the plan and ticket schema is exempt", () => {
+	test("a field label of the plan and ticket schema is exempt, also with a digit", () => {
 		expect(rules("Verify. `bun test` exits 0.")).toEqual([]);
 		expect(rules("Check: the build is green.")).toEqual([]);
+		expect(
+			rules(
+				"N1. The hook reads the file. The job writes the log. The tests pass. The owner merges it. The tool stops. The job ends.",
+			),
+		).toEqual([]);
 	});
 });
 
