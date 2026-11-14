@@ -113,7 +113,7 @@ A stack is a chain of base branches.
 The root PR targets trunk.
 Each child branch rebases onto its parent's exact tip.
 Its PR targets that parent branch.
-After a parent merges, move the child to trunk under `playbooks/shipping.md` step 4.
+After a parent merges, move the child to trunk under `playbooks/shipping.md` step 5.
 Create a child with `gh pr create --base <parent-branch>`.
 Retarget it with `gh pr edit <pr> --base <parent-branch>`.
 Branch from trunk only for independent work.

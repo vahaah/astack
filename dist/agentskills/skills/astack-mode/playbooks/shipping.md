@@ -61,7 +61,16 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    A development server is one such lane.
    Verify any other changed behavior again.
 
-4. Land one PR at a time from bottom to top.
+4. Read what the merge starts.
+
+   Read the `on.push` filters of each workflow.
+   Find each workflow that a push of these changes to the base branch starts.
+   Name each job that publishes, deploys, or submits a build.
+   A merge that starts such a job is a deployment under `references/autonomy.md`.
+   Land it only when the owner's words in this turn name that release or deployment.
+   Otherwise report the jobs and stop.
+
+5. Land one PR at a time from bottom to top.
 
    Merge the run's lowest unmerged PR with `gh pr merge <pr> --squash`.
    A PR based on its parent's branch merges into that branch.
@@ -80,9 +89,9 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    Use step 3's patch-id rule to determine whether the verdict survives.
    Merge the child only after its checks pass and its verdict still counts.
 
-5. Leave the stack unchanged during landing.
+6. Leave the stack unchanged during landing.
 
-   Step 4's move of the next PR is the only permitted branch or base change.
+   Step 5's move of the next PR is the only permitted branch or base change.
    A merge uses the branch and base that exist at that moment.
    A recorded verdict does not freeze them.
    Watch with `astack watch-pr --queued-stack --stack-prs <bottom-to-top>` from `playbooks/babysit.md`.
@@ -91,14 +100,24 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    Treat that move as expected.
    Diagnose a stalled merge before you change anything.
 
-6. Stop at the ceiling.
+7. Stop at the ceiling.
 
    An extended run needs new verdicts.
    Start a new pass at step 1.
+
+8. Release when the owner's words ask for a release.
+
+   Before a release action or a credential request, read the release docs of the repo and its release workflow.
+   Dispatch the release.
+   Arm a wake from `references/paths-and-wakeups.md`, and name that wake in the reply.
+   At the end state, report the result.
+   For a failure, name the job that failed and give an excerpt of its log.
+   When the owner corrects the release route, write the correction into the release docs of the repo in a PR.
 
 ## Reply
 
 Report the verified run and its ceiling.
 Name each PR's verdict and verifier.
 State what landed and how you confirmed it.
+Name each publish or deploy job that the merge started, with its run link and its state.
 State what the next gap needs.

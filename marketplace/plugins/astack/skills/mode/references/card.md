@@ -18,7 +18,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/pr-review-hardening` | `astack:pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
 | "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
 | "update from main" | Mode playbook `refresh.md` |
-| "merge", "merge when green" | The `astack:mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
+| "merge", "merge when green", "merge and release" | The `astack:mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
 | UI polish, mobile | `astack:control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack:mode` Worktree cleanup playbook |
 
