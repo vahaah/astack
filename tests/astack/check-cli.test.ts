@@ -12,9 +12,9 @@ import { join, resolve } from "node:path";
 import { PR_BODY_MAX_LINES } from "../../src/astack/cli/commands/check/pr.ts";
 
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
-const WRITE_DOCS = resolve(
+const SKILLS = resolve(
 	import.meta.dir,
-	"../../marketplace/plugins/astack/skills/write-docs",
+	"../../marketplace/plugins/astack/skills",
 );
 
 const FEATURE = `## Problem
@@ -155,14 +155,16 @@ describe("astack check-pr", () => {
 		expect(run.out).toBe(out);
 	});
 
-	test("the write-docs line limit of a PR body is the limit of check-pr", () => {
-		for (const file of ["SKILL.md", "references/pr-and-commits.md"]) {
-			const text = readFileSync(join(WRITE_DOCS, file), "utf8");
-			const limits = [
-				...text.matchAll(/Keep the body under about (\d+) lines/g),
-			].map((match) => Number(match[1]));
-			expect(limits).toEqual([PR_BODY_MAX_LINES]);
-		}
+	test.each([
+		"write-docs/SKILL.md",
+		"write-docs/references/pr-and-commits.md",
+		"mode/playbooks/opening-a-pr.md",
+	])("the PR body line limit of %s is the limit of check-pr", (file) => {
+		const text = readFileSync(join(SKILLS, file), "utf8");
+		const limits = [
+			...text.matchAll(/Keep (?:the|that) body under about (\d+) lines/g),
+		].map((match) => Number(match[1]));
+		expect(limits).toEqual([PR_BODY_MAX_LINES]);
 	});
 
 	test("--template checks every heading of the named template", () => {
