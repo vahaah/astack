@@ -94,7 +94,7 @@ Each of these must be true on the latest commit:
 
 Fetch the base right before the merge.
 
-Merge with the method that the repo uses. Read the allowed methods and recent merged PRs.
+Merge with the command that step 5 of Shipping gives.
 Run `gh pr merge` in its own Bash call. Never use `--admin` or another bypass.
 With a merge queue or auto-merge, stay until GitHub reports the PR as merged.
 Read the result back with `gh pr view <pr> --json state,mergedAt,mergeCommit,baseRefName`.
