@@ -27,7 +27,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `$as
 | UI polish, mobile | `astack:control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack:mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Find a mode playbook with `astack skill-path astack:mode references/<name>.md`, and read it.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path that `astack skill-path astack:mode <folder>/<name>.md` prints. A playbook that the card names by title, such as Bug fix, is `playbooks/bug-fix.md`. A file that the card names, such as `resume.md`, is in `references/`.
 
 ## Standing rules
 
