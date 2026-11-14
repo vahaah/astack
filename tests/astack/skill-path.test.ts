@@ -155,7 +155,20 @@ describe("astack skill-path", () => {
 		).toBeUndefined();
 	});
 
-	test("a file that an installed skill does not hold exits 3 and lists its references and playbooks", () => {
+	test.each([
+		[
+			"a file that an installed skill does not hold exits 3 and lists its references and playbooks",
+			"astack:mode",
+			3,
+			"astack skill-path: references/bug-fix.md is not in astack:mode\nIts references/ and playbooks/ folders hold:\n  playbooks/bug-fix.md\n  references/notes.md\n",
+		],
+		[
+			"a missing skill with a file argument exits 1 as not installed",
+			"astack:no-such",
+			1,
+			"astack skill-path: astack:no-such references/bug-fix.md not installed\n",
+		],
+	])("%s", (_name, ref, exitCode, stderr) => {
 		const dir = scratch();
 		const astack = plugin(join(dir, "plugins/astack"), "astack", ["mode"]);
 		mkdirSync(join(astack, "skills/mode/playbooks"));
@@ -163,7 +176,7 @@ describe("astack skill-path", () => {
 		writeFileSync(join(astack, "skills/mode/playbooks/bug-fix.sh"), "x\n");
 		let out = "";
 		let err = "";
-		const code = main(["skill-path", "astack:mode", "references/bug-fix.md"], {
+		const code = main(["skill-path", ref, "references/bug-fix.md"], {
 			out: (text) => {
 				out += text;
 			},
@@ -176,11 +189,9 @@ describe("astack skill-path", () => {
 			now: new Date("2026-11-14T09:00:00Z"),
 			scriptPath: undefined,
 		});
-		expect(code).toBe(3);
+		expect(code).toBe(exitCode);
 		expect(out).toBe("");
-		expect(err).toBe(
-			"astack skill-path: references/bug-fix.md is not in astack:mode\nIts references/ and playbooks/ folders hold:\n  playbooks/bug-fix.md\n  references/notes.md\n",
-		);
+		expect(err).toBe(stderr);
 	});
 
 	test("ignores a sibling directory whose manifest names another plugin", () => {
