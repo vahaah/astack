@@ -3,7 +3,7 @@ name: "astack-file-pr"
 description: "File a short PR that starts with the problem, not a list of changes. Use when the owner asks to file, open or create a PR."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 

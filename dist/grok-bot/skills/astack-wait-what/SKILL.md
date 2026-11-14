@@ -3,7 +3,7 @@ name: "astack-wait-what"
 description: "Explain the current direction again when the previous message was unclear."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Explain the current direction

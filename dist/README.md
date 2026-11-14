@@ -35,9 +35,9 @@ ln -s <repository root>/rules/postgres.md ~/.claude/rules/astack-postgres.md
 The hooks and many skills run the `astack` CLI. It needs Node 22 or later, or Bun. The Claude Code and Cursor plugins hold a copy in `bin/`. For CI, git hooks and other tools, run the package of this repository at a release tag:
 
 ```sh
-bunx github:vahaah/astack#v0.1.0 --help
+bunx github:vahaah/astack#v0.2.0 --help
 ```
 
 Run `astack doctor` after an install. It reports the runtime, the installed copies, duplicate skills, untrusted Codex hooks and output-style plugins that conflict with astack.
 
-Version: 0.1.0.
+Version: 0.2.0.

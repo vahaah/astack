@@ -2,7 +2,7 @@
 name: "astack-takeover"
 description: "Finish the PR, branch or agent thread of another person or agent, and keep their credit. Use when the owner asks you to take over a PR, a branch or a thread."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Takeover

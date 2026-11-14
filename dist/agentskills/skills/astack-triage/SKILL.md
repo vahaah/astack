@@ -3,7 +3,7 @@ name: "astack-triage"
 description: "Triage issues and enabled external PRs. Classify requests, verify claims, clarify decisions and write agent briefs."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

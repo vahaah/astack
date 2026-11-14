@@ -235,6 +235,21 @@
 			]
 		},
 		{
+			"path": "package.json",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
 			"path": "src/astack/change-proof/**",
 			"obligation": "SG-preserve",
 			"modelRefs": [
@@ -431,6 +446,21 @@
 		},
 		{
 			"path": "README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": [
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "CHANGELOG.md",
 			"obligation": "SG-preserve",
 			"modelRefs": [
 				"GrantFromWords",

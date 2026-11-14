@@ -34,4 +34,4 @@ Codex reads the Claude Code build in `claude-code/` through its marketplace supp
 - The Codex sandbox has no network access by default, so the tracker steps ask for approval.
 - Codex sends a file edit as `apply_patch`. The astack CLI reads the patch and runs the edit checks on each file that it adds or changes. Live Codex sessions run these checks and show their notes to the model.
 
-Version: 0.1.0.
+Version: 0.2.0.

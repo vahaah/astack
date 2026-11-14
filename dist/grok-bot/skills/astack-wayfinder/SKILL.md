@@ -3,7 +3,7 @@ name: "astack-wayfinder"
 description: "Plan work across agent sessions with a shared map of decision tickets. Resolve questions until the route to the destination is clear."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Wayfinder

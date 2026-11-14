@@ -8,11 +8,11 @@ No local astack installation is required.
 ## Get the tagged source
 
 Review a published release and its verified tag first.
-Use `v0.1.0` below only after that release exists.
+Use `v0.2.0` below only after that release exists.
 Run these commands from the project root:
 
 ```sh
-ASTACK_TAG=v0.1.0
+ASTACK_TAG=v0.2.0
 ASTACK_UNPACK="$(mktemp -d)"
 curl --fail --location "https://github.com/vahaah/astack/archive/refs/tags/$ASTACK_TAG.tar.gz" -o "$ASTACK_UNPACK/source.tar.gz"
 tar -xzf "$ASTACK_UNPACK/source.tar.gz" -C "$ASTACK_UNPACK"

@@ -3,7 +3,7 @@ name: "astack-write-ticket"
 description: "Write, refine or split Linear and GitHub issues. Use the shared templates and a ten-point rubric before filing."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 

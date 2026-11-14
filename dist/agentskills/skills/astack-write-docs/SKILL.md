@@ -3,7 +3,7 @@ name: "astack-write-docs"
 description: "Write and place documents, PR bodies and commit messages. Use for documentation changes, ADRs and change descriptions."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
 ---
 

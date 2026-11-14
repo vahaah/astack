@@ -3,7 +3,7 @@ name: "astack-to-tickets"
 description: "Split a plan, spec or conversation into vertical tickets. Publish one per file or tracker issue, with blocking edges."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Create tickets

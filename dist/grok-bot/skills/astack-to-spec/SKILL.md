@@ -3,7 +3,7 @@ name: "astack-to-spec"
 description: "Create and publish a spec from the current conversation. Synthesize known information without another interview."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Create a spec

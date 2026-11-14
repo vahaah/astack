@@ -3,7 +3,7 @@ name: "astack-why"
 description: "Investigate code history and design reasons across available evidence categories. Use for why questions, regressions, postmortems, tradeoffs, or data-backed thresholds."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

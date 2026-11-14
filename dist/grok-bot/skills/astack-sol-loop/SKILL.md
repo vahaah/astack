@@ -3,7 +3,7 @@ name: "astack-sol-loop"
 description: "Use for /astack-sol-loop or \"sol loop\". One reviewer from another model family reviews the change in rounds. The agent makes the smallest changes that satisfy the reviewer and pushes back on scope growth."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Sol loop

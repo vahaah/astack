@@ -2,7 +2,7 @@
 name: "astack-domain-modeling"
 description: "Build a project domain model. Use when you discuss terminology, change CONTEXT.md, or record or edit an ADR."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Domain modeling

@@ -2,7 +2,7 @@
 name: "astack-grilling"
 description: "Interview the user about a plan, decision or idea. Use when the user asks to grill or test their reasoning."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Grilling

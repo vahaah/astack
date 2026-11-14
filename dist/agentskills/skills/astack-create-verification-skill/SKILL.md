@@ -3,7 +3,7 @@ name: "astack-create-verification-skill"
 description: "Create a project-local verification skill for real app behavior. Use for /astack-create-verification-skill or a missing UI, CLI, or service driver."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

@@ -3,7 +3,7 @@ name: "astack-architect"
 description: "Sketch types, signatures and module structure before implementation. Use for /astack-architect, \"architect this\", \"design this\", or substantial work that needs a design first. Compare model perspectives, then follow the chosen sketch during implementation."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Architect

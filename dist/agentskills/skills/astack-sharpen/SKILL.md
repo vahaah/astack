@@ -3,7 +3,7 @@ name: "astack-sharpen"
 description: "Improve the approach before work starts. Use for /astack-sharpen to check the goal, constraints, expert methods, and independent proof."
 license: "MIT"
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

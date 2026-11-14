@@ -2,7 +2,7 @@
 name: "astack-setup-models"
 description: "Configure astack models and reasoning budgets by role. Use for /astack-setup-models, model selection, or budget changes."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Set up models

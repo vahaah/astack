@@ -2,7 +2,7 @@
 name: "astack-wizard"
 description: "Create an interactive Bash wizard for human-only setup or migration steps. Use for infrastructure, credentials, CI secrets, or unfamiliar dashboards."
 metadata:
-  astack-version: "0.1.0"
+  astack-version: "0.2.0"
 ---
 
 # Wizard
