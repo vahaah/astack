@@ -793,7 +793,7 @@ describe("chat replies", () => {
 		);
 	});
 
-	test("a human prompt is one from the composer, never a wakeup or a headless run", () => {
+	test("[control:sg-relayed-prompt] a human prompt is one from the composer, never a wakeup or a headless run", () => {
 		const attended = {
 			CLAUDE_CODE_ENTRYPOINT: "cli",
 			CLAUDE_CODE_SESSION_ATTENDED: "1",

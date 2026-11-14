@@ -222,7 +222,7 @@ describe("docs, plans and ADRs", () => {
 		);
 	});
 
-	test("a file outside the project and every work tree gets no note, and a sibling work tree uses its own settings", () => {
+	test("[control:sg-scratch-doc] a file outside the project and every work tree gets no note, and a sibling work tree uses its own settings", () => {
 		const outside = join(base, "outside");
 		mkdirSync(outside, { recursive: true });
 		const write = (file_path: string) =>

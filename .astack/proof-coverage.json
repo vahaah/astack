@@ -2,7 +2,8 @@
 	"version": 1,
 	"specs": [
 		"docs/reference/change-proof-contract.md",
-		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md"
+		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
+		"docs/reference/session-guards.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -12,7 +13,14 @@
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts",
 		"tests/astack/change-proof-ratification.test.ts",
-		"tests/astack/governing-authority.test.ts"
+		"tests/astack/governing-authority.test.ts",
+		"tests/astack/merge-guard.test.ts",
+		"tests/astack/ste.test.ts",
+		"tests/astack/doctor.test.ts",
+		"tests/astack/hook.test.ts",
+		"tests/astack/ste-hook.test.ts",
+		"tests/astack/guards.test.ts",
+		"tests/drift.test.ts"
 	],
 	"links": [
 		{
@@ -129,6 +137,62 @@
 				"proof-landing-fixed-base",
 				"proof-landing-structure",
 				"proof-landing-historical-grammar"
+			]
+		},
+		{
+			"criterion": "SG-merge-grant",
+			"controls": [
+				"sg-grant-words",
+				"sg-full-send-clause",
+				"sg-merge-needs-grant",
+				"sg-turn-grant-merges",
+				"sg-grant-scope",
+				"sg-grant-ends",
+				"sg-standing-grant"
+			]
+		},
+		{
+			"criterion": "SG-full-stop",
+			"controls": ["sg-full-send-clause", "sg-negated-merge"]
+		},
+		{
+			"criterion": "SG-unattended",
+			"controls": [
+				"sg-unattended-denial",
+				"sg-relayed-prompt",
+				"sg-machine-prompt",
+				"sg-doctor-unattended"
+			]
+		},
+		{
+			"criterion": "SG-scratch",
+			"controls": ["sg-scratch-write", "sg-scratch-doc"]
+		},
+		{
+			"criterion": "SG-commit-surface",
+			"controls": ["sg-commit-staged", "sg-commit-added"]
+		},
+		{
+			"criterion": "SG-work-loss",
+			"controls": [
+				"sg-work-loss-denied",
+				"sg-explicit-discard-passes",
+				"sg-clean-tree-passes"
+			]
+		},
+		{
+			"criterion": "SG-generated",
+			"controls": ["sg-stale-cli"]
+		},
+		{
+			"criterion": "SG-preserve",
+			"controls": [
+				"sg-grant-words",
+				"sg-merge-needs-grant",
+				"sg-unattended-denial",
+				"sg-scratch-write",
+				"sg-commit-staged",
+				"sg-work-loss-denied"
 			]
 		}
 	]

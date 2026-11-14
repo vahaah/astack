@@ -235,7 +235,7 @@ describe("astack doctor", () => {
 			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.",
 		],
 	])(
-		"the command names the setting that makes the session unattended (%p)",
+		"[control:sg-doctor-unattended] the command names the setting that makes the session unattended (%p)",
 		async (env, line) => {
 			const home = mkdtempSync(join(tmpdir(), "astack-doctor-session-"));
 			try {

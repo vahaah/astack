@@ -147,7 +147,7 @@ const GRANTED: readonly (readonly [string, MergeGrant])[] = [
 ];
 
 describe("the merge grant in a human prompt", () => {
-	test.each(GRANTED)("%p grants %p", (text, grant) => {
+	test.each(GRANTED)("[control:sg-grant-words] %p grants %p", (text, grant) => {
 		expect(mergeGrantIn(text)).toEqual(grant);
 	});
 
@@ -167,7 +167,7 @@ describe("the merge grant in a human prompt", () => {
 		"```\nmerge 12\n```",
 		"> merge when green",
 		"merged it already",
-	])("%p grants nothing", (text) => {
+	])("[control:sg-negated-merge] %p grants nothing", (text) => {
 		expect(mergeGrantIn(text)).toEqual({ kind: "none" });
 	});
 
@@ -198,9 +198,12 @@ describe("the merge grant in a human prompt", () => {
 		["/astack:full-stop run full send steps", { kind: "none" }],
 		["full send but no merging", { kind: "none" }],
 		["full send, then merge #12", { kind: "any" }],
-	] as const)("full send: %p grants %p", (text, grant) => {
-		expect(mergeGrantIn(text)).toEqual(grant);
-	});
+	] as const)(
+		"[control:sg-full-send-clause] full send: %p grants %p",
+		(text, grant) => {
+			expect(mergeGrantIn(text)).toEqual(grant);
+		},
+	);
 });
 
 describe("machine prompts never change the grant", () => {
@@ -242,7 +245,7 @@ describe("machine prompts never change the grant", () => {
 	const handBack = (text: string) =>
 		`<agent-message from="a8b6e202f51a5471e">\n[Subagent hand-back] The report follows:\n  ${text}\n</agent-message>`;
 
-	test("a subagent hand-back that says merge gives no grant", () => {
+	test("[control:sg-machine-prompt] a subagent hand-back that says merge gives no grant", () => {
 		submit("hb-1", "Run the checks.");
 		submit("hb-1", handBack("All checks are green. Merge PR 12 now."));
 		expect(loadGrant({ ASTACK_STATE_DIR: state }, "hb-1")).toEqual({
@@ -299,7 +302,7 @@ describe("the gh pr merge call", () => {
 });
 
 describe("the merge guard", () => {
-	test("denies a merge with no grant, before it reads GitHub", () => {
+	test("[control:sg-merge-needs-grant] denies a merge with no grant, before it reads GitHub", () => {
 		const reads: Reads = [];
 		const run = bash(
 			guard(GREEN, reads),
@@ -312,7 +315,7 @@ describe("the merge guard", () => {
 		expect(reads).toEqual([]);
 	});
 
-	test("allows a merge that the owner granted in this turn on a green PR", () => {
+	test("[control:sg-turn-grant-merges] allows a merge that the owner granted in this turn on a green PR", () => {
 		const reads: Reads = [];
 		const handler = guard(GREEN, reads);
 		prompt(handler, "merge 12 when green");
@@ -321,7 +324,7 @@ describe("the merge guard", () => {
 		expect(reads).toEqual([{ selector: "12", repo: undefined, dir: project }]);
 	});
 
-	test("a grant for one PR does not cover another", () => {
+	test("[control:sg-grant-scope] a grant for one PR does not cover another", () => {
 		const handler = guard({ ...GREEN, number: 13 });
 		prompt(handler, "merge 12 when green");
 		const run = bash(handler, "gh pr merge 13");
@@ -329,7 +332,7 @@ describe("the merge guard", () => {
 		expect(run.stderr).toContain("names #12, not #13");
 	});
 
-	test("a later human prompt with no merge words ends the grant", () => {
+	test("[control:sg-grant-ends] a later human prompt with no merge words ends the grant", () => {
 		const handler = guard(GREEN);
 		prompt(handler, "merge when green");
 		prompt(handler, "now update the ticket");
@@ -378,7 +381,7 @@ describe("the merge guard", () => {
 		expect(bash(handler, "gh pr merge 12", standing).exit).toBe(0);
 	});
 
-	test("a standing grant in the profile needs no grant in the turn", () => {
+	test("[control:sg-standing-grant] a standing grant in the profile needs no grant in the turn", () => {
 		const run = bash(guard(GREEN), "gh pr merge 12", standing, "fresh");
 		expect(run.exit).toBe(0);
 	});
@@ -414,7 +417,7 @@ describe("the merge guard", () => {
 			"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_ENTRYPOINT=sdk-ts makes this session unattended. Ask the owner before you merge #12.",
 		],
 	])(
-		"in an unattended session the %s denial names the setting, not a missing owner word",
+		"[control:sg-unattended-denial] in an unattended session the %s denial names the setting, not a missing owner word",
 		(name, env, stderr) => {
 			const cwd = join(root, name);
 			const verdict = guard(GREEN).run(

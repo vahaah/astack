@@ -156,13 +156,16 @@ describe("the destructive command guard", () => {
 			"discards the uncommitted changes in notes.txt.",
 		],
 		["git clean -fd", "deletes the untracked files scratch.txt."],
-	])("%s is denied when it discards uncommitted work", (command, text) => {
-		const verdict = destructive.run(shell(command, dirty), context(dirty));
-		expect(reason(verdict)).toContain(
-			`- ${command.replaceAll("'", "")} ${text}`,
-		);
-		expect(reason(verdict)).toContain("owner gate");
-	});
+	])(
+		"[control:sg-work-loss-denied] %s is denied when it discards uncommitted work",
+		(command, text) => {
+			const verdict = destructive.run(shell(command, dirty), context(dirty));
+			expect(reason(verdict)).toContain(
+				`- ${command.replaceAll("'", "")} ${text}`,
+			);
+			expect(reason(verdict)).toContain("owner gate");
+		},
+	);
 
 	test.each([
 		"git checkout HEAD -- notes.txt",
@@ -172,14 +175,17 @@ describe("the destructive command guard", () => {
 		"git clean -fdn",
 		"git clean -fX",
 		"git stash",
-	])("%s passes on a dirty tree because it discards no work", (command) => {
-		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
-			"allow",
-		);
-	});
+	])(
+		"[control:sg-explicit-discard-passes] %s passes on a dirty tree because it discards no work",
+		(command) => {
+			expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+				"allow",
+			);
+		},
+	);
 
 	test.each(["git reset --hard", "git checkout HEAD -- .", "git clean -fd"])(
-		"%s passes on a clean tree",
+		"[control:sg-clean-tree-passes] %s passes on a clean tree",
 		(command) => {
 			expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 		},

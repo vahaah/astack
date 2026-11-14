@@ -436,7 +436,7 @@ describe("git commit", () => {
 	});
 	afterAll(() => rmSync(repo, { recursive: true, force: true }));
 
-	test("a commit whose staged diff adds a provenance tag is denied", () => {
+	test("[control:sg-commit-staged] a commit whose staged diff adds a provenance tag is denied", () => {
 		writeFileSync(
 			join(repo, "base.ts"),
 			"// Fixes ABC-123 from the review\nexport const base = 2;\n",
@@ -451,7 +451,7 @@ describe("git commit", () => {
 		git(repo, "reset", "-q", "--hard");
 	});
 
-	test("files added in the same command are checked", () => {
+	test("[control:sg-commit-added] files added in the same command are checked", () => {
 		writeFileSync(
 			join(repo, "fresh.ts"),
 			"// const old = legacy();\nexport const fresh = 1;\n",
@@ -609,7 +609,7 @@ describe("scratch files outside the project", () => {
 	];
 
 	test.each(cases)(
-		"a probe with `any` and a long header in %s: %s",
+		"[control:sg-scratch-write] a probe with `any` and a long header in %s: %s",
 		(_, expected, dir) => {
 			const file = join(dir(), "probe.ts");
 			for (const payload of [
