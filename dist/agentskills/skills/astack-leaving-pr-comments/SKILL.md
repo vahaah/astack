@@ -12,8 +12,11 @@ metadata:
 Use this skill for each comment that you post on GitHub for the owner.
 That includes a top-level PR comment, an inline review comment and a reply to a reviewer or a bot.
 It also includes the written reason before you resolve or dismiss a thread.
+
 Do not use it for a PR body or a commit message.
 Do not use it for text that the owner tells you to post word for word with no attribution.
+Do not use it for a comment in a machine format that another skill or a tool defines.
+An example is the `proof.pr_comment` comment of `astack-pr-review-hardening`, which starts with its heading.
 
 This skill gives no permission to post.
 The owner gates of the rule card still apply, such as a message to a client.
