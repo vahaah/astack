@@ -146,10 +146,11 @@ function withholdsFullSend(tokens: readonly string[]): boolean {
 interface Clause {
 	readonly tokens: readonly string[];
 	readonly question: boolean;
+	readonly opensPrompt: boolean;
 }
 
 function clauseGrant(
-	{ tokens, question }: Clause,
+	{ tokens, question, opensPrompt }: Clause,
 	fullSendAllowed: boolean,
 ): MergeGrant {
 	for (let index = 0; index < tokens.length; index++) {
@@ -162,9 +163,10 @@ function clauseGrant(
 		const before = tokens.slice(Math.max(0, index - 3), index);
 		if (fullSend) {
 			if (before.some((word) => NEGATIONS.has(word))) continue;
-			const typedWords = !FULL_SEND_COMMAND.test(token);
+			const invoked =
+				opensPrompt && index === 0 && FULL_SEND_COMMAND.test(token);
 			if (
-				typedWords &&
+				!invoked &&
 				(question ||
 					before.some(
 						(word) => BLOCKERS.has(word) || FULL_SEND_MENTIONS.has(word),
@@ -195,10 +197,13 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 export function mergeGrantIn(prompt: string): MergeGrant {
 	const sentences = prose(prompt).split("?");
 	const clauses = sentences.flatMap((sentence, index) =>
-		sentence.split(/[!;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/).map((text) => ({
-			tokens: words(text),
-			question: index < sentences.length - 1,
-		})),
+		sentence
+			.split(/[!;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
+			.map((text, part) => ({
+				tokens: words(text),
+				question: index < sentences.length - 1,
+				opensPrompt: index === 0 && part === 0,
+			})),
 	);
 	const fullSendAllowed = !clauses.some(({ tokens }) =>
 		withholdsFullSend(tokens),

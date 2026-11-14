@@ -186,6 +186,8 @@ describe("the merge grant in a human prompt", () => {
 		["review full send for bugs", { kind: "none" }],
 		["explain full send", { kind: "none" }],
 		["review full-send for bugs", { kind: "none" }],
+		["What does /astack:full-send do?", { kind: "none" }],
+		["Review /astack:full-send for bugs", { kind: "none" }],
 		["full stop", { kind: "none" }],
 		["no full send", { kind: "none" }],
 		["don't full send", { kind: "none" }],
