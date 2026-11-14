@@ -48,7 +48,9 @@ The REST limit of GitHub is separate, and it usually has calls left.
 - Act only on checks and comments that are newer than the last push.
 - Examine each bot finding against the source before you change code. Use `playbooks/review-bot-triage.md` of the mode.
 - Fix real findings and CI failures. Keep a failure of the repo apart from a flaky failure of the infrastructure.
-- Treat CodeRabbit as advisory. Triage its findings like other findings, but never wait for it and never hold a merge for it.
+- Treat CodeRabbit as advisory. Triage its findings like other findings.
+- `astack watch-pr` and the merge guard gate on each check of the PR. They do not yet exempt the check of an advisory bot, such as CodeRabbit.
+- So a pending or failed check of an advisory bot holds the merge. Report that state to the owner. Do not report the PR as ready.
 - Some repos hold rule files for a review bot, such as `.macroscope/check-run-agents/*.md`. Read them before you answer that bot. Its findings cite them.
 - Post each comment through `astack-leaving-pr-comments`. That includes the reason before you dismiss and resolve a thread.
 - Attach a screenshot or a video when it proves a claim and you can upload it.
