@@ -140,7 +140,7 @@ Delete empty optional sections instead of writing "n/a".
 - Name the ticket on the first line as `Part of ABC-123`. Multiple tickets can share that line, as in `Part of ABC-123, ABC-124`. The line is mandatory when `.astack/profile.json` sets `tracker.requirePartOf`.
 - Never put a ticket key or `#n` after a closing word such as `Closes`, `Fixes` or `Resolves`. That form triggers tracker completion at merge, so the astack hook refuses it. The reference explains GitHub issue and branch-name cases.
 - Describe behavior. Call out schema, API and migration changes rather than listing files.
-- Describe the final state. Keep review rounds, commit SHAs and owner rulings out of headings and body. Link logs and long tables.
+- Describe the final state. Keep review rounds, commit SHAs and owner rulings out of headings and body. Link logs and long tables. A local walk log or a table of each run has no link. Post such a run record in one PR comment, and link that comment from Verification.
 - Explain internal code and abbreviations in plain words, or omit them.
 - Always state rollback. Name the revert, flag or reversible migration that undoes the change.
 - Keep Why to one to three short sentences covering the problem, impact and approach.

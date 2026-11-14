@@ -11,11 +11,21 @@ import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
 
+export const PR_BODY_MAX_LINES = 40;
+
 function reportLinks(io: Io, body: string, root: string | undefined): number {
 	const requirePartOf = root !== undefined && loadPrProfile(root).requirePartOf;
 	const findings = linkFindings({ title: undefined, body }, { requirePartOf });
 	for (const finding of findings) io.out(`PR body: ${finding}\n`);
 	return findings.length > 0 ? 1 : 0;
+}
+
+function noteLength(io: Io, body: string): void {
+	const lines = body.trimEnd().split("\n").length;
+	if (lines > PR_BODY_MAX_LINES)
+		io.out(
+			`note: PR body has ${lines} lines, over the ${PR_BODY_MAX_LINES} lines of astack:write-docs. Link long run records from Verification.\n`,
+		);
 }
 
 function headingSource(
@@ -44,14 +54,14 @@ function run(args: readonly string[], io: Io): number {
 	const source = headingSource(io, root, parsed.template);
 	if (typeof source === "number") return source;
 	const links = reportLinks(io, body, root);
+	noteLength(io, body);
 	const headings = reportGaps(io, body, "PR body", [source]);
 	return Math.max(links, headings);
 }
 
 export const command: Command = {
 	name: "pr",
-	summary:
-		"Checks a PR body: the headings of the repo PR template or the default headings, the Part of line when the profile asks for it, and closing words before a ticket key.",
+	summary: `Checks a PR body: the headings of the repo PR template or the default headings, the Part of line when the profile asks for it, and closing words before a ticket key. A note names a body over ${PR_BODY_MAX_LINES} lines and never fails.`,
 	usage: "check pr <file|-> [--template <name>]",
 	run,
 };

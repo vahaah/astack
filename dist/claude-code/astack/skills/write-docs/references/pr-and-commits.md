@@ -26,7 +26,7 @@ One to three bullets on the behavior, not a file list, then what the PR leaves o
 
 ## Verification
 
-One to three bullets, each a gate or run path with its counts or outcome. For a bug or a review finding, show the failing run first, then the passing run. Name what you did not run.
+One to three bullets, each a gate or run path with its counts or outcome. For a bug or a review finding, show the failing run first, then the passing run. Name what you did not run. A local walk log or a table of each run has no link. Post such a run record in one PR comment, and link that comment here.
 
 ## Risk and rollback
 
