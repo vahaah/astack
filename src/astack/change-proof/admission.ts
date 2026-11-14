@@ -411,10 +411,9 @@ function linkedControls(
 		matrix.value.specs.map(source),
 		matrix.value.tests.map(source),
 	);
-	const [finding] = drift.findings;
-	if (finding !== undefined)
+	if (drift.findings.length > 0)
 		return err(
-			`${path} has ${drift.findings.length} spec-drift findings; the first is: ${finding}`,
+			`${path} has ${drift.findings.length} spec-drift findings: ${drift.findings.join("; ")}`,
 		);
 	const unlinked = criteria.find(
 		(criterion) =>
@@ -476,15 +475,17 @@ function scopeCheck(
 	const patterns = proof.scope.map((row) => row.path);
 	if (changed.length === 0)
 		return fail(`the candidate has no change from base ${proof.base}`);
-	const hole = changed.find((entry) => !anyGlob(patterns, entry.path));
-	if (hole !== undefined)
-		return fail(`no scope row covers the changed path ${hole.path}`);
-	const idle = proof.scope.find(
-		(row) => !changed.some((entry) => globMatches(row.path, entry.path)),
-	);
-	return idle === undefined
-		? PASS
-		: fail(`scope row ${idle.path} covers no changed path`);
+	const problems = [
+		...changed
+			.filter((entry) => !anyGlob(patterns, entry.path))
+			.map((hole) => `no scope row covers the changed path ${hole.path}`),
+		...proof.scope
+			.filter(
+				(row) => !changed.some((entry) => globMatches(row.path, entry.path)),
+			)
+			.map((idle) => `scope row ${idle.path} covers no changed path`),
+	];
+	return problems.length === 0 ? PASS : fail(problems.join("; "));
 }
 
 function modelCheck(

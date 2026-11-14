@@ -18,7 +18,12 @@ import {
 	type RunEnd,
 } from "../../src/astack/change-proof/tlc.ts";
 import { ok } from "../../src/astack/result.ts";
-import { PROOF_FILES, type Proof, validProof } from "./change-proof-fixture.ts";
+import {
+	marker,
+	PROOF_FILES,
+	type Proof,
+	validProof,
+} from "./change-proof-fixture.ts";
 
 const BASE = "a".repeat(40);
 
@@ -246,6 +251,59 @@ describe("admitChangeProof", () => {
 				stage: "model",
 				message:
 					"the restored run found other state counts than the positive run",
+			},
+		});
+	});
+});
+
+describe("admission stops", () => {
+	test("name every uncovered changed path and every idle scope row", () => {
+		const proof = parsed((p) => {
+			p.scope.push(
+				{ path: "lib/**", obligation: "P1", modelRefs: ["Admit"] },
+				{ path: "bin/*", obligation: "P1", modelRefs: ["Admit"] },
+			);
+		});
+		if (!proof.ok) throw new Error(proof.error.message);
+		const original = facts(SNAPSHOT);
+		const changed = [
+			...CHANGED,
+			{ path: "notes/a.md", present: true },
+			{ path: "notes/b.md", present: false },
+		];
+		expect(
+			admitChangeProof(proof.value, {
+				...original,
+				view: { ...original.view, changed },
+			}),
+		).toEqual({
+			ok: false,
+			error: {
+				stage: "controls",
+				message:
+					"no scope row covers the changed path notes/a.md; no scope row covers the changed path notes/b.md; scope row lib/** covers no changed path; scope row bin/* covers no changed path",
+			},
+		});
+	});
+
+	test("name every spec-drift finding of the matrix", () => {
+		const original = facts(SNAPSHOT);
+		const files = new Map(original.view.files);
+		files.set("tests/gate.txt", {
+			kind: "text",
+			text: `${PROOF_FILES["tests/gate.txt"]}${["C2", "C3"].map((id) => `test ${marker("control", id)}\n`).join("")}`,
+		});
+		expect(
+			admitChangeProof(validChangeProof(), {
+				...original,
+				view: { ...original.view, files },
+			}),
+		).toEqual({
+			ok: false,
+			error: {
+				stage: "controls",
+				message:
+					".astack/matrix.json has 2 spec-drift findings: control C2 (tests/gate.txt) is linked by no criterion and has no exemption; control C3 (tests/gate.txt) is linked by no criterion and has no exemption",
 			},
 		});
 	});
