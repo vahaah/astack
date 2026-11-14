@@ -136,12 +136,15 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    Run this step once, after the ceiling and any release, never between the merges of a stack.
    Record `df -h /`.
    For each landed PR, remove each worktree that this run made for it, also the verifier worktrees of step 1.
-   Run `git worktree remove <path>` for each one, then run `git worktree prune`.
    Delete the temporary folders that this run made.
    Stop the dev servers that this run started.
 
-   Apply the gates of steps 2 and 4 of `playbooks/worktree-cleanup.md`.
+   Apply the gates of steps 2 and 4 of `playbooks/worktree-cleanup.md` to each worktree.
    Skip a worktree with tracked uncommitted edits, an open PR, or a live session.
+   Name the untracked files of each other worktree, as step 4 of that playbook says.
+   Run `git worktree remove --force <path>` only for a worktree that passed these gates.
+   Then run `git worktree prune`.
+
    Keep every branch ref.
    When the owner says to keep them, remove nothing.
 
