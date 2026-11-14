@@ -45,7 +45,7 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 
 # Coding
 
-When the astack plugin is installed, load `astack:coding-rules` before you write, change or review code. The session that owns the ticket also loads `astack:coding-guide` and runs its daily workflow in order, from `$astack:plan` to the merged PR.
+When the astack plugin is installed, load `astack:coding-rules` before you write, change or review code. If you cannot load it, read the SKILL.md that `astack skill-path astack:coding-rules` prints. The session that owns the ticket also loads `astack:coding-guide` and runs its daily workflow in order, from `$astack:plan` to the merged PR.
 
 These rules hold in every repo, with or without the astack plugin. A stricter repo rule wins. Tickets follow `$astack:write-ticket`, and docs and PR bodies follow `$astack:write-docs`.
 
