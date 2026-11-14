@@ -117,16 +117,19 @@ function prNumbers(tokens: readonly string[]): number[] {
 }
 
 const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
-const FULL_SEND_MENTIONS = new Set([
-	"about",
-	"describe",
-	"does",
-	"explain",
-	"mean",
-	"means",
-	"review",
-	"what",
-	"why",
+const FULL_SEND_FILLER = new Set([
+	"ahead",
+	"go",
+	"it",
+	"just",
+	"now",
+	"ok",
+	"okay",
+	"please",
+	"pr",
+	"the",
+	"this",
+	"yes",
 ]);
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
@@ -138,10 +141,11 @@ function withholdsFullSend(clause: Clause): boolean {
 			FULL_STOP_COMMAND.test(token) ||
 			(token === "full" && tokens[index + 1] === "stop"),
 	);
+	const grantsNoMerge = clauseGrant(clause, false).kind === "none";
 	const keepsTheMerge =
-		tokens.some((token) => MERGE_WORD.test(token)) &&
-		clauseGrant(clause, false).kind === "none";
-	return stops || keepsTheMerge;
+		grantsNoMerge && tokens.some((token) => MERGE_WORD.test(token));
+	const refuses = grantsNoMerge && tokens.some((token) => NEGATIONS.has(token));
+	return stops || keepsTheMerge || refuses;
 }
 
 interface Clause {
@@ -163,18 +167,20 @@ function clauseGrant(
 		if (!fullSend && token !== "merge" && token !== "squash-merge") continue;
 		const before = tokens.slice(Math.max(0, index - 3), index);
 		if (fullSend) {
-			if (before.some((word) => NEGATIONS.has(word))) continue;
-			const invoked =
-				opensPrompt && index === 0 && FULL_SEND_COMMAND.test(token);
-			if (
-				!invoked &&
-				(question ||
-					before.some(
-						(word) => BLOCKERS.has(word) || FULL_SEND_MENTIONS.has(word),
-					))
-			)
-				continue;
-			return { kind: "any" };
+			const command = FULL_SEND_COMMAND.test(token);
+			const invoked = opensPrompt && index === 0 && command;
+			const others = [
+				...tokens.slice(0, index),
+				...tokens.slice(index + (command ? 1 : 2)),
+			];
+			const bare =
+				!question &&
+				others.every(
+					(word) =>
+						FULL_SEND_FILLER.has(word) || prNumber(word, undefined).length > 0,
+				);
+			if (invoked || bare) return { kind: "any" };
+			continue;
 		}
 		if (before.some((word) => BLOCKERS.has(word))) continue;
 		const after = tokens
@@ -196,16 +202,18 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 }
 
 export function mergeGrantIn(prompt: string): MergeGrant {
-	const sentences = prose(prompt).split("?");
-	const clauses = sentences.flatMap((sentence, index) =>
-		sentence
-			.split(/[!;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
-			.map((text, part) => ({
-				tokens: words(text),
-				question: index < sentences.length - 1,
-				opensPrompt: index === 0 && part === 0,
-			})),
-	);
+	const clauses = prose(prompt)
+		.split(/(?<=[!?\n])|(?<=[.:])(?=\s|$)/)
+		.flatMap((sentence) =>
+			sentence
+				.split(/[!?;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
+				.map((text) => ({
+					tokens: words(text),
+					question: sentence.trimEnd().endsWith("?"),
+				})),
+		)
+		.filter(({ tokens }) => tokens.length > 0)
+		.map((clause, index) => ({ ...clause, opensPrompt: index === 0 }));
 	const fullSendAllowed = !clauses.some(withholdsFullSend);
 	return clauses
 		.map((clause) => clauseGrant(clause, fullSendAllowed))

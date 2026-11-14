@@ -47,7 +47,7 @@ The merge guard reads a "full send" clause with no negation as a merge grant of 
 The grant holds for the current prompt only, as each other merge grant does.
 The words "full stop" never give a merge grant.
 A prompt with "full stop" gives no full-send grant. A prompt with a clause that names the merge but grants no merge, such as "do not merge" or "I will handle the merge", gives none too.
-The typed words give no grant in a question, or after an article, a modal or a word of discussion such as "explain" or "review". The command form, such as `/astack:full-send`, grants only at the start of the prompt. Elsewhere it follows the rules of the typed words.
+The typed words grant only as a bare instruction, such as "full send" or "ok, full send this PR". A clause with other words, such as "fix full send", or a question gives no grant. A clause with a negation, such as "not yet", withholds the grant of the whole prompt. The command form, such as `/astack:full-send`, grants only at the start of the prompt. Elsewhere it follows the rules of the typed words.
 
 #### Formal claim
 

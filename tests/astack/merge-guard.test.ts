@@ -202,6 +202,18 @@ describe("the merge grant in a human prompt", () => {
 		["full send, but I will handle the merge", { kind: "none" }],
 		["full send, then let me do the final merge", { kind: "none" }],
 		["full send, then merge #12", { kind: "any" }],
+		["Full send. What's the ETA?", { kind: "any" }],
+		["ok, full send this PR", { kind: "any" }],
+		["/astack:full-send fix the parser bug", { kind: "any" }],
+		["we could full send this later", { kind: "none" }],
+		["you can full send once I approve", { kind: "none" }],
+		["full send is broken, fix it", { kind: "none" }],
+		["fix full send", { kind: "none" }],
+		["cancel full send", { kind: "none" }],
+		["Instead of full send, just open the PR", { kind: "none" }],
+		["full send, but not yet", { kind: "none" }],
+		["Full send. Actually no, wait.", { kind: "none" }],
+		["I don't want you to full send this one", { kind: "none" }],
 	] as const)(
 		"[control:sg-full-send-clause] full send: %p grants %p",
 		(text, grant) => {
