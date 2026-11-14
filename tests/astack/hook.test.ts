@@ -651,6 +651,16 @@ describe("scratch files outside the project", () => {
 	);
 });
 
+describe("a write target that the hook cannot resolve", () => {
+	test("does not hide the type check of another write in the command", () => {
+		const file = join(project, "probe-unresolved.ts");
+		const command = `printf 'export const b: any = 1;\\n' > ${file}; echo x > /dev/null/x`;
+		const run = runHook(tool("Bash", { command }));
+		expect(decision(run)).toBe("deny");
+		expect(reason(run)).toContain("It adds code that hides type errors");
+	});
+});
+
 describe("gh pr create and gh issue create", () => {
 	const fullPr =
 		"## Why\nA reason.\n\n## What changes\nA change.\n\n## Verification\nTests.\n\n## Risk and rollback\nRevert.";

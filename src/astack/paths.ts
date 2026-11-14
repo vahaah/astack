@@ -83,8 +83,16 @@ function linkTarget(path: string, hops = 0): string {
 	return linkTarget(resolve(dir, readlinkSync(path)), hops + 1);
 }
 
+function resolvedFile(path: string): string | undefined {
+	try {
+		return canonicalFile(linkTarget(resolve(path)));
+	} catch {
+		return undefined;
+	}
+}
+
 export function isScratchPath(projectDir: string, path: string): boolean {
-	const file = canonicalFile(linkTarget(resolve(path)));
-	if (isWithin(canonical(projectDir), file)) return false;
+	const file = resolvedFile(path);
+	if (file === undefined || isWithin(canonical(projectDir), file)) return false;
 	return workTreeRoot(dirname(file)) === undefined;
 }
