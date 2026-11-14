@@ -52,6 +52,14 @@ These include plan edits, ticket and PR structure, merge authority, duplicate PR
 Turn state still records scheduled prompts and advances each interactive turn.
 A scheduled prompt does not become a human merge grant when STE is disabled.
 
+## Know which files the hooks skip
+
+The type, comment, and doc STE hooks skip a write or an edit of a scratch file.
+A scratch file is outside the project, and no folder at or above it holds `.git` or `.astack/profile.json`.
+A file in the OS temp folder outside the project is a scratch file too, also in a git work tree.
+Commit, PR, ticket, and tracker comment checks still examine their text.
+To examine the files of a folder outside a repository, add `.astack/profile.json` to it.
+
 ## Understand Cursor records
 
 Cursor retains one record for each blocked file and handler in its session and workspace.

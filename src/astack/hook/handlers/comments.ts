@@ -11,7 +11,7 @@ import {
 import type { CommentPolicy } from "../../comments/classify.ts";
 import { gitChanges } from "../../git.ts";
 import { type CommitScope, commitScopes } from "../../git-command.ts";
-import { canonicalRelative, readOptional } from "../../paths.ts";
+import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import { commentPolicy } from "../../profile.ts";
 import { type FileWrite, fileWrites, shellSteps } from "../../shell.ts";
 import { keptCommentFindings } from "../../ste/comments.ts";
@@ -63,6 +63,7 @@ function fileVerdict(
 	context: Context,
 ): Verdict {
 	const projectDir = projectDirOf(context);
+	if (isScratchPath(projectDir, path)) return ALLOW;
 	const relPath = canonicalRelative(projectDir, path);
 	if (!isCheckedPath(relPath)) return ALLOW;
 	const change = { relPath, before, after, regions: [...regions] };
@@ -104,6 +105,7 @@ function writeVerdict(write: FileWrite, context: Context): Verdict {
 	if (write.target.dynamic) return ALLOW;
 	const projectDir = projectDirOf(context);
 	const absolute = resolve(write.step.dir, write.target.value);
+	if (isScratchPath(projectDir, absolute)) return ALLOW;
 	const relPath = canonicalRelative(projectDir, absolute);
 	if (!isCheckedPath(relPath)) return ALLOW;
 	const before = readOptional(absolute);

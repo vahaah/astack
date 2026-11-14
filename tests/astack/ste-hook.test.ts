@@ -222,18 +222,22 @@ describe("docs, plans and ADRs", () => {
 		);
 	});
 
-	test("a file outside every repo only advises, also from a deny repo", () => {
+	test("a file outside the project and every work tree gets no note, and a sibling work tree uses its own settings", () => {
 		const outside = join(base, "outside");
 		mkdirSync(outside, { recursive: true });
-		const run = hook(
-			"PreToolUse",
-			tool("Write", {
-				file_path: join(outside, "cv.md"),
-				content: "It's a short note.\n",
-			}),
+		const write = (file_path: string) =>
+			hook(
+				"PreToolUse",
+				tool("Write", { file_path, content: "It's a short note.\n" }),
+			);
+		const scratch = write(join(outside, "cv.md"));
+		expect(scratch.status).toBe(0);
+		expect(scratch.stdout).toBe("");
+		const sibling = write(join(loose, "docs/cv.md"));
+		expect(sibling.status).toBe(0);
+		expect(sibling.context).toContain(
+			"astack STE advice for this write to docs/cv.md",
 		);
-		expect(run.status).toBe(0);
-		expect(run.context).toContain("astack STE advice for this write to cv.md");
 	});
 
 	test("a plan file gets its STE findings once, from the STE hook", () => {

@@ -300,6 +300,7 @@ PR and ticket rules come from the repo profile.
 - `@ts-expect-error` is legal only in `*.test-d.ts` type-test files, because type tests need it.
 - The hook also denies a `biome-ignore` of `noNonNullAssertion`, `noEnum`, `noBannedTypes` or `useExhaustiveSwitchCases` [fp-types].
 - STE runs on a kept comment after Sicko keeps it (section 9.3).
+- The comment hook and its STE check of kept comments skip a write or an edit of a scratch file. A scratch file is outside the project, and no folder at or above it holds `.git` or `.astack/profile.json`. A file in the OS temp folder outside the project is a scratch file too, also in a git work tree. A commit of the file still gets the check. To examine the files of a folder outside a repo, add `.astack/profile.json` to it.
 
 Other guards are handlers on the same dispatcher.
 - Merge guard. Deny `gh pr merge` when threads are open or CI is not green on the exact head. Also deny it with a closing word, in a chain with other commands, with no grant, or with `--admin`. Deny a merge through `gh api` and through the GitHub MCP tool `merge_pull_request`. Only a prompt that a person types gives or ends a grant. A subagent hand-back, a teammate message and other harness text never do. A typed "full send" clause or the `/astack:full-send` command grants a merge of each PR in that turn. A negated "full send", such as "no full send", and "full stop" give no grant.
@@ -322,7 +323,7 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 
 ### 8.1 The type hook
 
-- Files are `.ts`, `.tsx`, `.mts` and `.cts`. The hook skips `*.d.ts`, `*.gen.ts`, files marked `@generated` or "DO NOT EDIT" in their first 5 lines, the comment hook skip paths and the profile `types.skip` globs.
+- Files are `.ts`, `.tsx`, `.mts` and `.cts`. The hook skips `*.d.ts`, `*.gen.ts`, files marked `@generated` or "DO NOT EDIT" in their first 5 lines, the comment hook skip paths and the profile `types.skip` globs. It also skips a write or an edit of a scratch file (section 7).
 - The lexer masks strings, comments, templates and JSX text first. A lexer failure allows.
 - The hook denies new `any`, new unsafe `as` and new `!`. Unsafe `as` includes `as unknown as T` and angle-bracket casts in `.ts` and `.mts` files. `as const`, `satisfies` and a bare `as unknown` are legal. `!` includes `let x!: T`.
 - The type hook denies a new `@ts-ignore`, `@ts-nocheck` and `@ts-expect-error` by count. The type hook checks Edits, Writes, shell writes and commits of its files. The comment hook leaves these directives to it there. So each one gets one report. The comment hook still denies them in a JavaScript file.
@@ -368,6 +369,7 @@ STE is mandatory. Deny applies only to rules with proven precision. Judgment rul
 - Each list item is a paragraph. The text kind comes from each sentence.
 - A language guard skips a file or a message where more than 30% of the letters are not Latin. A chat reply gets a `language` finding in its place (9.4). A chat reply in another language with Latin letters gets it too. Spelling stays as the repo has it, and word-list entries hold both -ise and -ize forms.
 - When the checker skips more than 40% of a text and no client-draft route is active, quotes count as prose.
+- The doc check skips a write or an edit of a scratch file (section 7). A commit message, a PR, a ticket and a tracker comment keep their checks.
 
 Only new sentences count. The checker normalizes each sentence and drops every finding whose sentence is also in the old text. The old text is `old_string` for an Edit and the file on disk for a Write. A new ticket, a commit message and a PR create have no old text. Paragraph rules run only on a paragraph that is new as a whole. A fixture proves that an Edit with 3 old non-STE context sentences passes.
 

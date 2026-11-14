@@ -27,12 +27,16 @@ interface HookRun {
 
 let project = "";
 
-function runHook(payload: unknown, raw?: string): HookRun {
+function runHook(
+	payload: unknown,
+	raw?: string,
+	env: Record<string, string> = {},
+): HookRun {
 	const started = performance.now();
 	const result = spawnSync(LAUNCHER, ["hook", "claude-code", "PreToolUse"], {
 		input: raw ?? JSON.stringify(payload),
 		encoding: "utf8",
-		env: { ...process.env, CLAUDE_PROJECT_DIR: project },
+		env: { ...process.env, CLAUDE_PROJECT_DIR: project, ...env },
 	});
 	const ms = performance.now() - started;
 	const stdout = result.stdout.trim();
@@ -578,6 +582,54 @@ describe("files written by cat and tee", () => {
 			).stdout,
 		).toBe("");
 	});
+});
+
+describe("scratch files outside the project", () => {
+	const PROBE =
+		'// Usage: bun probe.ts <file>\n// Reads the file and prints the value.\n// Exits 1 when the parse fails.\nconst value: any = JSON.parse("1");\nexport { value };\n';
+	let base = "";
+	const temp = () => join(base, "tmp");
+
+	beforeAll(() => {
+		base = mkdtempSync(join(tmpdir(), "astack-scratch-"));
+		mkdirSync(join(temp(), "clone/.git"), { recursive: true });
+		mkdirSync(join(base, "notes"));
+		mkdirSync(join(base, "repo/.git"), { recursive: true });
+		mkdirSync(join(base, "opted/.astack"), { recursive: true });
+		writeFileSync(join(base, "opted/.astack/profile.json"), "{}\n");
+	});
+	afterAll(() => rmSync(base, { recursive: true, force: true }));
+
+	const cases: readonly [string, "allow" | "deny", () => string][] = [
+		["a git clone in the OS temp dir", "allow", () => join(temp(), "clone")],
+		["a folder with no work tree above it", "allow", () => join(base, "notes")],
+		["a sibling git work tree", "deny", () => join(base, "repo")],
+		["a folder with an astack profile", "deny", () => join(base, "opted")],
+		["the project", "deny", () => project],
+	];
+
+	test.each(cases)(
+		"a probe with `any` and a long header in %s: %s",
+		(_, expected, dir) => {
+			const file = join(dir(), "probe.ts");
+			for (const payload of [
+				tool("Write", { file_path: file, content: PROBE }),
+				tool("Bash", { command: `cat > ${file} <<'EOF'\n${PROBE}EOF` }),
+			]) {
+				const run = runHook(payload, undefined, { TMPDIR: temp() });
+				if (expected === "allow") {
+					expect(run.status).toBe(0);
+					expect(run.stdout).toBe("");
+				} else {
+					expect(decision(run)).toBe("deny");
+					expect(reason(run)).toContain("It adds code that hides type errors");
+					expect(reason(run)).toContain(
+						"probe.ts:1 is a comment of 3 lines, over the 2-line limit",
+					);
+				}
+			}
+		},
+	);
 });
 
 describe("gh pr create and gh issue create", () => {

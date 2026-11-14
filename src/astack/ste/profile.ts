@@ -1,8 +1,7 @@
-import { existsSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { anyGlob } from "../glob.ts";
-import { readOptional } from "../paths.ts";
-import { PROFILE_PATH, readProfileJson } from "../profile.ts";
+import { readOptional, workTreeRoot } from "../paths.ts";
+import { readProfileJson } from "../profile.ts";
 import { DEFAULT_TECHNICAL_VERBS } from "./lexicon.ts";
 import type { Enforcement, Glossary } from "./types.ts";
 
@@ -146,14 +145,7 @@ export function settingsRoot(path: string, fallback: string): string {
 }
 
 export function settingsRootFrom(start: string, fallback: string): string {
-	let dir = resolve(start);
-	for (;;) {
-		if (existsSync(join(dir, PROFILE_PATH)) || existsSync(join(dir, ".git")))
-			return dir;
-		const parent = dirname(dir);
-		if (parent === dir) return fallback;
-		dir = parent;
-	}
+	return workTreeRoot(start) ?? fallback;
 }
 
 export function hasHeaderFields(relPath: string, profile: SteProfile): boolean {

@@ -21,6 +21,9 @@ Remove an old cast or `any` only in work about that code.
 
 The hook skips `*.d.ts`, `*.gen.ts`, `*.generated.*`, `generated/` paths and Supabase type output.
 It also skips a file with `@generated` or "DO NOT EDIT" in its first 5 lines.
+It skips a scratch file outside the project when no folder at or above it holds `.git` or `.astack/profile.json`.
+It also skips a file in the OS temp folder outside the project.
+A commit of a scratch file still gets the check.
 Set further repo exceptions in `.astack/profile.json`:
 
 ```json
