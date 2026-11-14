@@ -117,6 +117,17 @@ function prNumbers(tokens: readonly string[]): number[] {
 }
 
 const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
+const FULL_SEND_MENTIONS = new Set([
+	"about",
+	"describe",
+	"does",
+	"explain",
+	"mean",
+	"means",
+	"review",
+	"what",
+	"why",
+]);
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
@@ -132,8 +143,13 @@ function withholdsFullSend(tokens: readonly string[]): boolean {
 	);
 }
 
+interface Clause {
+	readonly tokens: readonly string[];
+	readonly question: boolean;
+}
+
 function clauseGrant(
-	tokens: readonly string[],
+	{ tokens, question }: Clause,
 	fullSendAllowed: boolean,
 ): MergeGrant {
 	for (let index = 0; index < tokens.length; index++) {
@@ -146,6 +162,15 @@ function clauseGrant(
 		const before = tokens.slice(Math.max(0, index - 3), index);
 		if (fullSend) {
 			if (before.some((word) => NEGATIONS.has(word))) continue;
+			const typedWords = !FULL_SEND_COMMAND.test(token);
+			if (
+				typedWords &&
+				(question ||
+					before.some(
+						(word) => BLOCKERS.has(word) || FULL_SEND_MENTIONS.has(word),
+					))
+			)
+				continue;
 			return { kind: "any" };
 		}
 		if (before.some((word) => BLOCKERS.has(word))) continue;
@@ -168,12 +193,18 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 }
 
 export function mergeGrantIn(prompt: string): MergeGrant {
-	const clauses = prose(prompt)
-		.split(/[!?;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/)
-		.map(words);
-	const fullSendAllowed = !clauses.some(withholdsFullSend);
+	const sentences = prose(prompt).split("?");
+	const clauses = sentences.flatMap((sentence, index) =>
+		sentence.split(/[!;,\n]+|[.:](?=\s|$)|\s+(?:but|then)\s+/).map((text) => ({
+			tokens: words(text),
+			question: index < sentences.length - 1,
+		})),
+	);
+	const fullSendAllowed = !clauses.some(({ tokens }) =>
+		withholdsFullSend(tokens),
+	);
 	return clauses
-		.map((tokens) => clauseGrant(tokens, fullSendAllowed))
+		.map((clause) => clauseGrant(clause, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
 }
 
