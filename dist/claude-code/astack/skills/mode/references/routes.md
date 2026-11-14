@@ -30,6 +30,7 @@ For the 23 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 | "merge", "merge when green", "merge all", "merge and release" | The `astack:mode` Shipping playbook | The merge needs a grant in `.astack/profile.json` or the owner's merge words in this turn. `merge.authority: standing` covers each PR. `merge.standingBases` covers only a PR of the `origin` repo into a base branch that it names. Run `gh pr merge` as its own Bash call. The astack merge guard refuses a merge with open threads, CI that is not green on the head, or a closing word before a key |
 | "full stop" | Read `astack:full-stop` by path | Do the full-send work, but never merge. Stop with a readiness verdict. "full stop" is never a merge grant |
 | "don't merge" | Stop at ready to merge | Report the PR as ready and stop |
+| "merged", "clean after yourself", "clean and settle" | The Settle step of the `astack:mode` Shipping playbook | Remove the worktrees, temporary folders and dev servers that the run made for the merged PR. Keep every branch ref |
 | UI polish | `astack:control-ui` | Walk the journey as a real persona, never as a superuser. Use the repo UI kit. Measure a layout before you change it |
 | Mobile, a device, a simulator | `astack:control-ui` and the device skills that are installed | Run the device QA matrix. Done means 2 full passes in a row |
 | "pause", "stop" | The `astack:mode` Pause safely playbook | A hard stop. Do no other git or PR work. Give the hand-off prompt from `references/resume.md` |

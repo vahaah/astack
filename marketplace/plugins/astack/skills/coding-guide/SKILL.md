@@ -121,6 +121,7 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Under Shipping and either Autopilot playbook, keep `merge.after_clean_stop` at `report` in the hardening profile.
    Those playbooks verify each PR before the merge.
    Under any other route, the user merges after review or asks `/astack:mode` to use Shipping.
+   When the user merges and reports the merge, run the Settle step of the `astack:mode` Shipping playbook.
    Before the merge, update the Verification counts after the last fix commit.
    The counts must be true at the head that lands.
    When the profile sets `proof.pr_comment`, link to hardening's last PR comment instead of counting.

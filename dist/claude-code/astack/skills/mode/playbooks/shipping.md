@@ -114,6 +114,20 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    For a failure, name the job that failed and give an excerpt of its log.
    When the owner corrects the release route, write the correction into the release docs of the repo in a PR.
 
+9. Settle.
+
+   Run this step once, after the ceiling and any release, never between the merges of a stack.
+   Record `df -h /`.
+   For each landed PR, remove each worktree that this run made for it, also the verifier worktrees of step 1.
+   Run `git worktree remove <path>` for each one, then run `git worktree prune`.
+   Delete the temporary folders that this run made.
+   Stop the dev servers that this run started.
+
+   Apply the gates of steps 2 and 4 of `playbooks/worktree-cleanup.md`.
+   Skip a worktree with tracked uncommitted edits, an open PR, or a live session.
+   Keep every branch ref.
+   When the owner says to keep them, remove nothing.
+
 ## Reply
 
 Report the verified run and its ceiling.
@@ -121,3 +135,6 @@ Name each PR's verdict and verifier.
 State what landed and how you confirmed it.
 Name each publish or deploy job that the merge started, with its run link and its state.
 State what the next gap needs.
+
+Give `df -h /` before and after the Settle step and the worktrees that it removed.
+Give one line for each worktree that it held back, with the reason.
