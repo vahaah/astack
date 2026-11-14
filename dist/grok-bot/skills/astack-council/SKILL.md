@@ -30,7 +30,8 @@ It loops until each seat agrees, and it keeps the scope small.
 - Run an external entry, such as `codex:<model>`, through Bash.
 - Use the read-only form of `../astack-arena/references/external-seats.md` for an external entry.
 - A harness that runs models of other providers can run a seat with its own tools.
-- Run each seat at high effort.
+- Run each seat at the target effort of the `# budget` line in `astack-models.md`. Without that line, use `xhigh`.
+- Pass that effort to each seat as `astack-setup-models` says.
 - When a seat cannot run, report it. Never put another model in its place.
 - The fallback of the external-seats reference does not apply to the council.
 
