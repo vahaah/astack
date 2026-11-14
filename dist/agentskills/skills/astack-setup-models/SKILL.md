@@ -84,8 +84,8 @@ If the result is not listed, use that family's highest listed effort at or below
 If none fits, mark the role as needing a choice.
 
 If step 1 found no working codex, replace each `codex` default with `sonnet`.
-The `sol-loop reviewer` role is the exception.
-Mark it as needing a choice, because the loop needs a reviewer from another model family.
+The `council members` and `sol-loop reviewer` roles are the exceptions.
+Mark each of them as needing a choice, because each needs a seat from another model family.
 
 ### Show the role map
 

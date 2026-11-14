@@ -26,6 +26,7 @@ It loops until each seat agrees, and it keeps the scope small.
 - Read the `council members` role in `astack-models.md`, which `astack-setup-models` writes.
 - Each entry is one seat. Use the members that the owner names, when the owner names them.
 - When the role is missing, use `opus` and `codex`. Report that the council has only two model families.
+- When all seats are of one model family, such as `opus` and `sonnet`, report that the council has one model family.
 - The best council has one seat from each of three model families.
 - Run an alias entry, such as `opus`, as a subagent with that model.
 - Run an external entry, such as `codex:<model>`, through Bash.
