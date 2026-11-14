@@ -273,6 +273,14 @@ describe("the clean selection of the work-loss guard", () => {
 		expect(readFileSync(join(dir, ".git/index")).equals(index)).toBe(true);
 	});
 
+	test("git clean -ff passes when only an untracked folder exists", () => {
+		const dir = untrackedRepo();
+		rmSync(join(dir, "keep.txt"));
+		expect(
+			destructive.run(shell("git clean -ff", dir), context(dir)).kind,
+		).toBe("allow");
+	});
+
 	test("the guard deletes no file when it reads git clean --no-dry-run", () => {
 		const dir = untrackedRepo();
 		const verdict = destructive.run(

@@ -348,8 +348,10 @@ function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
 		if (entry.length < 4) continue;
 		const index = entry.charAt(0);
 		const path = entry.slice(3);
-		const nestedRepo = path.endsWith("/") && !loss.removesNestedRepos;
-		if (isLost(loss.lost, index, entry.charAt(1)) && !nestedRepo)
+		const keptFolder =
+			path.endsWith("/") &&
+			(loss.keepsUntrackedFolders === true || !loss.removesNestedRepos);
+		if (isLost(loss.lost, index, entry.charAt(1)) && !keptFolder)
 			paths.push(path);
 		if (index === "R" || index === "C") i++;
 	}
