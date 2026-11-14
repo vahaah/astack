@@ -415,6 +415,10 @@ Loop guard. Each reply gets one rewrite at most.
 
 The merge grant still reads only a human prompt. A prompt that starts with a harness tag, such as `<agent-message ...>` or `<task-notification>`, is not human. A prompt that equals a cron prompt from `session_crons` of the last Stop is not human either.
 
+On Claude Code and Codex, astack reads `CLAUDE_CODE_SESSION_ATTENDED` and `CLAUDE_CODE_ENTRYPOINT` to find an unattended session. `CLAUDE_CODE_SESSION_ATTENDED=0`, or an entrypoint that starts with `sdk`, makes the session unattended. Then a prompt with no `source` field is not human, so it gives no merge grant. The merge denial, the SessionStart note and `astack doctor` name the variable that makes the session unattended.
+
+This is the host contract. A host that relays the typed prompts of a person must not set `CLAUDE_CODE_SESSION_ATTENDED=0`, and must not use an `sdk` entrypoint. A host must set `CLAUDE_CODE_SESSION_ATTENDED=0` on a thread that carries an agent brief, because no person types its prompts. astack has no attended override, because each child process inherits an environment variable. In an unattended session, only `merge.authority` or `merge.standingBases` in `.astack/profile.json` gives a merge grant.
+
 Each tool uses its own shape. Claude Code and Codex get `{"decision":"block","reason":...}` with exit 0 from the same command. Cursor saves the `afterAgentResponse` text under `conversation_id` and `generation_id`, and `stop` returns `followup_message` with `loop_limit: 1`. A `loop_count` of 0 starts a new chain. A stop that did not complete, such as an abort, sends no follow-up. A Cursor background agent gets `ASTACK_ATTENDED=0` from the `sessionStart` env, so its replies get no rewrite. Grok Bot has no hook, so replies get only the rule card in skill text. The signals of `codex exec` and `cursor-agent -p` are not probed, so those runs can still get a rewrite (`docs/ste-targets.md`).
 
 The coordinator turns off the explanatory and learning output-style plugins at install, because they conflict with STE and terse replies (Q11). `astack doctor` fails while either is on.
