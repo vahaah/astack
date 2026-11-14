@@ -15,24 +15,25 @@ Work in rounds.
 The frontier contains every decision whose prerequisites are settled.
 Ask every question on the current frontier in one round.
 Number each question.
-Give your recommended answer with each one.
+Give each question lettered options and one recommended option.
 Wait for the answers before the next round.
 
 Write each round in plain text with this format:
 
 ```text
-Q1. <question title>. <question body, might be multiple paragraphs, including multiple choices>
-Recommended. <your recommended answer>
+Q1. <Title>? <One paragraph.>
+a. <Option>. Recommended, because <evidence>.
+b. <Option>. <Its cost>.
 
----
-
-Q2. <question title>. <question body, might be multiple paragraphs, including multiple choices>
-Recommended. <your recommended answer>
+Q2. <Title>? <One paragraph.>
+a. <Option>. Recommended, because <evidence>.
+b. <Option>. <Its cost>.
 ```
 
 Never use AskUserQuestion for a whole round.
 It permits at most four questions, while a round includes the full frontier.
-Word each question so "yes" accepts your recommendation.
+The user answers in short codes, such as "Q1 a, Q2 b".
+"agree" accepts each recommendation.
 
 After each round, update the tree from the answers.
 Recompute the frontier.

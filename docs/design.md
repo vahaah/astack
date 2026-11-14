@@ -188,7 +188,7 @@ Model evidence does not establish private reasoning or full implementation corre
 The card also holds the standing rules. They apply without the mode.
 - Autonomy. Push after green gates. Open and update PRs. Merge only with a grant from the profile or from this turn.
 - Owner gates. Stop for accounts, secrets, paid infrastructure, production data writes with no grant and destructive resets. Stop for a force-push to a shared branch, `--admin` merges and messages to clients.
-- Questions. Ask only human calls, each with a recommendation and lettered options. "agree" accepts all. Never ask for a fact. Ask for owner-only inputs one at a time.
+- Questions. Ask only human calls. Ask all ready calls in one round, each with a recommendation and lettered options. "agree" accepts all. Never ask for a fact. Ask one at a time only for a value that the owner types, such as a secret or an account.
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only on an owner call. Follow-ups update the open PR.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before a claim, and open each cited file first. A zero result needs a positive control.
 - State. The plan, the tracker and git hold state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.

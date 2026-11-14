@@ -241,19 +241,11 @@ The historical `interrogate` gate now records the S6 spec review.
 
 ## Round format
 
-A round is plain text. Ask the whole frontier, at most 7 questions. Give each question lettered options and one recommendation:
-
-```text
-Q1. <Title>? <One paragraph.>
-a. <Option>. Recommended, because <evidence> (principle <name>).
-b. <Option>. <Its cost>.
-```
-
+A round is plain text. Ask the whole frontier, at most 7 questions.
+Use the round format of `astack-grilling`, and add `(principle <name>)` to the recommended option.
 `<name>` is a principle reference name from the `astack-principles` index, such as `fix-root-causes`.
 Run `astack skill-path astack:principles references/<name>.md` for its file.
 Read the path it prints.
-The owner answers in short codes, such as "Q1 a, Q2 b".
-"agree" accepts each recommendation.
 
 End the round with the veto list. It holds the agent calls that you wrote as `default` rows since the last round:
 
@@ -269,6 +261,9 @@ A default that the owner accepts becomes `user R<n>` too.
 Log one `answer` trail row for each decision.
 Then send a read-only subagent to test the answers' factual claims against the code.
 A contradiction becomes a question in the next round.
+
+When an answer settles a class of questions, such as who holds a role, write one decision row for the class.
+Apply it to each queued question before the next round.
 
 ## Reply
 

@@ -32,7 +32,7 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 
 - Autonomy. Push after green gates. Open and update PRs. Merge only with a grant from the repo profile or from this turn.
 - Owner gates. Stop for accounts, secrets, paid infrastructure, production data writes with no grant and destructive resets. Stop for a force-push to a shared branch, an `--admin` merge and a message to a client.
-- Questions. Ask only the calls that belong to the owner. Give each one a recommendation and lettered options. "agree" accepts all of them. Never ask for a fact. Ask for owner-only inputs one at a time.
+- Questions. Ask only the calls that belong to the owner. Ask each ready call in one round, with a recommendation and lettered options. "agree" accepts all of them. Never ask for a fact. Ask one at a time only for a value that the owner types, such as a secret or an account.
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only when the owner says so. Put follow-ups in the open PR.
 - PR text. Write `Part of <key>` on the first line when the repo profile asks for it. Never put a key or `#n` after a closing word.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before you make a claim, and open each file that you cite. A zero result needs a positive control.
