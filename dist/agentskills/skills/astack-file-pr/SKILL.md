@@ -54,13 +54,15 @@ Add no second line that names a model or a harness.
 
 `gh pr create` uses GraphQL.
 When it fails because the GraphQL limit has no calls left, create the PR through REST.
-Do this only after these two steps passed:
+Do this only after these four steps passed:
 
 1. Step 1 of the playbook found no open PR for this work.
-2. `astack check-pr <file>` passed on the body file.
+2. `astack check-pr <file>` and `astack check ste <file> --surface pr` passed on the body file.
+3. `astack check ste <title file> --surface pr` passed on a file that holds only the title.
+4. The title has no closing word, such as "Closes" or "Fixes", before a ticket key or `#n`. `astack check-pr` does not read the title.
 
 The astack hooks that check a new PR read only `gh pr create`.
-The two steps do their work for the REST call.
+The four steps do their work for the REST call.
 
 ```bash
 gh api repos/<owner>/<repo>/pulls -f title=<title> -f head=<head> -f base=<base> -F body=@<file>
