@@ -92,6 +92,7 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 	new Map([
 		["architect", ["pstack"]],
 		["arena", ["pstack"]],
+		["babysit-pr", ["tstack"]],
 		["benchmark-checklist", ["pstack"]],
 		["blast-radius", ["pstack"]],
 		["code-review", ["mattpocock-skills"]],
