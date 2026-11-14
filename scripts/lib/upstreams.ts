@@ -112,6 +112,7 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["improve-codebase-architecture", ["mattpocock-skills"]],
 		["in-your-own-words", ["pstack"]],
 		["interrogate", ["pstack"]],
+		["leaving-pr-comments", ["tstack"]],
 		["maintain-verification-skill", ["pstack"]],
 		["mode", ["pstack"]],
 		["no-comments", ["pstack"]],
