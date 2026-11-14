@@ -253,7 +253,7 @@ The caps fit the owner's real plans. Fixtures with the size and shape of three r
 | hand-off comment | over 5 lines | none |
 
 - The standard tier has no row cap. The byte cap controls bloat.
-- In a file with `plan:` frontmatter, the hook denies only four edits. These are a result over the deny cap, an added checkbox line, an added `Status:` line and a register table. Every other finding is a note.
+- In a file with `plan:` frontmatter, the hook denies only four edits. These are a result over the deny cap, an added checkbox line, an added `Status:` line and a register table. Each other finding that the edit adds is a note.
 - A hook note flags dates, PR numbers and a "Current wave" block in AGENTS.md and CLAUDE.md.
 
 ### 5.5 Lifecycle and the session CLI
