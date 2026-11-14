@@ -129,7 +129,7 @@ A date goes only in the frontmatter or a `Target.` line.
 
 For a file with `plan:` frontmatter, the astack hook denies four edits.
 They are a result over the deny cap, an added checkbox, an added `Status:` line and an added register table.
-Each other finding is a note.
+Each other finding that the edit adds is a note.
 
 ## Prose
 

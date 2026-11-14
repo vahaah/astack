@@ -14,7 +14,7 @@ import { command as checkPlan } from "../../src/astack/cli/commands/check/plan.t
 import { command as plan } from "../../src/astack/cli/commands/plan.ts";
 import { command as planTicket } from "../../src/astack/cli/commands/plan-ticket.ts";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
-import { note } from "../../src/astack/hook/events.ts";
+import { ALLOW, type Context, note } from "../../src/astack/hook/events.ts";
 import { handler as planFile } from "../../src/astack/hook/handlers/plan-file.ts";
 import { TEMPLATES } from "../../src/astack/plan/template.ts";
 import { trailCell } from "../../src/astack/plan/trail.ts";
@@ -416,6 +416,17 @@ describe("plan hooks", () => {
 				};
 	}
 
+	function hookContext(): Context {
+		return {
+			tool: "claude-code",
+			event: "PreToolUse",
+			cwd: repo,
+			projectDir: repo,
+			env: {},
+			today: "2026-10-16",
+		};
+	}
+
 	test("the real-plan shapes never meet a deny", () => {
 		for (const name of ["shift-booking", "partner-go-live", "form-order"]) {
 			const result = write(
@@ -435,21 +446,65 @@ describe("plan hooks", () => {
 		expect(
 			planFile.run(
 				{ kind: "write", path: outside, before: undefined, after },
-				{
-					tool: "claude-code",
-					event: "PreToolUse",
-					cwd: repo,
-					projectDir: repo,
-					env: {},
-					today: "2026-10-16",
-				},
+				hookContext(),
 			),
 		).toEqual(
 			note(
 				[
-					`astack check-plan finds 1 problem in ${outside} after this edit.`,
+					`astack check-plan finds 1 new problem in ${outside} after this edit.`,
 					"65: S2: Fog. appears twice",
 					`Run astack check-plan ${outside} before the plan goes active.`,
+				].join("\n"),
+			),
+		);
+	});
+
+	test("an edit notes only the findings that it adds, keyed by group and message", () => {
+		const path = join(repo, EXPORT);
+		const text = readFileSync(path, "utf8");
+		const bullet =
+			"- `bun scripts/export-bench.ts --rows 200000` prints under 30 s on a cold cache, and peak memory stays under 300 MB.\n";
+		const sized = (bullets: number, above = "") =>
+			text.replace(
+				"## Proof\n",
+				`## Proof\n\n${above}- The bench ran at commit 3f9a2c1 on trunk.\n${bullet.repeat(bullets)}`,
+			);
+		const change = (before: string, after: string) =>
+			planFile.run(
+				{
+					kind: "edit",
+					path,
+					before,
+					after,
+					regions: [],
+					oldText: before,
+					newText: after,
+				},
+				hookContext(),
+			);
+		const header = `astack check-plan finds 1 new problem in ${EXPORT} after this edit.`;
+		const run = `Run astack check-plan ${EXPORT} before the plan goes active.`;
+		expect(change(sized(182), sized(183))).toEqual(
+			note(
+				[
+					header,
+					"1: note: 24594 bytes, more than the 24576 bytes of a standard plan. Move file:line detail into the step hand-in",
+					`1 earlier finding remains. ${run}`,
+				].join("\n"),
+			),
+		);
+		expect(change(sized(183), sized(184))).toEqual(ALLOW);
+		expect(
+			change(
+				sized(183),
+				sized(183, "- The old bench ran at commit 8e7d6c5 on trunk.\n"),
+			),
+		).toEqual(
+			note(
+				[
+					header,
+					"67: warning: a commit SHA; point at a branch, a ticket or an ADR instead",
+					`2 earlier findings remain. ${run}`,
 				].join("\n"),
 			),
 		);
