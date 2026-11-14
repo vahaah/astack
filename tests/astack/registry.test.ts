@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { CHECKS } from "../../src/astack/cli/commands/check/index.ts";
+import { command as planCheck } from "../../src/astack/cli/commands/check/plan.ts";
 import { ALIASES, COMMANDS } from "../../src/astack/cli/commands/index.ts";
 import type { Io } from "../../src/astack/cli/io.ts";
 import { main, usage } from "../../src/astack/cli/main.ts";
@@ -118,6 +119,50 @@ describe("the command registry", () => {
 			expect(await main(args, run.io)).toBe(code);
 			expect(run.out()).toStartWith(out);
 			expect(run.err()).toBe(err);
+		},
+	);
+
+	type HelpRow = [args: string[], usage: string, summary: string];
+	const helpRows: HelpRow[] = [
+		...COMMANDS.filter(
+			(command) => command.name !== "orch" && command.name !== "watch-pr",
+		).map(
+			(command): HelpRow => [
+				[command.name, "--help"],
+				command.usage,
+				command.summary,
+			],
+		),
+		...CHECKS.flatMap((check): HelpRow[] => [
+			[["check", check.name, "--help"], check.usage, check.summary],
+			[
+				[`check-${check.name}`, "-h"],
+				check.usage.replaceAll(`check ${check.name}`, `check-${check.name}`),
+				check.summary,
+			],
+		]),
+		[
+			["check", "plan", "docs/plans/x.md", "--strict", "-h"],
+			planCheck.usage,
+			planCheck.summary,
+		],
+	];
+
+	test.each(helpRows)(
+		"astack %p prints the usage and summary of its own entry and exits 0",
+		async (args, usageText, summary) => {
+			const run = capture();
+			expect(await main(args, run.io)).toBe(0);
+			expect(run.out()).toBe(
+				[
+					"usage:",
+					...usageText.split("\n").map((line) => `  astack ${line}`),
+					"",
+					summary,
+					"",
+				].join("\n"),
+			);
+			expect(run.err()).toBe("");
 		},
 	);
 

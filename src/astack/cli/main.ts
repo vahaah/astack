@@ -1,11 +1,7 @@
-import type { Command } from "./command.ts";
+import { asksForHelp, printHelp, usageLines } from "./command.ts";
 import { CHECKS } from "./commands/check/index.ts";
 import { ALIASES, COMMANDS } from "./commands/index.ts";
 import { type Io, processIo, usageError } from "./io.ts";
-
-function usageLines(command: Pick<Command, "usage">): string[] {
-	return command.usage.split("\n").map((line) => `  astack ${line}`);
-}
 
 export function usage(): string {
 	return [
@@ -15,6 +11,7 @@ export function usage(): string {
 		...COMMANDS.map((command) => `${command.name}: ${command.summary}`),
 		...CHECKS.map((check) => `check ${check.name}: ${check.summary}`),
 		`${ALIASES.map((alias) => alias.name).join(", ")} are short forms of check <name>.`,
+		"Add --help or -h to a command or a check to print only its usage and summary.",
 		"A usage error exits 2, unless the summary of the command gives a different code.",
 	].join("\n");
 }
@@ -38,5 +35,6 @@ export function main(
 	);
 	if (!command)
 		return usageError(io, `astack: unknown command ${name}\n${usage()}`);
+	if (!command.ownsHelp && asksForHelp(args)) return printHelp(command, io);
 	return command.run(args, io);
 }

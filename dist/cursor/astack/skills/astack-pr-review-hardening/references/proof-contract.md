@@ -30,10 +30,19 @@ The manifest never stores its own digest or its containing commit's hash.
 ## Domain and decisions
 
 Use the affected context's glossary and aggregate symbol.
+`domain.context` must be the exact text of a glossary heading.
+Each term must be the exact text of a heading or of a bold span, such as `**Order**:`.
+Plain text in a table cell does not define a term.
+[GLOSSARY-FORMAT.md](../../astack-domain-modeling/GLOSSARY-FORMAT.md) gives the glossary format.
+
 Each ordinary governing ADR reference must be accepted and contain the cited decision.
 Metadata uses `Status: Accepted` or `- **Status:** Accepted · <stamp>`.
 Decision headings use `### D<n>. <claim>` or `### D<n> — <claim>`.
 Fenced examples and duplicate Status fields cannot provide governing metadata.
+
+An ordinary governing ADR also holds the four proof sections under `###` to `######` headings.
+They are `Formal claim`, `Category composition`, `Implementation correspondence` and `Verification`.
+[adr.md](../../astack-write-docs/references/adr.md#integrate-a-governing-proof-adr) gives the content of each section.
 
 ### Integrated proposals
 

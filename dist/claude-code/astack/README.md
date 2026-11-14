@@ -288,7 +288,7 @@ The hooks cover Claude's `Edit`, `Write` and `Bash` tools. They do not see files
 
 ## Run the checks yourself
 
-`bin/astack` is on the Bash tool's `PATH` while the plugin is enabled. Outside Claude Code, run it by path. `astack check <name>` and `astack check-<name>` run the same check.
+`bin/astack` is on the Bash tool's `PATH` while the plugin is enabled. Outside Claude Code, run it by path. `astack check <name>` and `astack check-<name>` run the same check. Add `--help` or `-h` to a command or a check to print its usage and summary.
 
 ```sh
 astack check-comments                 # working tree, staged and untracked files against HEAD

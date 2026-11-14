@@ -8,4 +8,5 @@ export const command: Command<Promise<number>> = {
 	usage:
 		"watch-pr [--pr <n>] [--stack | --queued-stack [--stack-prs <n,...>]] [--status-only] [--pretty]",
 	run: (args, io) => main(args, ghRuntime(io)),
+	ownsHelp: true,
 };
