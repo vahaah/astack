@@ -120,7 +120,8 @@ type LostChange = "unstaged" | "tracked" | "untracked";
 interface WorkLoss {
 	readonly lost: LostChange;
 	readonly pathspecs: readonly string[];
-	readonly cleanArgs?: readonly string[];
+	readonly excludes?: readonly string[];
+	readonly keepsUntrackedFolders?: boolean;
 }
 
 const WHOLE_TREE = [":/"];
@@ -197,19 +198,52 @@ function restoreLoss(args: readonly string[]): WorkLoss | undefined {
 		: undefined;
 }
 
+interface CleanOperands {
+	readonly flags: readonly string[];
+	readonly pathspecs: readonly string[];
+	readonly excludes: readonly string[];
+}
+
+function cleanOperands(args: readonly string[]): CleanOperands {
+	const flags: string[] = [];
+	const pathspecs: string[] = [];
+	const excludes: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] ?? "";
+		const cluster = /^-([A-Za-z]*?)e(.*)$/.exec(arg);
+		if (arg === "--") {
+			pathspecs.push(...args.slice(i + 1));
+			break;
+		} else if (arg === "--exclude") {
+			i++;
+			excludes.push(args[i] ?? "");
+		} else if (arg.startsWith("--exclude=")) {
+			excludes.push(arg.slice("--exclude=".length));
+		} else if (cluster && !arg.startsWith("--")) {
+			if (cluster[1]) flags.push(`-${cluster[1]}`);
+			if (cluster[2]) excludes.push(cluster[2]);
+			else {
+				i++;
+				excludes.push(args[i] ?? "");
+			}
+		} else if (arg.startsWith("-")) flags.push(arg);
+		else pathspecs.push(arg);
+	}
+	return { flags, pathspecs, excludes };
+}
+
 function cleanLoss(args: readonly string[]): WorkLoss | undefined {
-	const { flags, plain, dashed } = operands(args, ["-e", "--exclude"]);
+	const { flags, pathspecs, excludes } = cleanOperands(args);
 	const removesUntracked =
 		hasFlag(flags, "--force", "f") &&
 		!hasFlag(flags, "--dry-run", "n") &&
 		!hasFlag(flags, "-X", "X");
-	const pathspecs = [...plain, ...(dashed ?? [])];
-	const interactive = hasFlag(flags, "--interactive", "i");
 	return removesUntracked
 		? {
 				lost: "untracked",
 				pathspecs: pathspecs.length > 0 ? pathspecs : ["."],
-				...(interactive ? {} : { cleanArgs: args }),
+				excludes,
+				keepsUntrackedFolders: !hasFlag(flags, "-d", "d"),
 			}
 		: undefined;
 }
@@ -250,7 +284,9 @@ function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
 		"status",
 		"--porcelain=v1",
 		"-z",
-		"--untracked-files=all",
+		loss.keepsUntrackedFolders
+			? "--untracked-files=normal"
+			: "--untracked-files=all",
 		"--",
 		...loss.pathspecs,
 	]);
@@ -261,7 +297,9 @@ function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
 		const entry = entries[i] ?? "";
 		if (entry.length < 4) continue;
 		const index = entry.charAt(0);
-		if (isLost(loss.lost, index, entry.charAt(1))) paths.push(entry.slice(3));
+		const path = entry.slice(3);
+		if (isLost(loss.lost, index, entry.charAt(1)) && !path.endsWith("/"))
+			paths.push(path);
 		if (index === "R" || index === "C") i++;
 	}
 	return paths;
@@ -280,22 +318,21 @@ function rootRelative(pathspec: string, dir: string, root: string): string {
 		: canonicalRelative(root, resolve(dir, pathspec));
 }
 
-function cleanSelection(
-	dir: string,
-	root: string,
-	args: readonly string[],
-): readonly string[] | undefined {
-	const dryRun = runGit(dir, ["clean", "-n", ...args]);
-	if (!dryRun.ok) return undefined;
-	return dryRun.stdout
-		.toString("utf8")
-		.split("\n")
-		.flatMap((line) => {
-			const path = /^Would remove (.+)$/.exec(line)?.[1];
-			return path === undefined
-				? []
-				: [canonicalRelative(root, resolve(dir, path))];
-		});
+function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
+	const patterns = loss.excludes ?? [];
+	if (patterns.length === 0) return new Set();
+	const listed = runGit(dir, [
+		"ls-files",
+		"--others",
+		"--ignored",
+		"--full-name",
+		"-z",
+		...patterns.map((pattern) => `--exclude=${pattern}`),
+		"--",
+		...loss.pathspecs,
+	]);
+	if (!listed.ok) return new Set();
+	return new Set(listed.stdout.toString("utf8").split("\0").filter(Boolean));
 }
 
 function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
@@ -304,10 +341,10 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const namedFiles = loss.pathspecs
 		.filter(isLiteral)
 		.map((pathspec) => rootRelative(pathspec, dir, root));
-	const selected =
-		(loss.cleanArgs && cleanSelection(dir, root, loss.cleanArgs)) ??
-		changedPaths(dir, loss);
-	return selected.filter((path) => !namedFiles.includes(path));
+	const excluded = excludedPaths(dir, loss);
+	return changedPaths(dir, loss).filter(
+		(path) => !namedFiles.includes(path) && !excluded.has(path),
+	);
 }
 
 function workLossReasons(step: ShellStep): readonly string[] {

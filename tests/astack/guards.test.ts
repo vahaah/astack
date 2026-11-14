@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -191,6 +197,52 @@ describe("the destructive command guard", () => {
 			expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 		},
 	);
+});
+
+describe("the clean selection of the work-loss guard", () => {
+	let count = 0;
+	function untrackedRepo(): string {
+		count++;
+		const dir = join(root, `clean-${count}`);
+		mkdirSync(join(dir, "junk"), { recursive: true });
+		initRepo(dir);
+		write(dir, { "kept.md": "kept\n" });
+		git(dir, "add", "kept.md");
+		git(dir, "commit", "-q", "-m", "init");
+		write(dir, { "keep.txt": "keep\n", "junk/a.txt": "a\n" });
+		return dir;
+	}
+
+	test.each([
+		["git clean -fq", "deletes the untracked files keep.txt."],
+		["git clean -fd junk", "deletes the untracked files junk/a.txt."],
+		["git clean -fd -e keep.txt", "deletes the untracked files junk/a.txt."],
+	])("%s is denied", (command, text) => {
+		const dir = untrackedRepo();
+		expect(
+			reason(destructive.run(shell(command, dir), context(dir))),
+		).toContain(`- ${command} ${text}`);
+	});
+
+	test("the guard deletes no file when it reads git clean --no-dry-run", () => {
+		const dir = untrackedRepo();
+		const verdict = destructive.run(
+			shell("git clean -f --no-dry-run", dir),
+			context(dir),
+		);
+		expect(existsSync(join(dir, "keep.txt"))).toBe(true);
+		expect(reason(verdict)).toContain("deletes the untracked files keep.txt.");
+	});
+
+	test("git clean -fd -e keep.txt -e junk passes, because it deletes no file", () => {
+		const dir = untrackedRepo();
+		expect(
+			destructive.run(
+				shell("git clean -fd -e keep.txt -e junk", dir),
+				context(dir),
+			).kind,
+		).toBe("allow");
+	});
 });
 
 describe("the duplicate PR guard", () => {
