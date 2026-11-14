@@ -82,5 +82,6 @@ Keep a checkpoint reply to 6 lines or fewer.
 Give the commit or PR link, gate counts, next step, and count of open questions in that order.
 
 Before a long written answer, run `astack check ste -` on the draft.
-Before a commit, a PR body, a ticket or a tracker comment, write the text to a file.
-Then run `astack check ste <file> --surface <commit|pr|ticket|comment>` on it.
+Before a commit, a PR body, a PR comment, a ticket or a tracker comment, write the text to a file.
+Then run `astack check ste <file> --surface <commit|pr|ticket>` on it.
+Use `--surface pr` for a PR comment or a review reply, and `--surface ticket` for a tracker comment. The hooks judge them on those surfaces.

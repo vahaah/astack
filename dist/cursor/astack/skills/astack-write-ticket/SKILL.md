@@ -89,7 +89,7 @@ Fix a failing point in the plan rather than editing its rendered ticket.
 2. Search for duplicates. In Linear, query `list_issues` with key terms. On GitHub, run `gh issue list --search "<terms>"`. Refine or link a matching ticket instead of creating a duplicate.
 3. Fill the chosen template. Remove empty optional sections.
 4. Run `astack check-ticket <file>` with `--bug` or `--feature` when the type is known. It checks the shared headings and matching Markdown issue template. Use `--template <name>` to select a template. Use `--no-template` for Linear. Then score the draft against `references/rubric.md`.
-5. Run `astack check ste <file> --surface ticket`. Use `--surface comment` for a tracker comment. Fix every failing point and each deny finding. Ask for an input you cannot discover. Never file a ticket with a failing point.
+5. Run `astack check ste <file> --surface ticket`. Use `--surface ticket` for a tracker comment too, because the hooks judge it on that surface. Fix every failing point and each deny finding. Ask for an input you cannot discover. Never file a ticket with a failing point.
 6. Show the draft and scorecard. File it when every point passes and the user asked for publication. Report its key. Under an autonomy grant, or an `astack-mode` playbook's Tickets step, file a passing draft without another question. Otherwise wait for the user's answer.
 7. Set the team, parent and exactly one type label. Set the project when the tracker uses projects. Set priority when known. Add links to designs, documents and related issues.
 
