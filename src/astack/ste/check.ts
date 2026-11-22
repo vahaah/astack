@@ -7,7 +7,6 @@ import { sentencesOf } from "./sentences.ts";
 import type {
 	Enforcement,
 	Finding,
-	FindingRule,
 	Glossary,
 	Hit,
 	Report,
@@ -113,7 +112,7 @@ export function regionLines(
 	}));
 }
 
-export function fingerprint(rule: FindingRule, key: string): string {
+export function fingerprint(rule: string, key: string): string {
 	let hash = 0x811c9dc5;
 	for (const char of `${rule}\u0000${key}`) {
 		hash ^= char.codePointAt(0) ?? 0;

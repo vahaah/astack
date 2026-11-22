@@ -729,6 +729,26 @@ describe("fresh Cursor file judgments", () => {
 		expect(flow.stop()).toEqual({});
 	});
 
+	test("[control:tel-comment-refresh] a comment deny on a Cursor edit writes one line, and each refresh at stop writes none", () => {
+		const flow = liveCursor();
+		flow.edit(GOOD_TYPE, `// now uses the new cache\n${GOOD_TYPE}`);
+		const log = join(flow.state, "ste", flow.session, "events.jsonl");
+		const logged = readFileSync(log, "utf8");
+		expect(
+			logged
+				.split("\n")
+				.filter((line) => line !== "")
+				.map((line): Record<string, unknown> => JSON.parse(line))
+				.map((line) => [line.handler, line.rule, line.outcome]),
+		).toEqual([["comments", "narration", "deny"]]);
+		const denied = {
+			followup_message: expect.stringContaining("now uses the new cache"),
+		};
+		expect(flow.stop()).toEqual(denied);
+		expect(flow.stop()).toEqual(denied);
+		expect(readFileSync(log, "utf8")).toBe(logged);
+	});
+
 	test("a removed workspace alias preserves the canonical file judgment", () => {
 		const flow = liveCursor();
 		const alias = join(scratch(), "project");

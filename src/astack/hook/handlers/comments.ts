@@ -14,12 +14,14 @@ import { type CommitScope, commitScopes } from "../../git-command.ts";
 import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import { commentPolicy } from "../../profile.ts";
 import { type FileWrite, fileWrites, shellSteps } from "../../shell.ts";
+import { fingerprint } from "../../ste/check.ts";
 import { keptCommentFindings } from "../../ste/comments.ts";
 import {
 	combineJudged,
 	type Judged,
 	judged,
 	logRun,
+	type Observation,
 } from "../../ste/events.ts";
 import { loadSettings, settingsRoot } from "../../ste/profile.ts";
 import { outcomeOf, withLedger } from "../../ste/verdict.ts";
@@ -33,16 +35,33 @@ import {
 	type EventOf,
 	note,
 	projectDirOf,
-	type Verdict,
 } from "../events.ts";
+
+function observationOf(finding: Finding): Observation {
+	return {
+		check: "comments",
+		surface: "comment",
+		rule: finding.rule,
+		fingerprint: fingerprint(
+			finding.rule,
+			finding.quote.join(" ").replace(/\s+/g, " ").trim().toLowerCase(),
+		),
+		shown: finding.verdict === "deny" ? "deny" : "advise",
+	};
+}
 
 function findingsVerdict(
 	findings: readonly Finding[],
 	subject: string,
-): Verdict {
+): Judged {
+	const observed = findings.map(observationOf);
 	const denied = findings.filter((finding) => finding.verdict === "deny");
-	if (denied.length > 0) return deny(denyMessage(subject, denied));
-	return findings.length > 0 ? note(adviceMessage([...findings])) : ALLOW;
+	if (denied.length > 0)
+		return judged(deny(denyMessage(subject, denied)), observed);
+	return judged(
+		findings.length > 0 ? note(adviceMessage([...findings])) : ALLOW,
+		observed,
+	);
 }
 
 function steCommentVerdict(
@@ -83,7 +102,7 @@ function fileVerdict(
 		isTypeSource(change, typePolicy(projectDir));
 	const findings = checkChange(change, policy, typeHook);
 	return combineJudged([
-		judged(findings ? findingsVerdict(findings, "this edit") : ALLOW),
+		findings ? findingsVerdict(findings, "this edit") : judged(ALLOW),
 		steCommentVerdict(change, path, policy, context),
 	]);
 }
@@ -108,7 +127,7 @@ function commitVerdict(scope: CommitScope, context: Context): Judged {
 		);
 		if (result) findings.push(...result);
 	}
-	return judged(findingsVerdict(findings, "this commit"));
+	return findingsVerdict(findings, "this commit");
 }
 
 function writeVerdict(write: FileWrite, context: Context): Judged {
@@ -133,7 +152,7 @@ function writeVerdict(write: FileWrite, context: Context): Judged {
 		isTypeSource(change, typePolicy(projectDir));
 	const findings = checkChange(change, policy, typeHook);
 	return combineJudged([
-		judged(findings ? findingsVerdict(findings, "this write") : ALLOW),
+		findings ? findingsVerdict(findings, "this write") : judged(ALLOW),
 		steCommentVerdict(change, absolute, policy, context),
 	]);
 }
