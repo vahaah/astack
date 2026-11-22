@@ -818,7 +818,9 @@
 				"witness-wrong-type",
 				"witness-leaves-no-file",
 				"witness-wrong-forms",
-				"witness-checker-options"
+				"witness-checker-options",
+				"witness-tracked-tsc",
+				"witness-own-config"
 			]
 		},
 		{

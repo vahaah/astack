@@ -19,3 +19,5 @@ The witness compares the declared types with the exported types by name, and a t
 A step check reads a readonly array and a mutable array of one type as one type. It reads a readonly tuple and a mutable tuple in the same way, but it keeps the order and the length of each tuple. A flow pair still needs the assignment.
 The ladder model takes the law kind as a true observation of the block.
 The witness reads the tsc of the repo, so a repo with no `node_modules/.bin/tsc` stops a manifest with `domain.plan`.
+A tree that tracks a file under `node_modules/`, or the target of `node_modules/.bin/tsc`, also stops it.
+The witness config copies only the type check options that `tsc --showConfig` gives for the tsconfig. It holds no `extends`, so a repo option that writes a file has no effect.

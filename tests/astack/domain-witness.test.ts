@@ -1,6 +1,8 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import {
+	chmodSync,
 	cpSync,
+	existsSync,
 	mkdirSync,
 	readdirSync,
 	readFileSync,
@@ -22,7 +24,7 @@ import {
 	WITNESS_CACHE,
 } from "../../src/astack/domain/witness-run.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
-import { scratchDir } from "./change-proof-fixture.ts";
+import { git, scratchDir } from "./change-proof-fixture.ts";
 
 const ASTACK = resolve(import.meta.dir, "../..");
 const scratch = scratchDir("astack-domain-witness-");
@@ -127,6 +129,7 @@ function witnessRepo(files: Readonly<Record<string, string>>): string {
 			recursive: true,
 		},
 	);
+	git(root, "init", "-q");
 	return root;
 }
 
@@ -350,6 +353,82 @@ describe("the tsc witness", () => {
 			expect(
 				lines(await verdict(root, text, ["src/grant.ts#judge"], "result")),
 			).toEqual(expected);
+		},
+		heavyTestTimeout,
+	);
+
+	test.each([
+		{
+			name: "node_modules/.bin/tsc",
+			stage: (_root: string) => {},
+			tracked: "node_modules/.bin/tsc",
+		},
+		{
+			name: "the target of node_modules/.bin/tsc",
+			stage: (root: string) => {
+				mkdirSync(join(root, "tools"));
+				writeFileSync(
+					join(root, "tools/tsc"),
+					'#!/bin/sh\nexec "$(dirname "$0")/../typescript/bin/tsc" "$@"\n',
+				);
+				chmodSync(join(root, "tools/tsc"), 0o755);
+				rmSync(join(root, "node_modules/.bin/tsc"));
+				symlinkSync("../../tools/tsc", join(root, "node_modules/.bin/tsc"));
+			},
+			tracked: "tools/tsc",
+		},
+	])(
+		"[control:witness-tracked-tsc] a tree that tracks $name stops the witness before tsc runs",
+		async ({ stage, tracked }) => {
+			const root = witnessRepo({});
+			stage(root);
+			git(root, "add", "-f", tracked);
+			expect(
+				lines(
+					await verdict(
+						root,
+						"context Proof\nstep judge : MergeGrant -> Verdict",
+						["src/grant.ts#judge"],
+						"result",
+					),
+				),
+			).toBe(
+				`git tracks ${tracked}, so the witness does not run a tsc of the candidate tree`,
+			);
+		},
+	);
+
+	test(
+		"[control:witness-own-config] a repo tsconfig with incremental and tsBuildInfoFile writes no build info, and a paths alias of an extended config still resolves",
+		async () => {
+			const info = `outside-${count}.tsbuildinfo`;
+			const root = witnessRepo({
+				"tsconfig.json": JSON.stringify({
+					extends: "./config/base.json",
+					compilerOptions: {
+						...TSCONFIG.compilerOptions,
+						incremental: true,
+						tsBuildInfoFile: `../${info}`,
+					},
+					include: TSCONFIG.include,
+				}),
+				"config/base.json":
+					'{\n\t// the alias of the grant module\n\t"compilerOptions": { "paths": { "@grant/*": ["../src/*"], }, },\n}\n',
+				"src/alias.ts":
+					'import type { MergeGrant, Verdict } from "@grant/grant.ts";\nexport type { MergeGrant, Verdict } from "@grant/grant.ts";\n\nexport function judgeAlias(grant: MergeGrant): Verdict {\n\treturn grant.at > 0 ? "merge" : "wait";\n}\n',
+			});
+			const run = lines(
+				await verdict(
+					root,
+					"context Proof\nstep judgeAlias : MergeGrant -> Verdict",
+					["src/alias.ts#judgeAlias"],
+					"result",
+				),
+			);
+			expect({ run, written: existsSync(join(root, "..", info)) }).toEqual({
+				run: "pass",
+				written: false,
+			});
 		},
 		heavyTestTimeout,
 	);

@@ -54,6 +54,7 @@ The block names its rung, and check-plan refuses a rung below the derived rung.
 
 The witness writes one check for each step, flow pair and agg line under `node_modules/.cache/astack/`.
 It runs the tsc of the repo with the tsconfig of the first linked module.
+It refuses a tsc that git tracks. Its own config holds only the type check options of that tsconfig, and it has no `extends`.
 A module under another tsconfig stops the witness.
 Each step needs one Files cell `<module>#<name>`, and the run removes its folder.
 
