@@ -28,8 +28,18 @@ import {
 } from "../events.ts";
 
 const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
-const GRAPHQL_ENDPOINT =
-	/^(?:\/?graphql|https?:\/\/[^/]+\/(?:api\/)?graphql)\/?$/i;
+const GRAPHQL = /graphql/i;
+const PERCENT = /%/;
+
+function namesGraphql(value: string): boolean {
+	if (GRAPHQL.test(value)) return true;
+	if (!PERCENT.test(value)) return false;
+	try {
+		return GRAPHQL.test(decodeURIComponent(value));
+	} catch {
+		return true;
+	}
+}
 const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH =
@@ -61,10 +71,7 @@ const UNREADABLE: MergeCommand = { kind: "unreadable" };
 function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
 	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
-	if (
-		args.some((value) => GRAPHQL_ENDPOINT.test(value)) &&
-		args.some((value) => UNREAD_QUERY.test(value))
-	)
+	if (args.some(namesGraphql) && args.some((value) => UNREAD_QUERY.test(value)))
 		return true;
 	return (
 		args.some((value) => MERGE_PATH.test(value)) &&
