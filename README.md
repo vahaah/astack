@@ -297,8 +297,8 @@ The trade-off is that astack is opinionated. If its path does not fit, the proje
 
 `astack check proof` reads `.astack/proof.json` and admits the change only when all of these hold:
 
-1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit and an ancestor of `HEAD`. When you pass `--base`, that ref resolves to the same commit.
-2. Its `scope` rows cover every changed, staged, removed and untracked path.
+1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit. Without `--base`, that commit is the diff base and an ancestor of `HEAD`. With `--base <ref>`, the diff base is the merge base of the ref and `HEAD`, and the manifest base must be an ancestor of it. So the proof of a PR stays valid when main moves.
+2. Its `scope` rows cover every changed, staged, removed and untracked path since the diff base.
 3. The domain contract resolves. That is the glossary, the aggregate symbol, the terms and invariants, and each cited ADR decision. A cited ADR must have status Accepted, unless the reference has an `integrated-proposal` ratification. Then the governing ADR stays Proposed and the process ADR stays Accepted. ADR 0007 is superseded by ADR 0008. The code does not limit that route to those two files. `governingMetadata` set to `landed-header-value` is the ADR 0008 option. It allows one `Landed` header value to differ.
 4. The spec-drift matrix passes, and each named criterion has a links row.
 5. TLC (`tla2tools.jar` 1.7.4, SHA-256 pinned) passes the model, then finds the named violation in the declared negative mutation, then passes the restored model. Each run uses a temporary copy. Each run has a deadline of at most 60 seconds. The candidate inputs are hashed before and after the runs. The check does not read a stored receipt.
@@ -307,7 +307,7 @@ Exit 0 means admitted. Exit 1 means missing or invalid evidence, or a tool failu
 
 The manifest fields are `version`, `change`, `base`, `scope`, `domain`, `category`, `abstraction`, `model`, `negative` and `limits`. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
 
-In this repository the positive run explores 276 distinct states. The negative mutation violates `LandingAuthoritySafe` with a counterexample of 9 states. The receipt names the head commit and a digest of the candidate inputs. Those inputs are the index, the worktree files and any ratification history.
+In this repository the positive run explores 276 distinct states. The negative mutation violates `LandingAuthoritySafe` with a counterexample of 9 states. The receipt names the manifest base, the diff base, the head commit and a digest of the candidate inputs. Those inputs are the index, the worktree files and any ratification history.
 
 What it does **not** prove:
 

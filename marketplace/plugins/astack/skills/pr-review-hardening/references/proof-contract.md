@@ -2,9 +2,25 @@
 
 `astack check proof` requires `.astack/proof.json` by default.
 Pass another manifest path when the repo uses a named candidate contract.
-`--base <ref>` must resolve to the manifest's fixed base commit.
 The gate admits only a complete current run.
 `--summary` prints unverified intent and never a proof success line.
+
+## Base
+
+The manifest `base` is a fixed commit. Ratification history stays bound to it.
+Without `--base`, the diff base is the manifest base. It must be an ancestor of HEAD.
+With `--base <ref>`, the diff base is the merge base of the ref and HEAD.
+The manifest base must be an ancestor of that merge base. Otherwise the gate stops and names both commits.
+
+The scope check and both input snapshots read from the diff base, so a file that only the base branch changed stays out of scope.
+The receipt prints the manifest base and the diff base.
+Do not change the manifest base after a merge or a rebase of the base branch.
+
+A CI run passes `--base`. A pull request run uses the base branch of the PR.
+A push to the default branch and a release use the first parent of HEAD.
+A push to another branch uses the default branch.
+A local run with `--base HEAD` has an empty diff, so it stops.
+Each base read and each diff read ignores replacement refs and graft ancestry, with Git's `--no-lazy-fetch` option.
 
 ## Required records
 

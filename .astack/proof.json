@@ -445,6 +445,11 @@
 			]
 		},
 		{
+			"path": "templates/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["GrantFromWords"]
+		},
+		{
 			"path": "README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": [
