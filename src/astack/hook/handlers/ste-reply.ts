@@ -74,7 +74,8 @@ export const handler = defineHandler({
 			saveRewrite(dir, { asked: rewrite.asked, answer: key });
 			if (decision.kind === "rewrite") {
 				recordPending(dir, decision.findings.length);
-				writeEvents(dir, replyEvents(decision.findings, "pending"));
+				if (claimReply(dir, `${key}.answer`) === "claimed")
+					writeEvents(dir, replyEvents(decision.findings, "pending"));
 			} else clearPending(dir);
 			return ALLOW;
 		}

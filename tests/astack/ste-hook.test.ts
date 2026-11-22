@@ -942,9 +942,10 @@ describe("the strict Stop hook", () => {
 		expect(await parallel(chained(failing, "p2", after))).toBe(0);
 	});
 
-	test("[control:tel-reply] a claimed rewrite writes one rewrite line for each finding, a parallel copy writes none, and a rewrite that still fails writes pending lines", async () => {
+	test("[control:tel-reply] a claimed rewrite writes one rewrite line for each finding, and a rewrite that still fails writes one pending line for each finding, also from parallel copies and a repeat", async () => {
 		hook("UserPromptSubmit", prompt("tel-reply", "go"));
 		expect(await parallel(stop("tel-reply", failing))).toBe(1);
+		expect(await parallel(stop("tel-reply", rewrite, after))).toBe(0);
 		expect(hook("Stop", stop("tel-reply", rewrite, after)).blocked).toBe(false);
 		expect(
 			events("tel-reply").map((line) => [
