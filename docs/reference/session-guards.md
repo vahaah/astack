@@ -18,6 +18,7 @@ The [design](../design.md) gives the hook behavior in full.
 - [criterion:SG-commit-surface] The comment and type hooks examine each path that a commit includes, also a scratch file.
 - [criterion:SG-work-loss] The destructive hook denies a git command that discards uncommitted work in the whole tree or in a folder. Each denial names work that git discards.
 - [criterion:SG-generated] Each generated file and each bundle of the CLI equals a fresh build of its source.
+- [criterion:SG-runtime] `bin/astack` runs the first runtime that it finds, with bun before node, and probes no version before a run. Below node 22, a hook exits 0 with one line on stderr, and each other command exits 1.
 - [criterion:SG-preserve] A change to a skill, a doc or another command leaves the verdicts of the session guards unchanged.
 
 ## Claim boundary

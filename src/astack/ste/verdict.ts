@@ -1,16 +1,15 @@
+import { ALLOW, type Context, deny, note } from "../hook/events.ts";
 import {
-	ALLOW,
-	type Context,
-	combineAll,
-	deny,
-	note,
-	type Verdict,
-} from "../hook/events.ts";
-import { stateDir } from "../state.ts";
+	combineJudged,
+	type Judged,
+	type Observation,
+	type Shown,
+	steSessionDir,
+} from "./events.ts";
 import { adviceMessage, denyMessage } from "./format.ts";
 import { EXACT_RULES, RULE_TIER } from "./rules.ts";
-import { demoted, recordDenies, sessionDir } from "./state.ts";
-import type { Finding, FindingRule } from "./types.ts";
+import { demoted, recordDenies } from "./state.ts";
+import type { Finding, FindingRule, Surface } from "./types.ts";
 
 const QUIET_RULES: ReadonlySet<FindingRule> = new Set<FindingRule>([
 	"noun-cluster",
@@ -19,8 +18,7 @@ const QUIET_RULES: ReadonlySet<FindingRule> = new Set<FindingRule>([
 	"symbol",
 ]);
 
-export type Outcome = {
-	readonly verdict: Verdict;
+export type Outcome = Judged & {
 	readonly denied: readonly string[];
 };
 
@@ -32,19 +30,35 @@ function demotable(finding: Finding): boolean {
 	return !EXACT_RULES.has(finding.rule);
 }
 
+function shownOf(finding: Finding, blocks: boolean): Shown {
+	if (blocks) return "deny";
+	if (QUIET_RULES.has(finding.rule)) return "quiet";
+	return finding.severity === "deny" ? "demoted" : "advise";
+}
+
 export function outcomeOf(
 	subject: string,
+	surface: Surface,
 	findings: readonly Finding[],
 	skip: ReadonlySet<string>,
 ): Outcome {
-	const blocking = findings.filter(
-		(finding) =>
-			finding.severity === "deny" &&
-			!(demotable(finding) && skip.has(finding.fingerprint)),
+	const blocks = (finding: Finding): boolean =>
+		finding.severity === "deny" &&
+		!(demotable(finding) && skip.has(finding.fingerprint));
+	const observed = findings.map(
+		(finding): Observation => ({
+			check: "ste",
+			surface,
+			rule: finding.rule,
+			fingerprint: finding.fingerprint,
+			shown: shownOf(finding, blocks(finding)),
+		}),
 	);
+	const blocking = findings.filter(blocks);
 	if (blocking.length > 0)
 		return {
 			verdict: deny(denyMessage(subject, blocking)),
+			observed,
 			denied: blocking.filter(demotable).map((finding) => finding.fingerprint),
 		};
 	const advice = findings
@@ -53,27 +67,21 @@ export function outcomeOf(
 		.sort((a, b) => rank(a) - rank(b) || a.line - b.line);
 	return {
 		verdict: advice.length > 0 ? note(adviceMessage(subject, advice)) : ALLOW,
+		observed,
 		denied: [],
 	};
-}
-
-function ledgerDir(context: Context): string | undefined {
-	const root = stateDir(context.env);
-	return root && context.session
-		? sessionDir(root, context.session)
-		: undefined;
 }
 
 export function withLedger(
 	context: Context,
 	build: (skip: ReadonlySet<string>) => readonly Outcome[],
-): Verdict {
-	const dir = ledgerDir(context);
+): Judged {
+	const dir = steSessionDir(context);
 	const outcomes = build(dir ? demoted(dir) : new Set<string>());
 	if (dir && context.refresh !== true)
 		recordDenies(
 			dir,
 			outcomes.flatMap((outcome) => outcome.denied),
 		);
-	return combineAll(outcomes.map((outcome) => outcome.verdict));
+	return combineJudged(outcomes);
 }

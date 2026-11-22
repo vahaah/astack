@@ -125,11 +125,11 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Before the merge, update the Verification counts after the last fix commit.
    The counts must be true at the head that lands.
    When the profile sets `proof.pr_comment`, link to hardening's last PR comment instead of counting.
-9. After the plan's `now` session PR merges, run `/astack-plan <slug>`.
-   It reviews the session boundary and asks for the next session's grant.
+9. After the `now` session PR merges, run `/astack-plan <slug>` once.
+   It commits the boundary on the next session branch and asks for its grant.
    Build the next session only after that grant, or under a delegation grant.
    After a merge or a session that needed corrections, the user runs `/astack-retro` in the same session.
-   Or the user runs `/astack-reflect` to turn its lessons into edits on existing skills.
+   Or the user runs `/astack-reflect` to turn its lessons into skill edits.
 
 The `astack-mode` Opening a PR playbook runs steps 4 to 6 at the end of every playbook.
 Step 5 runs after `/astack-deslop` and before `gh pr create`.

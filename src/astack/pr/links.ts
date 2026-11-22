@@ -1,3 +1,5 @@
+import { replaceCodeSpans } from "../ste/mask.ts";
+
 const CLOSING_WORD =
 	"close[sd]?|closing|fix(?:e[sd])?|fixing|resolve[sd]?|resolving|complete[sd]?|completing";
 
@@ -56,7 +58,7 @@ function maskCode(text: string): string {
 				fence = marker;
 				return "";
 			}
-			return line.replace(/(`+)[^`]*?\1/g, (span) => " ".repeat(span.length));
+			return replaceCodeSpans(line, (span) => " ".repeat(span.length));
 		})
 		.join("\n");
 }

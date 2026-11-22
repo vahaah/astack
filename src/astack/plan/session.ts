@@ -249,7 +249,7 @@ export function startSession(
 	);
 	const text = [
 		`Session ${record.session} of ${path}. ${stripPeriod(session.title)}.`,
-		`Branch. ${branch}. Work in a worktree from the default branch, never on it.`,
+		`Branch. ${branch}. This command makes no worktree and no checkout. Work in a worktree from the default branch, never on it.`,
 		`Checkpoints. ${perWave(session) ? "One per wave" : "One per step"}, mode ${frontmatterValue(plan, "checkpoints") ?? "report"}. The package goes to the PR, and chat gets 6 lines or fewer.`,
 		"Waves. Step workers run in parallel worktrees. The integrator lands their commits on the session branch in step order.",
 		...byWave,

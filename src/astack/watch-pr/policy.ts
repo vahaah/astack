@@ -357,6 +357,15 @@ const deadlinePassed = (
 	options: T.PollingOptions,
 	now: number,
 ): boolean => options.timeout > 0 && now - started >= options.timeout;
+const secondsBeforeDeadline = (
+	seconds: number,
+	started: number,
+	options: T.PollingOptions,
+	now: number,
+): number =>
+	options.timeout > 0
+		? Math.max(0, Math.min(seconds, started + options.timeout - now))
+		: seconds;
 type StepResult<V> =
 	| { readonly kind: "terminal"; readonly verdict: V }
 	| {
@@ -383,9 +392,19 @@ async function pollUntilTerminal<V>(args: {
 			failures += 1;
 			if (!error.failure.retryable || failures >= args.options.maxQueryErrors)
 				return statusQueryVerdict(args.stamp, failures, error.failure);
-			const retryInSeconds = queryBackoffSeconds(
-				args.options.interval,
-				failures,
+			const now = args.dependencies.clock.now();
+			if (deadlinePassed(started, args.options, now))
+				return args.stamp({
+					kind: "TIMEOUT",
+					terminal: true,
+					exitCode: 5,
+					reason: { kind: "status-unavailable", failure: error.failure },
+				});
+			const retryInSeconds = secondsBeforeDeadline(
+				queryBackoffSeconds(args.options.interval, failures),
+				started,
+				args.options,
+				now,
 			);
 			args.dependencies.emit(
 				args.stamp({
@@ -396,13 +415,6 @@ async function pollUntilTerminal<V>(args: {
 					retryInSeconds,
 				}),
 			);
-			if (deadlinePassed(started, args.options, args.dependencies.clock.now()))
-				return args.stamp({
-					kind: "TIMEOUT",
-					terminal: true,
-					exitCode: 5,
-					reason: { kind: "status-unavailable", failure: error.failure },
-				});
 			await args.dependencies.clock.sleep(retryInSeconds);
 			continue;
 		}
@@ -413,7 +425,14 @@ async function pollUntilTerminal<V>(args: {
 				deadlinePassed(started, args.options, args.dependencies.clock.now())
 			)
 				return result.onDeadline();
-			await args.dependencies.clock.sleep(result.seconds);
+			await args.dependencies.clock.sleep(
+				secondsBeforeDeadline(
+					result.seconds,
+					started,
+					args.options,
+					args.dependencies.clock.now(),
+				),
+			);
 		}
 	}
 }

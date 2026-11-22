@@ -15,7 +15,7 @@ Alternatively, link the source behind access control.
 
 Give each point one line with evidence or its missing information:
 
-```
+```data
 1 Title          pass  "CSV export drops rows whose name contains a comma"
 2 Problem        fail  Summary names no role. Who runs the export?
 3 Outcome        pass

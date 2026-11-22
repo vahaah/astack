@@ -93,6 +93,15 @@ describe("not narration", () => {
 	});
 });
 
+test("[control:span-run-classify] narration words inside a double-backtick span are code, not narration", () => {
+	expect(
+		only("a.ts", above("// The parser keeps it used to be x whole.")),
+	).toBe("deny:narration");
+	expect(
+		only("a.ts", above("// The parser keeps ``it used to be ` x`` whole.")),
+	).toBe("judge:judge");
+});
+
 describe("deny: provenance tags", () => {
 	test.each([
 		"// Support tickets (ABC-139, ADR-0060)",

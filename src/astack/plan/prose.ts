@@ -1,4 +1,5 @@
 import { checkText, DEFAULT_GLOSSARY } from "../ste/check.ts";
+import { replaceCodeSpans } from "../ste/mask.ts";
 import type { Finding } from "../ste/types.ts";
 import type { Line, Severity } from "./types.ts";
 
@@ -16,8 +17,7 @@ const CURLY_QUOTE = /[‘’“”]/;
 const TABLE_ROW = /^\s*\|/;
 
 function plain(text: string): string {
-	return text
-		.replace(/`[^`]*`/g, "x")
+	return replaceCodeSpans(text, () => "x")
 		.replace(/!\[[^\]]*\]\([^)]*\)/g, "")
 		.replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
 		.replace(/https?:\/\/\S+/g, "x");

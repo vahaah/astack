@@ -49,5 +49,5 @@ Run the controls through the repo's existing gates.
 Check a critical control by removing its implementation and seeing the control fail.
 Links prove declared traceability only.
 
-Every change requires [formal-models.md](formal-models.md), including docs and configuration.
-Link the changed contract, typed composition, governing ADR, model claim, and implementation control in one ChangeProof.
+Every change, also docs and configuration, needs the [change proof](../../astack-mode/references/change-proof.md).
+Link the changed contract and its controls in one ChangeProof, as the [proof contract](../../astack-pr-review-hardening/references/proof-contract.md) defines.

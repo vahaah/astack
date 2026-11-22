@@ -99,6 +99,8 @@ over through by into again here there now first also
 export const NOUN_SIDE = set(`
 a an the this that each every no one its their our your his her any first second last type health
 status spot double same quick final full real manual visual code unit spell lint pre post
+two three four five six seven eight nine ten
+required failed failing passing green red flaky pending
 `);
 
 export const VERB_AFTER = set(

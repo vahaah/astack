@@ -116,6 +116,21 @@ describe("our word list", () => {
 			if (entry.basis.kind === "ste-public")
 				expect(entry.basis.citation.length).toBeGreaterThan(0);
 	});
+
+	test("[control:noun-checks] checks after a number word, a state adjective or before a comma is a noun, and checks after CI is a verb", () => {
+		const wordBroad = (text: string) =>
+			rules(text).filter((rule) => rule === "advise:word-broad").length;
+		expect(
+			[
+				"The required checks all pass on the branch.",
+				"Two checks all fail on the main branch.",
+				"The failing checks all stop the merge.",
+				"The flaky checks both pass on the second run.",
+				"The job runs the tests and checks, the build waits.",
+				"CI checks the branch on each push.",
+			].map(wordBroad),
+		).toEqual([0, 0, 0, 0, 0, 1]);
+	});
 });
 
 describe("the exact deny rules", () => {
@@ -168,6 +183,17 @@ describe("sentence length", () => {
 		expect(
 			tokens(maskInline("Read https://example.com/a/b/c/d/e/f now.").text),
 		).toHaveLength(3);
+	});
+
+	test("[control:unit-one] a number and its next unit count as one word, and a number with a plain noun counts as two", () => {
+		const probe =
+			"The hook took 12 ms on run one, 3.4 MB of memory, 40 KB of the budget, 8 s on run two and 9 min on run three.";
+		expect({
+			probe: tokens(maskInline(probe).text).length,
+			decimal: tokens(maskInline("3.4 MB").text).length,
+			noun: tokens(maskInline("12 apples").text).length,
+			denies: denies(probe),
+		}).toEqual({ probe: 23, decimal: 1, noun: 2, denies: [] });
 	});
 
 	test("a heading gets only advice, and never a length finding", () => {
@@ -241,6 +267,11 @@ describe("text scope", () => {
 			fields: [],
 			plain: ["semicolon", "dash", "dash", "sentence-length"],
 		});
+	});
+
+	test("[control:span-run-mask] a code span never opens inside a longer backtick run", () => {
+		expect(maskInline("Use ```a`` b here.").spans).toEqual([]);
+		expect(maskInline("Use ``a ` b`` here.").spans).toEqual(["``a ` b``"]);
 	});
 
 	test("restore gives back the original spans", () => {

@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "review-roadmap-b01-merge-authority",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"base": "ad80df7c445df5739f95342a02fd044047d10f25",
 	"scope": [
 		{
 			"path": "src/astack/pr/**",

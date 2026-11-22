@@ -154,8 +154,50 @@ The cap on the `*.md` words of each skill tree and on their total, in `scripts/l
 _Avoid_: Size limit, token budget
 _Code_: `budgetReport`
 
+### Finding event
+
+One JSON line in the `events.jsonl` file of a session folder for one STE or comment finding of a hook.
+It holds the rule, the surface, the outcome and a fingerprint, and no sentence, comment or path.
+_Avoid_: Fire log, telemetry record
+_Code_: `FindingEvent`
+
 ### Zero-use part
 
 A skill, agent, command or module with no measured use in 30 days and no live dependent.
 A live dependent is code, a route, a test or an accepted ADR that needs the part.
 _Avoid_: Unused code, dead skill
+
+### Session boundary
+
+The plan edits that follow the merge of a `now` session PR. They run once and commit first on the next session branch.
+The last session PR carries the close and deletes the plan.
+_Avoid_: Plan sync, plan-only PR
+_Code_: `marketplace/plugins/astack/skills/plan/references/upkeep.md`
+
+### Graduated row
+
+A decision row that shrinks to `Graduated to ADR NNNN Dm` when that ADR heading resolves.
+It leaves the live rows, and its handle never becomes live again.
+_Avoid_: Deleted row
+_Code_: `Retirement`
+
+### Plan state folder
+
+The folder `astack/plans/<slug>/` in the git common dir of a plan. It holds the trail, the drafts and the session records.
+A plan path finds it from any folder.
+_Avoid_: Plan cache
+_Code_: `planStateFor`
+
+### Codex hook trust
+
+The trust status that Codex reports for one hook in its `hooks/list` reply: `trusted`, `managed`, `modified` or `untrusted`.
+Codex binds it to the hook hash and to a content hash that changes in each release, so a pinned hook hash proves no trust.
+_Avoid_: Trusted hash, pin match
+_Code_: `CodexHooksRead`
+
+### Hardening profile rule
+
+A rule that a review profile must pass before a hardening run loads it.
+Apply, `astack check hardening-profile` and doctor read one list of these rules, and each problem has a repair.
+_Avoid_: Profile lint, profile schema
+_Code_: `reviewProfileProblems`

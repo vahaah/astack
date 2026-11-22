@@ -1,5 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdtempSync,
+	readFileSync,
+	realpathSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { command as board } from "../../src/astack/cli/commands/board.ts";
@@ -103,6 +110,34 @@ describe("astack session", () => {
 			"post a claim comment on ABC-211",
 		]);
 		writeFileSync(path, text);
+	});
+
+	test("[control:cwd-free] start of the next session from outside the repo, through a symlink, writes its record in the state folder of the programme", () => {
+		const outside = realpathSync(
+			mkdtempSync(join(tmpdir(), "astack-outside-")),
+		);
+		dirs.push(outside);
+		const other = freshRepo(dirs);
+		symlinkSync(other, join(outside, "linked"));
+		const record = join(
+			git(other, "rev-parse", "--absolute-git-dir"),
+			"astack/plans/data-platform/session-B01-S2.json",
+		);
+		const result = run(
+			session.run,
+			["start", join(outside, "linked", BRIEF), "B01/S2", "--prefix", "sam"],
+			outside,
+		);
+		expect(result.err).toBe("");
+		expect(result.out).toContain(
+			"Branch. sam/abc-210/b01-s2-data-platform. This command makes no worktree and no checkout.",
+		);
+		expect(result.out).toContain(`Record. ${record}\n`);
+		expect(JSON.parse(readFileSync(record, "utf8"))).toMatchObject({
+			plan: BRIEF,
+			session: "B01/S2",
+			branch: "sam/abc-210/b01-s2-data-platform",
+		});
 	});
 
 	test("a second start keeps the checkpoints of the record", () => {

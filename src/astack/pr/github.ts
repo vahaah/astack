@@ -162,7 +162,7 @@ export function pullRequestFrom(
 
 const GH_TIMEOUT_MS = 4000;
 
-function ghJson(dir: string, args: readonly string[]): unknown {
+export function ghJson(dir: string, args: readonly string[]): unknown {
 	const result = spawnSync("gh", args, {
 		cwd: dir,
 		encoding: "utf8",

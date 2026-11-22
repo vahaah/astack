@@ -174,12 +174,17 @@ export type ModelRun = {
 	readonly cleanup: Result<undefined, string>;
 };
 
+type Halt =
+	| { readonly kind: "timeout" }
+	| Extract<RunEnd, { kind: "output-cap" | "failed" }>;
+
 function waitForExit(
 	command: string,
 	args: readonly string[],
 	cwd: string,
 	env: Record<string, string>,
 	timeoutMs: number,
+	cancel: AbortSignal,
 ): Promise<RunEnd> {
 	return new Promise((settle) => {
 		const child = spawn(command, args, {
@@ -187,18 +192,19 @@ function waitForExit(
 			env,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
+		const kill = (): void => {
+			child.kill("SIGKILL");
+		};
+		cancel.addEventListener("abort", kill, { once: true });
 		const stdout: Buffer[] = [];
 		const stderr: Buffer[] = [];
 		let bytes = 0;
-		let stop: RunEnd | undefined;
-		const halt = (reason: RunEnd): void => {
+		let stop: Halt | undefined;
+		const halt = (reason: Halt): void => {
 			stop ??= reason;
 			child.kill("SIGKILL");
 		};
-		const timer = setTimeout(
-			() => halt({ kind: "timeout", ms: timeoutMs }),
-			timeoutMs,
-		);
+		const timer = setTimeout(() => halt({ kind: "timeout" }), timeoutMs);
 		const collect = (into: Buffer[]) => (chunk: Buffer) => {
 			bytes += chunk.length;
 			if (bytes > OUTPUT_CAP_BYTES)
@@ -212,7 +218,14 @@ function waitForExit(
 		});
 		child.on("close", (code, signal) => {
 			clearTimeout(timer);
-			if (stop !== undefined) settle(stop);
+			cancel.removeEventListener("abort", kill);
+			if (stop?.kind === "timeout")
+				settle({
+					kind: "timeout",
+					ms: timeoutMs,
+					stdout: Buffer.concat(stdout).toString("utf8"),
+				});
+			else if (stop !== undefined) settle(stop);
 			else if (code === null)
 				settle({ kind: "signalled", signal: signal ?? "unknown" });
 			else
@@ -244,6 +257,7 @@ export async function runModel(
 	module: string,
 	config: string,
 	timeoutMs: number,
+	cancel: AbortSignal,
 ): Promise<ModelRun> {
 	let root: string;
 	try {
@@ -289,6 +303,7 @@ export async function runModel(
 			model,
 			childEnv(env),
 			timeoutMs,
+			cancel,
 		);
 	} catch (error) {
 		end = {

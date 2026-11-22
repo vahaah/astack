@@ -13,25 +13,7 @@ floor=22
 runtime=""
 
 pick() {
-	if [ -n "$runtime" ] || [ -z "$1" ] || [ ! -f "$1" ] || [ ! -x "$1" ]; then
-		return
-	fi
-	case "$(basename "$1")" in
-	bun*)
-		runtime="$1"
-		return
-		;;
-	esac
-	version="$("$1" --version 2>/dev/null)"
-	version="${version#v}"
-	major="${version%%.*}"
-	case "$major" in
-	'' | *[!0-9]*)
-		runtime="$1"
-		return
-		;;
-	esac
-	if [ "$major" -ge "$floor" ]; then
+	if [ -z "$runtime" ] && [ -n "$1" ] && [ -f "$1" ] && [ -x "$1" ]; then
 		runtime="$1"
 	fi
 }
@@ -40,12 +22,12 @@ pick "${ASTACK_RUNTIME:-}"
 if [ -z "$runtime" ] && [ -r "$saved" ]; then
 	pick "$(head -n 1 "$saved")"
 fi
-pick "$(command -v node 2>/dev/null)"
 pick "$(command -v bun 2>/dev/null)"
-pick /opt/homebrew/bin/node
+pick "$(command -v node 2>/dev/null)"
 pick /opt/homebrew/bin/bun
-pick /usr/local/bin/node
+pick /opt/homebrew/bin/node
 pick /usr/local/bin/bun
+pick /usr/local/bin/node
 pick "$HOME/.bun/bin/bun"
 pick "$HOME/.volta/bin/node"
 if [ -z "$runtime" ]; then
@@ -67,19 +49,44 @@ cursor_allow() {
 
 if [ -z "$runtime" ]; then
 	echo "astack: found no node $floor or later and no bun, so the astack checks did not run. Set ASTACK_RUNTIME to the path of node or bun." >&2
-	if [ "$1" = hook ] && [ "$2" = cursor ]; then
+	if [ "$1" != hook ]; then
+		exit 1
+	fi
+	if [ "$2" = cursor ]; then
 		cursor_allow "$3"
 	fi
 	exit 0
 fi
-if [ "$1" = hook ] && [ "$2" = cursor ]; then
-	output="$("$runtime" "$script" "$@")"
-	status=$?
-	if [ -z "$output" ]; then
-		cursor_allow "$3"
-		exit 0
-	fi
-	printf '%s\n' "$output"
-	exit "$status"
+if [ "$1" != hook ]; then
+	exec "$runtime" "$script" "$@"
 fi
-exec "$runtime" "$script" "$@"
+output="$("$runtime" "$script" "$@")"
+status=$?
+case "$status:${runtime##*/}" in
+0:* | 2:* | *:bun*) ;;
+*)
+	version="$("$runtime" --version 2>/dev/null)"
+	version="${version#v}"
+	major="${version%%.*}"
+	case "$major" in
+	'' | *[!0-9]*) ;;
+	*)
+		if [ "$major" -lt "$floor" ]; then
+			echo "astack: $runtime is node $version, which is older than node $floor, so the astack checks did not run. Set ASTACK_RUNTIME to the path of node $floor or later or bun." >&2
+			if [ "$2" = cursor ]; then
+				cursor_allow "$3"
+			fi
+			exit 0
+		fi
+		;;
+	esac
+	;;
+esac
+if [ "$2" = cursor ] && [ -z "$output" ]; then
+	cursor_allow "$3"
+	exit 0
+fi
+if [ -n "$output" ]; then
+	printf '%s\n' "$output"
+fi
+exit "$status"

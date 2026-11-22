@@ -69,6 +69,7 @@ describe("the public source checkout", () => {
 						...process.env,
 						npm_config_userconfig: config,
 						npm_config_cache: join(scratch, "npm-cache"),
+						npm_config_update_notifier: "false",
 					},
 				},
 			);

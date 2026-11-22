@@ -712,7 +712,7 @@ describe("fresh Cursor file judgments", () => {
 		expect(flow.stop()).toEqual({});
 	});
 
-	test("refresh keeps the STE ledger unchanged and creates no reply claim", () => {
+	test("[control:tel-refresh] refresh keeps the STE ledger and the event log unchanged and creates no reply claim", () => {
 		const flow = liveCursor({ name: "note.md" });
 		mkdirSync(join(flow.dir, ".astack"));
 		writeFileSync(
@@ -722,6 +722,9 @@ describe("fresh Cursor file judgments", () => {
 		flow.edit("Read the file.\n", "Ensure the file exists.\n");
 		const ledger = join(flow.state, "ste", flow.session, "ledger.json");
 		const initial = readFileSync(ledger, "utf8");
+		const log = join(flow.state, "ste", flow.session, "events.jsonl");
+		const logged = readFileSync(log, "utf8");
+		expect(logged.split("\n").filter((line) => line !== "")).toHaveLength(1);
 		const parsed: unknown = JSON.parse(initial);
 		if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
 			throw new Error("The ledger must hold its first real denial.");
@@ -737,10 +740,31 @@ describe("fresh Cursor file judgments", () => {
 		);
 		expect(flow.stop()).toEqual(denied);
 		expect(readFileSync(ledger, "utf8")).toBe(initial);
+		expect(readFileSync(log, "utf8")).toBe(logged);
 		const names = readdirSync(join(flow.state, "ste", flow.session));
-		expect(names.sort()).toEqual(["ledger.json"]);
+		expect(names.sort()).toEqual(["events.jsonl", "ledger.json"]);
 		writeFileSync(flow.file, "Read the file.\n");
 		expect(flow.stop()).toEqual({});
+	});
+
+	test("[control:tel-comment-refresh] a comment deny on a Cursor edit writes one line, and each refresh at stop writes none", () => {
+		const flow = liveCursor();
+		flow.edit(GOOD_TYPE, `// now uses the new cache\n${GOOD_TYPE}`);
+		const log = join(flow.state, "ste", flow.session, "events.jsonl");
+		const logged = readFileSync(log, "utf8");
+		expect(
+			logged
+				.split("\n")
+				.filter((line) => line !== "")
+				.map((line): Record<string, unknown> => JSON.parse(line))
+				.map((line) => [line.handler, line.rule, line.outcome]),
+		).toEqual([["comments", "narration", "deny"]]);
+		const denied = {
+			followup_message: expect.stringContaining("now uses the new cache"),
+		};
+		expect(flow.stop()).toEqual(denied);
+		expect(flow.stop()).toEqual(denied);
+		expect(readFileSync(log, "utf8")).toBe(logged);
 	});
 
 	test("a removed workspace alias preserves the canonical file judgment", () => {

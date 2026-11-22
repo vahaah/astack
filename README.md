@@ -47,7 +47,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
 | Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler, but a merge guard error refuses the merge. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
-| CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
+| CI | This repo's Check workflow runs `bun run check` on a push to main and on each pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
 
 ```mermaid
@@ -332,7 +332,7 @@ What is only analogy:
 
 One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients. All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#quickstart)).
 
-### Claude Code and Grok Build
+### Claude Code
 
 Add the marketplace from the stable link `$ASTACK_CURRENT`, so that an [update](#update) only moves the link:
 
@@ -343,7 +343,19 @@ claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Grok Build uses the Claude plugin build through its own marketplace install from the same link.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root.
+
+### Grok Build
+
+Grok Build installs the Claude plugin build from its folder in the release:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Grok keeps a copy of the plugin, so the link does not move it to a new release. Grok Build reads the shared rules that you linked for Claude Code.
 
 ### Codex
 
@@ -379,7 +391,16 @@ claude plugin marketplace update astack
 claude plugin update astack@astack
 ```
 
-Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link.
+
+Grok Build keeps a copy of the plugin, and `grok plugin update astack` keeps the old copy. These commands remove the copy and install the new release. `--keep-data` keeps the data of the plugin:
+
+```sh
+grok plugin uninstall astack --keep-data
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Then restart Grok Build.
 
 An older install that added the marketplace from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the marketplace from the link and install the plugin again:
 
@@ -422,6 +443,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus `.astack/proof.json` or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
 | `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
+| `astack check hardening-profile` | Check `.claude/pr-review-hardening.profile.md` with the rules that apply uses. Each problem prints with its repair and exits 1. A missing profile or fenced block exits 2. `astack doctor` runs the same rules |
 | `astack check proof [--base <ref>] [--summary]` | Admit a change only with a domain contract, composition records and passing TLC runs. A cited ADR is Accepted, or Proposed with an integrated-proposal ratification. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
 | `astack check comments\|types [--staged\|--base <ref>]` | Fail when an added comment is in a class that no keep rule covers, or when an unsafe type-pattern count rises in a file |
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
@@ -429,10 +451,10 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
 | `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
 | `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
-| `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
+| `astack managed <path>` | Print whether apply writes the path or the repo owns it. Exit 0 when the owner is known, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
-| `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
+| `astack doctor` | Report the runtime, installed copies, duplicate skills and the hook trust that Codex reports. Also count the STE and comment hook findings of the last 7 days by rule, surface and outcome. `--skip-profile <dir>` skips a Claude config folder on purpose. Doctor writes only its skip file, its runtime file and the state that `codex app-server` keeps in `CODEX_HOME` |
 | `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
 Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
@@ -522,12 +544,17 @@ The TypeScript pack covers `.ts`, `.tsx`, `.mts` and `.cts`. The PostgreSQL pack
 ```sh
 bun install --frozen-lockfile
 bun run check:drift
+bun run check:fast
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof. `bun run check` runs that proof twice. The `test` script runs it, and `check` runs it again at the end. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it passes no `--base`, so after a merge of main the local run reports the paths of main as a scope gap. Then run `bun src/astack/cli/bin.ts check proof --base origin/main`, as CI does.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so a merge of main shows its paths as a scope gap.
 
-`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` builds every target. It runs validation, neutrality and secret scans, STE checks, the skill word budget, tests, formatting, lint and type checks. The word budget, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test needs an API key or OAuth token. It is reported as skipped without one.
+`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget and the change proof. It runs the tests last, in parallel.
+
+The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
+
+`check:fast` gives a short answer while you work. It runs the type check, lint, build, bundle, the dist build without the external checks, STE precision gate and word budget. Then it runs the tests that `bun test --changed` selects from the merge base with `origin/HEAD`. It also runs each test file that starts the launcher or the bundle. Its fixed cap is 20 s. It does not fail on time, and it does not replace `check`.
 
 ## Source layout
 

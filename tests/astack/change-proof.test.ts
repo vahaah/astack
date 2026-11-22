@@ -107,16 +107,36 @@ const CHANGED = [...Object.keys(PROOF_FILES), ".astack/proof.json"].map(
 	(path) => ({ path, present: true }),
 );
 const COUNTS = { generated: 6, distinct: 4, queued: 0 };
+const VIOLATION = {
+	name: "AdmitFresh",
+	states: 3,
+	trace: "1: <Initial predicate>",
+};
 const EVIDENCE: ModelEvidence = {
 	positive: ok(COUNTS),
-	negative: ok({ name: "AdmitFresh", states: 3 }),
+	negative: ok(VIOLATION),
 	restored: ok(COUNTS),
 };
 const SNAPSHOT: Snapshot = {
 	head: "b".repeat(40),
 	digest: `sha256:${"c".repeat(64)}`,
 	files: 13,
+	index: "1".repeat(64),
+	history: "2".repeat(64),
+	entries: new Map(
+		Array.from({ length: 13 }, (_, at) => [
+			`src/file-${String(at).padStart(2, "0")}.ts`,
+			`file 100644 ${"3".repeat(64)}`,
+		]),
+	),
 };
+
+function changedEntries(count: number): Snapshot {
+	const entries = new Map(SNAPSHOT.entries);
+	for (const path of [...entries.keys()].slice(0, count))
+		entries.set(path, `file 100644 ${"4".repeat(64)}`);
+	return { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}`, entries };
+}
 
 function facts(
 	after: Snapshot,
@@ -168,7 +188,7 @@ describe("ADR format admission", () => {
 					digest: SNAPSHOT.digest,
 					files: 13,
 					positive: COUNTS,
-					negative: { name: "AdmitFresh", states: 3 },
+					negative: VIOLATION,
 					action: "Admit",
 					restored: COUNTS,
 				}),
@@ -231,23 +251,64 @@ describe("admitChangeProof", () => {
 				digest: SNAPSHOT.digest,
 				files: 13,
 				positive: COUNTS,
-				negative: { name: "AdmitFresh", states: 3 },
+				negative: VIOLATION,
 				action: "Admit",
 				restored: COUNTS,
 			}),
 		);
 	});
 
-	test("[control:proof-stale-digest] rejects evidence when the input digest changed during the runs", () => {
-		const stale = { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}` };
-		expect(admitChangeProof(validChangeProof(), facts(stale))).toEqual({
+	test("[control:proof-stale-digest] rejects evidence when an input file changed during the runs, and names it", () => {
+		expect(
+			admitChangeProof(validChangeProof(), facts(changedEntries(1))),
+		).toEqual({
 			ok: false,
 			error: {
 				stage: "stale",
-				message: `the candidate inputs changed during the proof: digest ${SNAPSHOT.digest} became ${stale.digest}`,
+				message:
+					"the candidate inputs changed during the proof: src/file-00.ts",
 			},
 		});
 	});
+
+	test.each<[string, Snapshot, string]>([
+		[
+			"eleven changed paths",
+			changedEntries(11),
+			"src/file-00.ts, src/file-01.ts, src/file-02.ts, src/file-03.ts, src/file-04.ts, src/file-05.ts, src/file-06.ts, src/file-07.ts, src/file-08.ts, src/file-09.ts and 1 more",
+		],
+		[
+			"ten changed paths",
+			changedEntries(10),
+			"src/file-00.ts, src/file-01.ts, src/file-02.ts, src/file-03.ts, src/file-04.ts, src/file-05.ts, src/file-06.ts, src/file-07.ts, src/file-08.ts, src/file-09.ts",
+		],
+		[
+			"a removed path",
+			{
+				...SNAPSHOT,
+				entries: new Map(
+					[...SNAPSHOT.entries].filter(([path]) => path !== "src/file-12.ts"),
+				),
+			},
+			"src/file-12.ts",
+		],
+		[
+			"the index and the ratification history",
+			{ ...SNAPSHOT, index: "5".repeat(64), history: "6".repeat(64) },
+			"the ratification history, the index",
+		],
+	])(
+		"[control:proof-stale-paths] a stale stop names %s",
+		(_name, after, names) => {
+			expect(admitChangeProof(validChangeProof(), facts(after))).toEqual({
+				ok: false,
+				error: {
+					stage: "stale",
+					message: `the candidate inputs changed during the proof: ${names}`,
+				},
+			});
+		},
+	);
 
 	test("[control:proof-restored-run] rejects a restored run whose counts differ from the positive run", () => {
 		const evidence = { ...EVIDENCE, restored: ok({ ...COUNTS, distinct: 5 }) };
@@ -345,8 +406,13 @@ const exited = (code: number, stdout: string): RunEnd => ({
 });
 
 describe("TLC output judges, from parser fixtures only", () => {
-	test.each<[string, RunEnd, boolean, string | undefined]>([
-		["a complete temporal run", exited(0, POSITIVE_OUTPUT), true, undefined],
+	test.each<[string, RunEnd, readonly string[], string | undefined]>([
+		[
+			"a complete temporal run",
+			exited(0, POSITIVE_OUTPUT),
+			["Ends"],
+			undefined,
+		],
 		[
 			"a run with no success record",
 			exited(
@@ -356,7 +422,7 @@ describe("TLC output judges, from parser fixtures only", () => {
 					"",
 				),
 			),
-			false,
+			[],
 			"the positive run has no single success record 2193",
 		],
 		[
@@ -365,7 +431,7 @@ describe("TLC output judges, from parser fixtures only", () => {
 				0,
 				`${record(2401, 3, "use the parallel collector")}${POSITIVE_OUTPUT}`,
 			),
-			false,
+			[],
 			"the positive run printed warning 2401",
 		],
 		[
@@ -377,19 +443,19 @@ describe("TLC output judges, from parser fixtures only", () => {
 					"",
 				),
 			),
-			true,
+			["Ends"],
 			"the positive run has no single temporal check completion record 2267",
 		],
 		[
 			"a truncated record",
 			exited(0, POSITIVE_OUTPUT.slice(0, -25)),
-			false,
+			[],
 			"the positive run printed malformed output: record 2186 has no end",
 		],
 	])(
 		"[control:proof-output-protocol] judgePositive: %s",
-		(_name, end, temporal, problem) => {
-			expect(judgePositive("positive", end, temporal)).toEqual(
+		(_name, end, properties, problem) => {
+			expect(judgePositive("positive", end, properties)).toEqual(
 				problem === undefined
 					? ok({ generated: 6, distinct: 4, queued: 0 })
 					: { ok: false, error: problem },
@@ -407,7 +473,13 @@ describe("TLC output judges, from parser fixtures only", () => {
 		].join("");
 		expect(
 			judgeNegative(exited(13, output), { kind: "temporal", name: "Ends" }),
-		).toEqual(ok({ name: "Ends", states: 2 }));
+		).toEqual(
+			ok({
+				name: "Ends",
+				states: 2,
+				trace: "1: <Initial predicate>; 2: Stuttering",
+			}),
+		);
 	});
 });
 

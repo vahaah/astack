@@ -329,7 +329,7 @@ export function setHome(text: string, home: string): string {
 
 function addendumBody(plan: Plan, path: string): string {
 	const rows = plan.decisions.rows
-		.filter((row) => !row.supersededBy && row.handle.startsWith("D"))
+		.filter((row) => !row.retired && row.handle.startsWith("D"))
 		.map(
 			(row) =>
 				`- ${row.handle}. ${stripPeriod(row.decision)}. Settled by ${row.settled}.`,
