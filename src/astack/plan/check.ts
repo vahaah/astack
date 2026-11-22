@@ -1,4 +1,5 @@
 import { basename, dirname, resolve } from "node:path";
+import { decisionHeading } from "../adr.ts";
 import {
 	bullets,
 	DECISION_HEADER,
@@ -538,11 +539,7 @@ function checkGoal(ctx: Ctx, emit: Emit): void {
 		emit("error", "goal", scope.line, "Scope has no Out. bullet");
 }
 
-function adrResolves(
-	env: CheckEnv,
-	number: string,
-	decision: string,
-): "ok" | "no-file" | "no-heading" {
+function readAdr(env: CheckEnv, number: string): string | undefined {
 	const dir = resolve(env.root, env.adrDir);
 	const file = env
 		.listDir(dir)
@@ -551,11 +548,21 @@ function adrResolves(
 				name === `${number}.md` ||
 				(name.startsWith(`${number}-`) && name.endsWith(".md")),
 		);
-	if (!file) return "no-file";
-	const text = env.readFile(resolve(dir, file)) ?? "";
-	return new RegExp(`^###\\s+D${decision}\\.`, "m").test(text)
-		? "ok"
-		: "no-heading";
+	return file === undefined
+		? undefined
+		: (env.readFile(resolve(dir, file)) ?? "");
+}
+
+function adrResolves(
+	env: CheckEnv,
+	number: string,
+	decision: string,
+): "ok" | "no-file" | "no-heading" {
+	const text = readAdr(env, number);
+	if (text === undefined) return "no-file";
+	return decisionHeading(text, `D${decision}`) === undefined
+		? "no-heading"
+		: "ok";
 }
 
 function settledBy(plan: Plan): Map<string, number> {

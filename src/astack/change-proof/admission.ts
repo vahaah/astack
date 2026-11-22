@@ -1,3 +1,4 @@
+import { adrProse, decisionHeading } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
@@ -169,26 +170,6 @@ function headings(text: string): readonly string[] {
 	);
 }
 
-function adrProse(text: string): string {
-	let closing: RegExp | undefined;
-	return text
-		.split("\n")
-		.map((line) => {
-			if (closing !== undefined) {
-				if (closing.test(line)) closing = undefined;
-				return line.replace(/[^\r]/g, " ");
-			}
-			const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
-			if (marker === undefined) return line;
-			const character = marker.startsWith("`") ? "`" : "~";
-			closing = new RegExp(
-				`^ {0,3}${character}{${marker.length},}[ \\t]*\\r?$`,
-			);
-			return line.replace(/[^\r]/g, " ");
-		})
-		.join("\n");
-}
-
 function adrMetadata(
 	text: string,
 	file: string,
@@ -209,14 +190,11 @@ function adrMetadata(
 		return fail(
 			`${file} has status ${JSON.stringify(status)}, not ${expected}`,
 		);
-	const heading = new RegExp(
-		`^###[ \\t]+${decision}(?:\\.[ \\t]+|[ \\t]+—[ \\t]+)\\S`,
-		"m",
-	).exec(prose);
-	if (heading === null)
+	const heading = decisionHeading(text, decision);
+	if (heading === undefined)
 		return fail(`${file} has no ### ${decision}. decision heading`);
 	if (requireBody) {
-		const lineEnd = prose.indexOf("\n", heading.index);
+		const lineEnd = prose.indexOf("\n", heading);
 		const tail = lineEnd < 0 ? "" : prose.slice(lineEnd + 1);
 		const end = tail.search(/^#{1,6}[ \t]+/m);
 		if ((end < 0 ? tail : tail.slice(0, end)).trim() === "")
