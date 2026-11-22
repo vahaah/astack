@@ -126,13 +126,13 @@ describe("parseRegistry", () => {
 			"models[1]: negative.expect names Other, which is not a configured invariant",
 		],
 	])(
-		"[control:rl-registry] %s stops with its key path",
+		"[control:rl-registry-stops] %s stops with its key path",
 		(_name, edit, message) => {
 			expect(parsed(edit)).toEqual({ ok: false, error: message });
 		},
 	);
 
-	test("[control:rl-registry] text that is not JSON stops", () => {
+	test("[control:rl-registry-json] text that is not JSON stops", () => {
 		expect(parseRegistry("{")).toEqual({
 			ok: false,
 			error: "formal/models.json is not valid JSON",

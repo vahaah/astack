@@ -58,34 +58,58 @@ describe("the model registry of astack", () => {
 		).toEqual([]);
 	});
 
-	test("[control:rl-records] records lists each file whose Formal claim names the model", () => {
+	test("[control:rl-records] records lists each file whose Formal claim names the model, and only those files", () => {
+		const names = (path: string, module: string): boolean =>
+			PROOF_RECORDS.includes(path) && formalClaim(read(path)).includes(module);
 		expect(
-			REGISTRY.models.flatMap((entry) =>
-				PROOF_RECORDS.filter(
+			REGISTRY.models.flatMap((entry) => [
+				...PROOF_RECORDS.filter(
 					(path) =>
-						formalClaim(read(path)).includes(entry.model.module) &&
-						!entry.records.includes(path),
+						names(path, entry.model.module) && !entry.records.includes(path),
 				).map((path) => `${entry.name} misses ${path}`),
-			),
+				...entry.records
+					.filter((path) => !names(path, entry.model.module))
+					.map((path) => `${entry.name} lists ${path}`),
+			]),
 		).toEqual([]);
 	});
 
 	test("[control:rl-covers] each src path of a record matches a covers glob of its model", () => {
 		expect(
 			REGISTRY.models.flatMap((entry) =>
-				entry.records
-					.filter((path) => TRACKED_SET.has(path))
-					.flatMap((path) =>
-						[...read(path).matchAll(/\bsrc\/[\w./-]*\w/g)]
-							.map((match) => match[0])
-							.filter((cited) => !anyGlob(entry.covers, cited))
-							.map((cited) => `${entry.name}: ${path} cites ${cited}`),
-					),
+				entry.records.flatMap((path) =>
+					[...read(path).matchAll(/\bsrc\/[\w./-]*\w/g)]
+						.map((match) => match[0])
+						.filter((cited) => !anyGlob(entry.covers, cited))
+						.map((cited) => `${entry.name}: ${path} cites ${cited}`),
+				),
 			),
 		).toEqual([]);
 	});
 
-	test("[control:rl-fail-closed] each tracked file under a fail-closed glob has a model glob or an unmodelled entry", () => {
+	test.each(["src/astack/hook/handlers/merge-guard.ts", "src/astack/paths.ts"])(
+		"[control:rl-covers-guard] a diff of %s with a PlanBoundary manifest runs PlanBoundary and then SessionGuards at R4",
+		(path) => {
+			const manifest = REGISTRY.models.find(
+				(entry) => entry.name === "PlanBoundary",
+			);
+			if (manifest === undefined) throw new Error("no PlanBoundary model");
+			const ladder = deriveLadder({
+				changed: [{ path, present: true }],
+				registry: { base: REGISTRY, tree: REGISTRY },
+				floor: { base: "R0", tree: "R0" },
+				manifest,
+				inTree: (file) => TRACKED_SET.has(file),
+			});
+			expect(
+				ladder.ok && ladder.value.kind === "ladder"
+					? [ladder.value.rung, ...ladder.value.runs.map((run) => run.name)]
+					: ladder,
+			).toEqual(["R4", "PlanBoundary", "SessionGuards"]);
+		},
+	);
+
+	test("[control:rl-fail-closed-tree] each tracked file under a fail-closed glob has a model glob or an unmodelled entry", () => {
 		const [manifest] = REGISTRY.models;
 		if (manifest === undefined) throw new Error("the registry has no model");
 		expect(
@@ -123,7 +147,7 @@ describe("the model registry of astack", () => {
 	test("[control:rl-unmodelled-control] each unmodelled entry names a control marker of a test", () => {
 		const markers = new Set(
 			TRACKED.filter((path) => path.startsWith("tests/")).flatMap((path) =>
-				[...read(path).matchAll(/\[control:([A-Za-z0-9._-]+)\]/g)].map(
+				[...read(path).matchAll(/\[(?:control):([A-Za-z0-9._-]+)\]/g)].map(
 					(match) => match[1],
 				),
 			),

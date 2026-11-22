@@ -1,497 +1,509 @@
 {
 	"version": 1,
-	"change": "fixture-isolation",
-	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
+	"change": "proof-ladder",
+	"base": "605610cc26c0b65ca9a5b3451d2ab01477a5c573",
 	"scope": [
 		{
 			"path": ".astack/**",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "AGENTS.md",
+			"obligation": "RL-RUNG"
+		},
+		{
+			"path": "README.md",
+			"obligation": "RL-RUNG"
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": "docs/design.md",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "docs/adr/README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "docs/runbooks/**",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "docs/reference/test-fixtures.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": "docs/adr/**",
+			"obligation": "RL-RUNG"
+		},
+		{
+			"path": "docs/reference/proof-ladder.md",
+			"obligation": "RL-RUNG"
+		},
+		{
+			"path": "docs/reference/change-proof-contract.md",
+			"obligation": "CP-02"
 		},
 		{
 			"path": "docs/plans/review-roadmap/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"obligation": "RL-R0"
 		},
 		{
-			"path": "tests/adr-numbers.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "formal/ProofAdmission.tla",
+			"obligation": "RL-STAGE-ORDER"
 		},
 		{
-			"path": "docs/review-lessons.md",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
+			"path": "formal/ProofLadder.tla",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "formal/FixtureIsolation.tla",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": "formal/ProofLadder.cfg",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "formal/FixtureIsolation.cfg",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": "formal/models.json",
+			"obligation": "RL-REGISTRY"
 		},
 		{
-			"path": "package.json",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "dist/**",
+			"obligation": "SG-generated"
 		},
 		{
-			"path": "scripts/check-companion.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
 		},
 		{
-			"path": "scripts/check-fast.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/mode/references/**",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "tests/git-template.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"RewriteConfig",
-				"RefreshIndex",
-				"FinishBuild"
-			]
+			"path": "rules/astack.md",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "tests/git-template.test.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate",
-				"Push"
-			]
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md",
+			"obligation": "CP-21"
 		},
 		{
-			"path": "tests/astack/ci-pins.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-example.json",
+			"obligation": "RL-SCHEMA"
 		},
 		{
-			"path": "tests/astack/ci-pins-adversarial.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
+			"path": "scripts/lib/budget.json",
+			"obligation": "OWN-ZERO"
 		},
 		{
-			"path": "tests/astack/pr-head-harness.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged", "Push"]
+			"path": "scripts/lib/ste-own.ts",
+			"obligation": "OWN-ZERO"
 		},
 		{
-			"path": "tests/apply/worktree.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
+			"path": "scripts/lib/projects.ts",
+			"obligation": "RL-FLOOR"
 		},
 		{
-			"path": "tests/apply/ci-parity-apply.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
+			"path": "scripts/lib/render.ts",
+			"obligation": "RL-FLOOR"
 		},
 		{
-			"path": "tests/check-companion.test.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "RL-ADMIT-R4"
 		},
 		{
-			"path": "tests/heavy-test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/change-proof/candidate.ts",
+			"obligation": "RL-REGISTRY-GONE"
 		},
 		{
-			"path": "tests/neutral.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "RL-SCHEMA"
 		},
 		{
-			"path": "tests/validate.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/change-proof/registry.ts",
+			"obligation": "RL-REGISTRY"
 		},
 		{
-			"path": "tests/check-fast.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/change-proof/rung.ts",
+			"obligation": "RL-RUNG"
 		},
 		{
-			"path": "tests/drift.test.ts",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/cli/commands/check/proof.ts",
+			"obligation": "RL-SELECT"
+		},
+		{
+			"path": "src/astack/profile.ts",
+			"obligation": "RL-FLOOR"
+		},
+		{
+			"path": "tests/apply/projects.test.ts",
+			"obligation": "RL-FLOOR"
+		},
+		{
+			"path": "tests/apply/render.test.ts",
+			"obligation": "RL-FLOOR"
+		},
+		{
+			"path": "tests/astack/profile.test.ts",
+			"obligation": "RL-FLOOR"
 		},
 		{
 			"path": "tests/astack/change-proof-cli.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
+			"obligation": "RL-SELECT"
 		},
 		{
-			"path": "tests/astack/change-proof-ratification.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/change-proof-fixture.ts",
+			"obligation": "RL-SELECT"
 		},
 		{
-			"path": "tests/check-proof-script.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/change-proof.test.ts",
+			"obligation": "RL-ADMIT-R4"
+		},
+		{
+			"path": "tests/astack/dispatch.test.ts",
+			"obligation": "RL-UNMODELLED"
+		},
+		{
+			"path": "tests/astack/model-registry.test.ts",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "tests/astack/proof-contract-doc.test.ts",
+			"obligation": "CP-21"
+		},
+		{
+			"path": "tests/astack/proof-ladder.test.ts",
+			"obligation": "RL-RUNG"
+		},
+		{
+			"path": "tests/formal-registry.test.ts",
+			"obligation": "RL-COVERS"
+		},
+		{
+			"path": "tests/ste-own.test.ts",
+			"obligation": "OWN-ZERO"
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "tests/git-template.ts",
-			"symbol": "Template"
+			"path": "src/astack/change-proof/rung.ts",
+			"symbol": "Ladder"
 		},
-		"terms": [
-			"Fixture template",
-			"ChangeProof",
-			"Model control",
-			"Session guard"
-		],
+		"terms": ["ChangeProof", "Proof rung", "Model registry", "Model control"],
 		"invariants": [
 			{
-				"name": "A write or a push in a copy never changes the template or its origin",
-				"modelRef": "TemplateUnchanged"
+				"name": "A model run starts only at R4",
+				"modelRef": "TlcOnlyAtR4"
 			},
 			{
-				"name": "A write or a push in a copy never changes another copy",
-				"modelRef": "CopiesDisjoint"
+				"name": "An admission at R4 needs one passed triple for each selected model",
+				"modelRef": "AdmitNeedsEachTriple"
 			},
 			{
-				"name": "Each ready copy has a clean index",
-				"modelRef": "CopyIndexClean"
+				"name": "An uncovered fail-closed path stops before a rung",
+				"modelRef": "FailClosedStops"
 			},
 			{
-				"name": "A template at its final path is a complete build",
-				"modelRef": "NoPartialTemplate"
+				"name": "The rung is the highest of the path rung and both floors",
+				"modelRef": "FloorOnlyRaises"
+			},
+			{
+				"name": "Each model starts at most one triple",
+				"modelRef": "OneTriplePerModel"
+			},
+			{
+				"name": "A registry diff runs each model of both sides",
+				"modelRef": "RegistryRunsAll"
+			},
+			{
+				"name": "A registry at the diff base with none in the tree stops",
+				"modelRef": "DeletedRegistryStops"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D9"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"FX-ISOLATE",
-				"FX-INDEX",
-				"FX-TREE",
-				"FX-ATOMIC",
-				"FX-OWN-DIR",
-				"FX-REAL-SCAN",
+				"RL-R0",
+				"RL-FLOOR",
+				"RL-SELECT",
+				"RL-COVERS",
+				"RL-FAIL-CLOSED",
+				"RL-REGISTRY-GONE",
+				"RL-STAGE-ORDER",
+				"RL-ONE-RUN",
+				"RL-STOP-ORDER",
+				"RL-ADMIT-R4",
+				"RL-STALE",
+				"RL-SCHEMA",
+				"RL-RUNG",
+				"RL-REGISTRY",
+				"RL-UNMODELLED",
+				"RL-LEGACY",
 				"CP-02",
-				"SG-preserve",
+				"CP-09",
+				"CP-21",
+				"OWN-ZERO",
 				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "artifact",
-			"contract": "Each arrow maps a fixture folder to a fixture folder. A ready copy is a new repo with the template commits, its own origin and a clean index, and no write in it reaches the template or another copy."
+			"kind": "pure"
 		},
 		"objects": [
 			{
-				"name": "FixtureSpec",
+				"name": "LadderInput",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "FixtureSpec"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "LadderInput"
 				}
 			},
 			{
-				"name": "Template",
+				"name": "Ladder",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "Template"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "Ladder"
 				}
 			},
 			{
-				"name": "RepoCopy",
+				"name": "LadderRun",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "RepoCopy"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "LadderRun"
 				}
 			},
 			{
-				"name": "BranchSpec",
+				"name": "AdmissionFacts",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "BranchSpec"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "AdmissionFacts"
+				}
+			},
+			{
+				"name": "Admitted",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "Admitted"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "buildTemplate",
-				"from": "FixtureSpec",
-				"to": "Template",
+				"name": "deriveLadder",
+				"from": "LadderInput",
+				"to": "Ladder",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "deriveLadder"
 				},
-				"effects": ["fs-read", "fs-write", "spawn", "env"]
+				"effects": []
 			},
 			{
-				"name": "copyTemplate",
-				"from": "Template",
-				"to": "RepoCopy",
+				"name": "modelRuns",
+				"from": "Ladder",
+				"to": "LadderRun",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "modelRuns"
 				},
-				"effects": ["fs-read", "fs-write"]
+				"effects": []
 			},
 			{
-				"name": "rewriteConfig",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
+				"name": "admitChangeProof",
+				"from": "AdmissionFacts",
+				"to": "Admitted",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
 				},
-				"effects": ["fs-read", "fs-write"]
-			},
-			{
-				"name": "refreshIndex",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
-				},
-				"effects": ["fs-read", "spawn", "env"]
-			},
-			{
-				"name": "commitTree",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"effects": ["fs-write", "spawn", "env"]
+				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two templates are equal when their folders hold the same refs, objects and git config. Two copies are equal when their refs, their remote URLs and the state of their index are equal.",
+		"equality": "Two ladders are equal when their rung, their cause and their runs are equal, with each run compared by name, model contract and negative control.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/git-template.ts"
+		"typedWitness": "src/astack/cli/commands/check/proof.ts"
 	},
 	"abstraction": {
-		"hides": "The git object layout, the fast-import stream, the config path rewrite and the index refresh of each copied repo.",
+		"hides": "The glob match of each changed path, the registry and profile reads at the diff base and in the tree, and the order of the model runs.",
 		"callersKnow": [
-			"A copy is a new folder with the template commits, and each copied repo has its own origin.",
-			"A write or a push in a copy never reaches the template or another copy.",
-			"A new copy passes git diff-index --quiet HEAD.",
-			"commitTree writes each branch at fixed past dates, so two copies of one template get the same commit ids.",
-			"A build that throws leaves no folder, and removeTemplate removes the folder of a template."
+			"check proof prints the rung and the path or floor that set it, when a registry exists.",
+			"Below R4 no Java process starts, and the receipt names no jar.",
+			"At R4 the manifest model runs first, then each other selected model, one triple each.",
+			"An uncovered fail-closed path and a deleted registry stop at rung.",
+			"A repo with no registry runs only the manifest model and prints no rung line."
 		],
-		"deletionTest": "Without the helper, each of the 5 files keeps its own chain of init, add, commit and push calls for each test.",
+		"deletionTest": "Without the ladder, each change runs the manifest model only, so a docs change starts Java and a guard change can merge with no guard model run.",
 		"alternatives": [
 			{
-				"name": "git clone --shared or --reference",
-				"rejectedBecause": "The copies then share objects with the template."
+				"name": "TLC on each change",
+				"rejectedBecause": "TLC cannot see a code change, and a docs change pays for 3 Java processes."
 			},
 			{
-				"name": "One repo for each file",
-				"rejectedBecause": "The tests then share commits."
+				"name": "A verdict cache",
+				"rejectedBecause": "It saves at most 3.51 s and stores state that an agent can write."
 			},
 			{
-				"name": "An add and a commit for each branch",
-				"rejectedBecause": "A repo then costs 53 to 71 ms, from 17 to 24 ms with one fast-import stream."
+				"name": "A sync commit for each model",
+				"rejectedBecause": "15 of 20 pull requests then edit the registry and conflict."
 			},
 			{
-				"name": "Object writes in process",
-				"rejectedBecause": "They need a git library."
+				"name": "A rung that the author picks",
+				"rejectedBecause": "The author is the party that the gate checks."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "deriveLadder"
 				},
-				"modelAction": "FinishBuild"
+				"modelAction": "Derive"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "deriveLadder"
 				},
-				"modelAction": "StopBuild"
+				"modelAction": "DeriveStop"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "src/astack/cli/commands/check/proof.ts",
+					"symbol": "runTriple"
 				},
-				"modelAction": "CopyTemplate"
+				"modelAction": "Start"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
+					"path": "src/astack/cli/commands/check/proof.ts",
+					"symbol": "runTriple"
 				},
-				"modelAction": "RewriteConfig"
+				"modelAction": "Judge"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
 				},
-				"modelAction": "RefreshIndex"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"modelAction": "Commit"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.test.ts",
-					"symbol": "commitAndPush"
-				},
-				"modelAction": "Push"
+				"modelAction": "Admit"
 			}
 		],
 		"omitted": [
-			"The git objects, the files and the index are abstracted to one commit count for each repo and one clean flag for each copy.",
-			"removeTemplate and the template cache of each file are not in the model. The fx-own-dir control and the pr-head order runs examine them.",
-			"The scan runner of check:companion and the timeout budget are not in the model. The fx-real-scan control and the timed runs examine them."
+			"The glob syntax, the registry schema and the profile parse are not in the model. The rl-rung, rl-registry and rl-floor-profile controls examine them.",
+			"The model joins the three runs of a triple in one start and one judge step. ProofAdmission and the CP-02 controls examine the judge order.",
+			"The stale snapshot of the registry, the profile and each selected model is not in the model. The rl-stale control examines it."
 		]
 	},
 	"model": {
-		"module": "formal/FixtureIsolation.tla",
-		"config": "formal/FixtureIsolation.cfg",
+		"module": "formal/ProofLadder.tla",
+		"config": "formal/ProofLadder.cfg",
 		"dependencies": [],
 		"bounds": [
-			"One template, two copies and at most 2 commits in each copy.",
-			"A build of 2 steps that can stop before its end and start again.",
-			"Each order of the copy, rewrite, refresh, commit and push steps of each copy."
+			"Two models, seven path kinds, a base registry that can be absent, and the floors R0, R1 and R4 on each side.",
+			"A diff of one or two path kinds, and each order of the derive, start, judge and admit steps."
 		],
 		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"TemplateUnchanged",
-			"CopiesDisjoint",
-			"CopyIndexClean",
-			"NoPartialTemplate"
+			"TlcOnlyAtR4",
+			"AdmitNeedsEachTriple",
+			"FailClosedStops",
+			"FloorOnlyRaises",
+			"OneTriplePerModel",
+			"RegistryRunsAll",
+			"DeletedRegistryStops"
 		],
 		"properties": []
 	},
 	"negative": {
-		"file": "formal/FixtureIsolation.tla",
-		"action": "RewriteConfig",
-		"original": "/\\ remote' = [remote EXCEPT ![c] = c]",
-		"replacement": "/\\ remote' = remote",
-		"defect": "A copy that keeps the origin URL of the template pushes into the origin of the template, as a copy with no config rewrite does.",
+		"file": "formal/ProofLadder.tla",
+		"action": "Derive",
+		"original": "/\\ \"failGap\" \\notin changed",
+		"replacement": "",
+		"defect": "A rung rule that drops the fail-closed guard gives a rung to a guard file that no model covers, so a guard change merges with no model run.",
 		"expect": {
 			"kind": "invariant",
-			"name": "TemplateUnchanged"
+			"name": "FailClosedStops"
 		}
 	},
 	"limits": [
-		"The finite model takes git, the file copy and the index refresh as true observations. The fx-isolate, fx-index, fx-tree and fx-atomic controls examine them.",
-		"The model does not check the git spawn counts, the timeout budget or the suite times. The timed runs in the PR Verification give them.",
+		"The finite model takes the glob match, the registry parse and the TLC verdict as true observations. The rl-rung, rl-registry and CLI controls examine them.",
+		"The model does not check that a covers glob names each file that a model claim depends on. Review of each registry diff and the rl-covers control examine it.",
 		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]

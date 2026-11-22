@@ -875,19 +875,19 @@ describe("astack check proof", () => {
 
 		test.each<[string, Parameters<typeof ladderRepo>[1], string, string]>([
 			[
-				"an uncovered file under a fail-closed glob",
+				"[control:rl-fail-closed] an uncovered file under a fail-closed glob",
 				{ change: { "src/guard/new.ts": "export const guard = 1;\n" } },
 				"rung",
 				"the changed path src/guard/new.ts is under the fail-closed glob src/guard/** of formal/models.json, but no model glob and no unmodelled entry names it",
 			],
 			[
-				"a deleted registry",
+				"[control:rl-registry-gone] a deleted registry",
 				{ remove: ["formal/models.json"] },
 				"rung",
 				"the diff base holds formal/models.json, but the tree does not. A model leaves the registry only through an edit of formal/models.json",
 			],
 			[
-				"a domain error with an uncovered fail-closed file",
+				"[control:rl-stage-order-cli] a domain error with an uncovered fail-closed file",
 				{
 					change: { "src/guard/new.ts": "export const guard = 1;\n" },
 					edit: (p) => {
@@ -897,22 +897,19 @@ describe("astack check proof", () => {
 				"domain",
 				'CONTEXT.md defines no term "Stale receipt"',
 			],
-		])(
-			"[control:rl-fail-closed] [control:rl-stage-order] %s stops before any Java process",
-			(_name, plan, stage, message) => {
-				const repo = ladderRepo(scratch, plan);
-				const java = loggingJava(`java-stop-${stage}-${message.length}`);
-				const run = proof(repo.root, [], { JAVA_HOME: java });
-				expect(run).toEqual({
-					code: 1,
-					out: `stop: proof ${stage}: ${message}\n`,
-					err: rule(
-						stage === "rung" ? "Rungs and models" : "Domain and decisions",
-					),
-				});
-				expect(starts(java)).toEqual({});
-			},
-		);
+		])("%s stops before any Java process", (_name, plan, stage, message) => {
+			const repo = ladderRepo(scratch, plan);
+			const java = loggingJava(`java-stop-${stage}-${message.length}`);
+			const run = proof(repo.root, [], { JAVA_HOME: java });
+			expect(run).toEqual({
+				code: 1,
+				out: `stop: proof ${stage}: ${message}\n`,
+				err: rule(
+					stage === "rung" ? "Rungs and models" : "Domain and decisions",
+				),
+			});
+			expect(starts(java)).toEqual({});
+		});
 
 		test(
 			"[control:rl-stop-order] a failed positive run of the first model stops at model and starts no triple of the second model",
