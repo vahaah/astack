@@ -20,3 +20,6 @@
 **/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
 **/skills/astack-plan/references/phase-boundaries.md:\bClaude\b:names Claude as one end of a harness hand-off example
 **/skills/astack-writing-for-agents/SKILL-MECHANICS.md:\bClaude Code\b:the invocation rules state what Claude Code does with a user-only skill, and name Codex for contrast
+**/skills/astack-arena/references/external-seats.md:\bclaude -p\b:the sol-loop reviewer seat runs the claude CLI through the shell, also in a Codex session
+**/skills/astack-setup-models/SKILL.md:\bclaude -p\b:setup-models checks the claude CLI before it writes a claude seat for the sol-loop reviewer
+**/skills/astack-sol-loop/SKILL.md:CLAUDE_CONFIG_DIR|~/\.claude\b:sol-loop reads the model rule at the path that setup-models writes, because Codex does not load that folder

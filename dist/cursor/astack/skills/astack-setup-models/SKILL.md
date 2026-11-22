@@ -15,12 +15,11 @@ Its role values override the astack skill defaults.
   The Agent call sets that `model`.
 - `inherit-parent` or `auto`.
   The Agent call omits `model` and uses the parent chat model.
-- An external seat: `codex`, `codex:<model>`, or `cursor-agent:<model>`.
+- An external seat: `codex`, `codex:<model>`, or `cursor-agent:<model>`. The `sol-loop reviewer` also takes `claude` and `claude:<model>`.
   Follow `../astack-arena/references/external-seats.md` for that CLI.
-  Bare `codex` uses its configured default model.
 
 External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, `council members`, `sol-loop reviewer`, and `arena cross-judge pool`.
-The `sol-loop reviewer` role accepts only an external seat. Its line can also stay out of the rule.
+The `sol-loop reviewer` role takes only a list of external seats, or no line.
 Every other role runs as a Claude subagent with the session's tools.
 The `why` and `reflect` roles need MCP access.
 Code roles need the astack agents.
@@ -37,10 +36,11 @@ Check each external CLI and record it only after a working run:
   Read the default from the `model` line in `~/.codex/config.toml`.
 - Run `command -v cursor-agent`.
   Check login with `cursor-agent status` and list models with `cursor-agent models`.
+- Run `command -v claude`.
+  Check login with `claude -p --permission-mode plan "Reply OK"`.
 
 If detection cannot find a requested model, ask the user for its name.
 Never write an external value without a successful run.
-`inherit-parent` and `auto` are valid for each role except `sol-loop reviewer`.
 
 ## 2. Read current choices
 
@@ -111,8 +111,8 @@ Offer one entry from each of three model families when step 1 found them.
 
 Require each Claude value to appear in the Agent tool's `model` enum.
 Require each external value to have passed step 1.
-`inherit-parent` and `auto` pass for each role except `sol-loop reviewer`.
-For `sol-loop reviewer`, accept only `codex`, `codex:<model>`, or `cursor-agent:<model>`.
+For `sol-loop reviewer`, accept only a list of `codex`, `codex:<model>`, `claude`, `claude:<model>` or `cursor-agent:<model>`.
+`inherit-parent` and `auto` pass for each other role.
 When the owner chooses no external seat, leave the `sol-loop reviewer` line out of the rule.
 If a choice is unavailable, stop and ask again.
 
@@ -147,7 +147,7 @@ swarm workers: sonnet
 architect runners: opus, codex
 interrogate reviewers: opus, codex
 council members: opus, codex
-sol-loop reviewer: codex
+sol-loop reviewer: codex, claude
 ```
 
 ## 6. Confirm the result
@@ -159,7 +159,6 @@ If `CLAUDE_CODE_EFFORT_LEVEL` is set, Claude Code runs all subagents at that lev
 The Agent tool then has no `effort` parameter.
 The budget affects external seats only.
 Report that limit and name the variable.
-`echo $CLAUDE_CODE_EFFORT_LEVEL` shows its value.
 
 ## 7. Offer verification when useful
 

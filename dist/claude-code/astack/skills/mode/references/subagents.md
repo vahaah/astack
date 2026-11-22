@@ -35,7 +35,7 @@ A role with no line keeps its default.
 | Prompt | Use file pointers instead of context pasted into the prompt. Every `astack:delegate` prompt must carry this file's absolute path. |
 | Follow-up | `name` makes a running agent addressable through `SendMessage`. Use `ListAgents` to see what is live. Use `TaskStop` to stop it. |
 | Nesting | Agents nest to depth 3. The main chat is depth 0. An agent at depth 3 has no Agent tool. Set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` before launch to raise the cap. Fit every tree inside the budget. State the depth of each role. |
-| Cross-family reviewer | Use Bash, not Agent, as `astack skill-path astack:arena references/external-seats.md` says. Run `codex exec --sandbox read-only "<prompt>"` when `command -v codex` succeeds. You can also use `cursor-agent -p --mode ask --model <model> "<prompt>"`. A role value of `codex`, `codex:<model>`, or `cursor-agent:<model>` names such a seat. Point the reviewer at the diff or a read-only checkout. |
+| Cross-family reviewer | Use Bash, not Agent, as `astack skill-path astack:arena references/external-seats.md` says. Run `codex exec --sandbox read-only "<prompt>"` when `command -v codex` succeeds. You can also use `cursor-agent -p --mode ask --model <model> "<prompt>"`. A role value of `codex`, `codex:<model>`, or `cursor-agent:<model>` names such a seat, and the `sol-loop reviewer` also takes `claude`. Point the reviewer at the diff or a read-only checkout. |
 | Workflow tool | Never require Workflow. It runs only in the main thread after the user opts in. |
 
 ## Commands in a worktree

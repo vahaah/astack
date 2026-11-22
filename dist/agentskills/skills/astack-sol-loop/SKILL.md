@@ -17,10 +17,10 @@ Watch for scope growth, and push back with evidence.
 
 ## The reviewer
 
-- Read the `sol-loop reviewer` role in `astack-models.md`, which `astack-setup-models` writes. When the role is missing, use `codex`.
-- `codex:<model>` pins the model. Bare `codex` uses the default model of the codex CLI.
-- Run the reviewer in the read-only form of `../astack-arena/references/external-seats.md`.
-- The reviewer must be an external value that this reference lists. For any other value, report the blocker and stop.
+- Read the `sol-loop reviewer` line of `${CLAUDE_CONFIG_DIR:-~/.claude}/rules/astack-models.md`, which `astack-setup-models` writes.
+- Take the first value of that line whose family is not the family of the session model. With no line, take `claude` under an OpenAI model and `codex` otherwise.
+- Read each value and its family in the file that `astack skill-path astack:arena references/external-seats.md` prints. Run the reviewer in its read-only form.
+- With no listed value of another family, report the blocker and stop.
 - When the CLI is missing or signed out, report the blocker and stop. Never put another model in its place.
 - Use one reviewer only. The reviewer never starts subagents or other reviewers.
 - Make no edit to the scoped files while a round runs.
@@ -54,7 +54,7 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
 A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 The change runs from `BASE_SHA` to the working tree in the scoped paths, with the untracked files.
-Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths>`.
+Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths> > <out>/diff.txt`. Write `git status --short` to `<out>/status.txt`.
 State the intent and what is out of scope in 1 or 2 sentences.
 Run the checks that cover the change.
 Do not send code that this change breaks.
@@ -62,14 +62,14 @@ Name each missing check and each check that failed before the change in the brie
 
 ## 2. Start a round
 
-Write the brief to a file.
+Write the brief to `<out>/brief.md`.
 Run the reviewer on it as a background Bash call.
 For round 1, the brief is this text with the values filled in:
 
 ```text
 Review only. Do not edit, commit, push, comment on PRs or start subagents.
 Repo: <absolute path>  Base: <BASE_SHA>  Intent: <intent>  Out of scope: <scope>  Checks: <results>
-Read: git diff <BASE_SHA> [-- <paths>] and git status --short. Read the untracked files too.
+Read: <out>/diff.txt and <out>/status.txt. Read the untracked files too.
 Read the code around the change. Find bugs, broken callers and gaps against the intent.
 Skip style unless it hides a bug. Hold the change to the smallest form.
 Flag code, tests or guards that the intent does not need.
