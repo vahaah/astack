@@ -189,7 +189,7 @@ When a stage runs inline with no subagent, the main thread reads the skills of t
 | S4 | `astack:codebase-design` for the depth words. `astack:prototype` when a person must judge a prototype | The S4 lead reads `astack:architect` and `astack:arena`. A fork that a test settles reads `astack:mode playbooks/prototype.md` |
 | S5 | None | `astack:principles` and each reference that its index says applies. The slicing rules of `astack:to-tickets`. `astack:figure-it-out` for a large migration or an unattended run. The charting rules of `astack:wayfinder`, in a programme |
 | S6 | None | The S6 lead reads `references/spec-review.md`. It reads `astack:principles references/attack-the-premise.md` when needed |
-| S7 | `astack:write-ticket` for each ticket | The rules of `astack:to-spec`, when the owner asks for a spec |
+| S7 | `astack:write-ticket` for each ticket | Its umbrella template, when the owner asks for a spec |
 | S8 | `astack:write-docs` for ADRs, the glossary and PR bodies | None |
 
 The other skills set `disable-model-invocation`, so the Skill tool refuses them.
@@ -210,7 +210,7 @@ A nonzero exit means that the skill or reference is unavailable.
 Say so once.
 Use `references/fallbacks.md`.
 
-Name `/astack:retro`, `/astack:reflect` and `/astack:to-questionnaire` when they fit, because the user runs them. Never copy them.
+Name `/astack:retro` and `/astack:reflect` when they fit, because the user runs them. Never copy them.
 Each ticket still goes through `astack:write-ticket`.
 
 ## Recover after a compaction

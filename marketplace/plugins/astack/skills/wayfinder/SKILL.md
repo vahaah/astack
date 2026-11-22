@@ -73,7 +73,7 @@ Put excluded work under Scope.
 
 - [ ] No open child ticket remains.
 - [ ] Not yet specified is empty.
-- [ ] A spec built from this map with /astack:to-spec is approved.
+- [ ] A spec built from this map is approved.
 
 ## Scope
 
@@ -81,7 +81,7 @@ Put excluded work under Scope.
 
 ## Verification
 
-The operator reads the spec that /astack:to-spec produces from this map and approves it.
+The operator reads the spec built from this map and approves it.
 
 ## Notes
 

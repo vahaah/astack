@@ -13,7 +13,7 @@
 
 astack is a plugin for AI coding agents. Its skills and rules give the agent one path from a goal to a merged pull request. The path is plan, build test-first on a branch, run the gates, review, open the PR, harden and merge. The agent stops before each decision that belongs to you. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-- **61 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 63.
+- **50 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 52.
 - **Six agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `researcher`, `delegate` and `comment-judge` are used by the skills. Those four are not limited to Read, Grep and Glob.
 - **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
 - **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
@@ -33,8 +33,8 @@ astack is a plugin for AI coding agents. Its skills and rules give the agent one
 ```mermaid
 flowchart TD
   goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
-  plan --> spec["Spec and tickets (to-spec, to-tickets)"]
-  spec --> build["Build on a branch, failing test first (implement, tdd)"]
+  plan --> spec["Spec and tickets (write-ticket, to-tickets)"]
+  spec --> build["Build on a branch, failing test first (tdd)"]
   build --> gates{"Gates: lint, types, tests, astack check …"}
   gates -->|fail| build
   gates --> proof{"change-proof: contract, ADRs, TLC positive, negative and restored runs"}
@@ -180,7 +180,7 @@ The full guide is [docs/workflow.md](docs/workflow.md). The rule card routes eac
 
 | Shape of the work | Start with |
 |---|---|
-| One ticket | `/astack:implement` |
+| One ticket | The `/astack:mode` Feature playbook |
 | One plan session | `astack session start <plan>` |
 | A stack of pull requests | Autopilot-stack |
 | A programme | `astack board <plan>`, then Orchestrate |

@@ -56,6 +56,16 @@ describe("flowSupersedes", () => {
 			expect(candidates.has(name)).toBe(true);
 		}
 	});
+
+	test("names a shipped successor for each upstream skill but the three that astack never shipped", () => {
+		const shipped = builtFlowSkills(join(root, "marketplace"));
+		if (!shipped.ok) throw new Error(shipped.error);
+		const names = new Set(shipped.value);
+		const orphans = Object.entries(flowSupersedes)
+			.filter(([, candidates]) => !candidates.some((name) => names.has(name)))
+			.map(([name]) => name);
+		expect(orphans).toEqual(["ask-matt", "handoff", "teach"]);
+	});
 });
 
 describe("parseSkillsTxt", () => {
