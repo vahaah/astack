@@ -29,12 +29,20 @@ import {
 } from "../../../change-proof/candidate.ts";
 import {
 	type ChangeProof,
-	DEFAULT_PROOF_MANIFEST,
+	LEGACY_PROOF_MANIFEST,
+	PROOF_MANIFEST_FOLDER,
 	parseChangeProof,
 	type Rejection,
 	STAGE_SECTIONS,
 	type Stage,
 } from "../../../change-proof/contract.ts";
+import {
+	chooseManifest,
+	type ManifestChoice,
+	manifestCandidates,
+	manifestsHeldAt,
+	staleManifests,
+} from "../../../change-proof/manifest.ts";
 import { parseRegistry } from "../../../change-proof/registry.ts";
 import {
 	deriveLadder,
@@ -149,18 +157,12 @@ function summaryLines(proof: ChangeProof): readonly string[] {
 }
 
 function readManifest(
-	io: Io,
 	root: string,
-	arg: string | undefined,
+	path: string,
 ): Result<ManifestInput, Rejection> {
-	const path = resolve(
-		arg === undefined ? root : io.cwd,
-		arg ?? DEFAULT_PROOF_MANIFEST,
-	);
-	const shown = relative(root, path) || path;
-	const read = readRepoFile(root, relative(root, path));
-	if (read.kind === "text")
-		return ok({ path: relative(root, path), text: read.text });
+	const shown = path || root;
+	const read = readRepoFile(root, path);
+	if (read.kind === "text") return ok({ path, text: read.text });
 	return err({
 		stage: read.problem === "missing" ? "schema" : "domain",
 		message:
@@ -431,9 +433,14 @@ async function prove(
 	proof: ChangeProof,
 	target: DiffTarget,
 	manifest: ManifestInput,
+	choice: ManifestChoice,
 ): Promise<number> {
 	const base = proofBase(root, proof.base, target);
 	if (!base.ok) return stopAt(io, "stale", base.error);
+	const held = manifestsHeldAt(root, base.value);
+	if (!held.ok) return stopAt(io, "stale", held.error);
+	const kept = staleManifests(choice, held.value);
+	if (!kept.ok) return stopAt(io, "stale", kept.error);
 	const changed = changedPaths(root, base.value.diff);
 	if (!changed.ok) return stopAt(io, "controls", changed.error);
 	const reads = ladderReads(root);
@@ -551,7 +558,24 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 	if (top === undefined)
 		return usageError(io, `${NAME}: not inside a git repository`);
 	const root = realpathSync(top);
-	const text = readManifest(io, root, parsed.value.manifest);
+	const ref = parsed.value.base;
+	const target: Result<DiffTarget, string> =
+		ref === undefined ? ok({ kind: "manifest-base" }) : mergeBase(root, ref);
+	if (!target.ok) return stopAt(io, "stale", target.error);
+	const arg = parsed.value.manifest;
+	const view = manifestCandidates(
+		root,
+		target.value,
+		arg === undefined ? undefined : relative(root, resolve(io.cwd, arg)),
+	);
+	const choice = view.ok ? chooseManifest(view.value) : view;
+	if (!choice.ok) {
+		stopAt(io, "schema", choice.error);
+		return 1;
+	}
+	if (choice.value.route === "found")
+		io.out(`manifest: ${oneLine(choice.value.path)}\n`);
+	const text = readManifest(root, choice.value.path);
 	if (!text.ok) {
 		stop(io, text.error);
 		return 1;
@@ -562,16 +586,12 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 		io.out(`${summaryLines(proof.value).join("\n")}\n`);
 		return 0;
 	}
-	const ref = parsed.value.base;
-	const target: Result<DiffTarget, string> =
-		ref === undefined ? ok({ kind: "manifest-base" }) : mergeBase(root, ref);
-	if (!target.ok) return stopAt(io, "stale", target.error);
-	return prove(io, root, proof.value, target.value, text.value);
+	return prove(io, root, proof.value, target.value, text.value, choice.value);
 }
 
 export const command: Command<Promise<number>> = {
 	name: "proof",
-	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it reads formal/models.json and the proof.minRung floor of ${PROFILE_PATH} at the diff base and in the tree, and prints the proof rung and its cause. Below R4 it starts no Java process. At R4 it runs the manifest model first and then each other selected model, one after another. For each model it starts the pinned tla2tools.jar ${TLC_PIN.version} in three owned temporary copies at once: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live and starts no later model. A repo with no registry runs only the manifest model and prints no rung line. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
+	summary: `Admits one ChangeProof manifest. With no path, it reads the one manifest directly under ${PROOF_MANIFEST_FOLDER}, and with --base only one that the diff from the merge base changes. It prints that path first, and it stops on two or none. A tree with no manifest there reads ${LEGACY_PROOF_MANIFEST}. A change with a manifest under ${PROOF_MANIFEST_FOLDER} deletes each manifest that its manifest base holds, and ${LEGACY_PROOF_MANIFEST}. It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. A scope row that names a manifest path is never idle. Then it reads formal/models.json and the proof.minRung floor of ${PROFILE_PATH} at the diff base and in the tree, and prints the proof rung and its cause. Below R4 it starts no Java process. At R4 it runs the manifest model first and then each other selected model, one after another. For each model it starts the pinned tla2tools.jar ${TLC_PIN.version} in three owned temporary copies at once: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live and starts no later model. A repo with no registry runs only the manifest model and prints no rung line. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
 	usage: "check proof [manifest.json] [--base <ref>] [--summary]",
 	run,
 };

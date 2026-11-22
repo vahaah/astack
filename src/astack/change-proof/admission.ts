@@ -6,6 +6,7 @@ import {
 	type AdrReference,
 	type ChangeProof,
 	type FileLink,
+	isManifestPath,
 	type ModelContract,
 	type NegativeControl,
 	type Rejection,
@@ -533,7 +534,9 @@ function scopeCheck(proof: ChangeProof, view: RepoView): Check {
 			.map((hole) => `no scope row covers the changed path ${hole.path}`),
 		...proof.scope
 			.filter(
-				(row) => !changed.some((entry) => globMatches(row.path, entry.path)),
+				(row) =>
+					!isManifestPath(row.path) &&
+					!changed.some((entry) => globMatches(row.path, entry.path)),
 			)
 			.map((idle) => `scope row ${idle.path} covers no changed path`),
 	];

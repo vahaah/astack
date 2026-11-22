@@ -9,7 +9,7 @@ import {
 } from "../../../change-proof/candidate.ts";
 import { ciProofRecords } from "../../../change-proof/ci-records.ts";
 import {
-	DEFAULT_PROOF_MANIFEST,
+	LEGACY_PROOF_MANIFEST,
 	parseChangeProof,
 } from "../../../change-proof/contract.ts";
 import {
@@ -55,7 +55,7 @@ function proofRecordsAt(
 	root: string,
 	target: MergeBase,
 ): Result<readonly string[], string> {
-	const manifest = proofFileAt(root, DEFAULT_PROOF_MANIFEST);
+	const manifest = proofFileAt(root, LEGACY_PROOF_MANIFEST);
 	if (!manifest.ok) return manifest;
 	const parsed = parseChangeProof(manifest.value);
 	if (!parsed.ok) return err(parsed.error.message);
@@ -73,7 +73,7 @@ function proofRecordsAt(
 	const matrix = proofFileAt(root, matrixPath);
 	if (!matrix.ok) return matrix;
 	files.set(matrixPath, { kind: "text", text: matrix.value });
-	return ciProofRecords(parsed.value, DEFAULT_PROOF_MANIFEST, files);
+	return ciProofRecords(parsed.value, LEGACY_PROOF_MANIFEST, files);
 }
 
 function gitLines(root: string, args: string[]): string[] | undefined {
@@ -331,7 +331,7 @@ function run(args: readonly string[], io: Io): number {
 			outside.length > 0 &&
 			outside.every(
 				(path) =>
-					path === DEFAULT_PROOF_MANIFEST ||
+					path === LEGACY_PROOF_MANIFEST ||
 					(path.startsWith("formal/") && path.endsWith(".md")),
 			)
 		) {
