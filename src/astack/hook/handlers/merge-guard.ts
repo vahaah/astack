@@ -195,7 +195,54 @@ function shellVerdict(
 
 const MERGE_STEM = "merg";
 const MERGE_STATE = /merge(?:d|able|ability)$/;
-const READ_VERBS = new Set(["get", "list", "read", "search", "view", "find"]);
+const READ_ONLY_TOOLS = new Set([
+	"get_merge_request",
+	"list_merge_requests",
+	"list_merge_request_comments",
+]);
+const WRITE_VERBS = new Set([
+	"accept",
+	"add",
+	"apply",
+	"approve",
+	"close",
+	"commit",
+	"complete",
+	"create",
+	"delete",
+	"disable",
+	"do",
+	"edit",
+	"enable",
+	"execute",
+	"finish",
+	"land",
+	"mark",
+	"modify",
+	"patch",
+	"perform",
+	"post",
+	"push",
+	"put",
+	"queue",
+	"rebase",
+	"remove",
+	"resolve",
+	"run",
+	"save",
+	"schedule",
+	"send",
+	"set",
+	"ship",
+	"squash",
+	"start",
+	"submit",
+	"toggle",
+	"trigger",
+	"update",
+	"upsert",
+	"write",
+]);
 
 function nameTokens(name: string): readonly string[] {
 	return name
@@ -213,7 +260,11 @@ function isMergeWord(token: string): boolean {
 
 function isMcpMergeTool(tool: string): boolean {
 	const tokens = nameTokens(tool);
-	return !READ_VERBS.has(tokens[0] ?? "") && tokens.some(isMergeWord);
+	return (
+		tokens.some((token) => token.includes(MERGE_STEM)) &&
+		!READ_ONLY_TOOLS.has(tool) &&
+		tokens.some((token) => WRITE_VERBS.has(token) || isMergeWord(token))
+	);
 }
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {

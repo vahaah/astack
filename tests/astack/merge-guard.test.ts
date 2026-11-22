@@ -728,6 +728,7 @@ describe("MCP merge tools", () => {
 		...captured.map((name) => [name, merges.has(name)] as const),
 		["mcp__plugin_github_github__merge_pull_request", true],
 		["mcp__plugin_github_github__list_pull_requests", false],
+		["mcp__plugin_github_github__pull_request_read", false],
 		["mcp__forge__mergePullRequest", true],
 		["mcp__forge__enable-automerge", true],
 		["mcp__forge__createPRMerge", true],
@@ -736,6 +737,8 @@ describe("MCP merge tools", () => {
 		["mcp__forge__merge2", true],
 		["mcp__forge__s3merge", true],
 		["mcp__forge__show_merged_prs", false],
+		["mcp__forge__get_and_merge_pr", true],
+		["mcp__forge__mark_merged", true],
 	])(
 		"[control:sg-mcp-merge] %s is denied, also after the owner's grant: %p",
 		(name, denied) => {

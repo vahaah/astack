@@ -106,10 +106,12 @@ A person's prompt that opens with a bracket label, such as a pasted `[Image #1]`
 
 The guard splits a tool name on `_`, `-`, `.`, each case change and each change between a letter and a digit.
 An acronym is one token, so `createPRMerge` holds the token `merge`.
+A token that holds `merg` is a merge token.
+A merge token that ends in `merged`, `mergeable` or `mergeability` names a state. Each other merge token is a merge word, such as `prmerge` or `automerge`.
 
-A token that holds `merg`, such as `prmerge` or `automerge`, gives a deny on each server, also with a grant.
-A token that ends in `merged`, `mergeable` or `mergeability` names a state, so it gives no deny.
-A name that starts with `get`, `list`, `read`, `search`, `view` or `find` passes.
+A name with a merge token and a merge word or a write verb gets a deny on each server, also with a grant.
+So `get_and_merge_pr` and `mark_merged` get a deny, and `show_merged_prs` passes.
+A read tool on an exact list, such as `list_merge_requests` and `get_merge_request`, passes.
 The rule also denies a merge that is not a PR merge, such as a database branch merge. Such a merge is an owner gate.
 
 ### D5. An error of the merge guard on a merge gives a deny
@@ -144,4 +146,5 @@ The next prompt of a person sets the grant again, or ends it.
 - Refuse a dirty profile. Rejected because a local commit or a branch switch changes HEAD.
 - Add only the literal prefix `[Workflow harness`. Rejected because the next frame label passes again.
 - Keep an exact deny list of MCP merge tools. Rejected because the list missed CoCode and Linear, and it drifts with each host.
+- Let each name that starts with a read verb pass. Rejected because `get_and_merge_pr` then merges.
 - Keep the allow on a guard error. Rejected because an error then merges with no check.
