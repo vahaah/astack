@@ -3,6 +3,12 @@ import { join } from "node:path";
 import { RUNGS, type Rung } from "./change-proof/rung.ts";
 import type { CommentPolicy } from "./comments/classify.ts";
 import { limitsFor } from "./comments/limits.ts";
+import {
+	DEFAULT_DOMAIN_PROFILE,
+	type DomainProfile,
+	domainProblems,
+	domainProfile,
+} from "./domain/profile.ts";
 import { parseHookConfig } from "./hook-profile.ts";
 import { err, ok, type Result } from "./result.ts";
 
@@ -16,6 +22,7 @@ export type Profile = {
 	readonly commentKeep: readonly RegExp[];
 	readonly maxCommentLines: number | undefined;
 	readonly plan: PlanProfile;
+	readonly domain: DomainProfile;
 };
 
 export const PROFILE_PATH = ".astack/profile.json";
@@ -30,6 +37,7 @@ const DEFAULT_PROFILE: Profile = {
 	commentKeep: [],
 	maxCommentLines: undefined,
 	plan: DEFAULT_PLAN_PROFILE,
+	domain: DEFAULT_DOMAIN_PROFILE,
 };
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -92,6 +100,7 @@ export function parseProfile(parsed: unknown): Profile {
 		commentKeep: keepPatterns(parsed.commentKeep),
 		maxCommentLines: lineLimit(parsed.maxCommentLines),
 		plan: planProfile(parsed),
+		domain: domainProfile(parsed.domain),
 	};
 }
 
@@ -319,6 +328,8 @@ function sectionProblems(key: string, value: unknown): string[] {
 				: ["neutral must be an object with a deny string list"];
 		case "proof":
 			return proofProblems(value);
+		case "domain":
+			return domainProblems(value);
 		case "maxCommentLines":
 			return isPositiveInteger(value)
 				? []

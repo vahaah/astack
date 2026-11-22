@@ -506,6 +506,24 @@ describe("tracker and domain", () => {
 		).toContain("domain.contextMap is not a relative path inside the repo");
 	});
 
+	test("[control:domain-profile] accepts a domain carrier and code roots, and rejects other values", () => {
+		const domain = { glossary: "CONTEXT.md", adrDir: "docs/adr" };
+		expect(
+			errorsOf({
+				...valid,
+				domain: { ...domain, carrier: "effect", codeRoots: ["apps/**"] },
+			}),
+		).toBe("");
+		expect(
+			errorsOf({ ...valid, domain: { ...domain, carrier: "io" } }),
+		).toContain('domain.carrier must be "result" or "effect"');
+		expect(
+			errorsOf({ ...valid, domain: { ...domain, codeRoots: "src/**" } }),
+		).toContain(
+			"domain.codeRoots must be a list of one or more globs in the repo",
+		);
+	});
+
 	test("rejects a report-only project that renders the agent docs", () => {
 		expect(
 			errorsOf({

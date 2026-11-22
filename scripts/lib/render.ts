@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
+import { DEFAULT_DOMAIN_PROFILE } from "../../src/astack/domain/profile.ts";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
 import {
 	MANAGED_PATHS,
@@ -265,6 +266,19 @@ function steProfile(project: ProjectConfig): Json | undefined {
 	};
 }
 
+function domainProfileOf(project: ProjectConfig): {
+	readonly [key: string]: Json;
+} {
+	const { carrier, codeRoots } = project.domain;
+	if (carrier === undefined && codeRoots === undefined) return {};
+	return {
+		domain: {
+			carrier: carrier ?? DEFAULT_DOMAIN_PROFILE.carrier,
+			codeRoots: [...(codeRoots ?? DEFAULT_DOMAIN_PROFILE.codeRoots)],
+		},
+	};
+}
+
 export function renderAstackProfile(
 	project: ProjectConfig,
 	managed?: readonly string[],
@@ -285,6 +299,7 @@ export function renderAstackProfile(
 		...(project.hooks === undefined ? {} : { hooks: project.hooks }),
 		...(project.proof === undefined ? {} : { proof: project.proof }),
 		plan: { glossary: project.domain.glossary, adr: project.domain.adrDir },
+		...domainProfileOf(project),
 		...(project.keepPatterns.length > 0
 			? { commentKeep: project.keepPatterns }
 			: {}),

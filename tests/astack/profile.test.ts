@@ -159,6 +159,52 @@ describe("profileProblems", () => {
 	});
 
 	test.each<[string, unknown, readonly string[]]>([
+		[
+			"the effect carrier and two roots",
+			{ carrier: "effect", codeRoots: ["src/**", "*.ts"] },
+			[],
+		],
+		[
+			"another carrier, an empty root list and an unknown key",
+			{ carrier: "promise", codeRoots: [], resultModule: "src/result.ts" },
+			[
+				"domain.resultModule is not a known key",
+				'domain.carrier must be "result" or "effect"',
+				"domain.codeRoots must be a list of one or more globs in the repo",
+			],
+		],
+		[
+			"a root that leaves the repo",
+			{ codeRoots: ["../src/**"] },
+			["domain.codeRoots must be a list of one or more globs in the repo"],
+		],
+		["a list", ["result"], ["domain must be an object"]],
+	])(
+		"[control:domain-profile] the domain section with %s",
+		(_, domain, problems) => {
+			expect(profileProblems({ domain })).toEqual(problems);
+		},
+	);
+
+	test("loadProfile reads the domain carrier and roots, and the default is result over the code roots", () => {
+		expect(
+			loadProfile(repoWith({ domain: { carrier: "effect" } })).domain,
+		).toEqual({
+			carrier: "effect",
+			codeRoots: [
+				"src/**",
+				"packages/**",
+				"apps/**",
+				"lib/**",
+				"*.ts",
+				"*.tsx",
+				"*.swift",
+			],
+		});
+		expect(loadProfile(repoWith({})).domain.carrier).toBe("result");
+	});
+
+	test.each<[string, unknown, readonly string[]]>([
 		["the lowest floor", { minRung: "R0" }, []],
 		["the highest floor", { minRung: "R4" }, []],
 		[
