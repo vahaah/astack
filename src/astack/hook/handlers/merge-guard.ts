@@ -33,7 +33,7 @@ const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH_IN_INPUT =
 	/\bpulls\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
-const WRITE_METHOD_IN_INPUT = /(?:\b|-X)(?:PUT|POST|PATCH|DELETE)\b/i;
+const WRITE_METHOD_IN_INPUT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
@@ -277,7 +277,10 @@ function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
 
 function inputStrings(value: unknown): readonly string[] {
 	if (typeof value === "string") return [value];
-	if (Array.isArray(value)) return value.flatMap(inputStrings);
+	if (Array.isArray(value)) {
+		const items = value.flatMap(inputStrings);
+		return [...items, items.join("/")];
+	}
 	if (typeof value === "object" && value !== null)
 		return Object.entries(value).flatMap(([key, item]) => [
 			key,

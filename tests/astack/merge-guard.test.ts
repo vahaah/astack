@@ -873,6 +873,18 @@ describe("MCP merge tools", () => {
 			{ args: ["api", "-XPUT", "repos/o/r/pulls/12/merge"] },
 		],
 		[
+			"an HTTP_PUT method on the merge path",
+			"mcp__forge__call_api",
+			true,
+			{ http_method: "HTTP_PUT", path: "/repos/o/r/pulls/12/merge" },
+		],
+		[
+			"a PUT on the merge path as an array of segments",
+			"mcp__forge__call_api",
+			true,
+			{ method: "PUT", segments: ["repos", "o", "r", "pulls", "12", "merge"] },
+		],
+		[
 			"a GET on the REST merge path",
 			"mcp__forge__call_api",
 			false,

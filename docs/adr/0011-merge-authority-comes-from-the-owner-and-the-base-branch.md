@@ -122,6 +122,7 @@ An input that holds `mergePullRequest`, `enablePullRequestAutoMerge`, `enqueuePu
 A merge queue entry merges the PR later, and a branch merge goes into the base with no PR.
 An input with a `pulls/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
 The `<n>` part can be any path segment, such as the route template `{pull_number}`.
+The guard also reads the items of each array as one path, and a method after `-X` or `_`, such as `HTTP_PUT`.
 A `repos/<owner>/<repo>/merges` path with a write method gets a deny for the same reason as `mergeBranch`.
 An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
 
