@@ -247,17 +247,32 @@ export function saveSessionRepos(
 	}
 }
 
-const CLOCK_SLACK_MS = 1000n;
+function fileClock(env: Env, session: string | undefined): string | undefined {
+	const path = recordPath(env, session);
+	if (path === undefined) return undefined;
+	const marker = `${path}.${process.pid}.clock`;
+	try {
+		mkdirSync(dirname(path), { recursive: true });
+		writeFileSync(marker, "");
+		const { mtimeNs } = statSync(marker, { bigint: true });
+		rmSync(marker);
+		return String(mtimeNs);
+	} catch {
+		return undefined;
+	}
+}
 
-function freeTarget(target: string): SessionRepo | undefined {
+function freeTarget(
+	target: string,
+	since: string | undefined,
+): SessionRepo | undefined {
 	try {
 		const stat = lstatSync(target, { bigint: true, throwIfNoEntry: false });
 		const free: FreeTarget | undefined =
 			stat === undefined
-				? {
-						kind: "missing",
-						since: String((BigInt(Date.now()) - CLOCK_SLACK_MS) * 1_000_000n),
-					}
+				? since === undefined
+					? undefined
+					: { kind: "missing", since }
 				: stat.isDirectory() && readdirSync(target).length === 0
 					? {
 							kind: "empty",
@@ -310,7 +325,8 @@ export function rememberRepos(
 	repos: SessionRepos,
 	targets: readonly string[],
 ): Result<void, string> {
-	const pending = targets.flatMap((target) => freeTarget(target) ?? []);
+	const since = targets.length === 0 ? undefined : fileClock(env, session);
+	const pending = targets.flatMap((target) => freeTarget(target, since) ?? []);
 	if (pending.length === 0) return ok(undefined);
 	const paths = pending.map((repo) => repo.path);
 	return saveSessionRepos(env, session, [

@@ -1,11 +1,4 @@
-import {
-	afterAll,
-	beforeAll,
-	describe,
-	expect,
-	setSystemTime,
-	test,
-} from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
 	chmodSync,
@@ -1050,10 +1043,7 @@ describe("a repo that this session made", () => {
 			const owner = join(parent, "owner");
 			prepare(owner, dir);
 			const made = command.replaceAll("OWNER", owner).replaceAll("NEW", dir);
-			setSystemTime(Date.now() + 60_000);
-			const recorded = sessionRun(made, parent, state).kind;
-			setSystemTime();
-			expect(recorded).toBe("allow");
+			expect(sessionRun(made, parent, state).kind).toBe("allow");
 			expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
 			expect(sessionRun("ls", parent, state).kind).toBe("allow");
 			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(

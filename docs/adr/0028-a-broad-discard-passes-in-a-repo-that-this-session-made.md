@@ -34,7 +34,8 @@ Each other repo keeps the gate of ADR 0010 D3.
 A target counts when it does not exist or is an empty folder at PreToolUse.
 An empty folder holds no work, and each of the three verbs accepts one.
 A folder with files, a file and a symlink give no record.
-For a missing target, the pending entry holds the time of the call less one second.
+For a missing target, the pending entry holds the time of a file that the hook writes in the state folder at the call.
+That time comes from the clock of the file system, so a repo that the command makes has the same or a later birth time.
 For an empty folder, it holds the device, inode and birth time of that folder.
 
 ### D3. Only static words give a target
