@@ -38,5 +38,5 @@ Do not escalate a rebase, a retry, a flaky CI run, a review thread or a format f
 
 #### Reply
 
-At each checkpoint, give the board counts and the link of each merged PR.
-List each waiting item as the Catch up part of `references/resume.md` says.
+At each checkpoint, follow the checkpoint line of the mode `SKILL.md`, and add the board counts.
+A status ask gets the Catch up list of `references/resume.md`.

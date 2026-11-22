@@ -101,7 +101,12 @@
 		{
 			"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
 			"obligation": "OR-NO-STORE",
-			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+			"modelRefs": [
+				"CatchUp",
+				"Checkpoint",
+				"CatchUpListsEach",
+				"CheckpointHidesNothing"
+			]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/mode/references/paths-and-wakeups.md",
@@ -441,6 +446,13 @@
 				"concrete": {
 					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
 					"symbol": "waiting"
+				},
+				"modelAction": "Checkpoint"
+			},
+			{
+				"concrete": {
+					"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
+					"symbol": "checkpoint"
 				},
 				"modelAction": "Checkpoint"
 			},

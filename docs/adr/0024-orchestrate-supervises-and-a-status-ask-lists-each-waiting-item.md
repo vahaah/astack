@@ -81,8 +81,8 @@ The catch-up and the checkpoint are text rules with no code arrow.
 
 #### Implementation correspondence
 
-The Catch up part of mode `resume.md` and the Reply of Orchestrate map to the `CatchUp` action.
-The checkpoint line of the mode `SKILL.md` maps to the `Checkpoint` action.
+The Catch up part of mode `resume.md` and the status ask of Orchestrate map to the `CatchUp` action.
+The checkpoint line of the mode `SKILL.md` and the Orchestrate checkpoint, which follows that line, map to the `Checkpoint` action.
 `astack plan draft` adds a draft finding, so it maps to `Raise`.
 An owner answer, a merge or a closed draft maps to `Settle`.
 In the model, each waiting item is one model value.
@@ -102,7 +102,7 @@ The normal test gate runs the text controls, the watch-pr tests and the check-pl
 
 A checkpoint reply gives the commit or PR link, the gate counts, the next step and each waiting item, in that order.
 Past 3 waiting items, it gives their count and says that "status" lists them, so it keeps its 6 lines.
-The Reply of Orchestrate names the Catch up part.
+The Orchestrate checkpoint follows this line and adds the board counts. Its status ask gets the Catch up part.
 
 ### D4. watch-pr watches one PR
 

@@ -98,7 +98,28 @@ describe("a status ask lists each waiting item and starts no work", () => {
 		expect(catchUp).toMatch(/nothing waits/i);
 	});
 
-	test("[control:cu-checkpoint] a checkpoint reply names each waiting item up to 3, and past 3 gives their count and the status pointer", () => {
+	test("[control:cu-checkpoint] a checkpoint reply names each waiting item up to 3, and past 3 gives their count and the status pointer, also in Orchestrate", () => {
+		const orchestrate = read("playbooks/orchestrate.md");
+		const reply = sentences(
+			orchestrate.slice(orchestrate.indexOf("\n#### Reply\n")),
+		);
+		expect(
+			reply.some(
+				(sentence) =>
+					/checkpoint/i.test(sentence) && /`SKILL\.md`/.test(sentence),
+			),
+		).toBe(true);
+		expect(
+			reply.filter(
+				(sentence) =>
+					/each waiting item/i.test(sentence) && !/status ask/i.test(sentence),
+			),
+		).toEqual([]);
+		expect(
+			reply.some(
+				(sentence) => /status ask/i.test(sentence) && /Catch up/.test(sentence),
+			),
+		).toBe(true);
 		const skill = read("SKILL.md");
 		const replies = skill.slice(skill.indexOf("\n## Replies\n"));
 		const checkpoint = flat(
