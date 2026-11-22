@@ -158,6 +158,12 @@ describe("a session boundary rides in the next session PR", () => {
 		);
 	});
 
+	test("[control:close-deletes-plan] the close of the last session PR deletes the plan", () => {
+		expect(part("Pause and close")).toContain(
+			"Send each lesson to its home, and delete the plan.",
+		);
+	});
+
 	const planText = (dir: string): string[] =>
 		readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
 			.filter((path) => path.endsWith(".md"))
