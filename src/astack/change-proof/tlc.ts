@@ -50,7 +50,7 @@ export function parseTlcRecords(
 ): Result<readonly TlcRecord[], string> {
 	const records: TlcRecord[] = [];
 	let open: { code: number; severity: number; lines: string[] } | undefined;
-	for (const line of output.split("\n")) {
+	for (const line of output.split(/\r?\n/)) {
 		const start = /^@!@!@STARTMSG (\d+):(\d+) @!@!@$/.exec(line);
 		const end = /^@!@!@ENDMSG (\d+) @!@!@$/.exec(line);
 		if (start !== null) {
@@ -156,7 +156,7 @@ function noiseProblem(
 	if (noisy !== undefined)
 		return `the ${label} run printed ${noisy.severity === SEVERITY.bug ? "checker bug" : "warning"} ${noisy.code}`;
 	if (run.stderr.trim() !== "")
-		return `the ${label} run wrote to stderr: ${run.stderr.trim().split("\n")[0] ?? ""}`;
+		return `the ${label} run wrote to stderr: ${run.stderr.trim().split(/\r?\n/)[0] ?? ""}`;
 	if (records.at(-1)?.code !== CODE.finished)
 		return `the ${label} run has no final finished record ${CODE.finished}`;
 	return undefined;
