@@ -37,7 +37,8 @@ Do not add a runtime FP framework or another layer to repeat the notation.
 Map each indivisible code step to one model action.
 Never weaken an invariant, a bound, fairness or an assumption to get a pass.
 A positive failure on current code is a finding. Report it with its counterexample.
-State each invariant and the harm that it prevents in one sentence.
+State each invariant and its harm in one sentence.
+A progress claim needs a temporal property.
 
 ## Internal messages
 
@@ -61,7 +62,7 @@ Require exit 0 and a final line that starts with `ok: proof `.
 A saved receipt never replaces execution.
 
 Hold the tree still during the proof. Stop dev servers and restore gate rewrites first.
-A stale stop names each changed path. Run it again after any change to candidate inputs.
+Run the proof again after any change to candidate inputs.
 
 Keep the existing tests, static checks, removal controls, review cap, and owner gates.
 A model result does not establish implementation correspondence.
