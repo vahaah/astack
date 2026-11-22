@@ -393,11 +393,11 @@ describe(lessonsPath, () => {
 	const items = checklistItems(read(checklistPath));
 
 	test("the parser reads the classes table and the findings table", () => {
-		expect(lessons.classes).toContain("engine-stub-drift");
+		expect(lessons.classes).toContain("review-target-identity");
 		expect(lessons.findings.map((finding) => finding.ref)).toContain(
-			"codex:r1-1",
+			"codex:r1-2",
 		);
-		expect(items).toContain("engine-stub-drift");
+		expect(items).toContain("review-target-identity");
 		expect(lessons.problems).toEqual([]);
 	});
 

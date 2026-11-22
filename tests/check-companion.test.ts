@@ -72,12 +72,11 @@ describe("bun run check:companion", () => {
 		`profile scan: an entry of a profile prints no secret > ${join(root, path)} has no command, setup or check that prints the keys of a stack, the environment, a .env file or a value of the session`;
 
 	test(
-		"[control:fx-real-scan] runs the real profile scans once, with the exception rows of the companion, and names each problem of a fallback key, a schema error and a .env entry of a profile and of a branch overlay",
+		"[control:fx-real-scan] runs the real profile scans once, with the exception rows of the companion, and names each problem of a schema error and a .env entry of a profile and of a branch overlay",
 		() => {
 			const typecheck = "    command: bun run typecheck\n";
 			const printsEnv = "    command: bun run typecheck && cat .env\n";
 			const root = companionCopy([
-				[profile, "ledger:\n  carry_over: true\n", ""],
 				[profile, "after_create_pr: harden\n", "after_create_pr: maybe\n"],
 				[profile, typecheck, printsEnv],
 				[overlay, typecheck, printsEnv],
@@ -101,8 +100,6 @@ describe("bun run check:companion", () => {
 			const scanned = relative(repoRoot, join(root, profile));
 			const problems = [
 				`acme: ${profile}: after_create_pr: must be one of harden, none. Change it as references/profile.md of the pr-review-hardening skill says`,
-				`acme: ${profile}: the stub fallback reads ledger.carry_over, which the profile does not define. Define each key as references/profile.md of the pr-review-hardening skill says`,
-				`profile scan: keys the stub fallback reads > ${scanned} defines every key the fallback reads`,
 				`profile scan: project profiles > ${scanned} parses with no issues`,
 				"profile scan: validateProfile > every repo runs one hardening run after create pr, with a cap of 2",
 				printsSecret(root, overlay),

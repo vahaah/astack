@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import {
-	reviewFallbackSource,
 	reviewStubSource,
 } from "../scripts/lib/render.ts";
 import {
@@ -75,8 +74,7 @@ describe("project profiles", () => {
 	});
 
 	test("the shared stub names no old install", () => {
-		for (const source of [reviewStubSource, reviewFallbackSource])
-			expect(readFileSync(source, "utf8")).not.toMatch(/agent-stack/i);
+		expect(readFileSync(reviewStubSource, "utf8")).not.toMatch(/agent-stack/i);
 	});
 });
 

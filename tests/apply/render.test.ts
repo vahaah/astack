@@ -23,7 +23,6 @@ import {
 	renderReviewCopies,
 	renderRuleCopies,
 } from "../../scripts/lib/render.ts";
-import { FALLBACK_UNREAD } from "../../src/astack/pr-review-profile.ts";
 import { profileProblems } from "../../src/astack/profile.ts";
 import { exampleProjects } from "../profile-paths.ts";
 
@@ -257,50 +256,6 @@ describe("review stub and profile copies", () => {
 		expect(rendered.problems[0]).toContain("differ");
 	});
 
-	test("reports each key that the stub fallback reads and the profile leaves out", () => {
-		writeFileSync(
-			join(dir, "pr-review-hardening.profile.md"),
-			profileWith("[]"),
-		);
-		const rendered = renderReviewCopies(project(), dir, sources);
-		expect(rendered.problems).toHaveLength(2);
-		expect(rendered.problems[0]).toBe(
-			"projects/acme/pr-review-hardening.profile.md: test: is required. Change it as references/profile.md of the pr-review-hardening skill says",
-		);
-		expect(rendered.problems[1]).toContain(
-			"the stub fallback reads base.default, base.from_pr",
-		);
-		expect(rendered.problems[1]).toEndWith(
-			"merge.after_clean_stop, merge.conditions, which the profile does not define. Define each key as references/profile.md of the pr-review-hardening skill says",
-		);
-	});
-
-	test("reports each key that the profile sets away from its default and the stub fallback does not follow", () => {
-		writeFileSync(
-			join(dir, "pr-review-hardening.profile.md"),
-			complete("[]", [
-				"type_coverage: {command: bun run coverage, min_percent: 90}",
-				"reviewers: {select: applicable, agents: [code-reviewer], checklists: [], notes: [], extra: [{name: extra, invoke: Skill, when: always}]}",
-			]),
-		);
-		const rendered = renderReviewCopies(project(), dir, sources);
-		expect(rendered.problems).toEqual([
-			"projects/acme/pr-review-hardening.profile.md: the profile sets type_coverage, reviewers.extra away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it",
-		]);
-	});
-
-	const awayValues: Readonly<Record<string, unknown>> = {
-		type_coverage: { command: "bun run coverage" },
-		"typescript.boundary_cast_marker": "CAST:",
-		"reviewers.extra": [{ name: "extra", invoke: "Skill", when: "always" }],
-		"prepasses[].name": "claims-audit",
-		"forbidden.code": ["as any"],
-		"forbidden.gate_flags": ["--fix-all"],
-		"gates[].optional": true,
-		"test.optional": true,
-		"metrics.fallback": "bun tooling/metrics.ts",
-		"merge.fallback": "gh pr merge <pr> --squash",
-	};
 	const gateOf = (name: string) => ({
 		name,
 		command: `bun run ${name}`,
@@ -366,34 +321,6 @@ describe("review stub and profile copies", () => {
 		else setAt(data[head], rest.join("."), value);
 	}
 
-	test("the table of values away from the default names each key that the stub fallback does not follow", () => {
-		expect(Object.keys(awayValues).sort()).toEqual(
-			FALLBACK_UNREAD.map(({ key }) => key).sort(),
-		);
-	});
-
-	test.each(FALLBACK_UNREAD.map(({ key }) => key))(
-		"reports a profile that sets %s away from its default, because the stub fallback does not follow it",
-		(key) => {
-			const data = completeData();
-			setAt(data, key, awayValues[key]);
-			if (key === "gates[].optional")
-				setAt({ gates: data.gates.slice(1) }, key, false);
-			writeFileSync(
-				join(dir, "pr-review-hardening.profile.md"),
-				`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
-			);
-			expect(renderReviewCopies(project(), dir, sources).problems).toEqual([
-				...(key === "typescript.boundary_cast_marker"
-					? [
-							"projects/acme/pr-review-hardening.profile.md: typescript.boundary_cast_marker: needs a comments.keep_patterns entry that matches it. Change it as references/profile.md of the pr-review-hardening skill says",
-						]
-					: []),
-				`projects/acme/pr-review-hardening.profile.md: the profile sets ${key} away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it`,
-			]);
-		},
-	);
-
 	test("reports a profile that merges after a clean stop with no condition that checks CI on the head", () => {
 		const merging = (conditions: readonly string[]) => {
 			const data = completeData();
@@ -414,29 +341,6 @@ describe("review stub and profile copies", () => {
 		expect(
 			merging(["The check job of CI is green on the exact head SHA."]),
 		).toEqual([]);
-	});
-
-	test("a key that the stub fallback does not follow may stay at its default", () => {
-		writeFileSync(
-			join(dir, "pr-review-hardening.profile.md"),
-			complete("[]", ["type_coverage: null"]),
-		);
-		expect(renderReviewCopies(project(), dir, sources).problems).toEqual([]);
-	});
-
-	test("the stub fallback follows test adequacy per clause, a contract-coverage prepass, commit trailers and thread answers", () => {
-		const data = completeData();
-		expect(data).toMatchObject({
-			test_adequacy: "control-per-clause",
-			prepasses: [{ name: "contract-coverage" }],
-			conventions: { commit: { trailers: ["Session"] } },
-			threads: { answer: true },
-		});
-		writeFileSync(
-			join(dir, "pr-review-hardening.profile.md"),
-			`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
-		);
-		expect(renderReviewCopies(project(), dir, sources).problems).toEqual([]);
 	});
 
 	test("reports missing sources instead of inventing them", () => {

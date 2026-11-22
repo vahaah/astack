@@ -10,25 +10,13 @@ Each item is a class of finding that earlier hardening runs found and fixed. The
 - Before you fix a finding, read the item of its class. The guard of the item is in the astack repo. When the guard missed the finding, its fix goes to the astack repo, as "Files that astack writes" in `references/fix.md` says.
 - A finding that fits no item is a candidate for a new class and a new guard. Its ledger entry gets the class `none`, and the final report lists it.
 
-## The run and its stub
-
-### engine-stub-drift
-
-Does the stub fallback hold a counterpart, or a recorded reason, for each sentence of each step, stop and gate rule of the engine? Does it hold each field of the PR comment and each step of the unclean stop of the engine? Does each counterpart keep the scope of its engine sentence, such as a step that only a run with `--pr` does?
-
-Guard: the counterpart table in `tests/hardening-consistency.test.ts`, "each sentence of the run has a counterpart in the stub fallback". It splits each line of the engine into sentences. "the proof, the commits and the stop of the stub fallback" in the same file compares the PR comment and the unclean stop of the stub with the bullets of `references/gate.md`. "the branch of the fix commits" in the same file reads SKILL.md, each reference and the stub fallback. It finds the head branch of the PR in a sentence outside a run with `--pr`. Only a sentence in the section of `--pr`, or a sentence that starts with "In a run with `--pr`" or "With `--pr`", is in such a run. The read of the fork fields in the preflight, and a sentence that starts with "When `isCrossRepository` is true", also pass.
-
-### fallback-key-contract
-
-Does each new key of the profile schema have a place in `FALLBACK_KEYS`, `FALLBACK_UNREAD` or `FALLBACK_EXEMPT`, also inside a block that the fallback reads whole? Does the stub state how it follows each key that it reads? Does apply report each value of a key that the stub does not follow? A profile can set a block such as `metrics` to `null`. Does a step run or print a key of such a block with no condition on that block?
-
-Guard: "keys the stub fallback reads" in `tests/hardening-consistency.test.ts`, with its table of child keys and its table of how the stub follows each key. It also reads each sentence of the stub and the engine that names a key of a block that can be `null`. Apply runs `missingFallbackKeys` and `unreadFallbackKeys` in `renderReviewCopies` of `scripts/lib/render.ts`.
+## The run
 
 ### review-target-identity
 
-Does each step that acts on a PR compare the local head with the head of the PR, and diff against the fetched base? Does it stop on each failure of gh that is not the no-PR answer? Does each push for a PR from a fork go to the head repository, so that the run never pushes a branch to `origin`? Does a fork that does not allow edits from maintainers stop the run with no fix commit? Does each step take the checkout of a PR from a fork by its local branch, never by its head branch name?
+Does each step that acts on a PR compare the local head with the head of the PR, and diff against the fetched base? Does it stop on each failure of gh that is not the no-PR answer? Does each push for a PR from a fork go to the head repository, so that the run never pushes a branch to `origin`? Does a fork that does not allow edits from maintainers stop the run with no fix commit? Does each step take the checkout of a PR from a fork by its local branch, never by its head branch name? Does each sentence that names the head branch of the PR belong to a run that reads it?
 
-Guard: "a failed gh is never a run with no PR" and "each diff runs against the fetched base" in `tests/hardening-consistency.test.ts`. They scan each astack text and profile. The origin scan of "the branch of the fix commits" in the same file reads each astack text, the stub fallback and each profile. The playbooks of the mode that push a PR are astack texts too. It finds each sentence that names `origin` as the remote of `git push` or as the target of a push or of the fix commits. It exempts the push sentence of a run with no PR or a PR from the same repository. It exempts the negation in the push for a PR from a fork, and nothing else. "a run that names a PR reviews that PR" in the same file finds each sentence that takes a checkout by the name of the head branch.
+Guard: "a failed gh is never a run with no PR" and "each diff runs against the fetched base" in `tests/hardening-consistency.test.ts`. They scan each astack text and profile. "the branch of the fix commits" in the same file reads SKILL.md and each reference. It finds the head branch of the PR in a sentence outside a run with `--pr`. Only a sentence in the section of `--pr`, or a sentence that starts with "In a run with `--pr`" or "With `--pr`", is in such a run. The read of the fork fields in the preflight, and a sentence that starts with "When `isCrossRepository` is true", also pass. Its origin scan reads each astack text and each profile. The playbooks of the mode that push a PR are astack texts too. It finds each sentence that names `origin` as the remote of `git push` or as the target of a push or of the fix commits. It exempts the push sentence of a run with no PR or a PR from the same repository. It exempts the negation in the push for a PR from a fork, and nothing else. "a run that names a PR reviews that PR" in the same file finds each sentence that takes a checkout by the name of the head branch.
 
 ### clean-stop-criteria
 
