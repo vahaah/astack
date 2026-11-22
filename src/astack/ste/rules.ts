@@ -20,7 +20,7 @@ import {
 	VERB_AFTER,
 } from "./lexicon.ts";
 import { AND_OR, isPlaceholder, restore } from "./mask.ts";
-import { tokens } from "./sentences.ts";
+import { commaAfter, tokens } from "./sentences.ts";
 import type {
 	FindingRule,
 	Glossary,
@@ -250,15 +250,17 @@ function inVerbPosition(
 	index: number,
 	entry: WordEntry,
 	form: string,
+	comma: boolean,
 ): boolean {
 	const before = lower(words[index - 1]);
 	const next = words[index + 1];
 	const after = lower(next);
 	const objectFollows =
 		next === undefined ||
-		VERB_AFTER.has(after) ||
-		isPlaceholder(next) ||
-		SUBJECT_PRONOUNS.has(after);
+		(!comma &&
+			(VERB_AFTER.has(after) ||
+				isPlaceholder(next) ||
+				SUBJECT_PRONOUNS.has(after)));
 	const base = entry.forms.includes(form) && entry.forms[0] === form;
 	if (NOUN_SIDE.has(before) || /^\d/.test(before)) return false;
 	if (index === 0) return base && objectFollows;
@@ -279,6 +281,7 @@ function wordRule(entry: WordEntry): RuleId {
 }
 
 const wordList: SentenceRule = (sentence, glossary) => {
+	const commas = commaAfter(sentence.text);
 	const words = sentence.words.flatMap((word, index) => {
 		const form = word.toLowerCase();
 		const entry = FORMS.get(form);
@@ -287,7 +290,16 @@ const wordList: SentenceRule = (sentence, glossary) => {
 			return [];
 		if (entry.position === "verb") {
 			if (labelAt(sentence, word)) return [];
-			if (!inVerbPosition(sentence.words, index, entry, form)) return [];
+			if (
+				!inVerbPosition(
+					sentence.words,
+					index,
+					entry,
+					form,
+					commas[index] === true,
+				)
+			)
+				return [];
 		}
 		return [
 			hit(

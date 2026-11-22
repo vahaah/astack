@@ -116,6 +116,21 @@ describe("our word list", () => {
 			if (entry.basis.kind === "ste-public")
 				expect(entry.basis.citation.length).toBeGreaterThan(0);
 	});
+
+	test("[control:noun-checks] checks after a number word, a state adjective or before a comma is a noun, and checks after CI is a verb", () => {
+		const wordBroad = (text: string) =>
+			rules(text).filter((rule) => rule === "advise:word-broad").length;
+		expect(
+			[
+				"The required checks all pass on the branch.",
+				"Two checks all fail on the main branch.",
+				"The failing checks all stop the merge.",
+				"The flaky checks both pass on the second run.",
+				"The job runs the tests and checks, the build waits.",
+				"CI checks the branch on each push.",
+			].map(wordBroad),
+		).toEqual([0, 0, 0, 0, 0, 1]);
+	});
 });
 
 describe("the exact deny rules", () => {
