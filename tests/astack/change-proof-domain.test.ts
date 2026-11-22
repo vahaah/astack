@@ -1,11 +1,12 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
 import {
+	git,
 	PLAN_BLOCK,
 	PLAN_FILES,
 	PLAN_RECORD,
@@ -125,6 +126,37 @@ describe("a manifest that cites a plan record", () => {
 			expect({ code: run.code, first: firstLine(run.out) }).toEqual({
 				code: 1,
 				first: stop,
+			});
+		},
+		heavyTestTimeout,
+	);
+
+	test.each<[string, (outside: string) => string]>([
+		["a parent path", () => "../outside.ts"],
+		["an absolute path", (outside) => outside],
+		["a symlink to a file outside the repo", () => "src/link.ts"],
+	])(
+		"[control:proof-plan-record-outside] a linked module at %s stops at category",
+		(_name, linked) => {
+			const outside = join(scratch, "outside.ts");
+			writeFileSync(outside, PLAN_FILES["src/gate.ts"] ?? "");
+			const module = linked(outside);
+			const repo = planProofRepo(scratch, () => {}, {
+				...PLAN_FILES,
+				[PLAN_RECORD]: planText().replace(
+					"src/gate.ts#parseGate",
+					`${module}#parseGate`,
+				),
+			});
+			if (module === "src/link.ts") {
+				symlinkSync(outside, join(repo.root, module));
+				git(repo.root, "add", module);
+				git(repo.root, "commit", "-q", "-m", "link");
+			}
+			const run = proof(repo.root);
+			expect({ code: run.code, first: firstLine(run.out) }).toEqual({
+				code: 1,
+				first: `stop: proof category: the plan record links ${module}, which is not a regular file inside the repo`,
 			});
 		},
 		heavyTestTimeout,

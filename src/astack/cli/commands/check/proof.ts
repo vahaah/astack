@@ -240,15 +240,16 @@ function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
 		block.value.cells.map((cell) => cell.cell),
 		ports,
 	);
+	if (!links.ok) return none(rejection("category", links.error));
 	return {
 		read: ok({ ...block.value, card: card.value }),
 		inputs: [
 			...inputs,
-			...[...links.steps.values()].map((link) => link.module),
+			...[...links.value.steps.values()].map((link) => link.module),
 			...block.value.block.aggs.map((agg) => agg.module),
 			...(reading === "effect" ? [...ports.values()] : []),
 		],
-		links,
+		links: links.value,
 		reading,
 	};
 }

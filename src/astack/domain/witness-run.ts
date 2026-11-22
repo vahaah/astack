@@ -10,7 +10,8 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
-import { gitLines, isInside } from "../change-proof/candidate.ts";
+import { gitLines, isInside, readRepoFile } from "../change-proof/candidate.ts";
+import { isRepoPath } from "../change-proof/contract.ts";
 import { err, ok, type Result } from "../result.ts";
 import type { DomainBlock } from "./notation.ts";
 import {
@@ -90,29 +91,27 @@ export function stepLinks(
 	block: DomainBlock,
 	cells: readonly string[],
 	ports: ReadonlyMap<string, string>,
-): StepLinks {
+): Result<StepLinks, string> {
 	const names = new Set(block.steps.map((step) => step.name));
 	const steps = new Map<string, StepLink>();
 	for (const cell of cells) {
 		const [module = "", name = ""] = cell.split("#");
 		if (names.has(name) && !steps.has(name)) steps.set(name, { module, name });
 	}
-	const modules = [
+	const modules = new Set([
 		...block.aggs.map((agg) => agg.module),
 		...[...steps.values()].map((link) => link.module),
-	];
+	]);
 	const exports = new Map<string, ModuleExports>();
-	for (const module of new Set(modules)) {
-		try {
-			exports.set(
-				module,
-				scanExports(readFileSync(join(root, module), "utf8")),
+	for (const path of new Set([...modules, ...ports.values()])) {
+		const read = isRepoPath(path) ? readRepoFile(root, path) : undefined;
+		if (read?.kind !== "text")
+			return err(
+				`the plan record links ${path}, which is not a regular file inside the repo`,
 			);
-		} catch {
-			exports.set(module, scanExports(""));
-		}
+		if (modules.has(path)) exports.set(path, scanExports(read.text));
 	}
-	return { root, steps, exports, ports };
+	return ok({ root, steps, exports, ports });
 }
 
 function nearestConfig(root: string, module: string): string | undefined {

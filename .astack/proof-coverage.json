@@ -831,6 +831,7 @@
 			"criterion": "DR-plan-record",
 			"controls": [
 				"proof-plan-record",
+				"proof-plan-record-outside",
 				"proof-plan-record-stops",
 				"proof-plan-record-schema"
 			]

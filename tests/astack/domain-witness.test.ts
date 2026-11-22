@@ -23,6 +23,7 @@ import {
 	typeCheck,
 	WITNESS_CACHE,
 } from "../../src/astack/domain/witness-run.ts";
+import { err } from "../../src/astack/result.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
 import { git, scratchDir } from "./change-proof-fixture.ts";
 
@@ -168,10 +169,15 @@ async function verdict(
 	reading: Reading,
 ) {
 	const parsed = block(text);
-	const ports = new Map([["Git", "src/ports.ts"]]);
-	return typeCheck(
-		witnessSource(parsed, stepLinks(root, parsed, cells, ports), reading),
+	const links = stepLinks(
+		root,
+		parsed,
+		cells,
+		new Map([["Git", "src/ports.ts"]]),
 	);
+	return links.ok
+		? typeCheck(witnessSource(parsed, links.value, reading))
+		: err({ message: links.error });
 }
 
 function lines(
@@ -308,11 +314,9 @@ describe("the tsc witness", () => {
 		async () => {
 			const root = witnessRepo({});
 			const parsed = block(RESULT_BLOCK);
-			const source = witnessSource(
-				parsed,
-				stepLinks(root, parsed, RESULT_CELLS, new Map()),
-				"result",
-			);
+			const links = stepLinks(root, parsed, RESULT_CELLS, new Map());
+			if (!links.ok) throw new Error(links.error);
+			const source = witnessSource(parsed, links.value, "result");
 			const first = await typeCheck(source);
 			const second = await typeCheck(source);
 			const left = readdirSync(join(root, WITNESS_CACHE), {
