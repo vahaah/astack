@@ -26,24 +26,22 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 
 ## Required records
 
-| Record | Required content |
+| Record | Keys of [proof-example.json](proof-example.json) |
 |---|---|
-| `version`, `change`, `base` | Version 1, a change name, and a full immutable base SHA |
-| `scope` | Globs for every live changed path, with criterion and model references |
-| `domain` | Context, glossary, aggregate, terms, invariants, effective ADRs, and a spec-drift matrix |
-| `category` | Objects, typed arrows, carrier, effects, composition, equality, laws, and a typed witness |
-| `abstraction` | Hidden rule, caller facts, deletion test, alternatives, concrete-to-model relations, and omissions |
-| `model` | TLA+ module, config, exact project dependency closure, bounds, fairness, invariants, and properties |
-| `negative` | One named action, one exact mutation, its defect, and the expected named violation |
-| `limits` | Explicit limits of the selected proof |
+| `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
+| `scope` | `[{path, obligation, modelRefs}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
+| `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
+| `category` | `carrier {kind, error}`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
+| `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
+| `model` | `module`, `config`, `dependencies`, `bounds`, `fairness`, `invariants` and `properties`. [TLC execution](#tlc-execution) |
+| `negative` | `file`, `action`, `original`, `replacement`, `defect` and `expect {kind, name}`. [TLC execution](#tlc-execution) |
+| `limits` | Proof limits |
 
-Unknown fields, duplicate names, unresolved references, and empty required text fail.
+Unknown fields, duplicate names, unresolved references, and empty text fail.
 Paths stay inside the repo and outside `.git`.
-Proof references must resolve directly to regular files, without a symlink in the path.
-Scope includes tracked edits, staged edits, deletions, and nonignored untracked files.
-A scope row must cover a changed path.
+A proof reference is a regular file with no symlink in its path.
 The checker binds current candidate files and model inputs before and after execution.
-The manifest never stores its own digest or its containing commit's hash.
+The manifest never stores its own digest or commit hash.
 
 ## Domain and decisions
 
@@ -146,7 +144,6 @@ The runner pins `tla2tools.jar` release 1.7.4 and verifies its SHA-256 on every 
 The pin was computed from the official release asset after its published SHA-1 was checked.
 Java 17 or later is required.
 The runner downloads only the pinned jar into the astack cache when it is absent.
-A cached digest mismatch fails.
 
 `ASTACK_TLC_JAR` can name a verified jar outside the checkout.
 `ASTACK_PROOF_TIMEOUT_MS` can lower the 60000 ms policy cap.
