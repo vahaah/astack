@@ -72,22 +72,18 @@ What gets easier, what gets harder, and what follow-up work this creates.
 - Let the content determine the length. A small decision can need only one paragraph under `## Decisions`. Keep each ADR under about 15 KB and limited to one topic.
 - Exclude review history, PR rounds, progress and reviewer findings. Put those in the PR.
 
-## Integrate a governing proof ADR
+## Write a proof record
 
-A ChangeProof-governing ADR also contains these nonempty subsections under its decisions:
+An ordinary governing ADR needs only `Status: Accepted` and text under the cited decision.
+The separate proof record of an integrated proposal contains these nonempty subsections:
 
 - `Formal claim`: state the invariant or law, assumptions, bounds, and proof sketch.
 - `Category composition`: name the actual function symbols, typed arrows, carrier, effects, and applicable laws.
 - `Implementation correspondence`: map concrete functions and contracts to model actions and state.
 - `Verification`: link the TLA+ module, config, proof matrix, and implementation controls.
 
-The checker requires the function symbols in the category section and the proof artifact paths in the ADR.
-Keep the executable model and tests in their own files.
-Keep current run results in receipts and CI.
-State separately what the mathematical argument, bounded model run, and implementation controls establish.
-One ADR can govern a cohesive group of functions.
-An unrelated private helper does not need its own ADR.
-Semantic review still checks that the stated relation is appropriate.
+The checker requires the function symbols in the category section and the proof artifact paths in the record.
+A record for two decisions gives each decision its own subsections.
 
 ## Cite decisions
 

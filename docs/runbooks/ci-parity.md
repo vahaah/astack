@@ -54,7 +54,8 @@ When the PR also removes a job that sets up a tool, a new job with a tool is a c
 A rename can move a version from one job to another.
 Then the check exits 3, its last line starts with `ci_proof:`, and the run goes on in mode `ci_proof`.
 A tool version change, a form that it cannot read on either side and an expression in a version input exit 1.
-A PR can also change its parsed default proof manifest and declared proof records under `formal/`.
+A PR can also add the parsed manifest of the change under `.astack/proof/` and delete a manifest of its base.
+It can change declared proof records under `formal/`.
 Those committed records must be regular non-executable UTF-8 Markdown with complete sections and separate roles.
 All other files outside CI remain blocked.
 This classification never grants proof success.

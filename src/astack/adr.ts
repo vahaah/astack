@@ -27,3 +27,19 @@ export function decisionHeading(
 		"m",
 	).exec(adrProse(text))?.index;
 }
+
+const SPAN_END = /^(?:#{1,2}[ \t]|###[ \t]+D\d+(?:\.[ \t]+|[ \t]+—[ \t]+)\S)/m;
+
+export function decisionSpan(
+	text: string,
+	decision: string,
+): string | undefined {
+	const start = decisionHeading(text, decision);
+	if (start === undefined) return undefined;
+	const prose = adrProse(text);
+	const lineEnd = prose.indexOf("\n", start);
+	if (lineEnd < 0) return "";
+	const body = lineEnd + 1;
+	const end = prose.slice(body).search(SPAN_END);
+	return text.slice(body, end < 0 ? undefined : body + end);
+}

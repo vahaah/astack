@@ -49,51 +49,7 @@ The words "full stop" never give a merge grant.
 A prompt with "full stop" gives no full-send grant. A prompt with a clause that names the merge but grants no merge, such as "do not merge" or "I will handle the merge", gives none too.
 The typed words grant only as a bare instruction, such as "full send" or "ok, full send this PR". A clause with other words, such as "fix full send", or a question gives no grant. A clause with a negation, such as "not yet", withholds the grant of the whole prompt. The command form, such as `/astack:full-send`, grants only at the start of the prompt. Elsewhere it follows the rules of the typed words.
 
-#### Formal claim
-
-A merge grant names PRs that a merge word or an un-negated "full send" clause of a person's prompt covers.
-A "full stop" clause, a negated clause and a machine prompt add no PR to the grant.
-The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
-
-```text
-GrantFromWords      == \A n \in grant : OwnerCovers(said, n)
-GrantFromPerson     == grant # {} => PersonTyped(saidBy, attended)
-MergeNeedsAuthority == each merge has a profile grant or a covering prompt of a person
-FullStopNeverMerges == no merge happens while the last prompt of a person says "full stop"
-```
-
-The [model](../../formal/SessionGuards.tla) and its [configuration](../../formal/SessionGuards.cfg) check these invariants over prompts of one or two clauses and two PRs.
-The model takes the clause grammar and the prompt source as true observations.
-ADR 0010 holds the same model for the scratch, commit and work-loss guards.
-
-#### Category composition
-
-```text
-mergeGrantIn : PromptText -> MergeGrant   effects: none
-mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, network
-```
-
-`mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
-`mergeGuard` saves that grant for a person's prompt, and it reads the grant back when a `gh pr merge` call arrives.
-The other guards of the record are a `handler` of each hook file, as ADR 0010 says.
-The record uses the `artifact` carrier and declares no composite arrow, so no composition, functor or monad law applies.
-
-#### Implementation correspondence
-
-`mergeGrantIn` and `FULL_SEND_COMMAND` in `src/astack/pr/grant.ts` map to `ClauseGrant` of the `Prompt` action.
-`humanPrompt` maps to `HumanPrompt`, and `preflightReasons` with `grantCovers` map to the guard of `Merge`.
-The full-stop and full-send skills map to the `mode` of the model.
-No function enforces the full-stop rule. The skill text is its only source.
-
-D1, D2, D3, D5 and D6 change skills, credits and upstream files only.
-They change no guard code, so they map to the preservation relation.
-The guards keep the verdicts that D4 and ADR 0010 define.
-
-#### Verification
-
-[The proof matrix](../../.astack/proof-coverage.json) links the merge grant, full-stop and unattended criteria to the merge guard controls.
-The negative control lets a "full stop" clause give a grant of each PR, and it must violate `GrantFromWords`.
-The normal test gate runs the tests of the notice, the upstream snapshot and the skill shape for D1, D2, D5 and D6.
+> Amended 2026-11-22: The four proof sections of D4 moved to [the session guard proof record](../../formal/SessionGuards.md). They said that only a merge word or an un-negated "full send" clause of a person's prompt gives a merge grant. An ordinary reference to D4 needs no proof section.
 
 ### D5. Skill text names no vendor model
 

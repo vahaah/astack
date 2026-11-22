@@ -8,7 +8,9 @@ ADR 0005 D3 keeps fresh model execution mandatory.
 ### Formal claim
 
 [criterion:ci-proof-records] Classify only CI changes with unchanged tool setups and narrowly checked current proof records.
-The default manifest must parse completely, and its base must be an ancestor of the actual merge base.
+The check chooses the manifest at HEAD as `check proof --base` chooses it. Two changed manifests under `.astack/proof/` stop the classification.
+The chosen manifest must parse completely, and its base must be an ancestor of the actual merge base.
+A manifest that the diff deletes is proof metadata too.
 Its committed proof records must be regular UTF-8 Markdown files under `formal/`.
 They must contain the four required proof sections and valid references.
 The records cannot also serve authority, implementation, witness, glossary, matrix, listed source, or model roles.
@@ -19,7 +21,7 @@ Changed source, models, controls, arbitrary docs, and tool versions remain block
 `CiRecordsSafe` states that every `ci_proof` result has eligible inputs.
 `CurrentProofRequired` states that delivery still requires independent current proof.
 `delivery` means only that these two prerequisites hold. Other review and merge checks remain outside the model.
-The finite cases include four diff classes and seven record checks, with one invalid record check at a time.
+The finite cases include four diff classes and eight record checks, with one invalid record check at a time.
 Tool equality, base movement, and proof success each have two values.
 The safety model claims no fairness, progress, eventual CI success, or full implementation refinement.
 
@@ -35,6 +37,7 @@ Typed CLI controls call the actual parser and classifier under the normal TypeSc
 
 ### Implementation correspondence
 
+`chooseManifest` supplies the `manifest` observation from the committed manifests at HEAD and the changed paths.
 The committed manifest parser supplies the model's `schema` observation.
 `proofBase` supplies `base`. It accepts a manifest base that is an ancestor of the merge base, and Git reads ignore replace objects and grafts.
 Strict Git blob reads supply `regular` and `utf8`.

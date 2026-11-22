@@ -164,6 +164,7 @@ It checks links and exemptions without claiming test execution or semantic cover
 The registry `formal/models.json` selects the models of each changed path, and only the rung R4 runs TLC.
 [ADR 0012](adr/0012-change-proof-accepts-an-older-base.md) lets a PR proof keep an older manifest base.
 With `--base <ref>`, the diff starts at the merge base, and the manifest base must be an ancestor of it.
+[ADR 0016](adr/0016-each-change-carries-its-own-proof-manifest.md) gives each change its own manifest under `.astack/proof/`, so two open PRs never edit one proof file.
 It links DDD contracts, internal category notation, effective ADRs, formal models, and implementation controls.
 The proof gate stays independent of hook quality profiles.
 ADRs connect function signatures, laws, formal claims, abstraction relations, and executable controls.

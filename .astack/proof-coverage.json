@@ -69,6 +69,7 @@
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
 		"tests/old-names.test.ts",
+		"tests/astack/change-proof-manifest.test.ts",
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
 		"tests/property/verdict-monoid.test.ts",
@@ -670,6 +671,41 @@
 		{
 			"criterion": "AN-NAMES",
 			"controls": ["an-names", "an-models-header"]
+		},
+		{
+			"criterion": "CP-manifest-merge",
+			"controls": ["cp-manifest-merge"]
+		},
+		{
+			"criterion": "CP-manifest-search",
+			"controls": [
+				"cp-manifest-search",
+				"cp-manifest-two",
+				"cp-manifest-fallback"
+			]
+		},
+		{
+			"criterion": "CP-manifest-base",
+			"controls": [
+				"cp-manifest-base",
+				"cp-manifest-base-none",
+				"cp-manifest-merged"
+			]
+		},
+		{
+			"criterion": "CP-manifest-held",
+			"controls": ["cp-manifest-held", "cp-manifest-unstaged"]
+		},
+		{
+			"criterion": "CP-adr-decision",
+			"controls": ["proof-adr-contract", "cp-adr-span"]
+		},
+		{
+			"criterion": "CP-record-decision",
+			"controls": [
+				"cp-record-decision",
+				"proof-ratification-requires-the-separate-proof-record-s-s"
+			]
 		},
 		{
 			"criterion": "PH-LINE",
