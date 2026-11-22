@@ -202,7 +202,8 @@ function apiCall(
 			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
 		});
 	if (mergesThroughGraphql) return API;
-	if (writes && endpoint?.dynamic === true) return ENDPOINT;
+	if (writes && (endpoint?.dynamic === true || endpoint?.expands === true))
+		return ENDPOINT;
 	return parts.dynamicFlagAt !== undefined && !provablyGet(parts)
 		? ENDPOINT
 		: NONE;

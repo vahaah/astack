@@ -807,6 +807,28 @@ describe("the merge guard", () => {
 		},
 	);
 
+	test.each([
+		"gh api -X PUT repos/o/r/pulls/12/mer{g..g}e",
+		"gh api -X PUT repos/o/r/pulls/12/mer{g,}e",
+		"gh api -X PUT repos/o/r/pulls/12/m[e]rge",
+		"gh api -X PUT repos/o/r/pulls/12/merg?",
+	])(
+		"the shell expands a glob or a brace in the endpoint, so the write call %s is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
+		"gh api -X POST 'repos/o/r/issues?state=open'",
+		"gh api -X POST repos/{owner}/{repo}/issues",
+		"gh api repos/o/r/pulls/12/mer{g..g}e",
+	])("a quoted glob, a gh placeholder and a read pass: %s", (command) => {
+		expect(bash(guard(GREEN), command).exit).toBe(0);
+	});
+
 	test("a variable before a last -X GET cannot change the method, so the call passes", () => {
 		expect(bash(guard(GREEN), "gh api repos/o/r/pulls/12 $M -X GET").exit).toBe(
 			0,

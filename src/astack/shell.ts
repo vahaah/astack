@@ -4,6 +4,7 @@ export interface Word {
 	value: string;
 	dynamic: boolean;
 	startsDynamic?: boolean;
+	expands?: boolean;
 }
 
 export interface Redirect {
@@ -20,6 +21,8 @@ export interface SimpleCommand {
 	piped?: boolean;
 	background?: boolean;
 }
+
+const UNQUOTED_EXPANSION = /[*?[]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
 
 const HEREDOC_SUBSTITUTION =
 	/^\$\(\s*cat\s*<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2[ \t]*\n([\s\S]*?)\n[ \t]*\3[ \t]*\n?\s*\)/;
@@ -68,6 +71,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		substitutions,
 	};
 	let i = 0;
+	let unquoted = "";
 
 	const append = (text: string, dynamic = false): void => {
 		word ??= { value: "", dynamic: false };
@@ -77,6 +81,8 @@ export function parseShell(src: string): SimpleCommand[] {
 	};
 	const endWord = (): void => {
 		if (!word) return;
+		if (UNQUOTED_EXPANSION.test(unquoted)) word.expands = true;
+		unquoted = "";
 		if (hereStringNext) {
 			hereStringNext.stdin = word.value;
 			hereStringNext = undefined;
@@ -254,6 +260,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			if (word && /^\d+$/.test(word.value)) {
 				fd = word.value;
 				word = undefined;
+				unquoted = "";
 			}
 			endWord();
 			const opStart = i;
@@ -267,6 +274,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		append(c);
+		unquoted += c;
 		i++;
 	}
 	endCommand();
