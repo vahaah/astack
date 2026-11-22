@@ -93,7 +93,7 @@ describe("reviewProfileProblems", () => {
 			"```",
 			"",
 		].join("\n");
-		expect(reviewProfileProblems(minimal)).toEqual([]);
+		expect(reviewProfileProblems(minimal, [])).toEqual([]);
 	});
 });
 
@@ -269,22 +269,6 @@ describe("validateProfile", () => {
 		expect(
 			issuesFor({ reviewers: { agents: ["code-simplifier"] } }),
 		).toHaveLength(1);
-	});
-
-	test("requires a keep pattern for a boundary cast marker", () => {
-		const typescript = {
-			rules: true,
-			boundary_cast_marker: "// BOUNDARY-CAST:",
-		};
-		expect(issuesFor({ typescript })).toEqual([
-			"typescript.boundary_cast_marker: needs a comments.keep_patterns entry that matches it",
-		]);
-		expect(
-			issuesFor({
-				typescript,
-				comments: { keep_patterns: ["^\\s*// BOUNDARY-CAST: "] },
-			}),
-		).toEqual([]);
 	});
 
 	test("requires a merge command and a condition that checks CI on the head when the run may merge", () => {

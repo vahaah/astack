@@ -10,8 +10,6 @@ import {
 	type ProjectConfig,
 } from "../../scripts/lib/projects.ts";
 import {
-	keepPatternMismatch,
-	profileKeepPatterns,
 	renderAstackProfile,
 	renderRepoArtifacts,
 	renderReviewCopies,
@@ -45,7 +43,7 @@ function project(overrides: Partial<ProjectConfig> = {}): ProjectConfig {
 	};
 }
 
-const complete = (patterns: string, extra: readonly string[] = []) =>
+const complete = (extra: readonly string[] = []) =>
 	[
 		"```yaml",
 		"version: 1",
@@ -61,25 +59,12 @@ const complete = (patterns: string, extra: readonly string[] = []) =>
 		"test_adequacy: changed-behaviour",
 		"ledger: {carry_over: false}",
 		"prepasses: []",
-		`comments: {keep_patterns: ${patterns}}`,
 		"forbidden: {commands: [], paths: []}",
 		"conventions: {branch: {create: r/<x>, pattern: null}, commit: {subject: <id>, trailers: []}}",
 		"proof: {pr_comment: null, on_unclean: null}",
 		"threads: {answer: false}",
 		"merge: {after_clean_stop: report, conditions: []}",
 		...extra,
-		"```",
-		"",
-	].join("\n");
-
-const profileWith = (patterns: string) =>
-	[
-		"# Profile",
-		"",
-		"```yaml",
-		"version: 1",
-		"gates: [{name: change-proof, command: astack check proof}]",
-		`comments: {keep_patterns: ${patterns}}`,
 		"```",
 		"",
 	].join("\n");
@@ -137,7 +122,7 @@ describe("review stub and profile copies", () => {
 	writeFileSync(stub, "stub {{install-line}}\n");
 
 	test("copies the stub and profile to their repo paths", () => {
-		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
+		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete());
 		const rendered = renderReviewCopies(project(), dir, stub);
 		expect(rendered.problems).toEqual([]);
 		expect(rendered.artifacts.map((artifact) => artifact.path)).toEqual([
@@ -147,7 +132,7 @@ describe("review stub and profile copies", () => {
 	});
 
 	test("reports a stub with no install mark, so a repo without the plugin gets no install line", () => {
-		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete("[]"));
+		writeFileSync(join(dir, "pr-review-hardening.profile.md"), complete());
 		const unmarked = join(dir, "unmarked.SKILL.md");
 		writeFileSync(unmarked, "stub\n");
 		const rendered = renderReviewCopies(project(), dir, unmarked);
@@ -157,16 +142,6 @@ describe("review stub and profile copies", () => {
 		expect(rendered.artifacts.map((artifact) => artifact.path)).toEqual([
 			".claude/pr-review-hardening.profile.md",
 		]);
-	});
-
-	test("reports a profile whose keep patterns differ from the config", () => {
-		writeFileSync(
-			join(dir, "pr-review-hardening.profile.md"),
-			complete('["^TODO"]'),
-		);
-		const rendered = renderReviewCopies(project(), dir, stub);
-		expect(rendered.problems).toHaveLength(1);
-		expect(rendered.problems[0]).toContain("differ");
 	});
 
 	const gateOf = (name: string) => ({
@@ -209,7 +184,6 @@ describe("review stub and profile copies", () => {
 				sources: ["docs/spec.md"],
 			},
 		],
-		comments: { keep_patterns: [] },
 		forbidden: { commands: [], paths: [] },
 		conventions: {
 			branch: { create: "r/<x>", pattern: null },
@@ -256,6 +230,50 @@ describe("review stub and profile copies", () => {
 		).toEqual([]);
 	});
 
+	const markerProfile = (extra: readonly string[]) =>
+		complete([
+			"typescript: {rules: true, boundary_cast_marker: '// BOUNDARY-CAST:'}",
+			...extra,
+		]);
+
+	test.each([
+		["matches", ["^\\s*// BOUNDARY-CAST: "], []],
+		[
+			"does not match",
+			["^TODO"],
+			[
+				'projects/acme/pr-review-hardening.profile.md: typescript.boundary_cast_marker: no commentKeep pattern of the repo matches "// BOUNDARY-CAST:". Add a pattern that matches the marker to commentKeep in .astack/profile.json. Apply writes that list from keepPatterns of the project config',
+			],
+		],
+	])(
+		"[control:rs-keep-apply] a boundary cast marker whose keep pattern of the project config %s",
+		(_case, keepPatterns, problems) => {
+			writeFileSync(
+				join(dir, "pr-review-hardening.profile.md"),
+				markerProfile([]),
+			);
+			expect(
+				renderReviewCopies(project({ keepPatterns }), dir, stub).problems,
+			).toEqual(problems);
+		},
+	);
+
+	test("[control:rs-window] apply refuses a companion profile that still sets comments, with its repair", () => {
+		writeFileSync(
+			join(dir, "pr-review-hardening.profile.md"),
+			markerProfile(["comments: {keep_patterns: ['^\\s*// BOUNDARY-CAST: ']}"]),
+		);
+		expect(
+			renderReviewCopies(
+				project({ keepPatterns: ["^\\s*// BOUNDARY-CAST: "] }),
+				dir,
+				stub,
+			).problems,
+		).toEqual([
+			"projects/acme/pr-review-hardening.profile.md: comments: is retired, because the comment gate reads commentKeep. Delete the comments key, and keep each pattern in keepPatterns of projects/<name>.json",
+		]);
+	});
+
 	test("reports missing sources instead of inventing them", () => {
 		const rendered = renderReviewCopies(
 			project(),
@@ -264,13 +282,6 @@ describe("review stub and profile copies", () => {
 		);
 		expect(rendered.artifacts).toEqual([]);
 		expect(rendered.problems).toHaveLength(2);
-	});
-
-	test("reads keep patterns from the profile's YAML block", () => {
-		expect(profileKeepPatterns(profileWith('["a", "b"]'))).toEqual(["a", "b"]);
-		expect(profileKeepPatterns("no block")).toBeUndefined();
-		expect(keepPatternMismatch(["a"], ["a"])).toBeUndefined();
-		expect(keepPatternMismatch([], undefined)).toContain("no readable");
 	});
 });
 

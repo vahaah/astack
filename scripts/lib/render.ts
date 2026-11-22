@@ -133,29 +133,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function profileKeepPatterns(profile: string): string[] | undefined {
+export function retiredCommentsProblem(profile: string): string | undefined {
 	const { data } = parseProfile(profile);
-	const comments = isRecord(data) ? data.comments : undefined;
-	const patterns = isRecord(comments) ? comments.keep_patterns : undefined;
-	return Array.isArray(patterns) &&
-		patterns.every((pattern) => typeof pattern === "string")
-		? patterns
+	return isRecord(data) && "comments" in data
+		? "comments: is retired, because the comment gate reads commentKeep. Delete the comments key, and keep each pattern in keepPatterns of projects/<name>.json"
 		: undefined;
-}
-
-export function keepPatternMismatch(
-	configured: readonly string[],
-	inProfile: readonly string[] | undefined,
-): string | undefined {
-	if (inProfile === undefined) {
-		return "the profile has no readable comments.keep_patterns list";
-	}
-	const same =
-		configured.length === inProfile.length &&
-		configured.every((pattern, index) => pattern === inProfile[index]);
-	return same
-		? undefined
-		: `keepPatterns in projects/<name>.json (${JSON.stringify(configured)}) differ from comments.keep_patterns in the profile (${JSON.stringify(inProfile)})`;
 }
 
 export function stubPaths(project: ProjectConfig): string[] {
@@ -198,14 +180,10 @@ export function renderReviewCopies(
 			kind: "review-profile",
 			content: profile,
 		});
-		const mismatch = keepPatternMismatch(
-			project.keepPatterns,
-			profileKeepPatterns(profile),
-		);
-		if (mismatch !== undefined) {
-			problems.push(`${profileLabel}: ${mismatch}`);
-		}
-		for (const problem of reviewProfileProblems(profile))
+		const retired = retiredCommentsProblem(profile);
+		if (retired !== undefined) problems.push(`${profileLabel}: ${retired}`);
+		const keep = project.keepPatterns.map((pattern) => new RegExp(pattern));
+		for (const problem of reviewProfileProblems(profile, keep))
 			problems.push(`${profileLabel}: ${problemText(problem)}`);
 	}
 	return { artifacts, problems };

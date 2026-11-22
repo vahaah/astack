@@ -13,7 +13,7 @@ const schema = {
 describe("unkeptCitations", () => {
 	test("a hyphenated ADR citation fails with a keep pattern for the spaced spelling only", () => {
 		expect(unkeptCitations([schema], ["\\bADR \\d{4}\\b"])).toEqual([
-			'packages/db/src/schema.ts:2 `// Money convention (ADR-0006): integer minor units and an ISO-4217 tag.` cites a decision, and the comment hook gives advisory for it with the keep patterns ["\\\\bADR \\\\d{4}\\\\b"]. Add a keep pattern for this spelling to projects/<name>.json and the profile, or change the comment.',
+			'packages/db/src/schema.ts:2 `// Money convention (ADR-0006): integer minor units and an ISO-4217 tag.` cites a decision, and the comment hook gives advisory for it with the keep patterns ["\\\\bADR \\\\d{4}\\\\b"]. Add a keep pattern for this spelling to keepPatterns of projects/<name>.json, or change the comment.',
 		]);
 	});
 

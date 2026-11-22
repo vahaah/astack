@@ -76,9 +76,6 @@ test_adequacy: changed-behaviour
 ledger:
   carry_over: true
 prepasses: []
-comments:
-  keep_patterns:
-    - '\bADR-\d{4}\b'
 forbidden:
   commands:
     - "\\bgit rebase\\b"

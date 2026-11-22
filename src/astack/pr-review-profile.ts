@@ -353,7 +353,6 @@ export function validateProfile(data: unknown): ProfileIssue[] {
 	checkGateOrder(data, issues);
 	issues.push(...gateFixers(data));
 	issues.push(...gateForbiddenCommands(data));
-	checkBoundaryCastMarker(data, issues);
 	checkMerge(data.merge, issues);
 	return issues;
 }
@@ -728,38 +727,19 @@ function ciEnvEntry(item: Readonly<Record<string, unknown>>): CiEnvEntry[] {
 	return typeof value === "string" ? [{ kind: "copy", name, value }] : [];
 }
 
-function checkBoundaryCastMarker(
-	data: Record<string, unknown>,
-	issues: ProfileIssue[],
-): void {
-	const typescript = data.typescript;
-	if (
-		!isRecord(typescript) ||
-		typeof typescript.boundary_cast_marker !== "string"
-	)
-		return;
-	const marker = typescript.boundary_cast_marker;
-	const comments = isRecord(data.comments) ? data.comments : {};
-	const patterns = Array.isArray(comments.keep_patterns)
-		? comments.keep_patterns
-		: [];
-	const kept = patterns.some(
-		(entry) => typeof entry === "string" && safeTest(entry, `${marker} reason`),
-	);
-	if (!kept) {
-		issues.push({
-			path: "typescript.boundary_cast_marker",
-			message: "needs a comments.keep_patterns entry that matches it",
-		});
-	}
-}
-
-function safeTest(source: string, sample: string): boolean {
-	try {
-		return new RegExp(source).test(sample);
-	} catch {
-		return false;
-	}
+function unkeptMarker(
+	data: unknown,
+	keep: readonly RegExp[],
+): ProfileIssue | undefined {
+	if (!isRecord(data) || !isRecord(data.typescript)) return undefined;
+	const marker = data.typescript.boundary_cast_marker;
+	if (typeof marker !== "string") return undefined;
+	return keep.some((pattern) => pattern.test(`${marker} reason`))
+		? undefined
+		: {
+				path: "typescript.boundary_cast_marker",
+				message: `no commentKeep pattern of the repo matches ${JSON.stringify(marker)}`,
+			};
 }
 
 const CHECKS_CI_ON_HEAD = (condition: string): boolean =>
@@ -804,6 +784,7 @@ function schemaRepair(issue: ProfileIssue): string {
 
 export function reviewProfileProblems(
 	markdown: string,
+	keep: readonly RegExp[],
 ): ReviewProfileProblem[] {
 	const block = extractProfileBlock(markdown);
 	if (!block) return [{ path: "", message: NO_BLOCK, repair: NO_BLOCK_REPAIR }];
@@ -817,11 +798,21 @@ export function reviewProfileProblems(
 			},
 		];
 	const { data } = parsed;
+	const marker = unkeptMarker(data, keep);
 	return [
 		...validateProfile(data).map((issue) => ({
 			...issue,
 			repair: schemaRepair(issue),
 		})),
+		...(marker === undefined
+			? []
+			: [
+					{
+						...marker,
+						repair:
+							"Add a pattern that matches the marker to commentKeep in .astack/profile.json. Apply writes that list from keepPatterns of the project config",
+					},
+				]),
 		...proofGateIssues(data).map((issue) => ({
 			...issue,
 			repair: `Copy the change-proof gate from the Template section of ${REFERENCE}`,
@@ -845,8 +836,9 @@ export type ReviewProfileState =
 export function reviewProfileState(
 	path: string,
 	text: string | undefined,
+	keep: readonly RegExp[],
 ): ReviewProfileState {
 	if (text === undefined) return { kind: "missing", path };
 	if (extractProfileBlock(text) === null) return { kind: "no-block", path };
-	return { kind: "checked", path, problems: reviewProfileProblems(text) };
+	return { kind: "checked", path, problems: reviewProfileProblems(text, keep) };
 }
