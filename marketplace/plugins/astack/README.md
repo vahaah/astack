@@ -175,7 +175,7 @@ astack refuses `gh pr merge` in these cases:
 - astack cannot read the PR. It reads the PR with `gh pr view` and one `gh api graphql` call.
 - The command has `--admin`, which skips the branch protection rules. This is an owner gate, also with a standing grant.
 
-A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. astack also refuses a merge through `gh api` on `pulls/<n>/merge`. It refuses each MCP tool whose name holds a merge word, such as `pull_request_merge`, also with a grant. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
+A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. A workflow brief and a relay message are harness text too. A prompt that opens with a tag, or with a bracket label that is not a Markdown link, is harness text. astack also refuses a merge through `gh api` on `pulls/<n>/merge`. It refuses each MCP tool whose name holds a merge word, such as `pull_request_merge`, also with a grant. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
 
 ```json
 {
