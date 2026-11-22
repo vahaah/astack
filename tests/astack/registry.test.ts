@@ -44,6 +44,7 @@ describe("the command registry", () => {
 			"plan-ticket",
 			"session",
 			"stack",
+			"gates",
 			"board",
 			"skill-path",
 			"managed",

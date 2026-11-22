@@ -46,8 +46,8 @@ describe("the plain form of each shell step", () => {
 		],
 		["timeout -s KILL 60 nice -5 git clean -fd", ["git clean -fd"]],
 		[
-			"find . -name x | xargs -I{} git checkout {}",
-			["find . -name x", "git checkout ${}"],
+			"find . -name x | xargs -I% git checkout %",
+			["find . -name x", "git checkout $%"],
 		],
 		[
 			"for f in $(git ls-files); do git checkout $f; done",
