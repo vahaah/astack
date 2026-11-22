@@ -24,7 +24,9 @@ ClauseGrant(c) == CASE c \in {"merge", "fullSend"} -> PRs
                     [] c = "mergeOne" -> {1}
                     [] OTHER -> {}
 HumanPrompt(source, attended) == IF source = "none" THEN attended ELSE source = "user"
-ModeOf(p) == IF "fullStop" \in p THEN "fullStop"
+Withholds(p) == p \cap {"negatedMerge", "negatedFullSend", "fullStop"} # {}
+PromptGrant(p) == UNION {ClauseGrant(c) : c \in IF Withholds(p) THEN p \ {"fullSend"} ELSE p}
+ModeOf(p) == IF p = {"fullStop"} THEN "fullStop"
              ELSE IF "fullSend" \in p THEN "fullSend" ELSE "plain"
 
 Files == [inProject : BOOLEAN, inTemp : BOOLEAN, git : BOOLEAN, marked : BOOLEAN]
@@ -149,7 +151,7 @@ Init == \/ /\ concern = "merge"
 Prompt == /\ concern = "merge"
           /\ \E p \in Prompts, source \in Sources :
                IF HumanPrompt(source, attended)
-                 THEN /\ grant' = UNION {ClauseGrant(c) : c \in p}
+                 THEN /\ grant' = PromptGrant(p)
                       /\ said' = p
                       /\ saidBy' = source
                       /\ mode' = ModeOf(p)

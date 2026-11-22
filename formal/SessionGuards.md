@@ -16,6 +16,8 @@ The prompt source is `user`, absent or a machine source.
 
 A merge grant names PRs that a merge word or an un-negated "full send" clause of a person's prompt covers.
 A "full stop" clause, a negated clause and a machine prompt add no PR to the grant.
+A "full stop" clause or a negated clause also withholds the full-send grant of the whole prompt, as `Withholds` and `PromptGrant` say.
+A person's prompt whose only clause is "full stop" starts the full-stop run. That prompt stands for the command form `/astack:full-stop` too.
 The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
 
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
@@ -29,7 +31,7 @@ The push or commit skips the hooks or keeps them. It goes to a head, to refs tha
 GrantFromWords       == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson      == grant # {} => PersonTyped(saidBy, attended)
 MergeNeedsAuthority  == each merge has a profile grant or a covering prompt of a person
-FullStopNeverMerges  == no merge happens while the last prompt of a person says "full stop"
+FullStopNeverMerges  == no merge happens while the last prompt of a person starts the full-stop run
 WriteChecksKept      == a write outside the scratch class gets the write checks
 ScratchSkipped       == a write of a scratch file gets no write check
 CommitSurfaceChecked == each commit gets the commit checks
@@ -106,9 +108,10 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | Model concept | Concrete contract |
 |---|---|
 | `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt |
+| `Withholds` and `PromptGrant` | `withholdsFullSend`, which drops the full-send grant of each clause when one clause of the prompt withholds it |
 | `HumanPrompt` | `humanPrompt` with `replyInteractive`, and `unattendedReason` in `src/astack/attended.ts` |
 | `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts` |
-| `mode` of `Merge` | The full-stop and full-send skills. The full-stop skill never merges, and no function enforces this part |
+| `ModeOf` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for a person's prompt. `preflightReasons` denies each merge while `loadFullStop` finds the record. `--disable-auto` passes |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
 | `CodeLost` and `RunGit` | `workLossReasons` and its status reader in `src/astack/hook/handlers/destructive.ts` |
