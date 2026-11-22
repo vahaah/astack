@@ -456,6 +456,47 @@
 			]
 		},
 		{
+			"name": "SourceScan",
+			"model": {
+				"module": "formal/SourceScan.tla",
+				"config": "formal/SourceScan.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Each sequence of up to 4 tokens of 7 kinds: name, name word, operand keyword, dot, slash, close and comment.",
+					"One scan of each input, with a failure at each token, and one finish."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"MemberNameIsValue",
+					"NameWordIsValue",
+					"NoCommentInRegex",
+					"FailedScanIsIncomplete"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/SourceScan.tla",
+				"action": "Step",
+				"original": "\\/ (before = \"dot\" /\\ last \\in Words)",
+				"replacement": "\\/ FALSE",
+				"defect": "A scan that drops the member name rule reads the slash after obj.return as a regex, so both hooks lose the comment after it.",
+				"expect": {
+					"kind": "invariant",
+					"name": "MemberNameIsValue"
+				}
+			},
+			"records": [
+				"docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md"
+			],
+			"covers": [
+				"src/astack/types/scan.ts",
+				"src/astack/comments/lexer.ts",
+				"src/astack/comments/added.ts"
+			],
+			"text": []
+		},
+		{
 			"name": "WordBudget",
 			"model": {
 				"module": "formal/WordBudget.tla",

@@ -12,7 +12,8 @@
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
 		"docs/reference/pr-head-check.md",
-		"docs/reference/law-controls.md"
+		"docs/reference/law-controls.md",
+		"docs/reference/source-scan.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -70,7 +71,10 @@
 		"tests/old-names.test.ts",
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
-		"tests/property/verdict-monoid.test.ts"
+		"tests/property/verdict-monoid.test.ts",
+		"tests/astack/types.test.ts",
+		"tests/astack/lexer.test.ts",
+		"tests/keep-list.test.ts"
 	],
 	"links": [
 		{
@@ -707,6 +711,26 @@
 		{
 			"criterion": "ADMIT-ORDER",
 			"controls": ["proof-stage-order"]
+		},
+		{
+			"criterion": "CS-REGEX",
+			"controls": ["cs-regex"]
+		},
+		{
+			"criterion": "CS-MEMBER",
+			"controls": ["cs-member-type", "cs-member-comment"]
+		},
+		{
+			"criterion": "CS-NAME",
+			"controls": ["cs-name-type", "cs-name-comment"]
+		},
+		{
+			"criterion": "CS-INCOMPLETE",
+			"controls": ["cs-incomplete"]
+		},
+		{
+			"criterion": "KEEP-TIE",
+			"controls": ["keep-tie-anchor", "keep-tie-copies"]
 		}
 	]
 }

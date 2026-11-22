@@ -1,55 +1,110 @@
 {
 	"version": 1,
-	"change": "plan-holds-slice-and-map-rules",
-	"base": "0c409b8be7212a1ee3dee1c1a91d197c729c1a87",
+	"change": "one-source-scan",
+	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
 	"scope": [
 		{
-			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
+			"path": "src/astack/types/scan.ts",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex"
+			]
 		},
 		{
-			"path": "scripts/lib/duplicate-skills.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
+			"path": "src/astack/comments/lexer.ts",
+			"obligation": "CS-REGEX",
+			"modelRefs": ["Finish", "NoCommentInRegex", "FailedScanIsIncomplete"]
 		},
 		{
-			"path": "tests/apply/duplicate-skills.test.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
+			"path": "tests/astack/types.test.ts",
+			"obligation": "CS-NAME",
+			"modelRefs": ["Step", "MemberNameIsValue", "NameWordIsValue"]
 		},
 		{
-			"path": "scripts/lib/upstreams.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
+			"path": "tests/astack/lexer.test.ts",
+			"obligation": "CS-INCOMPLETE",
+			"modelRefs": [
+				"Step",
+				"Finish",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
 		},
 		{
-			"path": "scripts/dist/claude-terms.allow",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
+			"path": "tests/astack/scan-composition.ts",
+			"obligation": "CS-INCOMPLETE",
+			"modelRefs": ["Finish", "FailedScanIsIncomplete"]
 		},
 		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
-			"modelRefs": ["Lower", "CapsNeverRise"]
-		},
-		{
-			"path": "README.md",
-			"obligation": "SG-preserve",
+			"path": "tests/keep-list.test.ts",
+			"obligation": "KEEP-TIE",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/charts/checked-path.mmd",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "formal/SourceScan.*",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
 		},
 		{
-			"path": "docs/adr/0013-*.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "formal/models.json",
+			"obligation": "CS-MEMBER",
+			"modelRefs": ["MemberNameIsValue"]
 		},
 		{
-			"path": "docs/plans/review-roadmap/**",
+			"path": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "docs/reference/source-scan.md",
+			"obligation": "CS-REGEX",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "CS-MEMBER",
+			"modelRefs": ["Step", "Finish"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "CS-REGEX",
+			"modelRefs": ["Step", "Finish"]
+		},
+		{
+			"path": "docs/adr/README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
@@ -59,12 +114,12 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/NOTICE",
-			"obligation": "SG-generated",
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "NOTICE",
+			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
@@ -78,49 +133,54 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "scripts/budget.ts",
-			"symbol": "Budget"
+			"path": "src/astack/types/scan.ts",
+			"symbol": "Scan"
 		},
-		"terms": [
-			"Skill word budget",
-			"Zero-use part",
-			"Session guard",
-			"ChangeProof"
-		],
+		"terms": ["Source scan", "ChangeProof", "Model registry", "Session guard"],
 		"invariants": [
 			{
-				"name": "A pass has each skill and the total at or under their caps",
-				"modelRef": "PassWithinCaps"
+				"name": "A slash after a dot and a word is a division",
+				"modelRef": "MemberNameIsValue"
 			},
 			{
-				"name": "A fail names a skill or a total over its cap",
-				"modelRef": "FailNamesOverrun"
+				"name": "A slash after a name as, satisfies, keyof or let is a division",
+				"modelRef": "NameWordIsValue"
 			},
 			{
-				"name": "The lower step never raises a cap",
-				"modelRef": "CapsNeverRise"
+				"name": "A regex after an operand keyword yields no comment",
+				"modelRef": "NoCommentInRegex"
+			},
+			{
+				"name": "A failed scan gives no comments and complete false",
+				"modelRef": "FailedScanIsIncomplete"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"WB-cap",
-				"WB-ratchet",
-				"WB-cut",
+				"CS-REGEX",
+				"CS-MEMBER",
+				"CS-NAME",
+				"CS-INCOMPLETE",
+				"KEEP-TIE",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -128,202 +188,235 @@
 	},
 	"category": {
 		"carrier": {
-			"kind": "artifact",
-			"contract": "The gate maps the word counts of the skill trees and one budget to one report. A count over its cap is a problem that names the skill, and a count under its cap is a note."
+			"kind": "pure"
 		},
 		"objects": [
 			{
-				"name": "SkillTrees",
+				"name": "ScanInput",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "SKILLS_DIR"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "source"
 				}
 			},
 			{
-				"name": "WordCounts",
+				"name": "Scan",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "WordCounts"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "Scan"
 				}
 			},
 			{
-				"name": "Budget",
+				"name": "LexInput",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "Budget"
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "LanguageId"
 				}
 			},
 			{
-				"name": "BudgetReport",
+				"name": "LexResult",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "BudgetReport"
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "LexResult"
+				}
+			},
+			{
+				"name": "CommentUnit",
+				"link": {
+					"path": "src/astack/comments/units.ts",
+					"symbol": "CommentUnit"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "skillWords",
-				"from": "SkillTrees",
-				"to": "WordCounts",
+				"name": "scan",
+				"from": "ScanInput",
+				"to": "Scan",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "skillWords"
-				},
-				"effects": ["fs-read"]
-			},
-			{
-				"name": "budgetReport",
-				"from": "WordCounts",
-				"to": "BudgetReport",
-				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "budgetReport"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
 				},
 				"effects": []
 			},
 			{
-				"name": "lowerBudget",
-				"from": "WordCounts",
-				"to": "Budget",
+				"name": "lex",
+				"from": "LexInput",
+				"to": "LexResult",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "lowerBudget"
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "lex"
+				},
+				"effects": []
+			},
+			{
+				"name": "unitsOf",
+				"from": "LexInput",
+				"to": "CommentUnit",
+				"link": {
+					"path": "src/astack/comments/added.ts",
+					"symbol": "unitsOf"
 				},
 				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two reports are equal when their problem lists and their note lists are equal in order. Two budgets are equal when their total caps and their skill caps are equal.",
+		"equality": "Two scans are equal when their token lists and their comment lists are equal in order. Two lex results are equal when their comment offsets, their markers and their complete flags are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/budget.test.ts"
+		"typedWitness": "tests/astack/scan-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The walk of each skill tree, the word split of each Markdown file and the format of the cap file.",
+		"hides": "The token loop, the frames of templates and JSX, the punctuator table, the value rule and the line numbers of each token and comment.",
 		"callersKnow": [
-			"A skill or the total over its cap fails the gate, and the failure names it.",
-			"A skill with no cap fails the gate.",
-			"A cap above its count passes with a note, and the lower step sets it to the count.",
-			"A cap rises only in a PR that moves text into that skill while the total falls by more, and review enforces that rule."
+			"lex gives the comments of a ts, tsx or jsx file with their offsets and markers.",
+			"A scan that fails gives no comments and complete false, and unitsOf then gives no units.",
+			"A slash after a value, a member name or a name word is a division, and a slash after an operand keyword starts a regex.",
+			"A regex after the ) of an if, while or for head, and a slash after a name of, yield or await, stay wrong in both hooks."
 		],
-		"deletionTest": "Deleting budgetReport puts the cap comparison and the problem text in main and in each test. Deleting lowerBudget makes each cut PR edit the cap file by hand.",
+		"deletionTest": "Deleting the shared scan puts a second TS and JS lexer back in the comment hook, and each regex fix lands twice.",
 		"alternatives": [
 			{
-				"name": "A lint warning for skill size",
-				"rejectedBecause": "A warning does not stop growth."
+				"name": "Port the keyword set into lexJs and keep two lexers",
+				"rejectedBecause": "Each regex fix still lands twice."
 			},
 			{
-				"name": "A total cap only",
-				"rejectedBecause": "One skill can then grow while another shrinks."
+				"name": "A new shared lexer module",
+				"rejectedBecause": "It moves 480 lines for one more importer."
 			},
 			{
-				"name": "Fail a cap above its count",
-				"rejectedBecause": "Each commit of a cut PR then needs a cap edit."
+				"name": "The typescript package as the lexer",
+				"rejectedBecause": "It is a dev dependency only, so the bundle cannot use it."
+			},
+			{
+				"name": "Keep the 14-word set of lexJs in the scan",
+				"rejectedBecause": "It keeps the false comment in export default /[//]/.source;."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "budgetReport"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
 				},
-				"modelAction": "Check"
+				"modelAction": "Step"
 			},
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "lowerBudget"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "endsValue"
 				},
-				"modelAction": "Lower"
+				"modelAction": "Step"
 			},
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "skillWords"
+					"path": "src/astack/types/scan.ts",
+					"symbol": "isMemberDot"
 				},
-				"modelAction": "Edit"
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
+				},
+				"modelAction": "Fail"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "lex"
+				},
+				"modelAction": "Finish"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/comments/added.ts",
+					"symbol": "unitsOf"
+				},
+				"modelAction": "Finish"
 			}
 		],
 		"omitted": [
-			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
-			"The model takes the word count of each skill tree as a true observation.",
-			"The duplicate map and its cut rule are outside the model. The wb-successor control examines each cut name, also to-tickets and wayfinder, from mattpocock/skills and with no lock entry."
+			"Done stands for the end of a run after Finish.",
+			"The model does not read a character class, flags, a string, a template or JSX. The lexer and type tests examine them.",
+			"The keep-list test is outside the model. It reads the 7 copies and changes no copy, no hook output and no model state.",
+			"The parity probe of the trunk lexer and the branch lex runs outside the repo, and the PR Verification holds its counts."
 		]
 	},
 	"model": {
-		"module": "formal/WordBudget.tla",
-		"config": "formal/WordBudget.cfg",
+		"module": "formal/SourceScan.tla",
+		"config": "formal/SourceScan.cfg",
 		"dependencies": [],
+		"bounds": [
+			"Each sequence of up to 4 tokens of 7 kinds: name, name word, operand keyword, dot, slash, close and comment.",
+			"One scan of each input, with a failure at each token, and one finish."
+		],
+		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"PassWithinCaps",
-			"FailNamesOverrun",
-			"CapsNeverRise"
+			"MemberNameIsValue",
+			"NameWordIsValue",
+			"NoCommentInRegex",
+			"FailedScanIsIncomplete"
 		],
-		"properties": [],
-		"bounds": [
-			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
-			"Each order of the edit, check and lower steps."
-		],
-		"fairness": []
+		"properties": []
 	},
 	"negative": {
-		"file": "formal/WordBudget.tla",
-		"action": "Check",
-		"original": "\\A s \\in Skills : counts[s] <= caps[s]",
-		"replacement": "TRUE",
-		"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
+		"file": "formal/SourceScan.tla",
+		"action": "Step",
+		"original": "\\/ (before = \"dot\" /\\ last \\in Words)",
+		"replacement": "\\/ FALSE",
+		"defect": "A scan that drops the member name rule reads the slash after obj.return as a regex, so both hooks lose the comment after it.",
 		"expect": {
 			"kind": "invariant",
-			"name": "PassWithinCaps"
+			"name": "MemberNameIsValue"
 		}
 	},
 	"limits": [
-		"The finite model takes the word counts as true observations and covers two skills only.",
-		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"The plan cap rise from 14,278 to 14,701 words is a hand edit outside the model, because the gate cannot see a PR. Review compares it with the fall of the total from 133,781 to 131,412 words.",
-		"The model does not check the moved slice and map rules, the repointed routes or the ADR note. Review and the STE, budget, validate and drift gates examine them.",
-		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+		"The finite model takes the token kinds as true observations of the source text, and it covers inputs of up to 4 tokens.",
+		"A regex in the model ends at the next slash or comment token. The scan reads a character class and flags, and the lexer tests examine them.",
+		"The model does not show that the TypeScript code refines it. The linked controls, the parity probe and review examine that relation.",
+		"The model does not check the design text, the plan or the keep-list copies. Review, the keep-list test and the STE gates examine them.",
+		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }
