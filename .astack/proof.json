@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "plan-holds-slice-and-map-rules",
-	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
+	"base": "0c409b8be7212a1ee3dee1c1a91d197c729c1a87",
 	"scope": [
 		{
 			"path": "marketplace/plugins/astack/skills/**",
@@ -322,7 +322,7 @@
 	"limits": [
 		"The finite model takes the word counts as true observations and covers two skills only.",
 		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"The plan cap rise from 14,299 to 14,718 words is a hand edit outside the model, because the gate cannot see a PR. Review compares it with the fall of the total from 133,909 to 131,540 words.",
+		"The plan cap rise from 14,278 to 14,701 words is a hand edit outside the model, because the gate cannot see a PR. Review compares it with the fall of the total from 133,781 to 131,412 words.",
 		"The model does not check the moved slice and map rules, the repointed routes or the ADR note. Review and the STE, budget, validate and drift gates examine them.",
 		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]

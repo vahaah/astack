@@ -160,7 +160,8 @@ The hardening iteration cap remains binding.
 `check spec-drift` reads criterion and control inventories independently from explicit source files.
 It checks links and exemptions without claiming test execution or semantic coverage.
 [The review checks runbook](runbooks/review-checks.md) defines their use and limits.
-[ChangeProof](adr/0005-every-change-carries-domain-and-formal-proof.md) requires current TLA+ evidence for every change workflow.
+[ChangeProof](adr/0005-every-change-carries-domain-and-formal-proof.md) requires a contract and a proof rung for every change workflow.
+The registry `formal/models.json` selects the models of each changed path, and only the rung R4 runs TLC.
 [ADR 0012](adr/0012-change-proof-accepts-an-older-base.md) lets a PR proof keep an older manifest base.
 With `--base <ref>`, the diff starts at the merge base, and the manifest base must be an ancestor of it.
 It links DDD contracts, internal category notation, effective ADRs, formal models, and implementation controls.
@@ -336,15 +337,15 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 - The type hook denies a new `@ts-ignore`, `@ts-nocheck` and `@ts-expect-error` by count. The type hook checks Edits, Writes, shell writes and commits of its files. The comment hook leaves these directives to it there. So each one gets one report. The comment hook still denies them in a JavaScript file.
 - The type hook advises on an `enum` declaration and a `class X extends Y` outside the allowlist. The default allowlist holds `Error` subclasses, `Component`, `PureComponent`, `Data.TaggedError`, `Data.TaggedClass`, `Data.Class`, `Schema.TaggedError`, `Schema.Class`, `Context.Tag`, `Context.Reference`, `Effect.Tag` and `Effect.Service`. It also holds the Effect 4 helpers `Context.Service` and `<Module>.Service` of the middleware, layer and atom modules.
 - The verdict comes from the change in the count of each pattern class. The hook compares the before and after text of an Edit, a Write or a shell write. For a `git commit`, it compares the old and new blobs of each file. It denies only when a count rises, and it points at the new occurrences. So the hook never blames a touched old line. A shell write is a `cat` or `tee` heredoc or a static `echo` or `printf` into a file. A static `echo` or `printf` piped into `tee` is one too.
-- The deny applies in source and in tests. The profile `types.allow` list names one kernel file per repo, with paths, kinds and a reason. That file holds the brand constructors, one `fake<T>()` test helper and DOM type guards. The pr-metrics ratchet still counts it.
+- The deny applies in source and in tests. The profile `types.allow` list names one kernel file per repo, with paths, kinds and a reason. That file holds one `fake<T>()` test helper and DOM type guards. A type guard makes a brand with no cast, so a brand needs no entry. The pr-metrics ratchet still counts it.
 - The patterns for `any`, `as`, `!`, `enum` and `extends` measured precision and recall of 1.000 on 8,289 files [fp-types]. Angle-bracket casts have no measure, because every repo has 0 today.
 
 ### 8.2 Bounds against over-engineering
 
 1. No FP library in a repo that has none. Effect only where the repo uses it. No higher-kinded encodings, Functor or Monad interfaces, or type-class dictionaries.
 2. No interface or class with one implementation. A test fake counts as the second one.
-3. No new generic before 3 real call sites. No Result helper set before 3 call sites chain results.
-4. No monad transformer stacks, and no custom `pipe`, `compose` or `curry` outside Effect. Plain code returns `Promise<Result<T, E>>` with early return.
+3. No new generic before 3 real call sites. No Result helper set before 3 call sites chain results. A Result helper set, such as `map`, `andThen` and `all`, counts as one generic.
+4. No monad transformer stacks, and no custom `pipe`, `compose` or `curry` outside Effect. Plain code returns `Promise<Result<T, E>>` with early return or with the Result helper set.
 5. A type-level program over about 10 lines needs a type test. Names follow the domain, not the algebra.
 
 One client repo sets `noImplicitAny: false` and says "interfaces over types". Its base moves to the strict flags, and every repo uses `type` for unions (Q12).

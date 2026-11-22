@@ -30,7 +30,7 @@ Set further repo exceptions in `.astack/profile.json`:
   "types": {
     "skip": ["legacy/**"],
     "allow": [
-      { "paths": ["packages/kernel/src/brand.ts"], "kinds": ["cast"], "reason": "brand constructors" }
+      { "paths": ["packages/kernel/src/fake.ts"], "kinds": ["cast"], "reason": "test fake" }
     ],
     "extendsAllow": ["^Base[A-Z]\\w*Error$"]
   }
@@ -41,7 +41,7 @@ Set further repo exceptions in `.astack/profile.json`:
 An `allow` entry requires paths, kinds and a reason.
 The hook ignores an incomplete entry.
 Kinds are `any`, `cast`, `non-null`, `ts-ignore`, `ts-nocheck`, `ts-expect-error`, `banned-type`, `enum` and `extends`.
-Keep one kernel file per repo in `allow` for brand constructors, one `fake<T>()` test helper and DOM type guards.
+Keep one kernel file per repo in `allow` for a `fake<T>()` test helper and DOM guards.
 `extendsAllow` contains regular expressions for additional class bases.
 
 For a tool without hooks, run the same check through a git hook or CI:

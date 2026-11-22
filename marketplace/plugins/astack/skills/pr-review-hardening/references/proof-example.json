@@ -5,38 +5,31 @@
 	"scope": [
 		{
 			"path": ".astack/**",
-			"obligation": "P1",
-			"modelRefs": ["AdmitFresh"]
+			"obligation": "P1"
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "P1",
-			"modelRefs": ["TypeOK"]
+			"obligation": "P1"
 		},
 		{
 			"path": "docs/**",
-			"obligation": "P1",
-			"modelRefs": ["AdmitFresh"]
+			"obligation": "P1"
 		},
 		{
 			"path": "spec/**",
-			"obligation": "P1",
-			"modelRefs": ["AdmitFresh"]
+			"obligation": "P1"
 		},
 		{
 			"path": "tests/**",
-			"obligation": "P1",
-			"modelRefs": ["Admit"]
+			"obligation": "P1"
 		},
 		{
 			"path": "src/**",
-			"obligation": "P1",
-			"modelRefs": ["Admit"]
+			"obligation": "P1"
 		},
 		{
 			"path": "formal/*",
-			"obligation": "P1",
-			"modelRefs": ["Ends"]
+			"obligation": "P1"
 		}
 	],
 	"domain": {
@@ -138,24 +131,14 @@
 				"witness": "control:C1"
 			},
 			{
-				"law": "functor-id",
-				"status": "not_applicable",
-				"reason": "no map changes"
-			},
-			{
-				"law": "functor-comp",
-				"status": "not_applicable",
-				"reason": "no map changes"
-			},
-			{
 				"law": "monad-left",
 				"status": "witnessed",
-				"witness": "model:TypeOK"
+				"witness": "control:C1"
 			},
 			{
 				"law": "monad-right",
 				"status": "witnessed",
-				"witness": "model:TypeOK"
+				"witness": "control:C1"
 			},
 			{
 				"law": "monad-assoc",

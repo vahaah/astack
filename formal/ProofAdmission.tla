@@ -1,7 +1,7 @@
 ------------------------ MODULE ProofAdmission ------------------------
 EXTENDS Naturals, FiniteSets, Sequences
 
-Stages == <<"schema", "base", "domain", "category", "controls">>
+Stages == <<"schema", "base", "domain", "category", "controls", "rung">>
 Required == {Stages[i] : i \in 1..Len(Stages)}
 States == {"validating", "modeled", "checked", "restored", "admitted", "rejected"}
 PositiveResults == {"pending", "passed", "failed", "incomplete"}
@@ -10,7 +10,8 @@ Inputs == {"file", "index", "history"}
 Failures == {"model", "countermodel", "restore", "stale"} \cup Required
 Sections == [schema |-> "Required records", base |-> "Base",
              domain |-> "Domain and decisions", category |-> "Category and abstraction",
-             controls |-> "Required records", model |-> "TLC execution",
+             controls |-> "Required records", rung |-> "Rungs and models",
+             model |-> "TLC execution",
              countermodel |-> "TLC execution", restore |-> "TLC execution",
              stale |-> "Base"]
 
@@ -197,22 +198,4 @@ MovedAuthorityStops == status = "admitted" /\ authority.optIn => ~base.moved
 StaleStopNamesPaths == status = "rejected" /\ firstFailure = "stale" => named = changed /\ named # {}
 StopNamesSection == status = "rejected" => section = Sections[firstFailure]
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
-
-Values == {0, 1}
-Errors == {"invalid", "missing"}
-Ok(value) == [kind |-> "ok", item |-> value]
-Err(error) == [kind |-> "error", reason |-> error]
-Results == {Ok(value) : value \in Values} \cup {Err(error) : error \in Errors}
-Functions == [Values -> Results]
-Unit == [value \in Values |-> Ok(value)]
-Bind(result, fn) == IF result.kind = "error" THEN result ELSE fn[result.item]
-Compose(left, right) == [value \in Values |-> Bind(left[value], right)]
-
-ResultLeftIdentity == /\ status \in States
-                      /\ \A value \in Values, fn \in Functions : Bind(Ok(value), fn) = fn[value]
-ResultRightIdentity == /\ status \in States
-                       /\ \A result \in Results : Bind(result, Unit) = result
-ResultAssociativity == /\ status \in States
-                       /\ \A result \in Results, left \in Functions, right \in Functions :
-                            Bind(Bind(result, left), right) = Bind(result, Compose(left, right))
 =============================================================================

@@ -59,9 +59,9 @@ Before the hand-off, examine again each behavior change and each important confl
 Fetch the base.
 Read the live PR with `gh pr view <n> --json state,isDraft,headRefOid,baseRefName,mergeStateStatus,reviewDecision,autoMergeRequest,statusCheckRollup`.
 
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 Make sure that the PR is open, is not a draft and has no auto-merge.
 When another person merged it, report that.

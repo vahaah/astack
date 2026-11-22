@@ -7,10 +7,20 @@ Leave the remaining stack unchanged during that landing.
 
 ## PR head checks
 
-Use the checkout of the PR before acting on it.
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+
+## What the merge starts
+
+Read the triggers of each workflow to find each workflow that the merge starts.
+A merge starts a workflow on `push` to the base branch with these changes.
+It also starts a workflow on `pull_request` or `pull_request_target` with the type `closed`, and on `merge_group`.
+A workflow on `workflow_run` of a started workflow starts too.
+So does a workflow on a tag or a release that a job of a started workflow makes.
+
+Name each job of each started workflow that publishes, deploys, or submits a build.
+A merge that starts such a job is a deployment under `references/autonomy.md`.
 
 ## Steps
 
@@ -63,17 +73,9 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    A development server is one such lane.
    Verify any other changed behavior again.
 
-4. Read what the merge starts.
+4. Hold each deployment for the owner's words.
 
-   Read the triggers of each workflow to find each workflow that the merge starts.
-   A merge starts a workflow on `push` to the base branch with these changes.
-   It also starts a workflow on `pull_request` or `pull_request_target` with the type `closed`, and on `merge_group`.
-   A workflow on `workflow_run` of a started workflow starts too.
-   So does a workflow on a tag or a release that a job of a started workflow makes.
-
-   Name each job of each started workflow that publishes, deploys, or submits a build.
-   A merge that starts such a job is a deployment under `references/autonomy.md`.
-   Land it only when the owner's words in this turn name that release or deployment.
+   Land a deployment only when the owner's words in this turn name that release or deployment.
    Otherwise report the jobs and stop.
 
 5. Land one PR at a time from bottom to top.

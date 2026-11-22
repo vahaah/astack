@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { PUBLIC_REPO } from "../../scripts/dist/build.ts";
 import {
 	type AdmissionFacts,
+	type Admitted,
 	admitChangeProof,
 	type FileRead,
 	type ModelEvidence,
@@ -10,6 +11,7 @@ import {
 import {
 	type ChangeProof,
 	parseChangeProof,
+	type Rejection,
 } from "../../src/astack/change-proof/contract.ts";
 import { proofGateIssues } from "../../src/astack/change-proof/profile.ts";
 import {
@@ -17,7 +19,7 @@ import {
 	judgePositive,
 	type RunEnd,
 } from "../../src/astack/change-proof/tlc.ts";
-import { ok } from "../../src/astack/result.ts";
+import { andThen, err, map, ok } from "../../src/astack/result.ts";
 import {
 	marker,
 	PROOF_FILES,
@@ -97,6 +99,140 @@ describe("parseChangeProof", () => {
 	);
 });
 
+const lawNames = (edit: (proof: Proof) => void) =>
+	map(parsed(edit), (proof) =>
+		proof.category.laws.map((row): string => row.law),
+	);
+
+const dropLaws =
+	(...laws: readonly string[]) =>
+	(proof: Proof) => {
+		proof.category.laws = proof.category.laws.filter(
+			(row) => !laws.includes(row.law ?? ""),
+		);
+	};
+
+describe("law claims", () => {
+	test("[control:proof-law-claimed] a manifest lists the laws that it claims or needs, and the eight-row form still parses", () => {
+		const needed = [
+			"id-left",
+			"id-right",
+			"assoc",
+			"monad-left",
+			"monad-right",
+			"monad-assoc",
+		];
+		expect(lawNames(dropLaws("functor-id", "functor-comp"))).toEqual(
+			ok(needed),
+		);
+		expect(lawNames(() => {})).toEqual(
+			ok([
+				"id-left",
+				"id-right",
+				"assoc",
+				"functor-id",
+				"functor-comp",
+				"monad-left",
+				"monad-right",
+				"monad-assoc",
+			]),
+		);
+		const noComposites =
+			(carrier: Proof["category"]["carrier"]) => (proof: Proof) => {
+				proof.category.carrier = carrier;
+				proof.category.composites = [];
+				proof.category.laws = [];
+			};
+		expect(
+			lawNames(noComposites({ kind: "artifact", contract: "the gate text" })),
+		).toEqual(ok([]));
+		expect(lawNames(noComposites({ kind: "pure" }))).toEqual(ok([]));
+		expect(
+			lawNames(noComposites({ kind: "result", error: "Rejection" })),
+		).toEqual(
+			err({
+				stage: "category",
+				message: "carrier result needs a witness for monad-left",
+			}),
+		);
+		expect(lawNames(dropLaws("monad-assoc"))).toEqual(
+			err({
+				stage: "category",
+				message: "carrier result needs a witness for monad-assoc",
+			}),
+		);
+		expect(lawNames(dropLaws("assoc"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"category law assoc applies to the declared composites, so it needs a witness",
+			}),
+		);
+		const modelWitnessed = parsed((proof) => {
+			dropLaws("functor-id", "functor-comp")(proof);
+			proof.category.laws = proof.category.laws.map((row) => ({
+				law: row.law ?? "",
+				status: "witnessed",
+				witness: "model:AdmitFresh",
+			}));
+		});
+		expect(
+			map(
+				andThen(modelWitnessed, (proof) =>
+					admitChangeProof(proof, facts(SNAPSHOT)),
+				),
+				(admitted) => admitted.change,
+			),
+		).toEqual(ok("gate-admission"));
+	});
+
+	test("[control:proof-monoid-pair] a monoid claim needs both of its witnesses", () => {
+		const claim =
+			(...laws: readonly string[]) =>
+			(proof: Proof) => {
+				proof.category.laws.push(
+					...laws.map((law) => ({
+						law,
+						status: "witnessed",
+						witness: "control:C1",
+					})),
+				);
+			};
+		expect(lawNames(claim("monoid-id"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"a monoid claim needs witnesses for both monoid-id and monoid-assoc",
+			}),
+		);
+		expect(lawNames(claim("monoid-assoc"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"a monoid claim needs witnesses for both monoid-id and monoid-assoc",
+			}),
+		);
+		expect(
+			map(parsed(claim("monoid-id", "monoid-assoc")), (proof) =>
+				proof.category.laws.slice(-2),
+			),
+		).toEqual(
+			ok([
+				{
+					law: "monoid-id",
+					status: "witnessed",
+					witness: { kind: "control", id: "C1" },
+				},
+				{
+					law: "monoid-assoc",
+					status: "witnessed",
+					witness: { kind: "control", id: "C1" },
+				},
+			]),
+		);
+	});
+});
+
 const VIEW_FILES = new Map<string, FileRead>(
 	Object.entries(PROOF_FILES).map(([path, text]) => [
 		path,
@@ -138,9 +274,29 @@ function changedEntries(count: number): Snapshot {
 	return { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}`, entries };
 }
 
+const ADMITTED: Admitted = {
+	change: "gate-admission",
+	base: BASE,
+	diffBase: DIFF_BASE,
+	head: SNAPSHOT.head,
+	digest: SNAPSHOT.digest,
+	files: 13,
+	rung: undefined,
+	models: [
+		{
+			name: "Gate",
+			positive: COUNTS,
+			negative: VIOLATION,
+			action: "Admit",
+			restored: COUNTS,
+		},
+	],
+};
+
 function facts(
 	after: Snapshot,
-	evidence: ModelEvidence = EVIDENCE,
+	evidence: readonly ModelEvidence[] = [EVIDENCE],
+	ladder: AdmissionFacts["ladder"] = ok({ kind: "legacy" }),
 ): AdmissionFacts {
 	return {
 		view: {
@@ -149,6 +305,7 @@ function facts(
 			modelFiles: VIEW_FILES,
 			changed: CHANGED,
 		},
+		ladder,
 		before: SNAPSHOT,
 		after,
 		evidence,
@@ -179,20 +336,7 @@ describe("ADR format admission", () => {
 					"parseGate >=> admitGate preserves rejection.",
 					"```text\nparseGate >=> admitGate preserves rejection.\n```",
 				);
-			expect(admitAdr(native)).toEqual(
-				ok({
-					change: "gate-admission",
-					base: BASE,
-					diffBase: DIFF_BASE,
-					head: SNAPSHOT.head,
-					digest: SNAPSHOT.digest,
-					files: 13,
-					positive: COUNTS,
-					negative: VIOLATION,
-					action: "Admit",
-					restored: COUNTS,
-				}),
-			);
+			expect(admitAdr(native)).toEqual(ok(ADMITTED));
 		},
 	);
 
@@ -243,18 +387,25 @@ describe("ADR format admission", () => {
 describe("admitChangeProof", () => {
 	test("admits fresh evidence with unchanged inputs", () => {
 		expect(admitChangeProof(validChangeProof(), facts(SNAPSHOT))).toEqual(
-			ok({
-				change: "gate-admission",
-				base: BASE,
-				diffBase: DIFF_BASE,
-				head: SNAPSHOT.head,
-				digest: SNAPSHOT.digest,
-				files: 13,
-				positive: COUNTS,
-				negative: VIOLATION,
-				action: "Admit",
-				restored: COUNTS,
-			}),
+			ok(ADMITTED),
+		);
+	});
+
+	test("[control:rl-schema] a scope row may omit modelRefs, and a modelRefs name that no model defines still admits", () => {
+		const proof = parsed((p) => {
+			p.scope[0] = {
+				path: ".astack/**",
+				obligation: "P1",
+				modelRefs: ["Gone"],
+			};
+		});
+		if (!proof.ok) throw new Error(proof.error.message);
+		expect(proof.value.scope[1]).toEqual({
+			path: "CONTEXT.md",
+			obligation: "P1",
+		});
+		expect(admitChangeProof(proof.value, facts(SNAPSHOT))).toEqual(
+			ok(ADMITTED),
 		);
 	});
 
@@ -313,7 +464,7 @@ describe("admitChangeProof", () => {
 	test("[control:proof-restored-run] rejects a restored run whose counts differ from the positive run", () => {
 		const evidence = { ...EVIDENCE, restored: ok({ ...COUNTS, distinct: 5 }) };
 		expect(
-			admitChangeProof(validChangeProof(), facts(SNAPSHOT, evidence)),
+			admitChangeProof(validChangeProof(), facts(SNAPSHOT, [evidence])),
 		).toEqual({
 			ok: false,
 			error: {
@@ -325,7 +476,143 @@ describe("admitChangeProof", () => {
 	});
 });
 
+describe("rung admission", () => {
+	const proof = validChangeProof();
+	const gate = { name: "Gate", model: proof.model, negative: proof.negative };
+	const lock = {
+		name: "Lock",
+		model: { ...proof.model, module: "formal/Lock.tla" },
+		negative: { ...proof.negative, action: "Close" },
+	};
+	const twoModels = ok({
+		kind: "ladder" as const,
+		rung: "R4" as const,
+		cause: { kind: "path" as const, path: "src/lock.ts" },
+		runs: [gate, lock],
+	});
+
+	test("[control:rl-stage-order] a domain error stops before a rung stop, and a rung stop comes before the model evidence", () => {
+		const original = facts(SNAPSHOT, [], { ok: false, error: "lost" });
+		const files = new Map(original.view.files);
+		files.set("CONTEXT.md", { kind: "text", text: "# Other\n" });
+		expect([
+			admitChangeProof(proof, {
+				...original,
+				view: { ...original.view, files },
+			}),
+			admitChangeProof(proof, original),
+		]).toEqual([
+			{
+				ok: false,
+				error: {
+					stage: "domain",
+					message: 'CONTEXT.md has no heading for the context "Gate admission"',
+				},
+			},
+			{ ok: false, error: { stage: "rung", message: "lost" } },
+		]);
+	});
+
+	test("[control:rl-admit-r4] at R4 each selected model needs a full triple, and a failed restored run of the second model stops", () => {
+		const failed = {
+			...EVIDENCE,
+			restored: { ok: false as const, error: "the restored run exited 12" },
+		};
+		expect([
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE, failed], twoModels)),
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE], twoModels)),
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE, EVIDENCE], twoModels)),
+		]).toEqual([
+			{
+				ok: false,
+				error: { stage: "model", message: "the restored run exited 12" },
+			},
+			{
+				ok: false,
+				error: { stage: "model", message: "model Lock has no triple" },
+			},
+			ok({
+				...ADMITTED,
+				rung: "R4",
+				models: [
+					...ADMITTED.models,
+					{
+						name: "Lock",
+						positive: COUNTS,
+						negative: VIOLATION,
+						action: "Close",
+						restored: COUNTS,
+					},
+				],
+			}),
+		]);
+	});
+
+	test("[control:rl-tlc-only-r4] below R4 the rung admits with no triple", () => {
+		const ladder = ok({
+			kind: "ladder" as const,
+			rung: "R0" as const,
+			cause: { kind: "path" as const, path: "docs/a.md" },
+			runs: [],
+		});
+		expect(admitChangeProof(proof, facts(SNAPSHOT, [], ladder))).toEqual(
+			ok({ ...ADMITTED, rung: "R0", models: [] }),
+		);
+	});
+});
+
+const domainFault = (proof: Proof) => {
+	proof.domain.terms.push("Stale input");
+};
+const categoryFault = (proof: Proof) => {
+	proof.category.arrows = proof.category.arrows.map((arrow) =>
+		arrow.name === "parse"
+			? { ...arrow, link: { ...arrow.link, path: "spec/gate.md" } }
+			: arrow,
+	);
+};
+const controlsFault = (proof: Proof) => {
+	proof.scope.push({ path: "lib/**", obligation: "P1", modelRefs: ["Admit"] });
+};
+const modelFault = (proof: Proof) => {
+	proof.abstraction.relation.push({
+		concrete: { path: "src/gate.ts", symbol: "admitGate" },
+		modelAction: "Unknown",
+	});
+};
+
 describe("admission stops", () => {
+	test.each<[string, readonly ((proof: Proof) => void)[], Rejection]>([
+		[
+			"a domain fault and a category fault",
+			[domainFault, categoryFault],
+			{ stage: "domain", message: 'CONTEXT.md defines no term "Stale input"' },
+		],
+		[
+			"a category fault and a controls fault",
+			[categoryFault, controlsFault],
+			{
+				stage: "category",
+				message: "spec/gate.md does not mention the symbol parseGate",
+			},
+		],
+		[
+			"a controls fault and a model fault",
+			[controlsFault, modelFault],
+			{ stage: "controls", message: "scope row lib/** covers no changed path" },
+		],
+	])(
+		"[control:proof-stage-order] %s stop at the first of the two stages",
+		(_name, faults, rejection) => {
+			const proof = parsed((p) => {
+				for (const fault of faults) fault(p);
+			});
+			expect(
+				andThen(proof, (valid) => admitChangeProof(valid, facts(SNAPSHOT))),
+			).toEqual(err(rejection));
+		},
+	);
+
 	test("name every uncovered changed path and every idle scope row", () => {
 		const proof = parsed((p) => {
 			p.scope.push(

@@ -41,6 +41,19 @@ _Code_: `ProofBase.diff`
 A fresh positive model run or a named mutation that must produce its expected violation.
 _Avoid_: Any failed command
 
+### Proof rung
+
+The level of evidence that the changed paths and the profile floor give a ChangeProof, from R0 to R4.
+Only R4 runs TLC. A pull request cannot lower the floor of its diff base.
+_Avoid_: Proof level that the author picks, skip flag
+_Code_: `deriveLadder`
+
+### Model registry
+
+The file `formal/models.json`, which maps each path to its models, a fail-closed stop, an unmodelled control or a contract-only rung.
+_Avoid_: Model list in the profile, verdict cache
+_Code_: `ModelRegistry`
+
 ### Composition record
 
 The declared objects, typed arrows, effects, equality, laws, and witnesses for a candidate change.
@@ -55,6 +68,13 @@ _Avoid_: Same name means same behavior
 
 A test or probe that checks an observable implementation contract.
 _Avoid_: Model result
+
+### Law control
+
+An implementation control that examines a claimed law on the real function with generated inputs.
+A manifest cites it as the witness of the law.
+_Avoid_: Model law, sample loop
+_Code_: `tests/property/`
 
 ### ReviewRun
 
@@ -237,3 +257,12 @@ Examples are a green PR with no merge grant, an open question, a draft finding a
 A status ask lists each waiting item on its own line. A checkpoint reply names up to 3 and gives their count past 3.
 _Avoid_: Pending call, owner todo
 _Code_: `marketplace/plugins/astack/skills/mode/references/resume.md`
+
+### Head check
+
+The run of `astack check pr-head` before a text acts on a PR.
+A text goes on only after exit 0 with an `ok:` last line, or exit 3 with a `no_pr:` last line.
+After `stop: HEAD does not hold PR_HEAD`, the one next step is a pull of the PR branch and a second run.
+Each other result stops the text.
+_Avoid_: Manual head check, head compare
+_Code_: `src/astack/cli/commands/check/pr-head.ts`

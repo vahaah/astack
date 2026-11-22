@@ -7,6 +7,7 @@ export const STAGES = [
 	"domain",
 	"category",
 	"controls",
+	"rung",
 	"model",
 	"countermodel",
 	"stale",
@@ -19,6 +20,7 @@ export const STAGE_SECTIONS: Readonly<Record<Stage, string>> = {
 	domain: "Domain and decisions",
 	category: "Category and abstraction",
 	controls: "Required records",
+	rung: "Rungs and models",
 	model: "TLC execution",
 	countermodel: "TLC execution",
 	stale: "Base",
@@ -52,19 +54,23 @@ export const LAWS = [
 	"monad-left",
 	"monad-right",
 	"monad-assoc",
+	"monoid-id",
+	"monoid-assoc",
 ] as const;
 export type Law = (typeof LAWS)[number];
 
 const CATEGORY_LAWS: readonly Law[] = ["id-left", "id-right", "assoc"];
-const FUNCTOR_LAWS: readonly Law[] = ["functor-id", "functor-comp"];
 const MONAD_LAWS: readonly Law[] = ["monad-left", "monad-right", "monad-assoc"];
+const PAIRED_LAWS: readonly (readonly [string, readonly Law[]])[] = [
+	["functor", ["functor-id", "functor-comp"]],
+	["monoid", ["monoid-id", "monoid-assoc"]],
+];
 
 export type FileLink = { readonly path: string; readonly symbol: string };
 
 export type ScopeRow = {
 	readonly path: string;
 	readonly obligation: string;
-	readonly modelRefs: readonly string[];
 };
 
 export const GOVERNING_METADATA = ["landed-header-value"] as const;
@@ -209,8 +215,8 @@ export type ChangeProof = {
 
 const FULL_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const SYMBOL = /^[A-Za-z_$][\w$]*$/;
-const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
+export const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+export const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const DECISION = /^D[1-9]\d*$/;
 
 type Raw = Readonly<Record<string, unknown>>;
@@ -219,12 +225,14 @@ function isRaw(value: unknown): value is Raw {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const LINE_BREAKING_PATH = /[\p{Cc}\u2028\u2029]/u;
+
 export function isRepoPath(path: string): boolean {
 	return (
 		!path.startsWith("/") &&
 		!/^[A-Za-z]:/.test(path) &&
 		!path.includes("\\") &&
-		!path.includes("\0") &&
+		!LINE_BREAKING_PATH.test(path) &&
 		path
 			.split("/")
 			.every(
@@ -236,7 +244,7 @@ export function isRepoPath(path: string): boolean {
 
 type Sink = { first: string | undefined };
 
-type Fields = {
+export type Fields = {
 	at(key: string): string;
 	fail(key: string, message: string): void;
 	value(key: string): unknown;
@@ -276,6 +284,7 @@ function openFields(
 	value: unknown,
 	where: string,
 	keys: readonly string[],
+	root = false,
 ): Fields {
 	let raw: Raw;
 	if (!isRaw(value)) {
@@ -289,7 +298,7 @@ function openFields(
 	}
 	const fields: Fields = {
 		at(key: string): string {
-			return where === "the proof" ? key : `${where}.${key}`;
+			return root ? key : `${where}.${key}`;
 		},
 
 		fail(key: string, message: string): void {
@@ -505,6 +514,48 @@ function readExpectation(fields: Fields): Expectation {
 	};
 }
 
+export const MODEL_KEYS = [
+	"module",
+	"config",
+	"dependencies",
+	"bounds",
+	"fairness",
+	"invariants",
+	"properties",
+] as const;
+
+export function readModel(model: Fields): ModelContract {
+	return {
+		module: model.path("module", ".tla"),
+		config: model.path("config", ".cfg"),
+		dependencies: model.paths("dependencies", 0, ".tla"),
+		bounds: model.texts("bounds", 1),
+		fairness: model.texts("fairness", 0),
+		invariants: model.texts("invariants", 1, TLA_NAME, "a TLA+ name"),
+		properties: model.texts("properties", 0, TLA_NAME, "a TLA+ name"),
+	};
+}
+
+export const NEGATIVE_KEYS = [
+	"file",
+	"action",
+	"original",
+	"replacement",
+	"defect",
+	"expect",
+] as const;
+
+export function readNegative(negative: Fields): NegativeControl {
+	return {
+		file: negative.path("file", ".tla"),
+		action: negative.text("action", TLA_NAME, "a TLA+ name"),
+		original: negative.text("original"),
+		replacement: negative.string("replacement"),
+		defect: negative.text("defect"),
+		expect: negative.object("expect", ["kind", "name"], readExpectation),
+	};
+}
+
 function readProof(fields: Fields): ChangeProof {
 	if (fields.value("version") !== 1) fields.fail("version", "must be 1");
 	return {
@@ -518,7 +569,6 @@ function readProof(fields: Fields): ChangeProof {
 			(row) => ({
 				path: row.path("path"),
 				obligation: row.text("obligation", CRITERION, "a criterion ID"),
-				modelRefs: row.texts("modelRefs", 1, TLA_NAME, "a TLA+ name"),
 			}),
 		),
 		domain: fields.object(
@@ -663,7 +713,7 @@ function readProof(fields: Fields): ChangeProof {
 					}),
 				),
 				equality: category.text("equality"),
-				laws: category.items("laws", 1, (value, where) =>
+				laws: category.items("laws", 0, (value, where) =>
 					readLaw(category, value, where),
 				),
 				typedWitness: category.path("typedWitness"),
@@ -704,39 +754,8 @@ function readProof(fields: Fields): ChangeProof {
 				omitted: abstraction.texts("omitted", 0),
 			}),
 		),
-		model: fields.object(
-			"model",
-			[
-				"module",
-				"config",
-				"dependencies",
-				"bounds",
-				"fairness",
-				"invariants",
-				"properties",
-			],
-			(model) => ({
-				module: model.path("module", ".tla"),
-				config: model.path("config", ".cfg"),
-				dependencies: model.paths("dependencies", 0, ".tla"),
-				bounds: model.texts("bounds", 1),
-				fairness: model.texts("fairness", 0),
-				invariants: model.texts("invariants", 1, TLA_NAME, "a TLA+ name"),
-				properties: model.texts("properties", 0, TLA_NAME, "a TLA+ name"),
-			}),
-		),
-		negative: fields.object(
-			"negative",
-			["file", "action", "original", "replacement", "defect", "expect"],
-			(negative) => ({
-				file: negative.path("file", ".tla"),
-				action: negative.text("action", TLA_NAME, "a TLA+ name"),
-				original: negative.text("original"),
-				replacement: negative.string("replacement"),
-				defect: negative.text("defect"),
-				expect: negative.object("expect", ["kind", "name"], readExpectation),
-			}),
-		),
+		model: fields.object("model", MODEL_KEYS, readModel),
+		negative: fields.object("negative", NEGATIVE_KEYS, readNegative),
 		limits: fields.texts("limits", 1),
 	};
 }
@@ -792,11 +811,8 @@ function domainProblem(proof: ChangeProof): string | undefined {
 }
 
 function lawProblem(record: CompositionRecord): string | undefined {
-	const entry = (law: Law): LawEntry | undefined =>
-		record.laws.find((row) => row.law === law);
-	const witnessed = (law: Law): boolean => entry(law)?.status === "witnessed";
-	const missing = LAWS.find((law) => entry(law) === undefined);
-	if (missing !== undefined) return `category.laws has no entry for ${missing}`;
+	const witnessed = (law: Law): boolean =>
+		record.laws.some((row) => row.law === law && row.status === "witnessed");
 	const { kind } = record.carrier;
 	const monadic = kind === "result" || kind === "promise-result";
 	return firstOf([
@@ -819,10 +835,13 @@ function lawProblem(record: CompositionRecord): string | undefined {
 				: MONAD_LAWS.filter(witnessed).map(
 						(law) => `carrier ${kind} cannot claim ${law}`,
 					)[0],
-		() =>
-			FUNCTOR_LAWS.some(witnessed) && !FUNCTOR_LAWS.every(witnessed)
-				? "a functor claim needs witnesses for both functor-id and functor-comp"
-				: undefined,
+		...PAIRED_LAWS.map(
+			([claim, pair]) =>
+				() =>
+					pair.some(witnessed) && !pair.every(witnessed)
+						? `a ${claim} claim needs witnesses for both ${pair.join(" and ")}`
+						: undefined,
+		),
 	]);
 }
 
@@ -887,8 +906,10 @@ function arrowProblem(record: CompositionRecord): string | undefined {
 	]);
 }
 
-function modelProblem(proof: ChangeProof): string | undefined {
-	const { model, negative } = proof;
+export function modelProblem(
+	model: ModelContract,
+	negative: NegativeControl,
+): string | undefined {
 	const files = [model.module, ...model.dependencies];
 	const names = [model.config, ...files].map((path) =>
 		path.slice(path.lastIndexOf("/") + 1),
@@ -940,16 +961,28 @@ function scopeProblem(proof: ChangeProof): string | undefined {
 	]);
 }
 
-export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
+export function readDocument<T>(
+	text: string,
+	name: string,
+	keys: readonly string[],
+	read: (fields: Fields) => T,
+): Result<T, string> {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(text);
 	} catch {
-		return rejection("schema", "the proof is not valid JSON");
+		return err(`${name} is not valid JSON`);
 	}
 	const sink: Sink = { first: undefined };
-	const proof = readProof(
-		openFields(sink, parsed, "the proof", [
+	const document = read(openFields(sink, parsed, name, keys, true));
+	return sink.first === undefined ? ok(document) : err(sink.first);
+}
+
+export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
+	const read = readDocument(
+		text,
+		"the proof",
+		[
 			"version",
 			"change",
 			"base",
@@ -960,14 +993,16 @@ export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
 			"model",
 			"negative",
 			"limits",
-		]),
+		],
+		readProof,
 	);
-	if (sink.first !== undefined) return rejection("schema", sink.first);
+	if (!read.ok) return rejection("schema", read.error);
+	const proof = read.value;
 	const checks: readonly [Stage, string | undefined][] = [
 		["domain", domainProblem(proof)],
 		["category", arrowProblem(proof.category) ?? lawProblem(proof.category)],
 		["controls", scopeProblem(proof)],
-		["model", modelProblem(proof)],
+		["model", modelProblem(proof.model, proof.negative)],
 	];
 	for (const [stage, problem] of checks)
 		if (problem !== undefined) return rejection(stage, problem);

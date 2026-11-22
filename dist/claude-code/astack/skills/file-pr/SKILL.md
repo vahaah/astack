@@ -37,8 +37,7 @@ Weak:   Removed the carry-over from each entry point and deleted three helpers.
 Strong: The "new worktree" default did not apply to a new thread. Now each new thread uses the defaults.
 ```
 
-Keep one attribution in the body.
-That is the attribution line of the harness, which `astack:write-docs` keeps.
+Keep only the attribution line of the harness, which `astack:write-docs` keeps.
 Add no second line that names a model or a harness.
 
 ## Before you create the PR
@@ -57,8 +56,7 @@ Do this only after these four steps passed:
 3. `astack check ste <title file> --surface pr` passed on a file that holds only the title.
 4. The title has no closing word, such as "Closes" or "Fixes", before a ticket key or `#n`. `astack check-pr` does not read the title.
 
-The astack hooks that check a new PR read only `gh pr create`.
-The four steps do their work for the REST call.
+The four steps do the work of the astack PR hooks, which read only `gh pr create`.
 
 ```bash
 gh api repos/<owner>/<repo>/pulls -f title=<title> -f head=<head> -f base=<base> -F body=@<file>
@@ -67,7 +65,7 @@ gh api repos/<owner>/<repo>/pulls -f title=<title> -f head=<head> -f base=<base>
 For a branch of the same repository, `<head>` is the branch name.
 For a branch of a fork, `<head>` is `<head owner>:<branch>`.
 
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
 ## After the PR exists
 

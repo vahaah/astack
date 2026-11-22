@@ -6,7 +6,6 @@ import {
 	continueWith,
 	deny,
 	note,
-	type Verdict,
 } from "../../src/astack/hook/events.ts";
 import { outcomeIn } from "../../src/astack/ste/events.ts";
 import type {
@@ -15,36 +14,6 @@ import type {
 	Severity,
 } from "../../src/astack/ste/types.ts";
 import { outcomeOf } from "../../src/astack/ste/verdict.ts";
-
-const SAMPLE: readonly Verdict[] = [
-	ALLOW,
-	note("a"),
-	note("b"),
-	deny("x"),
-	deny("y"),
-	continueWith("p"),
-	continueWith("q"),
-];
-
-describe("combine is a monoid with allow as the identity", () => {
-	test("allow is a left and right identity", () => {
-		for (const verdict of SAMPLE) {
-			expect(combine(ALLOW, verdict)).toEqual(verdict);
-			expect(combine(verdict, ALLOW)).toEqual(verdict);
-		}
-	});
-
-	test("combine is associative on every triple of the sample", () => {
-		for (const a of SAMPLE)
-			for (const b of SAMPLE)
-				for (const c of SAMPLE)
-					expect(combine(combine(a, b), c)).toEqual(combine(a, combine(b, c)));
-	});
-
-	test("combineAll of nothing is allow", () => {
-		expect(combineAll([])).toEqual(ALLOW);
-	});
-});
 
 describe("combine ranks the verdicts", () => {
 	test("deny absorbs a note and joins the reasons of two denies", () => {

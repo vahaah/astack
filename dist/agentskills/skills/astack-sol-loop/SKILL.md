@@ -11,20 +11,19 @@ metadata:
 # Sol loop
 
 Use this loop to make a change more correct before you file a PR, or after.
-One reviewer from another model family reviews the change in rounds.
 Make the smallest changes that satisfy the reviewer.
 Watch for scope growth, and push back with evidence.
 
 ## The reviewer
 
-- Read the `sol-loop reviewer` role in `astack-models.md`, which `astack-setup-models` writes. When the role is missing, use `codex`.
-- `codex:<model>` pins the model. Bare `codex` uses the default model of the codex CLI.
-- Run the reviewer in the read-only form of `../astack-arena/references/external-seats.md`.
-- The reviewer must be an external value that this reference lists. For any other value, report the blocker and stop.
+- Read the `sol-loop reviewer` line of `${CLAUDE_CONFIG_DIR:-~/.claude}/rules/astack-models.md`, which `astack-setup-models` writes.
+- Take the first value of that line whose family is not the family of the session model. With no line, take `claude` under an OpenAI model and `codex` otherwise.
+- Read each value and its family in the file that `astack skill-path astack:arena references/external-seats.md` prints. Run the reviewer in its read-only form.
+- With no listed value of another family, report the blocker and stop.
 - When the CLI is missing or signed out, report the blocker and stop. Never put another model in its place.
 - Use one reviewer only. The reviewer never starts subagents or other reviewers.
 - Make no edit to the scoped files while a round runs.
-- Do not poll. Do not start a second reviewer. Wait for the exit of the background Bash call.
+- Do not poll. Wait for the exit of the background Bash call.
 - A timeout, an error or no reply is not an approval.
 - On a failure, stop the process and make sure that it stopped. Then start the round again with the ledger.
 
@@ -49,12 +48,14 @@ Watch for scope growth, and push back with evidence.
 7. Without a remote, use a base that the owner names, or `HEAD` for uncommitted changes only.
 8. Record the base as `BASE_SHA`.
 
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 The change runs from `BASE_SHA` to the working tree in the scoped paths, with the untracked files.
-Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths>`.
+`<out>` is a new folder from `mktemp -d`, outside the checkout.
+Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths> > <out>/diff.txt`. Write `git status --short` to `<out>/status.txt`.
+
 State the intent and what is out of scope in 1 or 2 sentences.
 Run the checks that cover the change.
 Do not send code that this change breaks.
@@ -62,14 +63,14 @@ Name each missing check and each check that failed before the change in the brie
 
 ## 2. Start a round
 
-Write the brief to a file.
+Write the brief to `<out>/brief.md`.
 Run the reviewer on it as a background Bash call.
 For round 1, the brief is this text with the values filled in:
 
 ```text
 Review only. Do not edit, commit, push, comment on PRs or start subagents.
 Repo: <absolute path>  Base: <BASE_SHA>  Intent: <intent>  Out of scope: <scope>  Checks: <results>
-Read: git diff <BASE_SHA> [-- <paths>] and git status --short. Read the untracked files too.
+Read: <out>/diff.txt and <out>/status.txt. Read the untracked files too.
 Read the code around the change. Find bugs, broken callers and gaps against the intent.
 Skip style unless it hides a bug. Hold the change to the smallest form.
 Flag code, tests or guards that the intent does not need.
@@ -80,8 +81,6 @@ VERDICT: APPROVE or CHANGES
 S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion>
 Keep each id stable across rounds.
 ```
-
-Read the result after the process exits.
 
 ## 3. Answer the findings
 
@@ -107,7 +106,8 @@ Start a next round only when budget remains and one of these is true:
 - Behavior code changed.
 - The approval does not cover the current behavior diff.
 
-Send the round 1 brief, the ledger and the same base diff.
+Write `<out>/diff.txt` and `<out>/status.txt` again with the commands of step 1.
+Send the round 1 brief and the ledger.
 Mark each ledger item `fixed:`, `disagree:` or `declined:` with its evidence.
 Add the change since the last round.
 Tell the reviewer to examine only the open ids and the changed code.

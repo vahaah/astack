@@ -40,10 +40,9 @@ Apply the slop-removal rules from `/astack-write-docs` after writing.
 
 ## PR head checks
 
-Use the checkout of the PR before acting on it.
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 ## Review
 

@@ -1,16 +1,25 @@
 import { adrProse, decisionHeading } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
-import { err, ok, type Result } from "../result.ts";
+import { all, andThen, err, map, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
 import {
 	type AdrReference,
 	type ChangeProof,
 	type FileLink,
+	type ModelContract,
+	type NegativeControl,
 	type Rejection,
 	rejection,
 	type Stage,
 } from "./contract.ts";
 import { compareLandedAuthority } from "./governing-authority.ts";
+import {
+	type Ladder,
+	type LadderRun,
+	modelFiles,
+	moduleName,
+	type Rung,
+} from "./rung.ts";
 import { type ModelPlan, planModel } from "./tla.ts";
 import type { Counts, Violation } from "./tlc.ts";
 
@@ -69,9 +78,18 @@ export type ModelEvidence = {
 
 export type AdmissionFacts = {
 	readonly view: RepoView;
+	readonly ladder: Result<Ladder, string>;
 	readonly before: Snapshot;
 	readonly after: Snapshot;
-	readonly evidence: ModelEvidence;
+	readonly evidence: readonly ModelEvidence[];
+};
+
+export type ModelAdmission = {
+	readonly name: string;
+	readonly positive: Counts;
+	readonly negative: Violation;
+	readonly action: string;
+	readonly restored: Counts;
 };
 
 export type Admitted = {
@@ -81,10 +99,8 @@ export type Admitted = {
 	readonly head: string;
 	readonly digest: string;
 	readonly files: number;
-	readonly positive: Counts;
-	readonly negative: Violation;
-	readonly action: string;
-	readonly restored: Counts;
+	readonly rung: Rung | undefined;
+	readonly models: readonly ModelAdmission[];
 };
 
 const PROBLEM_TEXT: Readonly<Record<FileProblem, string>> = {
@@ -120,7 +136,21 @@ export function referencedPaths(proof: ChangeProof): readonly string[] {
 }
 
 export function modelPaths(proof: ChangeProof): readonly string[] {
-	return [proof.model.module, proof.model.config, ...proof.model.dependencies];
+	return modelFiles(proof.model);
+}
+
+export function modelRuns(
+	proof: ChangeProof,
+	ladder: Ladder,
+): readonly LadderRun[] {
+	if (ladder.kind === "ladder") return ladder.runs;
+	return [
+		{
+			name: moduleName(proof.model.module),
+			model: proof.model,
+			negative: proof.negative,
+		},
+	];
 }
 
 export function matrixSourcePaths(matrixText: string): readonly string[] {
@@ -159,12 +189,16 @@ function linkCheck(
 		: fail(`${link.path} does not mention the symbol ${link.symbol}`);
 }
 
-function first(checks: readonly (() => Check)[]): Check {
-	for (const check of checks) {
-		const result = check();
-		if (!result.ok) return result;
-	}
-	return PASS;
+function first<E>(
+	checks: readonly (() => Result<unknown, E>)[],
+): Result<undefined, E> {
+	return map(
+		checks.reduce<Result<unknown, E>>(
+			(done, check) => andThen(done, check),
+			ok(undefined),
+		),
+		() => undefined,
+	);
 }
 
 function headings(text: string): readonly string[] {
@@ -510,47 +544,47 @@ function scopeCheck(proof: ChangeProof, view: RepoView): Check {
 	return problems.length === 0 ? PASS : fail(problems.join("; "));
 }
 
+export function planModelFiles(
+	model: ModelContract,
+	negative: NegativeControl,
+	files: ReadonlyMap<string, FileRead>,
+): Result<ModelPlan, string> {
+	return andThen(textOf(files, model.module), (module) =>
+		andThen(textOf(files, model.config), (config) =>
+			andThen(
+				all(
+					model.dependencies.map((path) =>
+						map(textOf(files, path), (text) => [path, text] as const),
+					),
+				),
+				(dependencies) =>
+					planModel(model, negative, {
+						module,
+						config,
+						dependencies: new Map(dependencies),
+					}),
+			),
+		),
+	);
+}
+
 function modelCheck(
 	proof: ChangeProof,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<ModelPlan, string> {
-	const { model } = proof;
-	const module = textOf(files, model.module);
-	if (!module.ok) return module;
-	const config = textOf(files, model.config);
-	if (!config.ok) return config;
-	const dependencies = new Map<string, string>();
-	for (const path of model.dependencies) {
-		const text = textOf(files, path);
-		if (!text.ok) return text;
-		dependencies.set(path, text.value);
-	}
-	const plan = planModel(model, proof.negative, {
-		module: module.value,
-		config: config.value,
-		dependencies,
-	});
-	if (!plan.ok) return plan;
-	const known = new Set([
-		...model.invariants,
-		...model.properties,
-		...plan.value.actions,
-	]);
-	const ref = proof.scope
-		.flatMap((row) => row.modelRefs)
-		.find((name) => !known.has(name));
-	if (ref !== undefined)
-		return err(
-			`a scope row cites ${ref}, which is no configured property and no model action`,
-		);
-	const action = proof.abstraction.relation.find(
-		(row) => !plan.value.actions.has(row.modelAction),
+	return andThen(
+		planModelFiles(proof.model, proof.negative, files),
+		(planned) => {
+			const action = proof.abstraction.relation.find(
+				(row) => !planned.actions.has(row.modelAction),
+			);
+			if (action !== undefined)
+				return err(
+					`abstraction relation cites ${action.modelAction}, which is no action of the model`,
+				);
+			return ok(planned);
+		},
 	);
-	if (action !== undefined)
-		return err(
-			`abstraction relation cites ${action.modelAction}, which is no action of the model`,
-		);
-	return plan;
 }
 
 function stageOf<T>(
@@ -564,19 +598,16 @@ export function checkReferences(
 	proof: ChangeProof,
 	view: RepoView,
 ): Result<ModelPlan, Rejection> {
-	const domain = stageOf("domain", domainCheck(proof, view));
-	if (!domain.ok) return domain;
 	const linked = linkedControls(proof, view.files);
-	const category = stageOf(
-		"category",
-		categoryCheck(proof, view.files, linked),
+	return andThen(
+		first([
+			() => stageOf("domain", domainCheck(proof, view)),
+			() => stageOf("category", categoryCheck(proof, view.files, linked)),
+			() => stageOf("controls", linked),
+			() => stageOf("controls", scopeCheck(proof, view)),
+		]),
+		() => stageOf("model", modelCheck(proof, view.modelFiles)),
 	);
-	if (!category.ok) return category;
-	const controls = stageOf("controls", linked);
-	if (!controls.ok) return controls;
-	const scope = stageOf("controls", scopeCheck(proof, view));
-	if (!scope.ok) return scope;
-	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
 
 const STALE_NAMES = 10;
@@ -597,13 +628,13 @@ export function staleInputs(
 	];
 }
 
-export function admitChangeProof(
-	proof: ChangeProof,
-	facts: AdmissionFacts,
-): Result<Admitted, Rejection> {
-	const references = checkReferences(proof, facts.view);
-	if (!references.ok) return references;
-	const { positive, negative, restored } = facts.evidence;
+function evidenceCheck(
+	run: LadderRun,
+	evidence: ModelEvidence | undefined,
+): Result<ModelAdmission, Rejection> {
+	if (evidence === undefined)
+		return rejection("model", `model ${run.name} has no triple`);
+	const { positive, negative, restored } = evidence;
 	if (!positive.ok) return rejection("model", positive.error);
 	if (!negative.ok) return rejection("countermodel", negative.error);
 	if (!restored.ok) return rejection("model", restored.error);
@@ -615,6 +646,35 @@ export function admitChangeProof(
 			"model",
 			"the restored run found other state counts than the positive run",
 		);
+	return ok({
+		name: run.name,
+		positive: positive.value,
+		negative: negative.value,
+		action: run.negative.action,
+		restored: restored.value,
+	});
+}
+
+export function admitChangeProof(
+	proof: ChangeProof,
+	facts: AdmissionFacts,
+): Result<Admitted, Rejection> {
+	const references = checkReferences(proof, facts.view);
+	if (!references.ok) return references;
+	if (!facts.ladder.ok) return rejection("rung", facts.ladder.error);
+	const ladder = facts.ladder.value;
+	const runs = modelRuns(proof, ladder);
+	if (facts.evidence.length > runs.length)
+		return rejection(
+			"model",
+			`the proof holds ${facts.evidence.length} triples for ${runs.length} selected models`,
+		);
+	const models: ModelAdmission[] = [];
+	for (const [index, run] of runs.entries()) {
+		const checked = evidenceCheck(run, facts.evidence[index]);
+		if (!checked.ok) return checked;
+		models.push(checked.value);
+	}
 	const { before, after } = facts;
 	if (before.head !== after.head)
 		return rejection(
@@ -636,9 +696,7 @@ export function admitChangeProof(
 		head: after.head,
 		digest: after.digest,
 		files: after.files,
-		positive: positive.value,
-		negative: negative.value,
-		action: proof.negative.action,
-		restored: restored.value,
+		rung: ladder.kind === "ladder" ? ladder.rung : undefined,
+		models,
 	});
 }

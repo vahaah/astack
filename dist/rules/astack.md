@@ -19,11 +19,11 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
 | "update from main" | Mode playbook `refresh.md` |
 | "merge", "merge when green", "merge and release" | The `astack:mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
-| "full send", "full stop", "council", "sol loop" | That astack skill, read by path. Only "full send" grants a merge |
+| "full send", "full stop", "council", "sol loop" | That astack skill. Only "full send" grants a merge |
 | UI polish, mobile | `astack:control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack:mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
 
 ## Standing rules
 
@@ -33,7 +33,7 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only when the owner says so. Put follow-ups in the open PR.
 - PR text. Write `Part of <key>` on the first line when the repo profile asks for it. Never put a key or `#n` after a closing word.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before you make a claim, and open each file that you cite. A zero result needs a positive control.
-- Change proof. Every code, configuration, or docs change has a DDD contract and current TLA+ evidence. Briefs and handoffs cite the record at `astack skill-path astack:pr-review-hardening references/proof-contract.md`. Delivery needs a pass of `astack check proof`.
+- Change proof. Every code, configuration, or docs change has a DDD contract and a proof rung. Briefs and handoffs cite the record at `astack skill-path astack:pr-review-hardening references/proof-contract.md`. Delivery needs a pass of `astack check proof`.
 - State. The plan, the tracker and git hold the state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
 - Replies. Write every reply in ASD-STE100 Simplified Technical English, also short and simple replies. Give the result first. Do not repeat agreed items. A checkpoint reply has 6 lines or fewer.
 - STE. Use 20 words or fewer in an instruction and 25 or fewer in a description. Use the active voice and one instruction in each sentence. Do not use contractions, semicolons, long dashes, "e.g.", "i.e.", "etc." or "and/or". Write "make sure", not "ensure", and "use", not "utilize". Keep code, paths and names as they are. Quote text that is not yours. Put a cited title, a log line, a header value and the user's words in backticks or double quotes.

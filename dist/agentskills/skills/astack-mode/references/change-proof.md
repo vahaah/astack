@@ -19,10 +19,8 @@ Preserve superseded decisions and their reasons.
 
 Create `.astack/proof.json` with the [proof contract](../../astack-pr-review-hardening/references/proof-contract.md).
 It links changed paths, criteria, domain references, composition, abstraction, models, and controls.
-Every changed path needs an obligation and a model relation.
-Use a change-specific model or an explicit preservation relation.
-For docs, model the changed procedure or selected contract data.
-An unrelated example never satisfies the requirement.
+Every changed path needs an obligation. The registry selects the models of each path.
+With no registry, the manifest model must model the change.
 
 Before implementation, state each record of the contract in the internal brief.
 [Category and abstraction](../../astack-pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the composition rules.
@@ -36,7 +34,7 @@ Do not add a runtime FP framework or another layer to repeat the notation.
 
 Map each indivisible code step to one model action.
 Never weaken an invariant, a bound, fairness or an assumption to get a pass.
-A positive failure on current code is a finding. Report it with its counterexample.
+A selected model ends in sync, updated, bug or blocked. In sync passes unchanged. Updated changes the model to match the code. Bug fails on current code. Report its counterexample. Blocked cannot finish.
 State each invariant and its harm in one sentence.
 A progress claim needs a temporal property.
 
@@ -44,14 +42,12 @@ A progress claim needs a temporal property.
 
 Use `astack check proof --summary` to print the shared intent record.
 Give each code delegate that record, its scope, and the permitted effects.
-The summary is explicitly unverified.
-It cannot satisfy a gate.
+The summary is unverified and cannot satisfy a gate.
 
 Each handoff cites the same record and governing ADR decisions.
 It states the current input digest, commands, outcomes, and unfinished obligations.
 A safe pause can report incomplete proof.
 A delivery claim cannot.
-Keep user-facing progress short and in plain language.
 
 ## Execute before delivery
 
@@ -66,7 +62,7 @@ Run the proof again after any change to candidate inputs.
 
 Keep the existing tests, static checks, removal controls, review cap, and owner gates.
 A model result does not establish implementation correspondence.
-Semantic review still checks domain meaning, abstraction suitability, and the model relation.
+Semantic review checks domain meaning, abstraction suitability, and the model relation.
 
 ## Missing adoption
 

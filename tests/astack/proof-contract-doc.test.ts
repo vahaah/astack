@@ -8,6 +8,11 @@ import {
 	type Stage,
 } from "../../src/astack/change-proof/contract.ts";
 
+const PROOF_ADMISSION = readFileSync(
+	join(import.meta.dir, "../../formal/ProofAdmission.tla"),
+	"utf8",
+);
+
 const REFERENCES = join(
 	import.meta.dir,
 	"../../marketplace/plugins/astack/skills/pr-review-hardening/references",
@@ -127,8 +132,9 @@ describe("the proof contract reference", () => {
 		const causes: Readonly<Record<Stage, readonly string[]>> = {
 			schema: ["Unknown fields"],
 			domain: ["glossary", "integratedAt"],
-			category: ["must compose"],
+			category: ["must compose", "monoid"],
 			controls: ["no row is idle", "spec-links.md"],
+			rung: ["uncovered fail-closed path", "deleted registry"],
 			model: ["A positive result needs"],
 			countermodel: ["The negative control"],
 			stale: ["must be an ancestor", "before and after execution"],
@@ -143,5 +149,19 @@ describe("the proof contract reference", () => {
 					.map((rule) => `${stage}: ${rule}`),
 			),
 		).toEqual([]);
+	});
+
+	test("[control:proof-model-sections] the Sections of ProofAdmission give each stop stage the section of STAGE_SECTIONS", () => {
+		const record =
+			/^Sections == \[([^\]]*)\]/m.exec(PROOF_ADMISSION)?.[1] ?? "";
+		const sections = new Map(
+			[...record.matchAll(/(\w+) \|-> "([^"]+)"/g)].map(([, stage, title]) => [
+				stage,
+				title,
+			]),
+		);
+		expect(STAGES.map((stage) => [stage, sections.get(stage)])).toEqual(
+			STAGES.map((stage) => [stage, STAGE_SECTIONS[stage]]),
+		);
 	});
 });
