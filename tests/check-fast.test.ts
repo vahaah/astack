@@ -1,13 +1,27 @@
 import { afterAll, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	appendFileSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { changedTestCommand, launcherTests } from "../scripts/check-fast.ts";
+import {
+	changedTestCommand,
+	launcherTests,
+	REBUILD,
+} from "../scripts/check-fast.ts";
+import { generatedTreeCopy } from "./generated-tree.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const scratch = mkdtempSync(join(tmpdir(), "astack-check-fast-"));
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+const trees: string[] = [scratch];
+afterAll(() => {
+	for (const dir of trees) rmSync(dir, { recursive: true, force: true });
+});
 
 function git(cwd: string, ...args: string[]): string {
 	const result = spawnSync(
@@ -27,6 +41,26 @@ test("the fast tests hold the three hook test files that reach turn.ts only thro
 			"tests/astack/ste-hook.test.ts",
 		]),
 	);
+});
+
+test("the rebuild steps leave no drift after a source edit, so the drift test of the launcher set passes", () => {
+	const tree = generatedTreeCopy();
+	trees.push(tree);
+	appendFileSync(
+		join(tree, "src/astack/cli/bin.ts"),
+		'\nprocess.stderr.write("new source behavior\\n");\n',
+	);
+	const statuses = REBUILD.map(
+		(args) =>
+			spawnSync(process.execPath, [...args], { cwd: tree, encoding: "utf8" })
+				.status,
+	);
+	expect(statuses).toEqual(REBUILD.map(() => 0));
+	const drift = spawnSync(process.execPath, ["scripts/drift.ts"], {
+		cwd: tree,
+		encoding: "utf8",
+	});
+	expect(`${drift.stdout}${drift.stderr}`).toBe("drift: 0 differences\n");
 });
 
 test("a committed change selects the test file that imports it and no other", () => {

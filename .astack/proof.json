@@ -94,6 +94,16 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
+			"path": "tests/drift.test.ts",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/generated-tree.ts",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "tests/source-install.test.ts",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]

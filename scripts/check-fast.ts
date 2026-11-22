@@ -6,6 +6,11 @@ import { listFiles, REPO_ROOT } from "./lib/files.ts";
 
 const CAP_SECONDS = 20;
 const TEST = ["test", "--parallel", "--timeout=20000"];
+export const REBUILD: readonly (readonly string[])[] = [
+	["run", "build"],
+	["run", "bundle"],
+	["run", "dist", "--no-external"],
+];
 const STARTS_THE_BUILT_CLI =
 	/marketplace\/plugins\/astack\/bin\/astack|dist\/cli\/astack\.js/;
 
@@ -40,8 +45,7 @@ function main(): number {
 	const steps: readonly (readonly string[])[] = [
 		["tsc", "-p", "."],
 		["biome", "ci", "."],
-		[process.execPath, "run", "build"],
-		[process.execPath, "run", "bundle"],
+		...REBUILD.map((args) => [process.execPath, ...args]),
 		[process.execPath, "run", "ste"],
 		[process.execPath, "run", "budget"],
 		changedTestCommand(REPO_ROOT),
