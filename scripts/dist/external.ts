@@ -163,7 +163,12 @@ export function codexProbe(
 	expected: readonly CodexExpectation[],
 ): CheckReport {
 	if (!onPath("codex"))
-		return { id: "codex", errors: [], summary: "skipped, no codex on PATH" };
+		return {
+			id: "codex",
+			errors: [],
+			summary: "no codex on PATH, so the check cannot run",
+			skipped: true,
+		};
 	const scratch = mkdtempSync(join(tmpdir(), "astack-codex-"));
 	try {
 		const home = join(scratch, "home");

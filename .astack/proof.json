@@ -137,6 +137,11 @@
 			"modelRefs": ["Check"]
 		},
 		{
+			"path": "tests/dist/external.test.ts",
+			"obligation": "WB-validate",
+			"modelRefs": ["Check"]
+		},
+		{
 			"path": "src/astack/hook/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
