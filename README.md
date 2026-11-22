@@ -47,7 +47,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
 | Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
-| CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
+| CI | This repo's Check workflow runs `bun run check` on a push to main and on each pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
 
 ```mermaid
@@ -522,12 +522,17 @@ The TypeScript pack covers `.ts`, `.tsx`, `.mts` and `.cts`. The PostgreSQL pack
 ```sh
 bun install --frozen-lockfile
 bun run check:drift
+bun run check:fast
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof. `bun run check` runs that proof twice. The `test` script runs it, and `check` runs it again at the end. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it passes no `--base`, so after a merge of main the local run reports the paths of main as a scope gap. Then run `bun src/astack/cli/bin.ts check proof --base origin/main`, as CI does.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so a merge of main shows its paths as a scope gap.
 
-`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` builds every target. It runs validation, neutrality and secret scans, STE checks, the skill word budget, tests, formatting, lint and type checks. The word budget, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test needs an API key or OAuth token. It is reported as skipped without one.
+`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget and the change proof. It runs the tests last, in parallel.
+
+The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
+
+`check:fast` gives a short answer while you work. It runs the type check, lint, build, bundle, the dist build without the external checks, STE precision gate and word budget. Then it runs the tests that `bun test --changed` selects from the merge base with `origin/HEAD`. It also runs each test file that starts the launcher or the bundle. Its fixed cap is 20 s. It does not fail on time, and it does not replace `check`.
 
 ## Source layout
 

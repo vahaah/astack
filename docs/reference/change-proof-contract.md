@@ -8,7 +8,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 ## Acceptance criteria
 
 - [criterion:CP-01] Missing contracts and summary-only results cannot admit a delivery.
-- [criterion:CP-02] Admission requires complete positive, expected negative, and unchanged restored-positive results.
+- [criterion:CP-02] Admission requires complete positive, expected negative, and unchanged restored-positive results. The three runs start together, and the checker judges them in the order positive, negative, restored.
 - [criterion:CP-03] A syntax error, wrong violation, or unchanged passing countermodel cannot count as the negative control.
 - [criterion:CP-04] Scope and candidate binding use lossless entry records for live edits, executable modes, staged edits, submodule state, removals, and nonignored untracked files.
 - [criterion:CP-05] Model dependencies, configurations, and mutation targets remain explicit and safe under the supported subset.
@@ -16,12 +16,13 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-07] Declared arrows compose, effects stay explicit, and applicable laws have witnesses for the actual carrier.
 - [criterion:CP-08] Tool exits, complete protocol output, state counts, and expected violations must agree.
 - [criterion:CP-09] A wrong jar or unavailable required Java runtime blocks admission.
-- [criterion:CP-10] Timeout or cleanup failure leaves no admitted result or live owned process.
+- [criterion:CP-10] Timeout or cleanup failure leaves no admitted result or live owned process. When the judge order gives a result, the checker kills the live runs and removes their temp roots before it stops.
 - [criterion:CP-11] Every adopted profile requires an unrestricted, nonoptional, unsuppressed executable proof gate with a checked success marker.
 - [criterion:CP-12] A blocked installation transition preserves review state and remains a visible principled stop.
 - [criterion:CP-13] With `--base <ref>`, the scope and the snapshots read from the merge base of the ref and HEAD. The manifest base must be an ancestor of that merge base. Replace objects and grafts cannot change a base or hide a changed path.
 - [criterion:CP-14] Each CI run of `scripts/check-proof.ts` passes a base. A push to the default branch and a release use the first parent of HEAD. A branch push whose HEAD the default branch holds also uses the first parent of HEAD. A push to another branch uses the default branch.
 - [criterion:CP-15] The base branch can change the authority of a ratified ADR after the manifest base. Then the stop names the ADR, both commits and the repair. A change of only the selected Landed value does not stop.
+- [criterion:CP-16] A local run of `scripts/check-proof.ts` reads `origin/HEAD`. A clean HEAD that the default branch holds uses the first parent of HEAD, and each other HEAD uses the default branch. With no `origin/HEAD` that resolves, or no first parent, the run keeps the manifest base.
 
 ## Claim boundary
 

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	chmodSync,
 	mkdirSync,
 	mkdtempSync,
 	rmSync,
@@ -414,22 +415,35 @@ describe("astack doctor", () => {
 		);
 	});
 
-	test("fails on a node runtime below the floor", () => {
-		expect(
-			fails(
-				diagnose(
-					snapshot({
-						runtime: {
-							current: "node v24",
-							found: undefined,
-							old: "/usr/local/bin/node",
-						},
-					}),
+	test("fails when the first runtime of bin/astack is a node below the floor, though a newer node comes later", () => {
+		const home = mkdtempSync(join(tmpdir(), "astack-doctor-floor-"));
+		try {
+			const old = join(home, "node");
+			writeFileSync(old, "#!/bin/sh\necho v21.7.3\n");
+			chmodSync(old, 0o755);
+			const newer = join(home, ".volta", "bin", "node");
+			mkdirSync(join(home, ".volta", "bin"), { recursive: true });
+			writeFileSync(newer, "#!/bin/sh\necho v24.13.1\n");
+			chmodSync(newer, 0o755);
+			const io = {
+				out: () => {},
+				err: () => {},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: old },
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			};
+			expect(
+				fails(diagnose(gather(io))).filter((text) =>
+					text.startsWith("bin/astack"),
 				),
-			),
-		).toEqual([
-			"bin/astack finds only /usr/local/bin/node, which is older than node 22, so the hooks do not run. Install node 22 or later, or bun, and run astack doctor --save-runtime with it.",
-		]);
+			).toEqual([
+				`bin/astack picks ${old} first, which is older than node 22, so the hooks do not run. Install node 22 or later, or bun, and run astack doctor --save-runtime with it.`,
+			]);
+		} finally {
+			rmSync(home, { recursive: true, force: true });
+		}
 	});
 
 	test("fails when ~/.agents/skills repeats a plugin skill in either name form", () => {

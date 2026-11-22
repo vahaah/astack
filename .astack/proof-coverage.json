@@ -22,6 +22,7 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
@@ -37,7 +38,8 @@
 			"controls": [
 				"proof-valid-triple",
 				"proof-restored-run",
-				"proof-release-history"
+				"proof-release-history",
+				"proof-run-order"
 			]
 		},
 		{
@@ -92,7 +94,7 @@
 		},
 		{
 			"criterion": "CP-10",
-			"controls": ["proof-timeout-cleanup"]
+			"controls": ["proof-timeout-cleanup", "proof-run-stop"]
 		},
 		{
 			"criterion": "CP-11",
@@ -113,6 +115,15 @@
 		{
 			"criterion": "CP-14",
 			"controls": ["proof-push-base", "proof-push-payload"]
+		},
+		{
+			"criterion": "CP-16",
+			"controls": [
+				"proof-local-base",
+				"proof-local-untracked",
+				"proof-local-fallback",
+				"proof-local-shallow"
+			]
 		},
 		{
 			"criterion": "CP-15",
@@ -207,6 +218,16 @@
 		{
 			"criterion": "SG-generated",
 			"controls": ["sg-stale-cli"]
+		},
+		{
+			"criterion": "SG-runtime",
+			"controls": [
+				"sg-runtime-no-probe",
+				"sg-runtime-bun-first",
+				"sg-runtime-floor",
+				"sg-runtime-none",
+				"sg-runtime-entry"
+			]
 		},
 		{
 			"criterion": "SG-preserve",

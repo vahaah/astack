@@ -3,21 +3,16 @@ import { createHash } from "node:crypto";
 import {
 	appendFileSync,
 	chmodSync,
-	cpSync,
 	lstatSync,
-	mkdirSync,
-	mkdtempSync,
 	readdirSync,
 	readFileSync,
-	realpathSync,
 	rmSync,
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join } from "node:path";
+import { generatedTreeCopy } from "./generated-tree.ts";
 
-const ROOT = resolve(import.meta.dir, "..");
 const fixtures: string[] = [];
 const GENERATED = [
 	"dist",
@@ -36,30 +31,8 @@ afterAll(() => {
 });
 
 function fixture(): string {
-	const dir = mkdtempSync(join(tmpdir(), "astack-drift-"));
+	const dir = generatedTreeCopy();
 	fixtures.push(dir);
-	for (const path of [
-		"src",
-		"scripts",
-		"marketplace",
-		"rules",
-		"examples",
-		"dist",
-		".claude-plugin",
-		".cursor-plugin",
-		"package.json",
-		"LICENSE",
-		"NOTICE",
-	]) {
-		mkdirSync(dirname(join(dir, path)), { recursive: true });
-		cpSync(join(ROOT, path), join(dir, path), { recursive: true });
-	}
-	mkdirSync(join(dir, "node_modules"));
-	cpSync(
-		realpathSync(join(ROOT, "node_modules/yaml")),
-		join(dir, "node_modules/yaml"),
-		{ recursive: true },
-	);
 	return dir;
 }
 
