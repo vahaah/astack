@@ -7,7 +7,8 @@
 		"docs/reference/word-budget.md",
 		"docs/reference/plan-boundary.md",
 		"docs/reference/doctor.md",
-		"docs/reference/finding-telemetry.md"
+		"docs/reference/finding-telemetry.md",
+		"docs/reference/test-fixtures.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -50,7 +51,9 @@
 		"tests/pr-review-profile.test.ts",
 		"tests/astack/verdict.test.ts",
 		"tests/ste-own.test.ts",
-		"tests/dist/render.test.ts"
+		"tests/dist/render.test.ts",
+		"tests/git-template.test.ts",
+		"tests/check-companion.test.ts"
 	],
 	"links": [
 		{
@@ -490,6 +493,30 @@
 		{
 			"criterion": "TEL-SUM",
 			"controls": ["tel-sum"]
+		},
+		{
+			"criterion": "FX-ISOLATE",
+			"controls": ["fx-isolate"]
+		},
+		{
+			"criterion": "FX-INDEX",
+			"controls": ["fx-index"]
+		},
+		{
+			"criterion": "FX-TREE",
+			"controls": ["fx-tree"]
+		},
+		{
+			"criterion": "FX-ATOMIC",
+			"controls": ["fx-atomic"]
+		},
+		{
+			"criterion": "FX-OWN-DIR",
+			"controls": ["fx-own-dir"]
+		},
+		{
+			"criterion": "FX-REAL-SCAN",
+			"controls": ["fx-real-scan"]
 		}
 	]
 }

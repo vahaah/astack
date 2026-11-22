@@ -43,6 +43,7 @@ import {
 	DEFAULT_GLOSSARY,
 	denied,
 } from "../../src/astack/ste/check.ts";
+import { buildTemplate, copyRepo, type Template } from "../git-template.ts";
 import { astackTree, companionTree, emptyDeny } from "./astack-tree.ts";
 import { fixtureProfile } from "./ci-parity-fixtures.ts";
 
@@ -422,20 +423,14 @@ const companionInputs = {
 	deny: emptyDeny,
 };
 
-function seedRepos(extra: Readonly<Record<string, string>> = {}): {
-	main: string;
-	worktrees: string;
-} {
-	const root = tempDir("astack-wt-");
+function buildSeed(root: string, extra: Readonly<Record<string, string>>) {
 	const origin = join(root, "origin.git");
 	const seed = join(root, "seed");
 	const main = join(root, "main");
 	git(root, "init", "-q", "--bare", "-b", "main", origin);
 	git(root, "clone", "-q", origin, seed);
-	for (const repo of [seed]) {
-		git(repo, "config", "user.name", "Test Owner");
-		git(repo, "config", "user.email", "owner@example.com");
-	}
+	git(seed, "config", "user.name", "Test Owner");
+	git(seed, "config", "user.email", "owner@example.com");
 	write(seed, ".gitignore", "node_modules/\n");
 	write(seed, "CONTEXT.md", "# Context\n");
 	write(seed, "docs/adr/0001-start.md", "# Start\n");
@@ -448,6 +443,7 @@ function seedRepos(extra: Readonly<Record<string, string>> = {}): {
 	git(seed, "add", "-A");
 	git(seed, "commit", "-qm", "fix(core): ABC-1 readme");
 	git(seed, "push", "-q", "origin", "main");
+	rmSync(seed, { recursive: true, force: true });
 	git(root, "clone", "-q", origin, main);
 	git(main, "config", "user.name", "Test Owner");
 	git(main, "config", "user.email", "owner@example.com");
@@ -459,7 +455,29 @@ function seedRepos(extra: Readonly<Record<string, string>> = {}): {
 		'#!/bin/sh\nfor f in "$@"; do test -f "$f" || exit 1; done\necho "checked $#"\n',
 	);
 	chmodSync(join(main, "node_modules/.bin/check-files"), 0o755);
-	return { main, worktrees: join(root, "worktrees") };
+}
+
+const seedTemplates = new Map<string, Template>();
+
+function seedRepos(extra: Readonly<Record<string, string>> = {}): {
+	main: string;
+	worktrees: string;
+} {
+	const key = JSON.stringify(extra);
+	const template =
+		seedTemplates.get(key) ??
+		buildTemplate(
+			{
+				name: "seed",
+				repos: ["origin.git", "main"],
+				build: (root) => buildSeed(root, extra),
+			},
+			tempDir("astack-wt-template-"),
+		);
+	seedTemplates.set(key, template);
+	const root = tempDir("astack-wt-");
+	copyRepo(template, root);
+	return { main: join(root, "main"), worktrees: join(root, "worktrees") };
 }
 
 function acme(

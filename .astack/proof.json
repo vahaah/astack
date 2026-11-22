@@ -1,215 +1,26 @@
 {
 	"version": 1,
-	"change": "review-roadmap-b01-merge-authority",
-	"base": "ad80df7c445df5739f95342a02fd044047d10f25",
+	"change": "fixture-isolation",
+	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
 	"scope": [
 		{
-			"path": "src/astack/pr/**",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/hook/handlers/merge-guard.ts",
-			"obligation": "SG-mcp-merge",
-			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "src/astack/hook/handlers/pr-body.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/cli/commands/check/pr.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/hook/dispatch.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Merge", "GuardErrorDenies"]
-		},
-		{
-			"path": "src/astack/hook/events.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Merge", "GuardErrorDenies"]
-		},
-		{
-			"path": "src/astack/ste/session.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "src/astack/hook/decode/**",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "src/astack/doctor.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/cli/commands/doctor.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/astack/merge-guard.test.ts",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"EditProfile",
-				"Merge",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied"
-			]
-		},
-		{
-			"path": "tests/astack/hook.test.ts",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/astack/dispatch.test.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Prompt", "Merge", "GrantFromPerson", "GuardErrorDenies"]
-		},
-		{
-			"path": "tests/astack/cursor-hook.test.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/ste.test.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/doctor.test.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/guard-composition.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/fixtures/hook-input/**",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson", "McpMergeDenied"]
-		},
-		{
-			"path": "formal/SessionGuards.*",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"EditProfile",
-				"Merge",
-				"TypeOK",
-				"GrantFromWords",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies",
-				"FullStopNeverMerges",
-				"WriteChecksKept",
-				"ScratchSkipped",
-				"CommitSurfaceChecked",
-				"BroadLossDenied",
-				"DenialNeedsLoss"
-			]
-		},
-		{
-			"path": "docs/adr/0011-*.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"EditProfile",
-				"Merge",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "docs/reference/session-guards.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
+			"path": ".astack/**",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": ["TemplateUnchanged"]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+			"obligation": "FX-ISOLATE",
+			"modelRefs": ["TemplateUnchanged"]
 		},
 		{
-			"path": "docs/design.md",
-			"obligation": "SG-base-authority",
+			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+			"obligation": "FX-ISOLATE",
 			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "README.md",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["GuardErrorDenies"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/routes.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
-			"obligation": "SG-generated",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "dist/**",
-			"obligation": "SG-generated",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"CopyIndexClean",
+				"NoPartialTemplate"
 			]
 		},
 		{
@@ -218,13 +29,155 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/plans/**",
+			"path": "docs/reference/test-fixtures.md",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": [
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"CopyIndexClean",
+				"NoPartialTemplate"
+			]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": ".astack/**",
+			"path": "tests/adr-numbers.test.ts",
 			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/review-lessons.md",
+			"obligation": "FX-REAL-SCAN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "formal/FixtureIsolation.tla",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": [
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"CopyIndexClean",
+				"NoPartialTemplate"
+			]
+		},
+		{
+			"path": "formal/FixtureIsolation.cfg",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": [
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"CopyIndexClean",
+				"NoPartialTemplate"
+			]
+		},
+		{
+			"path": "package.json",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/check-companion.ts",
+			"obligation": "FX-REAL-SCAN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/check-fast.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/git-template.ts",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": [
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"RewriteConfig",
+				"RefreshIndex",
+				"FinishBuild"
+			]
+		},
+		{
+			"path": "tests/git-template.test.ts",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": [
+				"TemplateUnchanged",
+				"CopiesDisjoint",
+				"CopyIndexClean",
+				"NoPartialTemplate",
+				"Push"
+			]
+		},
+		{
+			"path": "tests/astack/ci-pins.test.ts",
+			"obligation": "FX-TREE",
+			"modelRefs": ["Commit", "CopiesDisjoint"]
+		},
+		{
+			"path": "tests/astack/ci-pins-adversarial.test.ts",
+			"obligation": "FX-TREE",
+			"modelRefs": ["Commit", "CopiesDisjoint"]
+		},
+		{
+			"path": "tests/astack/pr-head-harness.ts",
+			"obligation": "FX-ISOLATE",
+			"modelRefs": ["TemplateUnchanged", "Push"]
+		},
+		{
+			"path": "tests/apply/worktree.test.ts",
+			"obligation": "FX-INDEX",
+			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
+		},
+		{
+			"path": "tests/apply/ci-parity-apply.test.ts",
+			"obligation": "FX-INDEX",
+			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
+		},
+		{
+			"path": "tests/check-companion.test.ts",
+			"obligation": "FX-REAL-SCAN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/heavy-test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/neutral.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/validate.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/check-fast.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/drift.test.ts",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/change-proof-cli.test.ts",
+			"obligation": "CP-02",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/change-proof-ratification.test.ts",
+			"obligation": "CP-02",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/check-proof-script.test.ts",
+			"obligation": "CP-02",
 			"modelRefs": ["TypeOK"]
 		}
 	],
@@ -232,340 +185,314 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/hook/events.ts",
-			"symbol": "Handler"
+			"path": "tests/git-template.ts",
+			"symbol": "Template"
 		},
 		"terms": [
-			"Session guard",
-			"Merge grant",
-			"Unattended session",
-			"Base branch authority",
-			"Harness frame"
+			"Fixture template",
+			"ChangeProof",
+			"Model control",
+			"Session guard"
 		],
 		"invariants": [
 			{
-				"name": "A merge needs a grant of the base branch profile or a covering prompt of a person",
-				"modelRef": "MergeNeedsAuthority"
+				"name": "A write or a push in a copy never changes the template or its origin",
+				"modelRef": "TemplateUnchanged"
 			},
 			{
-				"name": "Only a person's prompt sets a grant, and a framed prompt is not one",
-				"modelRef": "GrantFromPerson"
+				"name": "A write or a push in a copy never changes another copy",
+				"modelRef": "CopiesDisjoint"
 			},
 			{
-				"name": "No merge goes through an MCP tool",
-				"modelRef": "McpMergeDenied"
+				"name": "Each ready copy has a clean index",
+				"modelRef": "CopyIndexClean"
 			},
 			{
-				"name": "No merge goes ahead after a guard error",
-				"modelRef": "GuardErrorDenies"
+				"name": "A template at its final path is a complete build",
+				"modelRef": "NoPartialTemplate"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D3"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D4"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D5"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D6"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D7"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"SG-merge-grant",
-				"SG-unattended",
-				"SG-base-authority",
-				"SG-framed-prompt",
-				"SG-mcp-merge",
-				"SG-guard-error",
-				"SG-generated",
-				"SG-preserve"
+				"FX-ISOLATE",
+				"FX-INDEX",
+				"FX-TREE",
+				"FX-ATOMIC",
+				"FX-OWN-DIR",
+				"FX-REAL-SCAN",
+				"CP-02",
+				"SG-preserve",
+				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each guard maps one decoded hook call to one Verdict. The PR read gives the base branch authority with the threads and the checks. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+			"contract": "Each arrow maps a fixture folder to a fixture folder. A ready copy is a new repo with the template commits, its own origin and a clean index, and no write in it reaches the template or another copy."
 		},
 		"objects": [
 			{
-				"name": "PromptText",
+				"name": "FixtureSpec",
 				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "HookEvent"
+					"path": "tests/git-template.ts",
+					"symbol": "FixtureSpec"
 				}
 			},
 			{
-				"name": "MergeGrant",
+				"name": "Template",
 				"link": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "MergeGrant"
+					"path": "tests/git-template.ts",
+					"symbol": "Template"
 				}
 			},
 			{
-				"name": "PrTarget",
+				"name": "RepoCopy",
 				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "PrTarget"
+					"path": "tests/git-template.ts",
+					"symbol": "RepoCopy"
 				}
 			},
 			{
-				"name": "PullRequestState",
+				"name": "BranchSpec",
 				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "PullRequestState"
-				}
-			},
-			{
-				"name": "HookCall",
-				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "HookEvent"
-				}
-			},
-			{
-				"name": "Verdict",
-				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "Verdict"
+					"path": "tests/git-template.ts",
+					"symbol": "BranchSpec"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "mergeGrantIn",
-				"from": "PromptText",
-				"to": "MergeGrant",
+				"name": "buildTemplate",
+				"from": "FixtureSpec",
+				"to": "Template",
 				"link": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "mergeGrantIn"
+					"path": "tests/git-template.ts",
+					"symbol": "buildTemplate"
 				},
-				"effects": []
+				"effects": ["fs-read", "fs-write", "spawn", "env"]
 			},
 			{
-				"name": "readPullRequestWithGh",
-				"from": "PrTarget",
-				"to": "PullRequestState",
+				"name": "copyTemplate",
+				"from": "Template",
+				"to": "RepoCopy",
 				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "readPullRequestWithGh"
+					"path": "tests/git-template.ts",
+					"symbol": "copyTemplate"
 				},
-				"effects": ["spawn", "network"]
+				"effects": ["fs-read", "fs-write"]
 			},
 			{
-				"name": "mergeGuard",
-				"from": "HookCall",
-				"to": "Verdict",
+				"name": "rewriteConfig",
+				"from": "RepoCopy",
+				"to": "RepoCopy",
 				"link": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
+					"path": "tests/git-template.ts",
+					"symbol": "rewriteConfig"
 				},
-				"effects": ["fs-read", "fs-write", "spawn", "network"]
+				"effects": ["fs-read", "fs-write"]
+			},
+			{
+				"name": "refreshIndex",
+				"from": "RepoCopy",
+				"to": "RepoCopy",
+				"link": {
+					"path": "tests/git-template.ts",
+					"symbol": "refreshIndex"
+				},
+				"effects": ["fs-read", "spawn", "env"]
+			},
+			{
+				"name": "commitTree",
+				"from": "RepoCopy",
+				"to": "RepoCopy",
+				"link": {
+					"path": "tests/git-template.ts",
+					"symbol": "commitTree"
+				},
+				"effects": ["fs-write", "spawn", "env"]
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their kind and their text are equal. Two base authorities are equal when their kind, their commit and their merge profile are equal.",
+		"equality": "Two templates are equal when their folders hold the same refs, objects and git config. Two copies are equal when their refs, their remote URLs and the state of their index are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/astack/guard-composition.ts"
+		"typedWitness": "tests/git-template.ts"
 	},
 	"abstraction": {
-		"hides": "The GraphQL read of the profile at the base tip and its parse, the frame test of a prompt, the token grammar of an MCP tool name and the failure verdict of the merge guard.",
+		"hides": "The git object layout, the fast-import stream, the config path rewrite and the index refresh of each copied repo.",
 		"callersKnow": [
-			"A merge needs a grant of the profile on the PR base branch, or a covering prompt of a person in this turn.",
-			"A working-tree edit of the profile changes no merge verdict.",
-			"A workflow brief, a relay message and a Cursor background prompt never give a grant.",
-			"Each MCP tool with a merge word gets a deny, and an error of the merge guard on a merge gives a deny."
+			"A copy is a new folder with the template commits, and each copied repo has its own origin.",
+			"A write or a push in a copy never reaches the template or another copy.",
+			"A new copy passes git diff-index --quiet HEAD.",
+			"commitTree writes each branch at fixed past dates, so two copies of one template get the same commit ids.",
+			"A build that throws leaves no folder, and removeTemplate removes the folder of a template."
 		],
-		"deletionTest": "Deleting baseAuthorityFrom puts the profile read back in the guard, and each caller must again choose a working tree, a cwd and an origin repo. Deleting isMcpMergeTool brings back a list of known tools for each host.",
+		"deletionTest": "Without the helper, each of the 5 files keeps its own chain of init, add, commit and push calls for each test.",
 		"alternatives": [
 			{
-				"name": "Read origin/<base> from local git",
-				"rejectedBecause": "A session can move a remote-tracking ref with git update-ref or a fetch."
+				"name": "git clone --shared or --reference",
+				"rejectedBecause": "The copies then share objects with the template."
 			},
 			{
-				"name": "Deny each write of the profile",
-				"rejectedBecause": "Shell writes, branch switches and old worktrees are open sets, so the guard cannot cover them."
+				"name": "One repo for each file",
+				"rejectedBecause": "The tests then share commits."
 			},
 			{
-				"name": "Add only the literal prefix of the workflow frame",
-				"rejectedBecause": "The next frame label passes again."
+				"name": "An add and a commit for each branch",
+				"rejectedBecause": "A repo then costs 53 to 71 ms, from 17 to 24 ms with one fast-import stream."
 			},
 			{
-				"name": "Keep an exact deny list of MCP merge tools",
-				"rejectedBecause": "The list missed CoCode and Linear, and it drifts with each host."
+				"name": "Object writes in process",
+				"rejectedBecause": "They need a git library."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "mergeGrantIn"
+					"path": "tests/git-template.ts",
+					"symbol": "buildTemplate"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "FinishBuild"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/ste/session.ts",
-					"symbol": "humanPrompt"
+					"path": "tests/git-template.ts",
+					"symbol": "buildTemplate"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "StopBuild"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/decode/cursor.ts",
-					"symbol": "decodeCursor"
+					"path": "tests/git-template.ts",
+					"symbol": "copyTemplate"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "CopyTemplate"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "readPullRequestWithGh"
+					"path": "tests/git-template.ts",
+					"symbol": "rewriteConfig"
 				},
-				"modelAction": "Merge"
+				"modelAction": "RewriteConfig"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/merge.ts",
-					"symbol": "stateReasons"
+					"path": "tests/git-template.ts",
+					"symbol": "refreshIndex"
 				},
-				"modelAction": "Merge"
+				"modelAction": "RefreshIndex"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/merge.ts",
-					"symbol": "preflightReasons"
+					"path": "tests/git-template.ts",
+					"symbol": "commitTree"
 				},
-				"modelAction": "Merge"
+				"modelAction": "Commit"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
+					"path": "tests/git-template.test.ts",
+					"symbol": "commitAndPush"
 				},
-				"modelAction": "Merge"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/dispatch.ts",
-					"symbol": "judgeEach"
-				},
-				"modelAction": "Merge"
+				"modelAction": "Push"
 			}
 		],
 		"omitted": [
-			"The GraphQL reply is abstracted to one base observation of turn, standing, base or unread.",
-			"The frame test is abstracted to the source class frame.",
-			"The MCP token grammar is abstracted to two channels, gh and mcp.",
-			"A guard error is abstracted to one fault flag for each merge.",
-			"One repo is modeled, so the same-repo rule holds by the shape of the base read.",
-			"The host decides the prompt source and the attended variables, and the model takes them as true."
+			"The git objects, the files and the index are abstracted to one commit count for each repo and one clean flag for each copy.",
+			"removeTemplate and the template cache of each file are not in the model. The fx-own-dir control and the pr-head order runs examine them.",
+			"The scan runner of check:companion and the timeout budget are not in the model. The fx-real-scan control and the timed runs examine them."
 		]
 	},
 	"model": {
-		"module": "formal/SessionGuards.tla",
-		"config": "formal/SessionGuards.cfg",
+		"module": "formal/FixtureIsolation.tla",
+		"config": "formal/FixtureIsolation.cfg",
 		"dependencies": [],
+		"bounds": [
+			"One template, two copies and at most 2 commits in each copy.",
+			"A build of 2 steps that can stop before its end and start again.",
+			"Each order of the copy, rewrite, refresh, commit and push steps of each copy."
+		],
+		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"GrantFromWords",
-			"GrantFromPerson",
-			"MergeNeedsAuthority",
-			"McpMergeDenied",
-			"GuardErrorDenies",
-			"FullStopNeverMerges",
-			"WriteChecksKept",
-			"ScratchSkipped",
-			"CommitSurfaceChecked",
-			"BroadLossDenied",
-			"DenialNeedsLoss"
+			"TemplateUnchanged",
+			"CopiesDisjoint",
+			"CopyIndexClean",
+			"NoPartialTemplate"
 		],
-		"properties": [],
-		"bounds": [
-			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
-			"Each combination of four path facts for one write and an optional commit.",
-			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects."
-		],
-		"fairness": []
+		"properties": []
 	},
 	"negative": {
-		"file": "formal/SessionGuards.tla",
-		"action": "Merge",
-		"original": "/\\ ProfileCovers(baseAuthority, n) \\/ n \\in grant",
-		"replacement": "/\\ ProfileCovers(workingAuthority, n) \\/ n \\in grant",
-		"defect": "The merge guard reads the working-tree profile, so an uncommitted edit of merge.authority gives standing merge authority with no owner word.",
+		"file": "formal/FixtureIsolation.tla",
+		"action": "RewriteConfig",
+		"original": "/\\ remote' = [remote EXCEPT ![c] = c]",
+		"replacement": "/\\ remote' = remote",
+		"defect": "A copy that keeps the origin URL of the template pushes into the origin of the template, as a copy with no config rewrite does.",
 		"expect": {
 			"kind": "invariant",
-			"name": "MergeNeedsAuthority"
+			"name": "TemplateUnchanged"
 		}
 	},
 	"limits": [
-		"The finite model takes the base read, the prompt source class, the attended state and the tool channel as true observations.",
-		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"A session that can push to an unprotected base branch can change the base profile. Branch protection is the control for that case.",
-		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+		"The finite model takes git, the file copy and the index refresh as true observations. The fx-isolate, fx-index, fx-tree and fx-atomic controls examine them.",
+		"The model does not check the git spawn counts, the timeout budget or the suite times. The timed runs in the PR Verification give them.",
+		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
+		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

@@ -201,3 +201,10 @@ A rule that a review profile must pass before a hardening run loads it.
 Apply, `astack check hardening-profile` and doctor read one list of these rules, and each problem has a repair.
 _Avoid_: Profile lint, profile schema
 _Code_: `reviewProfileProblems`
+
+### Fixture template
+
+A git repo, or a folder of repos, that a heavy test file builds once and copies for each test.
+Each copy points its git config at itself, so a write in a copy never reaches the template or another copy.
+_Avoid_: Shared repo, golden repo
+_Code_: `buildTemplate`

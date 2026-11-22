@@ -13,6 +13,7 @@ import {
 	validProof,
 	writeFiles,
 } from "./astack/change-proof-fixture.ts";
+import { heavyTestTimeout } from "./heavy-test.ts";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/check-proof.ts");
 
@@ -120,6 +121,7 @@ test.each<[string, string, OriginMain, boolean]>([
 		);
 		expect(run.code).toBe(0);
 	},
+	heavyTestTimeout,
 );
 
 test("[control:proof-push-payload] a branch push with no default branch in the event payload fails before the proof", () => {
@@ -167,6 +169,7 @@ test.each<[string, OriginMain, boolean]>([
 		);
 		expect(run.code).toBe(0);
 	},
+	heavyTestTimeout,
 );
 
 test("[control:proof-local-untracked] an untracked path at the default tip reads its diff from origin/main", () => {

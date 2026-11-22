@@ -23,6 +23,7 @@ import {
 	worktreeProject,
 } from "../../scripts/lib/project-apply.ts";
 import { validateProjectConfig } from "../../scripts/lib/projects.ts";
+import { buildTemplate, copyRepo, type Template } from "../git-template.ts";
 import { astackTree, companionTree, emptyDeny } from "./astack-tree.ts";
 import { fixtureConfig, fixtureProfile, repo } from "./ci-parity-fixtures.ts";
 
@@ -50,12 +51,7 @@ function write(root: string, path: string, text: string): void {
 	writeFileSync(join(root, path), text);
 }
 
-function seed(extra: Readonly<Record<string, string>> = {}): {
-	main: string;
-	worktrees: string;
-	scratch: string;
-} {
-	const root = tempDir("astack-parity-");
+function buildSeed(root: string, extra: Readonly<Record<string, string>>) {
 	const origin = join(root, "origin.git");
 	const first = join(root, "seed");
 	const main = join(root, "main");
@@ -73,11 +69,35 @@ function seed(extra: Readonly<Record<string, string>> = {}): {
 	git(first, "add", "-A");
 	git(first, "commit", "-qm", "feat(core): start the repo");
 	git(first, "push", "-q", "origin", "main");
+	rmSync(first, { recursive: true, force: true });
 	git(root, "clone", "-q", origin, main);
 	git(main, "config", "user.name", "Test Owner");
 	git(main, "config", "user.email", "owner@example.com");
+}
+
+const seedTemplates = new Map<string, Template>();
+
+function seed(extra: Readonly<Record<string, string>> = {}): {
+	main: string;
+	worktrees: string;
+	scratch: string;
+} {
+	const key = JSON.stringify(extra);
+	const template =
+		seedTemplates.get(key) ??
+		buildTemplate(
+			{
+				name: "seed",
+				repos: ["origin.git", "main"],
+				build: (root) => buildSeed(root, extra),
+			},
+			tempDir("astack-parity-template-"),
+		);
+	seedTemplates.set(key, template);
+	const root = tempDir("astack-parity-");
+	copyRepo(template, root);
 	return {
-		main,
+		main: join(root, "main"),
 		worktrees: join(root, "worktrees"),
 		scratch: join(root, "scratch"),
 	};
