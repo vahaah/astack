@@ -291,6 +291,8 @@ type Wrapper = {
 	readonly replace?: string;
 	readonly assigns?: boolean;
 	readonly unsets?: readonly string[];
+	readonly resets?: boolean;
+	readonly keeps?: readonly string[];
 	readonly operands?: number;
 	readonly feeds?: boolean;
 	readonly numeric?: boolean;
@@ -308,7 +310,7 @@ const WRAPPERS: ReadonlyMap<string, Wrapper> = new Map([
 	],
 	["command", { flags: ["-p"] }],
 	["builtin", {}],
-	["exec", { flags: ["-c", "-l"], values: ["-a"] }],
+	["exec", { flags: ["-c", "-l"], values: ["-a"], unsets: ["-c"] }],
 	["time", { flags: ["-p"] }],
 	["nohup", {}],
 	["nice", { values: ["-n", "--adjustment"], numeric: true }],
@@ -341,9 +343,11 @@ const WRAPPERS: ReadonlyMap<string, Wrapper> = new Map([
 			],
 			values: ["-g", "-u", "--group", "--user"],
 			assigns: true,
+			resets: true,
+			keeps: ["-E", "--preserve-env"],
 		},
 	],
-	["doas", { flags: ["-n"], values: ["-u"] }],
+	["doas", { flags: ["-n"], values: ["-u"], resets: true }],
 	["stdbuf", { values: ["-e", "-i", "-o", "--error", "--input", "--output"] }],
 	[
 		"xargs",
@@ -455,12 +459,11 @@ type Plain = {
 	readonly unreadable: Unreadable | undefined;
 };
 
-function unsetsEnv(wrapper: Wrapper, name: string): boolean {
-	const unsets = wrapper.unsets ?? [];
+function namesFlag(flags: readonly string[], name: string): boolean {
 	return (
-		unsets.includes(name) ||
+		flags.includes(name) ||
 		(/^-[A-Za-z0-9]{2,}$/.test(name) &&
-			[...name.slice(1)].some((letter) => unsets.includes(`-${letter}`)))
+			[...name.slice(1)].some((letter) => flags.includes(`-${letter}`)))
 	);
 }
 
@@ -497,6 +500,7 @@ function plainForm(raw: readonly Word[]): Plain {
 		const wrapper = WRAPPERS.get(basename(name));
 		if (wrapper === undefined) break;
 		const start = at;
+		let kept = false;
 		at++;
 		for (
 			let option = raw[at];
@@ -519,9 +523,12 @@ function plainForm(raw: readonly Word[]): Plain {
 					unreadable: "wrapper",
 				};
 			if (read.name === wrapper.replace) replace = read.value?.value;
-			unsets ||= unsetsEnv(wrapper, read.name);
+			unsets ||= namesFlag(wrapper.unsets ?? [], read.name);
+			kept ||=
+				read.value === undefined && namesFlag(wrapper.keeps ?? [], read.name);
 			at += read.width;
 		}
+		unsets ||= wrapper.resets === true && !kept;
 		at += wrapper.operands ?? 0;
 		assigns = wrapper.assigns === true;
 		feeds ||= wrapper.feeds === true;

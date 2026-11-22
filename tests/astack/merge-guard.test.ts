@@ -541,6 +541,8 @@ describe("the merge guard", () => {
 		["gh --repo=other/repo pr merge 12", "other/repo"],
 		["env gh pr merge 12", undefined],
 		["command gh pr merge 12", undefined],
+		["sudo -E gh pr merge 12", undefined],
+		["sudo --preserve-env gh pr merge 12", undefined],
 		["/usr/local/bin/gh pr merge 12", undefined],
 	])(
 		"%p is a merge, so the guard reads #12 in the repo it names first",
@@ -556,6 +558,10 @@ describe("the merge guard", () => {
 		"env GH_REPO=other/repo gh pr merge 12",
 		"env -u GH_REPO gh pr merge 12",
 		"env -i gh pr merge 12",
+		"sudo gh pr merge 12",
+		"sudo -u root gh pr merge 12",
+		"doas gh pr merge 12",
+		"exec -c gh pr merge 12",
 	])("%p is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -567,7 +573,7 @@ describe("the merge guard", () => {
 		expect(run).toEqual({
 			exit: 2,
 			stderr:
-				"astack blocked gh pr merge:\n- Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with env -i or env -u. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
+				"astack blocked gh pr merge:\n- Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with a wrapper that resets it, such as env -i, env -u, exec -c, doas, or sudo with no -E. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
 		});
 		expect(reads).toEqual([]);
 	});

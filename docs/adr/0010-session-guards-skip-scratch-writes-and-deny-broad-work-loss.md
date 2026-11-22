@@ -101,6 +101,10 @@ The negative control lets a "full stop" clause give a grant of each PR. It must 
 The model takes the plain form of each shell step as given.
 The control of the plain form is the wrapper law `verdict(w c) = verdict(c)`, which a property test checks.
 
+Amended 2026-11-22. `sudo` and `doas` reset the environment by default, and `exec -c` clears it.
+So the merge guard reads each of them before `gh pr merge` as an environment change, unless `sudo` has `-E` or `--preserve-env`.
+The merge part of the wrapper law leaves out `env -i`, `sudo` and `doas` with no such flag. The destructive part keeps them.
+
 #### Category composition
 
 The record uses the `artifact` carrier.

@@ -108,12 +108,22 @@ const WRAPPERS = [
 	"timeout -s KILL 60",
 	"sudo",
 	"sudo -u root",
+	"sudo -E",
+	"sudo --preserve-env -u root",
 	"doas",
 	"doas -u root",
 	"stdbuf -o0",
 ] as const;
 
-const KEEPS_ENV = WRAPPERS.filter((wrapper) => wrapper !== "env -i");
+const RESETS_ENV = new Set<string>([
+	"env -i",
+	"sudo",
+	"sudo -u root",
+	"doas",
+	"doas -u root",
+]);
+
+const KEEPS_ENV = WRAPPERS.filter((wrapper) => !RESETS_ENV.has(wrapper));
 
 const GUARDS: readonly (readonly [string, Handler, readonly string[]])[] = [
 	["destructive", destructive, WRAPPERS],

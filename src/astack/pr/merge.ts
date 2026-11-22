@@ -166,7 +166,7 @@ export function preflightReasons(inputs: MergeInputs): readonly string[] {
 		);
 	if (inputs.setsEnv)
 		reasons.push(
-			"Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with env -i or env -u. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
+			"Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with a wrapper that resets it, such as env -i, env -u, exec -c, doas, or sudo with no -E. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
 		);
 	if (inputs.call.dynamic)
 		reasons.push(
