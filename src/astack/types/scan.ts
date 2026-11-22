@@ -23,6 +23,8 @@ export type SourceComment = {
 	readonly text: string;
 	readonly line: number;
 	readonly block: boolean;
+	readonly start: number;
+	readonly end: number;
 };
 
 export type Scan = {
@@ -487,6 +489,8 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 			text: source.slice(comment.start, comment.end),
 			line: commentLine(comment.start),
 			block: comment.block,
+			start: comment.start,
+			end: comment.end,
 		}),
 	);
 	return { tokens, comments };

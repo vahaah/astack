@@ -72,6 +72,29 @@ describe("TypeScript and JavaScript", () => {
 		expect(commentTexts(source, "ts")).toEqual(["// real"]);
 	});
 
+	test("[control:cs-regex] a slash after an operand keyword starts a regex, so its slashes are no comment", () => {
+		expect(commentTexts("export default /[//]/.source;\n", "ts")).toEqual([]);
+	});
+
+	test.each([["obj.default / 2; // note"], ["obj.return / 2; // note"]])(
+		"[control:cs-member-comment] a slash after a member keyword divides, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "ts")).toEqual(["// note"]);
+		},
+	);
+
+	test.each([
+		["const as = 4; as / 2; // note"],
+		["const satisfies = 4; satisfies / 2; // note"],
+		["const keyof = 4; keyof / 2; // note"],
+		["var let = 4; let / 2; // note"],
+	])(
+		"[control:cs-name-comment] a slash after a name word divides, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "ts")).toEqual(["// note"]);
+		},
+	);
+
 	test("treats a directive prologue and a shebang as code", () => {
 		const source =
 			"#!/usr/bin/env bun\n\"use client\";\n'use strict';\nexport {};\n";
@@ -115,10 +138,11 @@ describe("TypeScript and JavaScript", () => {
 		expect(commentTexts(source, "ts")).toEqual(["// cast"]);
 	});
 
-	test("reports an unterminated template literal as incomplete", () => {
-		expect(lex("const a = `open\n// not a comment\n", "ts").complete).toBe(
-			false,
-		);
+	test("[control:cs-incomplete] an unterminated template literal gives no comments and an incomplete result", () => {
+		expect(lex("const a = `open\n// not a comment\n", "ts")).toEqual({
+			comments: [],
+			complete: false,
+		});
 	});
 
 	test("groups consecutive line comments into one unit and keeps directives apart", () => {
