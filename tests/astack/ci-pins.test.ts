@@ -291,27 +291,33 @@ describe("astack check ci-pins", () => {
 		});
 	});
 
-	test("a PR that changes a workflow, an action under .github/actions or a local action that a workflow uses, and no tool version, exits 3 in mode ci_proof", () => {
-		const base = {
-			".github/workflows/check.yml": workflow("      - uses: ./tools/ci-setup"),
-			".github/actions/lint/action.yml": "runs:\n  using: composite\n",
-			"tools/ci-setup/action.yml": "runs:\n  using: composite\n  steps: []\n",
-			"tools/other.ts": "export {};\n",
-		};
-		const changed = (path: string) =>
-			ciPins(pullRequest(base, { [path]: "# changed\n" }));
-		for (const path of [
-			".github/workflows/check.yml",
-			".github/actions/lint/action.yml",
-			"tools/ci-setup/action.yml",
-			"tools/ci-setup/install.sh",
-		])
-			expect(changed(path)).toEqual({
+	const localAction = {
+		".github/workflows/check.yml": workflow("      - uses: ./tools/ci-setup"),
+		".github/actions/lint/action.yml": "runs:\n  using: composite\n",
+		"tools/ci-setup/action.yml": "runs:\n  using: composite\n  steps: []\n",
+		"tools/other.ts": "export {};\n",
+	};
+	const changes = (path: string) =>
+		ciPins(pullRequest(localAction, { [path]: "# changed\n" }));
+
+	test.each([
+		[".github/workflows/check.yml", "only"],
+		[".github/actions/lint/action.yml", "and at the head"],
+		["tools/ci-setup/action.yml", "and at the head"],
+		["tools/ci-setup/install.sh", "and at the head"],
+	])(
+		"a PR that changes a workflow, an action under .github/actions or a local action that a workflow uses, and no tool version, exits 3 in mode ci_proof: %s",
+		(path, head) => {
+			expect(changes(path)).toEqual({
 				code: 3,
-				out: `${path}: the PR changes this CI file.\n.github/workflows/check.yml#static: CI sets up runner ubuntu-latest at the base ${path === ".github/workflows/check.yml" ? "only" : "and at the head"}.\n${ciProof}`,
+				out: `${path}: the PR changes this CI file.\n.github/workflows/check.yml#static: CI sets up runner ubuntu-latest at the base ${head}.\n${ciProof}`,
 				err: "",
 			});
-		expect(changed("tools/other.ts")).toEqual({ code: 0, out: ok, err: "" });
+		},
+	);
+
+	test("a PR that changes a file next to a local action, and no CI file, exits 0", () => {
+		expect(changes("tools/other.ts")).toEqual({ code: 0, out: ok, err: "" });
 	});
 
 	test("an input that the scan cannot read, or a file that astack reads no version from, stops only when it can hide a change", () => {

@@ -12,6 +12,7 @@ import {
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
+import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	BASE_FILES,
 	git,
@@ -191,26 +192,30 @@ function promisorCandidate() {
 }
 
 describe("integrated ADR ratification", () => {
-	test("[control:proof-landing-selected-header] admits an explicit landing value update after the complete model triple", () => {
-		const repo = landingCandidate();
-		selectLanding(repo);
-		writeFileSync(
-			join(repo.root, GOVERNING),
-			readFileSync(join(repo.root, GOVERNING), "utf8").replace(
-				"Landed: none yet",
-				"Landed: fresh-input checks",
-			),
-		);
-		const result = run(repo.root);
-		expect(result.code).toBe(0);
-		expect(result.err).toBe("");
-		expect(result.out).toStartWith(
-			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-		);
-		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
-			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
-		);
-	});
+	test(
+		"[control:proof-landing-selected-header] admits an explicit landing value update after the complete model triple",
+		() => {
+			const repo = landingCandidate();
+			selectLanding(repo);
+			writeFileSync(
+				join(repo.root, GOVERNING),
+				readFileSync(join(repo.root, GOVERNING), "utf8").replace(
+					"Landed: none yet",
+					"Landed: fresh-input checks",
+				),
+			);
+			const result = run(repo.root);
+			expect(result.code).toBe(0);
+			expect(result.err).toBe("");
+			expect(result.out).toStartWith(
+				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
+			);
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-landing-default-strict] retains whole-byte comparison without the option", () => {
 		const repo = landingCandidate();
@@ -490,18 +495,22 @@ describe("integrated ADR ratification", () => {
 		);
 	});
 
-	test("[control:proof-ratification-admits-an-unchanged-integrated-proposal-only-after-the-full-model-triple] admits an unchanged integrated proposal only after the full model triple", () => {
-		const repo = candidate();
-		const result = run(repo.root);
-		expect(result.code).toBe(0);
-		expect(result.err).toBe("");
-		expect(result.out).toStartWith(
-			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-		);
-		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
-			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
-		);
-	});
+	test(
+		"[control:proof-ratification-admits-an-unchanged-integrated-proposal-only-after-the-full-model-triple] admits an unchanged integrated proposal only after the full model triple",
+		() => {
+			const repo = candidate();
+			const result = run(repo.root);
+			expect(result.code).toBe(0);
+			expect(result.err).toBe("");
+			expect(result.out).toStartWith(
+				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
+			);
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			);
+		},
+		heavyTestTimeout,
+	);
 
 	test.each([
 		["the governing decision", GOVERNING],
@@ -561,21 +570,25 @@ describe("integrated ADR ratification", () => {
 		},
 	);
 
-	test("[control:proof-landing-base-move] a move of main that changes only the selected Landed value still admits", () => {
-		const repo = landingSelected();
-		const text = readFileSync(join(repo.root, GOVERNING), "utf8");
-		mainMoves(
-			repo,
-			GOVERNING,
-			text.replace("Landed: none yet", "Landed: fresh-input checks"),
-		);
-		const result = run(repo.root, {}, ["--base", "origin/main"]);
-		expect(result.err).toBe("");
-		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
-			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
-		);
-		expect(result.code).toBe(0);
-	});
+	test(
+		"[control:proof-landing-base-move] a move of main that changes only the selected Landed value still admits",
+		() => {
+			const repo = landingSelected();
+			const text = readFileSync(join(repo.root, GOVERNING), "utf8");
+			mainMoves(
+				repo,
+				GOVERNING,
+				text.replace("Landed: none yet", "Landed: fresh-input checks"),
+			);
+			const result = run(repo.root, {}, ["--base", "origin/main"]);
+			expect(result.err).toBe("");
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			);
+			expect(result.code).toBe(0);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-ratification-compares-the-fixed-base-even-when-current-bytes-match-the-older-integration] compares the fixed base even when current bytes match the older integration", () => {
 		const repo = candidate();
@@ -801,91 +814,99 @@ describe("integrated ADR ratification", () => {
 		},
 	);
 
-	test("[control:proof-ratification-binds-history-availability-again-after-model-execution] binds history availability again after model execution", async () => {
-		const repo = candidate();
-		const commit = reference(repo).ratification.integratedAt;
-		const object = git(
-			repo.root,
-			"rev-parse",
-			"--git-path",
-			`objects/${commit.slice(0, 2)}/${commit.slice(2)}`,
-		);
-		let removed = false;
-		const result = await new Promise<{
-			code: number | null;
-			out: string;
-			err: string;
-		}>((done) => {
-			const child = spawn(process.execPath, [CLI, "check", "proof"], {
-				cwd: repo.root,
-				env: environment(),
+	test(
+		"[control:proof-ratification-binds-history-availability-again-after-model-execution] binds history availability again after model execution",
+		async () => {
+			const repo = candidate();
+			const commit = reference(repo).ratification.integratedAt;
+			const object = git(
+				repo.root,
+				"rev-parse",
+				"--git-path",
+				`objects/${commit.slice(0, 2)}/${commit.slice(2)}`,
+			);
+			let removed = false;
+			const result = await new Promise<{
+				code: number | null;
+				out: string;
+				err: string;
+			}>((done) => {
+				const child = spawn(process.execPath, [CLI, "check", "proof"], {
+					cwd: repo.root,
+					env: environment(),
+				});
+				let out = "";
+				let err = "";
+				child.stdout.on("data", (chunk: Buffer) => {
+					out += chunk.toString();
+					if (!removed && out.includes("positive:")) {
+						unlinkSync(resolve(repo.root, object));
+						removed = true;
+					}
+				});
+				child.stderr.on("data", (chunk: Buffer) => {
+					err += chunk.toString();
+				});
+				child.on("close", (code) => done({ code, out, err }));
 			});
-			let out = "";
-			let err = "";
-			child.stdout.on("data", (chunk: Buffer) => {
-				out += chunk.toString();
-				if (!removed && out.includes("positive:")) {
-					unlinkSync(resolve(repo.root, object));
-					removed = true;
-				}
-			});
-			child.stderr.on("data", (chunk: Buffer) => {
-				err += chunk.toString();
-			});
-			child.on("close", (code) => done({ code, out, err }));
-		});
-		expect(removed).toBe(true);
-		expect(result.code).toBe(1);
-		expect(result.err).toBe("");
-		const last = result.out.trimEnd().split("\n").at(-1) ?? "";
-		expect(last).toMatch(
-			/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
-		);
-		const hashes = [...last.matchAll(/sha256:([0-9a-f]{64})/g)].map(
-			(match) => match[1],
-		);
-		expect(hashes).toHaveLength(2);
-		expect(hashes[0]).not.toBe(hashes[1]);
-	});
+			expect(removed).toBe(true);
+			expect(result.code).toBe(1);
+			expect(result.err).toBe("");
+			const last = result.out.trimEnd().split("\n").at(-1) ?? "";
+			expect(last).toMatch(
+				/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+			);
+			const hashes = [...last.matchAll(/sha256:([0-9a-f]{64})/g)].map(
+				(match) => match[1],
+			);
+			expect(hashes).toHaveLength(2);
+			expect(hashes[0]).not.toBe(hashes[1]);
+		},
+		heavyTestTimeout,
+	);
 
-	test("[control:proof-ratification-binds-an-ignored-proof-record-across-model-execution] binds an ignored proof record across model execution", async () => {
-		const repo = candidate(PROPOSAL, POLICY, (root) =>
-			writeFileSync(join(root, ".gitignore"), "ignored/\n"),
-		);
-		mkdirSync(join(repo.root, "ignored"));
-		const record = join(repo.root, "ignored/proof.md");
-		writeFileSync(record, existingRecord);
-		reference(repo).ratification.proofRecord = "ignored/proof.md";
-		save(repo);
-		let changed = false;
-		const result = await new Promise<{
-			code: number | null;
-			out: string;
-			err: string;
-		}>((done) => {
-			const child = spawn(process.execPath, [CLI, "check", "proof"], {
-				cwd: repo.root,
-				env: environment(),
+	test(
+		"[control:proof-ratification-binds-an-ignored-proof-record-across-model-execution] binds an ignored proof record across model execution",
+		async () => {
+			const repo = candidate(PROPOSAL, POLICY, (root) =>
+				writeFileSync(join(root, ".gitignore"), "ignored/\n"),
+			);
+			mkdirSync(join(repo.root, "ignored"));
+			const record = join(repo.root, "ignored/proof.md");
+			writeFileSync(record, existingRecord);
+			reference(repo).ratification.proofRecord = "ignored/proof.md";
+			save(repo);
+			let changed = false;
+			const result = await new Promise<{
+				code: number | null;
+				out: string;
+				err: string;
+			}>((done) => {
+				const child = spawn(process.execPath, [CLI, "check", "proof"], {
+					cwd: repo.root,
+					env: environment(),
+				});
+				let out = "";
+				let err = "";
+				child.stdout.on("data", (chunk: Buffer) => {
+					out += chunk.toString();
+					if (!changed && out.includes("positive:")) {
+						writeFileSync(record, `${existingRecord}\nChanged.\n`);
+						changed = true;
+					}
+				});
+				child.stderr.on("data", (chunk: Buffer) => {
+					err += chunk.toString();
+				});
+				child.on("close", (code) => done({ code, out, err }));
 			});
-			let out = "";
-			let err = "";
-			child.stdout.on("data", (chunk: Buffer) => {
-				out += chunk.toString();
-				if (!changed && out.includes("positive:")) {
-					writeFileSync(record, `${existingRecord}\nChanged.\n`);
-					changed = true;
-				}
-			});
-			child.stderr.on("data", (chunk: Buffer) => {
-				err += chunk.toString();
-			});
-			child.on("close", (code) => done({ code, out, err }));
-		});
-		expect(changed).toBe(true);
-		expect(result.code).toBe(1);
-		expect(result.err).toBe("");
-		expect(result.out.trimEnd().split("\n").at(-1)).toMatch(
-			/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
-		);
-	});
+			expect(changed).toBe(true);
+			expect(result.code).toBe(1);
+			expect(result.err).toBe("");
+			expect(result.out.trimEnd().split("\n").at(-1)).toMatch(
+				/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+			);
+		},
+		heavyTestTimeout,
+	);
 });

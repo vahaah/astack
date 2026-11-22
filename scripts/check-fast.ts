@@ -5,7 +5,7 @@ import { runGit } from "../src/astack/git.ts";
 import { listFiles, REPO_ROOT } from "./lib/files.ts";
 
 const CAP_SECONDS = 20;
-const TEST = ["test", "--parallel", "--timeout=20000"];
+const TEST = ["test", "--parallel"];
 export const REBUILD: readonly (readonly string[])[] = [
 	["run", "build"],
 	["run", "bundle"],

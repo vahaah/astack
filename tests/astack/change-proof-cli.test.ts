@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isMap, isSeq, parseDocument } from "yaml";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
+import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	git,
 	PROOF_FILES,
@@ -105,68 +106,73 @@ describe("astack check proof", () => {
 			);
 			expect(run.code).toBe(0);
 		},
+		heavyTestTimeout,
 	);
 
-	test("[control:proof-release-history] the release verification checkout can admit a proof against its historical base", () => {
-		const workflow = parseDocument(
-			readFileSync(
-				resolve(import.meta.dir, "../../.github/workflows/release.yml"),
-				"utf8",
-			),
-		);
-		const steps = workflow.getIn(["jobs", "verify", "steps"], true);
-		if (!isSeq(steps)) throw new Error("release verification has no steps");
-		const checkout = steps.items.find((step) => {
-			if (!isMap(step)) return false;
-			const action = step.get("uses");
-			return (
-				typeof action === "string" && action.startsWith("actions/checkout@")
+	test(
+		"[control:proof-release-history] the release verification checkout can admit a proof against its historical base",
+		() => {
+			const workflow = parseDocument(
+				readFileSync(
+					resolve(import.meta.dir, "../../.github/workflows/release.yml"),
+					"utf8",
+				),
 			);
-		});
-		if (!isMap(checkout))
-			throw new Error("release verification has no checkout");
-		const depth = checkout.getIn(["with", "fetch-depth"]) ?? 1;
-		if (typeof depth !== "number" || !Number.isInteger(depth) || depth < 0)
-			throw new Error("release verification has no valid fetch depth");
-		const repo = proofRepo(scratch);
-		git(repo.root, "tag", "v0.1.0");
-		const source = pathToFileURL(repo.root).href;
-		const shallow = join(scratch, "release-shallow");
-		git(
-			scratch,
-			"clone",
-			"-q",
-			"--branch",
-			"v0.1.0",
-			"--depth",
-			"1",
-			source,
-			shallow,
-		);
-		expect(proof(shallow)).toEqual({
-			code: 1,
-			err: "",
-			out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
-		});
-		const verified = join(scratch, "release-verify");
-		const depthArgs = depth === 0 ? [] : ["--depth", String(depth)];
-		git(
-			scratch,
-			"clone",
-			"-q",
-			"--branch",
-			"v0.1.0",
-			...depthArgs,
-			source,
-			verified,
-		);
-		const run = proof(verified);
-		expect(run.err).toBe("");
-		expect(lastLine(run.out)).toBe(
-			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
-		);
-		expect(run.code).toBe(0);
-	});
+			const steps = workflow.getIn(["jobs", "verify", "steps"], true);
+			if (!isSeq(steps)) throw new Error("release verification has no steps");
+			const checkout = steps.items.find((step) => {
+				if (!isMap(step)) return false;
+				const action = step.get("uses");
+				return (
+					typeof action === "string" && action.startsWith("actions/checkout@")
+				);
+			});
+			if (!isMap(checkout))
+				throw new Error("release verification has no checkout");
+			const depth = checkout.getIn(["with", "fetch-depth"]) ?? 1;
+			if (typeof depth !== "number" || !Number.isInteger(depth) || depth < 0)
+				throw new Error("release verification has no valid fetch depth");
+			const repo = proofRepo(scratch);
+			git(repo.root, "tag", "v0.1.0");
+			const source = pathToFileURL(repo.root).href;
+			const shallow = join(scratch, "release-shallow");
+			git(
+				scratch,
+				"clone",
+				"-q",
+				"--branch",
+				"v0.1.0",
+				"--depth",
+				"1",
+				source,
+				shallow,
+			);
+			expect(proof(shallow)).toEqual({
+				code: 1,
+				err: "",
+				out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
+			});
+			const verified = join(scratch, "release-verify");
+			const depthArgs = depth === 0 ? [] : ["--depth", String(depth)];
+			git(
+				scratch,
+				"clone",
+				"-q",
+				"--branch",
+				"v0.1.0",
+				...depthArgs,
+				source,
+				verified,
+			);
+			const run = proof(verified);
+			expect(run.err).toBe("");
+			expect(lastLine(run.out)).toBe(
+				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			);
+			expect(run.code).toBe(0);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-missing-manifest] a repo with no proof manifest fails", () => {
 		const root = join(scratch, "empty");
@@ -177,125 +183,137 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(1);
 	});
 
-	test("an ignored manifest still belongs to the proof input digest", () => {
-		const repo = proofRepo(scratch);
-		const path = join(repo.root, ".astack/proof.json");
-		const manifest: unknown = JSON.parse(readFileSync(path, "utf8"));
-		if (
-			typeof manifest !== "object" ||
-			manifest === null ||
-			!("scope" in manifest) ||
-			!Array.isArray(manifest.scope)
-		)
-			throw new Error("the proof fixture has no scope");
-		manifest.scope.push({
-			path: ".gitignore",
-			obligation: "P1",
-			modelRefs: ["AdmitFresh"],
-		});
-		writeFileSync(path, JSON.stringify(manifest));
-		git(repo.root, "rm", "--cached", "-q", ".astack/proof.json");
-		writeFileSync(join(repo.root, ".gitignore"), ".astack/proof.json\n");
-		git(repo.root, "add", "-A");
-		git(repo.root, "commit", "-q", "-m", "ignore the intent record");
-		const tracked = git(repo.root, "ls-files", "-z")
-			.split("\0")
-			.filter(Boolean).length;
-		const run = proof(repo.root);
-		expect(run.code).toBe(0);
-		expect(run.out).toContain(` over ${tracked + 1} files, tla2tools `);
-	});
+	test(
+		"an ignored manifest still belongs to the proof input digest",
+		() => {
+			const repo = proofRepo(scratch);
+			const path = join(repo.root, ".astack/proof.json");
+			const manifest: unknown = JSON.parse(readFileSync(path, "utf8"));
+			if (
+				typeof manifest !== "object" ||
+				manifest === null ||
+				!("scope" in manifest) ||
+				!Array.isArray(manifest.scope)
+			)
+				throw new Error("the proof fixture has no scope");
+			manifest.scope.push({
+				path: ".gitignore",
+				obligation: "P1",
+				modelRefs: ["AdmitFresh"],
+			});
+			writeFileSync(path, JSON.stringify(manifest));
+			git(repo.root, "rm", "--cached", "-q", ".astack/proof.json");
+			writeFileSync(join(repo.root, ".gitignore"), ".astack/proof.json\n");
+			git(repo.root, "add", "-A");
+			git(repo.root, "commit", "-q", "-m", "ignore the intent record");
+			const tracked = git(repo.root, "ls-files", "-z")
+				.split("\0")
+				.filter(Boolean).length;
+			const run = proof(repo.root);
+			expect(run.code).toBe(0);
+			expect(run.out).toContain(` over ${tracked + 1} files, tla2tools `);
+		},
+		heavyTestTimeout,
+	);
 
-	test("[control:proof-index-binding] an index-only change during model execution makes the proof stale", async () => {
-		const repo = proofRepo(scratch);
-		const path = join(repo.root, "formal/Gate.tla");
-		const original = readFileSync(path, "utf8");
-		let changed = false;
-		const run = await new Promise<Run>((done) => {
-			const child = spawn(process.execPath, [CLI, "check", "proof"], {
-				cwd: repo.root,
-				env: proofEnv({}),
+	test(
+		"[control:proof-index-binding] an index-only change during model execution makes the proof stale",
+		async () => {
+			const repo = proofRepo(scratch);
+			const path = join(repo.root, "formal/Gate.tla");
+			const original = readFileSync(path, "utf8");
+			let changed = false;
+			const run = await new Promise<Run>((done) => {
+				const child = spawn(process.execPath, [CLI, "check", "proof"], {
+					cwd: repo.root,
+					env: proofEnv({}),
+				});
+				let out = "";
+				let err = "";
+				child.stdout.on("data", (chunk: Buffer) => {
+					out += chunk.toString();
+					if (!changed && out.includes("positive:")) {
+						changed = true;
+						writeFileSync(
+							path,
+							original.replace("/\\ fresh /\\ status'", "/\\ status'"),
+						);
+						git(repo.root, "add", "formal/Gate.tla");
+						writeFileSync(path, original);
+					}
+				});
+				child.stderr.on("data", (chunk: Buffer) => {
+					err += chunk.toString();
+				});
+				child.on("close", (code) => done({ code, out, err }));
 			});
-			let out = "";
-			let err = "";
-			child.stdout.on("data", (chunk: Buffer) => {
-				out += chunk.toString();
-				if (!changed && out.includes("positive:")) {
-					changed = true;
-					writeFileSync(
-						path,
-						original.replace("/\\ fresh /\\ status'", "/\\ status'"),
-					);
-					git(repo.root, "add", "formal/Gate.tla");
-					writeFileSync(path, original);
-				}
-			});
-			child.stderr.on("data", (chunk: Buffer) => {
-				err += chunk.toString();
-			});
-			child.on("close", (code) => done({ code, out, err }));
-		});
-		expect(changed).toBe(true);
-		expect(run.err).toBe("");
-		expect(run.code).toBe(1);
-		expect(run.out).toContain(
-			"stop: proof stale: the candidate inputs changed during the proof",
-		);
-		expect(readFileSync(path, "utf8")).toBe(original);
-		expect(
-			git(repo.root, "diff", "--cached", "--", "formal/Gate.tla"),
-		).toContain("-Admit ==");
-	});
+			expect(changed).toBe(true);
+			expect(run.err).toBe("");
+			expect(run.code).toBe(1);
+			expect(run.out).toContain(
+				"stop: proof stale: the candidate inputs changed during the proof",
+			);
+			expect(readFileSync(path, "utf8")).toBe(original);
+			expect(
+				git(repo.root, "diff", "--cached", "--", "formal/Gate.tla"),
+			).toContain("-Admit ==");
+		},
+		heavyTestTimeout,
+	);
 
-	test("[control:proof-worktree-mode] losing an unstaged launcher execute bit during model execution makes the proof stale", async () => {
-		const repo = proofRepo(scratch);
-		git(repo.root, "config", "core.fileMode", "true");
-		const launcher = join(repo.root, "src/launcher.sh");
-		const content = "#!/bin/sh\nprintf 'ready\\n'\n";
-		writeFileSync(launcher, content);
-		chmodSync(launcher, 0o755);
-		git(repo.root, "add", "src/launcher.sh");
-		git(repo.root, "commit", "-q", "-m", "add the launcher");
-		const index = git(repo.root, "ls-files", "--stage", "-z");
-		const executable = spawnSync(launcher, [], { encoding: "utf8" });
-		expect({ code: executable.status, out: executable.stdout }).toEqual({
-			code: 0,
-			out: "ready\n",
-		});
-		let changed = false;
-		const run = await new Promise<Run>((done) => {
-			const child = spawn(process.execPath, [CLI, "check", "proof"], {
-				cwd: repo.root,
-				env: proofEnv({}),
+	test(
+		"[control:proof-worktree-mode] losing an unstaged launcher execute bit during model execution makes the proof stale",
+		async () => {
+			const repo = proofRepo(scratch);
+			git(repo.root, "config", "core.fileMode", "true");
+			const launcher = join(repo.root, "src/launcher.sh");
+			const content = "#!/bin/sh\nprintf 'ready\\n'\n";
+			writeFileSync(launcher, content);
+			chmodSync(launcher, 0o755);
+			git(repo.root, "add", "src/launcher.sh");
+			git(repo.root, "commit", "-q", "-m", "add the launcher");
+			const index = git(repo.root, "ls-files", "--stage", "-z");
+			const executable = spawnSync(launcher, [], { encoding: "utf8" });
+			expect({ code: executable.status, out: executable.stdout }).toEqual({
+				code: 0,
+				out: "ready\n",
 			});
-			let out = "";
-			let err = "";
-			child.stdout.on("data", (chunk: Buffer) => {
-				out += chunk.toString();
-				if (!changed && out.includes("positive:")) {
-					changed = true;
-					chmodSync(launcher, 0o644);
-				}
+			let changed = false;
+			const run = await new Promise<Run>((done) => {
+				const child = spawn(process.execPath, [CLI, "check", "proof"], {
+					cwd: repo.root,
+					env: proofEnv({}),
+				});
+				let out = "";
+				let err = "";
+				child.stdout.on("data", (chunk: Buffer) => {
+					out += chunk.toString();
+					if (!changed && out.includes("positive:")) {
+						changed = true;
+						chmodSync(launcher, 0o644);
+					}
+				});
+				child.stderr.on("data", (chunk: Buffer) => {
+					err += chunk.toString();
+				});
+				child.on("close", (code) => done({ code, out, err }));
 			});
-			child.stderr.on("data", (chunk: Buffer) => {
-				err += chunk.toString();
-			});
-			child.on("close", (code) => done({ code, out, err }));
-		});
-		expect(changed).toBe(true);
-		expect(run.err).toBe("");
-		expect(readFileSync(launcher, "utf8")).toBe(content);
-		expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
-		expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
-			"mode change 100755 => 100644 src/launcher.sh",
-		);
-		const blocked = spawnSync(launcher, [], { encoding: "utf8" });
-		expect(blocked.error?.message).toContain("EACCES");
-		expect(lastLine(run.out)).toStartWith(
-			"stop: proof stale: the candidate inputs changed during the proof",
-		);
-		expect(run.code).toBe(1);
-	});
+			expect(changed).toBe(true);
+			expect(run.err).toBe("");
+			expect(readFileSync(launcher, "utf8")).toBe(content);
+			expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
+			expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
+				"mode change 100755 => 100644 src/launcher.sh",
+			);
+			const blocked = spawnSync(launcher, [], { encoding: "utf8" });
+			expect(blocked.error?.message).toContain("EACCES");
+			expect(lastLine(run.out)).toStartWith(
+				"stop: proof stale: the candidate inputs changed during the proof",
+			);
+			expect(run.code).toBe(1);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-symlink-reference] a glossary cannot hide unbound input bytes behind an in-repo symlink", () => {
 		const context = PROOF_FILES["CONTEXT.md"];
@@ -501,6 +519,7 @@ describe("astack check proof", () => {
 			);
 			expect(run.code).toBe(1);
 		},
+		heavyTestTimeout,
 	);
 
 	test.each<[string, (proof: Proof) => void, string]>([
@@ -531,24 +550,28 @@ describe("astack check proof", () => {
 		},
 	);
 
-	test("[control:proof-timeout-cleanup] a model run past the deadline is killed and its temp root is removed", () => {
-		const deadlineMs = 200;
-		const repo = proofRepo(scratch, () => {}, {
-			...PROOF_FILES,
-			"formal/Gate.tla": SLOW_GATE_TLA,
-		});
-		const tmp = join(scratch, "tmp-timeout");
-		mkdirSync(tmp);
-		const run = proof(repo.root, [], {
-			TMPDIR: tmp,
-			ASTACK_PROOF_TIMEOUT_MS: String(deadlineMs),
-		});
-		expect(run.out).toBe(
-			`stop: proof model: the positive run passed the ${deadlineMs} ms deadline and was stopped\n`,
-		);
-		expect(run.code).toBe(1);
-		expect(readdirSync(tmp)).toEqual([]);
-	});
+	test(
+		"[control:proof-timeout-cleanup] a model run past the deadline is killed and its temp root is removed",
+		() => {
+			const deadlineMs = 200;
+			const repo = proofRepo(scratch, () => {}, {
+				...PROOF_FILES,
+				"formal/Gate.tla": SLOW_GATE_TLA,
+			});
+			const tmp = join(scratch, "tmp-timeout");
+			mkdirSync(tmp);
+			const run = proof(repo.root, [], {
+				TMPDIR: tmp,
+				ASTACK_PROOF_TIMEOUT_MS: String(deadlineMs),
+			});
+			expect(run.out).toBe(
+				`stop: proof model: the positive run passed the ${deadlineMs} ms deadline and was stopped\n`,
+			);
+			expect(run.code).toBe(1);
+			expect(readdirSync(tmp)).toEqual([]);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-run-order] a failing positive run that ends after a wrong negative run stops on the positive run", () => {
 		const repo = proofRepo(scratch);
@@ -640,28 +663,32 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(2);
 	});
 
-	test("[control:proof-base-ancestor] a manifest base older than the merge base admits, prints both bases and keeps the files of main out of scope", () => {
-		const repo = proofRepo(scratch);
-		git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
-		writeFileSync(join(repo.root, "README.md"), "# Gate\n\nMain moved.\n");
-		git(repo.root, "commit", "-q", "-am", "main moves");
-		const moved = git(repo.root, "rev-parse", "HEAD");
-		git(repo.root, "update-ref", "refs/remotes/origin/main", moved);
-		git(repo.root, "checkout", "-q", "main");
-		git(repo.root, "merge", "-q", "--no-edit", "trunk");
-		expect(proof(repo.root).out).toBe(
-			"stop: proof controls: no scope row covers the changed path README.md\n",
-		);
-		const run = proof(repo.root, ["--base", "origin/main"]);
-		expect(run.err).toBe("");
-		expect(run.out).toContain(
-			`\nreceipt: change gate-admission base ${repo.base} diff base ${moved} head ${git(repo.root, "rev-parse", "HEAD")} digest `,
-		);
-		expect(lastLine(run.out)).toStartWith(
-			"ok: proof gate-admission admitted at ",
-		);
-		expect(run.code).toBe(0);
-	});
+	test(
+		"[control:proof-base-ancestor] a manifest base older than the merge base admits, prints both bases and keeps the files of main out of scope",
+		() => {
+			const repo = proofRepo(scratch);
+			git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
+			writeFileSync(join(repo.root, "README.md"), "# Gate\n\nMain moved.\n");
+			git(repo.root, "commit", "-q", "-am", "main moves");
+			const moved = git(repo.root, "rev-parse", "HEAD");
+			git(repo.root, "update-ref", "refs/remotes/origin/main", moved);
+			git(repo.root, "checkout", "-q", "main");
+			git(repo.root, "merge", "-q", "--no-edit", "trunk");
+			expect(proof(repo.root).out).toBe(
+				"stop: proof controls: no scope row covers the changed path README.md\n",
+			);
+			const run = proof(repo.root, ["--base", "origin/main"]);
+			expect(run.err).toBe("");
+			expect(run.out).toContain(
+				`\nreceipt: change gate-admission base ${repo.base} diff base ${moved} head ${git(repo.root, "rev-parse", "HEAD")} digest `,
+			);
+			expect(lastLine(run.out)).toStartWith(
+				"ok: proof gate-admission admitted at ",
+			);
+			expect(run.code).toBe(0);
+		},
+		heavyTestTimeout,
+	);
 
 	test("[control:proof-base-not-ancestor] a manifest base that is not an ancestor of the merge base stops and names both commits", () => {
 		const repo = proofRepo(scratch);

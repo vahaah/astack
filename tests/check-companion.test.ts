@@ -14,6 +14,7 @@ import { join, relative } from "node:path";
 import { checkCompanion } from "../scripts/check-companion.ts";
 import { exampleCompanionRoot } from "../scripts/lib/companion.ts";
 import { repoRoot } from "../scripts/lib/projects.ts";
+import { heavyTestTimeout } from "./heavy-test.ts";
 
 const dirs: string[] = [];
 
@@ -70,51 +71,55 @@ describe("bun run check:companion", () => {
 	const printsSecret = (root: string, path: string) =>
 		`profile scan: an entry of a profile prints no secret > ${join(root, path)} has no command, setup or check that prints the keys of a stack, the environment, a .env file or a value of the session`;
 
-	test("[control:fx-real-scan] runs the real profile scans once, with the exception rows of the companion, and names each problem of a fallback key, a schema error and a .env entry of a profile and of a branch overlay", () => {
-		const typecheck = "    command: bun run typecheck\n";
-		const printsEnv = "    command: bun run typecheck && cat .env\n";
-		const root = companionCopy([
-			[profile, "ledger:\n  carry_over: true\n", ""],
-			[profile, "after_create_pr: harden\n", "after_create_pr: maybe\n"],
-			[profile, typecheck, printsEnv],
-			[overlay, typecheck, printsEnv],
-		]);
-		writeFileSync(
-			join(root, "profile-scan.json"),
-			JSON.stringify({
-				stacks: [
-					{
-						profile: "acme",
-						stack: "db/supabase",
-						reset: null,
-						oneJob: [],
-						watch: [],
-						ports: ["54329"],
-						why: "A row of a stack that no gate of acme starts.",
-					},
+	test(
+		"[control:fx-real-scan] runs the real profile scans once, with the exception rows of the companion, and names each problem of a fallback key, a schema error and a .env entry of a profile and of a branch overlay",
+		() => {
+			const typecheck = "    command: bun run typecheck\n";
+			const printsEnv = "    command: bun run typecheck && cat .env\n";
+			const root = companionCopy([
+				[profile, "ledger:\n  carry_over: true\n", ""],
+				[profile, "after_create_pr: harden\n", "after_create_pr: maybe\n"],
+				[profile, typecheck, printsEnv],
+				[overlay, typecheck, printsEnv],
+			]);
+			writeFileSync(
+				join(root, "profile-scan.json"),
+				JSON.stringify({
+					stacks: [
+						{
+							profile: "acme",
+							stack: "db/supabase",
+							reset: null,
+							oneJob: [],
+							watch: [],
+							ports: ["54329"],
+							why: "A row of a stack that no gate of acme starts.",
+						},
+					],
+				}),
+			);
+			const scanned = relative(repoRoot, join(root, profile));
+			const problems = [
+				`acme: ${profile}: the stub fallback reads ledger.carry_over, which the profile does not define`,
+				`acme: ${profile}: after_create_pr: must be one of harden, none`,
+				`profile scan: keys the stub fallback reads > ${scanned} defines every key the fallback reads`,
+				`profile scan: project profiles > ${scanned} parses with no issues`,
+				"profile scan: validateProfile > every repo runs one hardening run after create pr, with a cap of 2",
+				printsSecret(root, overlay),
+				printsSecret(root, profile),
+				"profile scan: the config of a long-lived local stack > each stack port of the table is named by an entry of its profile",
+				"profile scan: a gate on a stack that an earlier gate seeded > the first gate of each job of the table resets the stack, and each row names a stack of its profile",
+			];
+			expect(runScript(["--companion", root])).toEqual({
+				code: 1,
+				stdout: [
+					`check:companion: 1 config(s) and 2 profile(s) in ${root}, ${problems.length} problem(s)`,
 				],
-			}),
-		);
-		const scanned = relative(repoRoot, join(root, profile));
-		const problems = [
-			`acme: ${profile}: the stub fallback reads ledger.carry_over, which the profile does not define`,
-			`acme: ${profile}: after_create_pr: must be one of harden, none`,
-			`profile scan: keys the stub fallback reads > ${scanned} defines every key the fallback reads`,
-			`profile scan: project profiles > ${scanned} parses with no issues`,
-			"profile scan: validateProfile > every repo runs one hardening run after create pr, with a cap of 2",
-			printsSecret(root, overlay),
-			printsSecret(root, profile),
-			"profile scan: the config of a long-lived local stack > each stack port of the table is named by an entry of its profile",
-			"profile scan: a gate on a stack that an earlier gate seeded > the first gate of each job of the table resets the stack, and each row names a stack of its profile",
-		];
-		expect(runScript(["--companion", root])).toEqual({
-			code: 1,
-			stdout: [
-				`check:companion: 1 config(s) and 2 profile(s) in ${root}, ${problems.length} problem(s)`,
-			],
-			stderr: problems,
-		});
-	});
+				stderr: problems,
+			});
+		},
+		heavyTestTimeout,
+	);
 
 	test("fails on an STE deny word in the prose of a profile and names the finding", async () => {
 		const root = companionCopy([

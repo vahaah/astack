@@ -1,4 +1,4 @@
-import { afterAll, expect, test } from "bun:test";
+import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import {
 	appendFileSync,
@@ -12,8 +12,8 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { generatedTreeCopy } from "./generated-tree.ts";
+import { heavyTestTimeout } from "./heavy-test.ts";
 
-const fixtures: string[] = [];
 const GENERATED = [
 	"dist",
 	"rules/astack.md",
@@ -26,14 +26,13 @@ const GENERATED = [
 	"NOTICE",
 ];
 
-afterAll(() => {
-	for (const dir of fixtures) rmSync(dir, { recursive: true, force: true });
-});
-
-function fixture(): string {
+function inFixture(use: (dir: string) => void): void {
 	const dir = generatedTreeCopy();
-	fixtures.push(dir);
-	return dir;
+	try {
+		use(dir);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
 }
 
 function run(dir: string) {
@@ -62,74 +61,83 @@ function snapshot(dir: string): ReadonlyMap<string, string> {
 	return entries;
 }
 
-test("fresh generated artifacts pass without changes to bytes, modes or mtimes", () => {
-	const dir = fixture();
-	const before = snapshot(dir);
-	expect(run(dir)).toEqual({ code: 0, output: "drift: 0 differences\n" });
-	expect(snapshot(dir)).toEqual(before);
-});
+test(
+	"fresh generated artifacts pass without changes to bytes, modes or mtimes",
+	() =>
+		inFixture((dir) => {
+			const before = snapshot(dir);
+			expect(run(dir)).toEqual({ code: 0, output: "drift: 0 differences\n" });
+			expect(snapshot(dir)).toEqual(before);
+		}),
+	heavyTestTimeout,
+);
 
-test("[control:sg-stale-cli] fresh source rejects a stale CLI even when its dist copies match it", () => {
-	const dir = fixture();
-	appendFileSync(
-		join(dir, "src/astack/cli/bin.ts"),
-		'\nprocess.stderr.write("new source behavior\\n");\n',
-	);
-	const before = snapshot(dir);
-	const result = run(dir);
-	expect(result.code).toBe(1);
-	for (const path of [
-		"marketplace/plugins/astack/bin/astack.js",
+test(
+	"[control:sg-stale-cli] fresh source rejects a stale CLI even when its dist copies match it",
+	() =>
+		inFixture((dir) => {
+			appendFileSync(
+				join(dir, "src/astack/cli/bin.ts"),
+				'\nprocess.stderr.write("new source behavior\\n");\n',
+			);
+			const before = snapshot(dir);
+			const result = run(dir);
+			expect(result.code).toBe(1);
+			for (const path of [
+				"marketplace/plugins/astack/bin/astack.js",
+				"dist/cli/astack.js",
+				"dist/claude-code/astack/bin/astack.js",
+			])
+				expect(result.output).toContain(`${path}: stale bytes`);
+			expect(snapshot(dir)).toEqual(before);
+		}),
+	heavyTestTimeout,
+);
+
+test.each<[string, string, (path: string) => void]>([
+	["missing", "dist/README.md", (path) => rmSync(path)],
+	[
+		"extra",
+		"dist/unexpected.txt",
+		(path) => writeFileSync(path, "unexpected\n"),
+	],
+	[
+		"wrong executable bit",
 		"dist/cli/astack.js",
-		"dist/claude-code/astack/bin/astack.js",
-	])
-		expect(result.output).toContain(`${path}: stale bytes`);
-	expect(snapshot(dir)).toEqual(before);
-});
+		(path) => chmodSync(path, 0o644),
+	],
+	[
+		"symbolic link",
+		"dist/README.md",
+		(path) => {
+			rmSync(path);
+			symlinkSync("../README.md", path);
+		},
+	],
+])(
+	"an output with the problem %s fails with its path %s",
+	(problem, path, change) =>
+		inFixture((dir) => {
+			change(join(dir, path));
+			const result = run(dir);
+			expect(result.code).toBe(1);
+			expect(result.output).toContain(`${path}: ${problem}`);
+		}),
+	heavyTestTimeout,
+);
 
-test("missing, extra, executable and linked outputs fail with their paths", () => {
-	const cases = [
-		{
-			path: "dist/README.md",
-			change: (path: string) => rmSync(path),
-			problem: "missing",
-		},
-		{
-			path: "dist/unexpected.txt",
-			change: (path: string) => writeFileSync(path, "unexpected\n"),
-			problem: "extra",
-		},
-		{
-			path: "dist/cli/astack.js",
-			change: (path: string) => chmodSync(path, 0o644),
-			problem: "wrong executable bit",
-		},
-		{
-			path: "dist/README.md",
-			change: (path: string) => {
-				rmSync(path);
-				symlinkSync("../README.md", path);
-			},
-			problem: "symbolic link",
-		},
-	];
-	for (const scenario of cases) {
-		const dir = fixture();
-		scenario.change(join(dir, scenario.path));
-		const result = run(dir);
-		expect(result.code).toBe(1);
-		expect(result.output).toContain(`${scenario.path}: ${scenario.problem}`);
-	}
-});
-
-test("stale root metadata and executable source outputs fail as prerequisites", () => {
-	const dir = fixture();
-	appendFileSync(join(dir, "NOTICE"), "stale notice\n");
-	chmodSync(join(dir, "rules/astack.md"), 0o755);
-	const before = snapshot(dir);
-	const result = run(dir);
-	expect(result.code).toBe(1);
-	expect(result.output).toContain("NOTICE: stale generated file");
-	expect(result.output).toContain("rules/astack.md: wrong executable bit");
-	expect(snapshot(dir)).toEqual(before);
-});
+test(
+	"stale root metadata and executable source outputs fail as prerequisites",
+	() =>
+		inFixture((dir) => {
+			appendFileSync(join(dir, "NOTICE"), "stale notice\n");
+			chmodSync(join(dir, "rules/astack.md"), 0o755);
+			const before = snapshot(dir);
+			const result = run(dir);
+			expect(result.code).toBe(1);
+			expect(result.output).toContain("NOTICE: stale generated file");
+			expect(result.output).toContain("rules/astack.md: wrong executable bit");
+			expect(snapshot(dir)).toEqual(before);
+		}),
+	heavyTestTimeout,
+);
