@@ -753,6 +753,8 @@ describe("MCP merge tools", () => {
 		["mcp__forge__show_merged_prs", false],
 		["mcp__forge__get_and_merge_pr", true],
 		["mcp__forge__mark_merged", true],
+		["mcp__forge__ensure_merged", true],
+		["mcp__forge__check_mergeability", false],
 		["mcp__gateway__merge__pull_request", true],
 		["mcp__automerge__enable", true],
 	])(
@@ -883,6 +885,12 @@ describe("MCP merge tools", () => {
 			"mcp__forge__call_api",
 			true,
 			{ method: "PUT", segments: ["repos", "o", "r", "pulls", "12", "merge"] },
+		],
+		[
+			"a PUT on the GitLab merge request merge path",
+			"mcp__gitlab__call_api",
+			true,
+			{ method: "PUT", path: "/projects/5/merge_requests/12/merge" },
 		],
 		[
 			"a GET on the REST merge path",

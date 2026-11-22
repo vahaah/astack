@@ -110,8 +110,9 @@ An acronym is one token, so `createPRMerge` holds the token `merge`.
 A token that holds `merg` is a merge token.
 A merge token that ends in `merged`, `mergeable` or `mergeability` names a state. Each other merge token is a merge word, such as `prmerge` or `automerge`.
 
-A name with a merge token and a merge word or a write verb gets a deny on each server, also with a grant.
-So `get_and_merge_pr` and `mark_merged` get a deny, and `show_merged_prs` passes.
+A name with a merge token gets a deny on each server, also with a grant.
+It passes only when it holds a read verb, such as `get`, `show` or `check`, and no write verb and no merge word.
+So `get_and_merge_pr`, `mark_merged` and `ensure_merged` get a deny, and `show_merged_prs` passes.
 A read tool on an exact list, such as `list_merge_requests` and `get_merge_request`, passes.
 The rule also denies a merge that is not a PR merge, such as a database branch merge. Such a merge is an owner gate.
 
@@ -120,7 +121,7 @@ It reads the decoded values, not the JSON text, so a tab or a line break before 
 It also decodes each JSON escape in a value, because the body of a raw request can hold escapes that the forge decodes.
 An input that holds `mergePullRequest`, `enablePullRequestAutoMerge`, `enqueuePullRequest` or `mergeBranch` gets a deny.
 A merge queue entry merges the PR later, and a branch merge goes into the base with no PR.
-An input with a `pulls/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
+An input with a `pulls/<n>/merge` or `merge_requests/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
 The `<n>` part can be any path segment, such as the route template `{pull_number}`.
 The guard also reads the items of each array as one path, and a method after `-X` or `_`, such as `HTTP_PUT`.
 A `repos/<owner>/<repo>/merges` path with a write method gets a deny for the same reason as `mergeBranch`.

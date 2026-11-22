@@ -32,7 +32,7 @@ const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
 const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH_IN_INPUT =
-	/\bpulls\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
+	/\b(?:pulls|merge_requests)\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
 const WRITE_METHOD_IN_INPUT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
@@ -208,6 +208,16 @@ const READ_ONLY_TOOLS = new Set([
 	"list_merge_requests",
 	"list_merge_request_comments",
 ]);
+const READ_VERBS = new Set([
+	"check",
+	"find",
+	"get",
+	"list",
+	"read",
+	"search",
+	"show",
+	"view",
+]);
 const WRITE_VERBS = new Set([
 	"accept",
 	"add",
@@ -268,10 +278,13 @@ function isMergeWord(token: string): boolean {
 
 function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
 	const tokens = [server, tool].flatMap(nameTokens);
+	const onlyReads =
+		tokens.some((token) => READ_VERBS.has(token)) &&
+		!tokens.some((token) => WRITE_VERBS.has(token) || isMergeWord(token));
 	return (
 		tokens.some((token) => token.includes(MERGE_STEM)) &&
 		!READ_ONLY_TOOLS.has(tool) &&
-		tokens.some((token) => WRITE_VERBS.has(token) || isMergeWord(token))
+		!onlyReads
 	);
 }
 
