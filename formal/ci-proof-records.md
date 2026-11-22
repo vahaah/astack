@@ -8,7 +8,9 @@ ADR 0005 D3 keeps fresh model execution mandatory.
 ### Formal claim
 
 [criterion:ci-proof-records] Classify only CI changes with unchanged tool setups and narrowly checked current proof records.
-The default manifest must parse completely, and its base must be an ancestor of the actual merge base.
+The check chooses the manifest at HEAD as `check proof --base` chooses it. Two changed manifests under `.astack/proof/` stop the classification.
+The chosen manifest must parse completely, and its base must be an ancestor of the actual merge base.
+A manifest that the diff deletes is proof metadata too.
 Its committed proof records must be regular UTF-8 Markdown files under `formal/`.
 They must contain the four required proof sections and valid references.
 The records cannot also serve authority, implementation, witness, glossary, matrix, listed source, or model roles.
@@ -35,6 +37,7 @@ Typed CLI controls call the actual parser and classifier under the normal TypeSc
 
 ### Implementation correspondence
 
+`chooseManifest` supplies the `manifest` observation from the committed manifests at HEAD and the changed paths.
 The committed manifest parser supplies the model's `schema` observation.
 `proofBase` supplies `base`. It accepts a manifest base that is an ancestor of the merge base, and Git reads ignore replace objects and grafts.
 Strict Git blob reads supply `regular` and `utf8`.

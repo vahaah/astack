@@ -31,6 +31,7 @@
 				"src/astack/ci-pins.ts",
 				"src/astack/change-proof/candidate.ts",
 				"src/astack/change-proof/ci-records.ts",
+				"src/astack/change-proof/manifest.ts",
 				"src/astack/cli/commands/check/ci-pins.ts"
 			],
 			"text": []
@@ -240,7 +241,7 @@
 				"bounds": [
 					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 					"Each failure kind maps to one section of the proof contract.",
-				"Six manifest observations: one, fallback, several, none, held and beside. Only a run with --base can find none.",
+					"Six manifest observations: one, fallback, several, none, held and beside. Only a run with --base can find none.",
 					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
 					"Finite Result laws use two values, two errors and all total functions between them."
 				],
