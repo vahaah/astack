@@ -56,12 +56,6 @@ export interface PullRequestFacts {
 	readonly mergedAt: string | null;
 	readonly isDraft: boolean;
 }
-export interface OpenPullRequest {
-	readonly number: PrNumber;
-	readonly headRefName: string;
-	readonly baseRefName: string;
-	readonly isCrossRepository: boolean;
-}
 export interface ReviewComment {
 	readonly authorLogin: string | null;
 	readonly authorIsBot: boolean;
@@ -248,51 +242,28 @@ export type PrDecision =
 	| WaitingDecision
 	| { readonly kind: "ready"; readonly pr: ReadyPr }
 	| { readonly kind: "merged"; readonly pr: MergedPr };
-export type StackDecision =
-	| { readonly kind: "blocker"; readonly blocker: MergeBlocker }
-	| WaitingDecision
-	| { readonly kind: "clear"; readonly prs: NonEmpty<ReadyPr | MergedPr> };
-export type WatchMode = "single" | "stack" | "queued-stack";
-interface EventBase<K extends string, M extends WatchMode = WatchMode> {
+export type WatchMode = "single";
+interface EventBase<K extends string> {
 	readonly schemaVersion: 1;
 	readonly sequence: number;
 	readonly observedAt: string;
-	readonly mode: M;
+	readonly mode: WatchMode;
 	readonly kind: K;
 }
-interface Progress<K extends string, M extends WatchMode = WatchMode>
-	extends EventBase<K, M> {
+interface Progress<K extends string> extends EventBase<K> {
 	readonly terminal: false;
 }
-interface Terminal<
-	K extends string,
-	C extends number,
-	M extends WatchMode = WatchMode,
-> extends EventBase<K, M> {
+interface Terminal<K extends string, C extends number> extends EventBase<K> {
 	readonly terminal: true;
 	readonly exitCode: C;
 }
 export type ProgressVerdict =
-	| (Progress<"QUEUE", "queued-stack"> & {
-			readonly queue: NonEmpty<PrContext>;
-	  })
-	| (Progress<"STATUS", "stack" | "queued-stack"> & {
-			readonly reason: "poll" | "whole-stack-sweep";
-			readonly rows: NonEmpty<PrSnapshot>;
-	  })
 	| (Progress<"WAITING"> & {
 			readonly frontier: PrContext;
-			readonly reason:
-				| {
-						readonly kind: "pending-checks";
-						readonly pending: NonEmpty<PendingCheck>;
-				  }
-				| { readonly kind: "merge-queue"; readonly unmergedCount: number };
-	  })
-	| (Progress<"ADVANCE", "queued-stack"> & {
-			readonly merged: PrContext;
-			readonly frontier: PrContext;
-			readonly remaining: number;
+			readonly reason: {
+				readonly kind: "pending-checks";
+				readonly pending: NonEmpty<PendingCheck>;
+			};
 	  })
 	| (Progress<"RETRY"> & {
 			readonly failure: QueryFailure;
@@ -334,38 +305,23 @@ export type TimeoutVerdict = Terminal<"TIMEOUT", 5> & {
 				readonly kind: "pending-checks";
 				readonly pending: NonEmpty<PendingCheck>;
 		  }
-		| { readonly kind: "status-unavailable"; readonly failure: QueryFailure }
-		| {
-				readonly kind: "queued-stack";
-				readonly frontier: PrContext;
-				readonly unmergedCount: number;
-		  };
+		| { readonly kind: "status-unavailable"; readonly failure: QueryFailure };
 };
 export type TerminalVerdict =
 	| (Terminal<"STATUS", 0> & {
 			readonly reason: "status-only";
 			readonly rows: NonEmpty<PrSnapshot>;
 	  })
-	| (Terminal<"READY", 0, "single" | "stack"> & {
-			readonly scope:
-				| { readonly kind: "single"; readonly pr: ReadyPr | MergedPr }
-				| {
-						readonly kind: "stack";
-						readonly prs: NonEmpty<ReadyPr | MergedPr>;
-				  };
-	  })
-	| (Terminal<"COMPLETE", 0, "queued-stack"> & {
-			readonly queue: NonEmpty<PrContext>;
-			readonly merged: NonEmpty<MergedPr>;
+	| (Terminal<"READY", 0> & {
+			readonly scope: {
+				readonly kind: "single";
+				readonly pr: ReadyPr | MergedPr;
+			};
 	  })
 	| BlockerVerdict
 	| TimeoutVerdict;
 export type WatcherVerdict = ProgressVerdict | TerminalVerdict;
 export type ExitCode = TerminalVerdict["exitCode"];
-export type QueueTerminalVerdict =
-	| Extract<TerminalVerdict, { readonly kind: "COMPLETE" }>
-	| BlockerVerdict
-	| TimeoutVerdict;
 export type ChecksFastPath =
 	| { readonly kind: "checks"; readonly checks: readonly Check[] }
 	| {
@@ -390,7 +346,6 @@ export interface GitHubReader {
 	originRepo(): Promise<Repository | null>;
 	currentPr(pr: PrNumber | null): Promise<PrContext>;
 	pullRequest(context: PrContext): Promise<PullRequestFacts>;
-	openPullRequests(repository: Repository): Promise<readonly OpenPullRequest[]>;
 	checksFastPath(context: PrContext): Promise<ChecksFastPath>;
 	checkRollupPage(
 		context: PrContext,
@@ -404,7 +359,6 @@ export interface GitHubReader {
 }
 export interface PollingOptions {
 	readonly interval: number;
-	readonly sweepInterval: number;
 	readonly timeout: number;
 	readonly maxQueryErrors: number;
 	readonly allowDraft: boolean;
