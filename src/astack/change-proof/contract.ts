@@ -208,8 +208,8 @@ export type ChangeProof = {
 
 const FULL_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const SYMBOL = /^[A-Za-z_$][\w$]*$/;
-const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
+export const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+export const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const DECISION = /^D[1-9]\d*$/;
 
 type Raw = Readonly<Record<string, unknown>>;
@@ -275,6 +275,7 @@ function openFields(
 	value: unknown,
 	where: string,
 	keys: readonly string[],
+	root = false,
 ): Fields {
 	let raw: Raw;
 	if (!isRaw(value)) {
@@ -288,7 +289,7 @@ function openFields(
 	}
 	const fields: Fields = {
 		at(key: string): string {
-			return where === "the proof" ? key : `${where}.${key}`;
+			return root ? key : `${where}.${key}`;
 		},
 
 		fail(key: string, message: string): void {
@@ -896,8 +897,10 @@ function arrowProblem(record: CompositionRecord): string | undefined {
 	]);
 }
 
-function modelProblem(proof: ChangeProof): string | undefined {
-	const { model, negative } = proof;
+export function modelProblem(
+	model: ModelContract,
+	negative: NegativeControl,
+): string | undefined {
 	const files = [model.module, ...model.dependencies];
 	const names = [model.config, ...files].map((path) =>
 		path.slice(path.lastIndexOf("/") + 1),
@@ -949,16 +952,28 @@ function scopeProblem(proof: ChangeProof): string | undefined {
 	]);
 }
 
-export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
+export function readDocument<T>(
+	text: string,
+	name: string,
+	keys: readonly string[],
+	read: (fields: Fields) => T,
+): Result<T, string> {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(text);
 	} catch {
-		return rejection("schema", "the proof is not valid JSON");
+		return err(`${name} is not valid JSON`);
 	}
 	const sink: Sink = { first: undefined };
-	const proof = readProof(
-		openFields(sink, parsed, "the proof", [
+	const document = read(openFields(sink, parsed, name, keys, true));
+	return sink.first === undefined ? ok(document) : err(sink.first);
+}
+
+export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
+	const read = readDocument(
+		text,
+		"the proof",
+		[
 			"version",
 			"change",
 			"base",
@@ -969,14 +984,16 @@ export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
 			"model",
 			"negative",
 			"limits",
-		]),
+		],
+		readProof,
 	);
-	if (sink.first !== undefined) return rejection("schema", sink.first);
+	if (!read.ok) return rejection("schema", read.error);
+	const proof = read.value;
 	const checks: readonly [Stage, string | undefined][] = [
 		["domain", domainProblem(proof)],
 		["category", arrowProblem(proof.category) ?? lawProblem(proof.category)],
 		["controls", scopeProblem(proof)],
-		["model", modelProblem(proof)],
+		["model", modelProblem(proof.model, proof.negative)],
 	];
 	for (const [stage, problem] of checks)
 		if (problem !== undefined) return rejection(stage, problem);
