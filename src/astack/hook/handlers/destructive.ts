@@ -6,7 +6,10 @@ import {
 	type GitInvocation,
 	type GitRead,
 	HOOKS_PATH_KEY,
+	hasPlaceForm,
 	isLongForm,
+	isPlaceVariable,
+	madeRepoTarget,
 	readGit,
 } from "../../git-command.ts";
 import {
@@ -15,6 +18,12 @@ import {
 	readOptional,
 	toPosix,
 } from "../../paths.ts";
+import {
+	isSessionRepo,
+	rememberRepos,
+	type SessionRepos,
+	settledRepos,
+} from "../../session-repos.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
@@ -476,7 +485,13 @@ function overwrittenPaths(dir: string, target: string): readonly string[] {
 		.filter((path) => untracked.has(path));
 }
 
-function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
+type SessionRepoTest = (root: string) => boolean;
+
+function lostPaths(
+	loss: WorkLoss,
+	dir: string,
+	sessionRepo: SessionRepoTest,
+): readonly string[] {
 	const root = repoRoot(dir);
 	if (root === undefined) return [];
 	const namedFiles = loss.pathspecs
@@ -485,19 +500,26 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const excluded = excludedPaths(dir, loss);
 	const overwritten =
 		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
-	return [...changedPaths(dir, loss), ...overwritten].filter(
+	const lost = [...changedPaths(dir, loss), ...overwritten].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
+	return lost.length > 0 && sessionRepo(root)
+		? lost.filter(
+				(path) =>
+					path.endsWith("/") && !sessionRepo(join(root, path.slice(0, -1))),
+			)
+		: lost;
 }
 
 function workLossReasons(
 	step: ShellStep,
 	git: GitInvocation,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	const loss = workLoss(git);
 	return loss === undefined
 		? []
-		: lossReasons(step.values.join(" "), loss, git.dir);
+		: lossReasons(step.values.join(" "), loss, git.dir, sessionRepo);
 }
 
 const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
@@ -529,6 +551,7 @@ function statusFails(dir: string): boolean {
 function extractReasons(
 	step: ShellStep,
 	previous: ShellStep | undefined,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	if (step.simple.piped !== true || previous === undefined) return [];
 	const source = readGit(previous);
@@ -547,6 +570,7 @@ function extractReasons(
 		command,
 		{ lost: "tracked", pathspecs: WHOLE_TREE },
 		step.dir,
+		sessionRepo,
 	);
 }
 
@@ -554,8 +578,9 @@ function lossReasons(
 	command: string,
 	loss: WorkLoss,
 	dir: string,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
-	const lost = lostPaths(loss, dir);
+	const lost = lostPaths(loss, dir, sessionRepo);
 	if (lost.length === 0) return [];
 	const effect =
 		loss.lost === "untracked"
@@ -580,6 +605,7 @@ const PUSH_VALUE_FLAGS = [
 type ShellState = {
 	readonly exported: readonly Word[];
 	readonly env: Env;
+	readonly sessionRepo: SessionRepoTest;
 };
 
 function isSkipVariable(word: Word): boolean {
@@ -850,13 +876,15 @@ function shown(words: readonly Word[]): string {
 function unreadableReasons(
 	step: ShellStep,
 	read: Extract<GitRead, { kind: "unreadable" }>,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	const lost =
 		read.verb === undefined ? undefined : LOST_BY_VERB.get(read.verb);
 	if (
 		lost !== undefined &&
 		read.dir !== undefined &&
-		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir).length === 0
+		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir, sessionRepo).length ===
+			0
 	)
 		return [];
 	return [
@@ -872,14 +900,20 @@ function stepReasons(
 	const read = readGit(step);
 	switch (read.kind) {
 		case "none":
-			return [...supabaseReasons(step), ...extractReasons(step, previous)];
+			return [
+				...supabaseReasons(step),
+				...extractReasons(step, previous, shell.sessionRepo),
+			];
 		case "unreadable":
-			return [...supabaseReasons(step), ...unreadableReasons(step, read)];
+			return [
+				...supabaseReasons(step),
+				...unreadableReasons(step, read, shell.sessionRepo),
+			];
 		case "plain":
 			return [
 				...supabaseReasons(step),
 				...gitReasons(step, read.git, shell),
-				...workLossReasons(step, read.git),
+				...workLossReasons(step, read.git, shell.sessionRepo),
 			];
 	}
 }
@@ -891,21 +925,64 @@ function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
 		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
 }
 
+function placedSteps(steps: readonly ShellStep[], env: Env): boolean[] {
+	const hookPlaced = Object.entries(env).some(
+		([key, value]) =>
+			value !== undefined && isPlaceVariable({ value: key, dynamic: false }),
+	);
+	return steps.map(
+		(step, index) =>
+			hookPlaced ||
+			hasPlaceForm(step) ||
+			steps
+				.slice(0, index)
+				.some(
+					(earlier) =>
+						earlier.values[0] === "export" &&
+						earlier.words
+							.slice(1)
+							.some((word) => word.dynamic || isPlaceVariable(word)),
+				),
+	);
+}
+
+function sessionRepoTest(
+	repos: SessionRepos,
+	placed: boolean,
+): SessionRepoTest {
+	return placed ? () => false : (root) => isSessionRepo(repos, root);
+}
+
 export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell"],
 	run: (event, context) => {
+		const repos = settledRepos(context.env, context.session);
 		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
-		return combineAll(
-			shellSteps(event.command, event.cwd).map((step, index, steps) =>
+		const steps = shellSteps(event.command, event.cwd);
+		const placed = placedSteps(steps, context.env);
+		const verdict = combineAll(
+			steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
 						exported: exportedSkips(steps, index),
 						env: context.env,
+						sessionRepo: sessionRepoTest(repos, placed[index] === true),
 					}),
 				),
 			),
 		);
+		if (verdict.kind !== "deny")
+			rememberRepos(
+				context.env,
+				context.session,
+				repos,
+				steps.flatMap((step, index) => {
+					const target = placed[index] ? undefined : madeRepoTarget(step);
+					return target === undefined ? [] : [target];
+				}),
+			);
+		return verdict;
 	},
 });

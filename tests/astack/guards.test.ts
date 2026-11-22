@@ -6,6 +6,7 @@ import {
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
+	realpathSync,
 	rmSync,
 	symlinkSync,
 	utimesSync,
@@ -907,6 +908,285 @@ describe("the clean selection of the work-loss guard", () => {
 			).kind,
 		).toBe("allow");
 	});
+});
+
+describe("a repo that this session made", () => {
+	let count = 0;
+
+	function fresh(name: string): { dir: string; state: string } {
+		count++;
+		const dir = join(root, `session-${count}`);
+		mkdirSync(dir);
+		return { dir: join(dir, name), state: join(dir, "state") };
+	}
+
+	function runAs(
+		session: string | undefined,
+		command: string,
+		cwd: string,
+		state: string,
+	): Verdict {
+		return destructive.run(shell(command, cwd), {
+			...context(cwd),
+			env: { ASTACK_STATE_DIR: state },
+			...(session === undefined ? {} : { session }),
+		});
+	}
+
+	function sessionRun(command: string, cwd: string, state: string): Verdict {
+		return runAs("session-1", command, cwd, state);
+	}
+
+	function dirtyRepoAt(dir: string): void {
+		mkdirSync(dir, { recursive: true });
+		initRepo(dir);
+		write(dir, { "a.txt": "a\n" });
+		git(dir, "add", ".");
+		git(dir, "commit", "-q", "-m", "a");
+		write(dir, { "a.txt": "b\n", "new.txt": "n\n" });
+	}
+
+	function initedRepo(state: string, target: string): void {
+		const parent = join(target, "..");
+		expect(sessionRun(`git init ${target}`, parent, state).kind).toBe("allow");
+		dirtyRepoAt(target);
+	}
+
+	const DISCARDS = [
+		"git reset --hard",
+		"git checkout -- .",
+		"git clean -f",
+		"git restore :/",
+	];
+
+	test.each(DISCARDS)(
+		"[control:sg-session-repo] %s passes in a dirty repo that git init made in this session",
+		(command) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(sessionRun(command, dir, state).kind).toBe("allow");
+		},
+	);
+
+	test("[control:sg-session-repo] git reset --hard passes in a repo that git clone made in this session", () => {
+		const { dir, state } = fresh("clone");
+		const parent = join(dir, "..");
+		expect(sessionRun(`git clone ${repo} clone`, parent, state).kind).toBe(
+			"allow",
+		);
+		git(parent, "clone", "-q", repo, "clone");
+		write(dir, { "package.json": "{}\n" });
+		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
+	});
+
+	test("[control:sg-session-repo] git reset --hard passes in a worktree that git worktree add made in this session", () => {
+		const { dir, state } = fresh("main");
+		dirtyRepoAt(dir);
+		const worktree = join(dir, "..", "wt");
+		expect(sessionRun("git worktree add ../wt", dir, state).kind).toBe("allow");
+		git(dir, "worktree", "add", "-q", "../wt");
+		write(worktree, { "a.txt": "b\n", "new.txt": "n\n" });
+		expect(sessionRun("git reset --hard", worktree, state).kind).toBe("allow");
+		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+			"owner gate",
+		);
+	});
+
+	test.each([
+		["git push --force origin main", "shared branch main"],
+		["supabase db reset", "deletes the database data"],
+		['git commit --no-verify -m "x"', "--no-verify"],
+	])(
+		"[control:sg-session-repo] %s keeps its owner gate in a session repo",
+		(command, text) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(reason(sessionRun(command, dir, state))).toContain(text);
+		},
+	);
+
+	test("[control:sg-session-repo] git clean -ffd is denied for a nested repo with no bound record", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const nested = join(dir, "vendor/lib");
+		dirtyRepoAt(nested);
+		const said = reason(sessionRun("git clean -ffd", dir, state));
+		expect(said).toContain("deletes the untracked files vendor/lib/.");
+	});
+
+	test("[control:sg-session-repo-identity] a reset is denied in a dirty repo that another process made at a dropped pending path", () => {
+		const { dir, state } = fresh("made");
+		const parent = join(dir, "..");
+		expect(sessionRun(`git init ${dir}`, parent, state).kind).toBe("allow");
+		expect(sessionRun("ls", parent, state).kind).toBe("allow");
+		dirtyRepoAt(dir);
+		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+			"discards the uncommitted changes in a.txt",
+		);
+	});
+
+	test.each([
+		[
+			"a symlink to another dirty repo",
+			(dir: string) => symlinkSync(dirty, dir),
+		],
+		["a new dirty repo", (dir: string) => dirtyRepoAt(dir)],
+	])(
+		"[control:sg-session-repo-identity] a reset is denied at the path of a bound record that now holds %s",
+		(_, replace) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(sessionRun("git status", dir, state).kind).toBe("allow");
+			rmSync(dir, { recursive: true, force: true });
+			replace(dir);
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"owner gate",
+			);
+		},
+	);
+
+	test.each([
+		"git init --separate-git-dir=OTHER/.git NEW",
+		"git init --separate-git-dir OTHER/.git NEW",
+	])(
+		"[control:sg-session-repo-identity] after %s a reset in the new folder is denied",
+		(command) => {
+			const { dir, state } = fresh("new");
+			const other = join(dir, "..", "other");
+			dirtyRepoAt(other);
+			git(other, "add", "a.txt");
+			const parent = join(dir, "..");
+			const made = command.replace("OTHER", other).replace("NEW", dir);
+			expect(sessionRun(made, parent, state).kind).toBe("allow");
+			spawnSync("sh", ["-c", made], { cwd: parent });
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"owner gate",
+			);
+		},
+	);
+
+	test.each([
+		"git --git-dir=REPO/.git reset --hard",
+		"git --work-tree=REPO reset --hard",
+		"GIT_DIR=REPO/.git git reset --hard",
+		"GIT_WORK_TREE=REPO git reset --hard",
+		"GIT_INDEX_FILE=REPO/.git/index git reset --hard",
+		"export GIT_DIR=REPO/.git && git reset --hard",
+		"GIT_DIR=REPO/.git; export GIT_DIR; git reset --hard",
+	])(
+		"[control:sg-session-repo-identity] %s gets the deny of main in a dirty session repo",
+		(command) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(
+				reason(sessionRun(command.replaceAll("REPO", dir), dir, state)),
+			).toContain("discards the uncommitted changes in a.txt");
+		},
+	);
+
+	test("[control:sg-session-repo-identity] a place variable in the env of the hook gives no exemption", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const verdict = destructive.run(shell("git reset --hard", dir), {
+			...context(dir),
+			env: { ASTACK_STATE_DIR: state, GIT_DIR: join(dir, ".git") },
+			session: "session-1",
+		});
+		expect(reason(verdict)).toContain("owner gate");
+	});
+
+	test.each<[string, string | undefined, (state: string) => void]>([
+		["no session id", undefined, () => {}],
+		["an id with a slash", "a/b", () => {}],
+		[
+			"a state folder that refuses a write",
+			"session-1",
+			(state) => {
+				mkdirSync(state);
+				chmodSync(state, 0o500);
+			},
+		],
+	])(
+		"[control:sg-session-repo-closed] with %s the discard after git init is denied",
+		(_, session, prepare) => {
+			const { dir, state } = fresh("made");
+			const parent = join(dir, "..");
+			prepare(state);
+			expect(runAs(session, `git init ${dir}`, parent, state).kind).toBe(
+				"allow",
+			);
+			dirtyRepoAt(dir);
+			expect(runAs(session, "ls", parent, state).kind).toBe("allow");
+			const said = reason(runAs(session, "git reset --hard", dir, state));
+			if (session === "session-1") chmodSync(state, 0o755);
+			expect(said).toContain("discards the uncommitted changes in a.txt");
+		},
+	);
+
+	test("[control:sg-session-repo-closed] a pending entry that binds in a call whose save fails passes the discard of that call", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const folder = join(state, "session-repos");
+		chmodSync(folder, 0o500);
+		const first = sessionRun("git reset --hard", dir, state).kind;
+		const second = sessionRun("git reset --hard", dir, state).kind;
+		chmodSync(folder, 0o755);
+		expect([first, second]).toEqual(["allow", "allow"]);
+		expect(
+			JSON.parse(readFileSync(join(folder, "session-1.json"), "utf8")),
+		).toEqual([{ kind: "pending", path: realpathSync(dir) }]);
+	});
+
+	test.each<[string, (state: string, target: string) => string]>([
+		[
+			"a record file that is a folder",
+			(state) => {
+				mkdirSync(join(state, "session-repos", "session-1.json"), {
+					recursive: true,
+				});
+				return state;
+			},
+		],
+		[
+			"a record of a wrong shape",
+			(state) => {
+				mkdirSync(join(state, "session-repos"), { recursive: true });
+				writeFileSync(
+					join(state, "session-repos", "session-1.json"),
+					'[{"kind":"bound","path":"/x"}]',
+				);
+				return state;
+			},
+		],
+		[
+			"a state path that is a file",
+			(state) => {
+				writeFileSync(state, "x");
+				return state;
+			},
+		],
+		[
+			"an init target that is a file",
+			(state, target) => {
+				writeFileSync(target, "x");
+				return state;
+			},
+		],
+	])(
+		"[control:sg-session-repo-total] with %s a call still denies a force-push and a discard in another repo",
+		(_, fault) => {
+			const { dir, state } = fresh("made");
+			const parent = join(dir, "..");
+			const used = fault(state, dir);
+			const command = `git init ${dir}; git push --force origin main; git -C ${dirty} reset --hard`;
+			const said = reason(sessionRun(command, parent, used));
+			const later = sessionRun("git status", parent, used).kind;
+			expect(said).toContain("shared branch main");
+			expect(said).toContain("discards the uncommitted changes in notes.txt");
+			expect(later).toBe("allow");
+		},
+	);
 });
 
 describe("the duplicate PR guard", () => {

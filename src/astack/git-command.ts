@@ -24,7 +24,7 @@ const REPO_FLAGS = ["--git-dir", "--work-tree"];
 const PLACE_FLAGS = ["-c", CONFIG_ENV, ...REPO_FLAGS, "--namespace"];
 const WORK_TREE_KEY = /^core\.worktree$/i;
 const PLACE_VARIABLE =
-	/^GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)=/;
+	/^GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)(?:=|$)/;
 
 export function isLongForm(flag: string, long: string): boolean {
 	return (
