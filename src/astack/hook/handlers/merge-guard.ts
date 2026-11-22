@@ -97,20 +97,26 @@ function shortInput(letter: string, word: Word): GraphqlInput | undefined {
 	return undefined;
 }
 
-type Method = { readonly word: Word | undefined; readonly at: number };
-
 type ApiParts = {
 	readonly inputs: readonly GraphqlInput[];
-	readonly method: Method | undefined;
+	readonly method: Word | undefined;
+	readonly positional: readonly Word[];
+	readonly dynamicFlag: boolean;
 };
 
 function apiParts(args: readonly Word[]): ApiParts {
 	const inputs: GraphqlInput[] = [];
-	let method: Method | undefined;
+	const positional: Word[] = [];
+	let method: Word | undefined;
+	let dynamicFlag = false;
 	for (let index = 1; index < args.length; index++) {
 		const word = args[index];
 		if (word === undefined) continue;
-		if (!word.value.startsWith("-")) continue;
+		if (!word.value.startsWith("-")) {
+			positional.push(word);
+			continue;
+		}
+		dynamicFlag ||= word.dynamic;
 		const attached = (value: string): Word => ({
 			value,
 			dynamic: word.dynamic,
@@ -125,7 +131,7 @@ function apiParts(args: readonly Word[]): ApiParts {
 		} else if (methodFlag) {
 			const value =
 				methodFlag[1] === undefined ? args[++index] : attached(methodFlag[1]);
-			method = { word: value, at: index };
+			method = value;
 		} else if (API_LONG_VALUES.includes(word.value)) index++;
 		else if (/^-[A-Za-z]/.test(word.value)) {
 			const at = [...word.value.slice(1)].findIndex((letter) =>
@@ -135,21 +141,21 @@ function apiParts(args: readonly Word[]): ApiParts {
 			const rest = word.value.slice(at + 2);
 			const value = rest === "" ? args[++index] : attached(rest);
 			const letter = word.value.charAt(at + 1);
-			if (letter === "X") method = { word: value, at: index };
+			if (letter === "X") method = value;
 			const input = value && shortInput(letter, value);
 			if (input) inputs.push(input);
 		}
 	}
-	return { inputs, method };
+	return { inputs, method, positional, dynamicFlag };
 }
 
-function provablyGet(method: Method | undefined, lastDynamic: number): boolean {
-	return (
-		method?.word !== undefined &&
-		!method.word.dynamic &&
-		method.word.value === "GET" &&
-		method.at > lastDynamic
-	);
+function writes(values: readonly string[], parts: ApiParts): boolean {
+	const staticGet =
+		parts.inputs.length === 0 &&
+		parts.method !== undefined &&
+		!parts.method.dynamic &&
+		parts.method.value === "GET";
+	return !staticGet && values.some((value) => METHOD_CHANGING_FLAG.test(value));
 }
 
 function inputText(
@@ -185,19 +191,23 @@ function apiCall(
 	const values = args.map((word) => word.value);
 	if (values[0] !== "api") return NONE;
 	if (values.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return API;
-	const writes = values.some((value) => METHOD_CHANGING_FLAG.test(value));
-	if (writes && values.some((value) => MERGE_PATH.test(value))) return API;
-	const { inputs, method } = apiParts(args);
+	const parts = apiParts(args);
+	const writing = writes(values, parts);
+	if (writing && values.some((value) => MERGE_PATH.test(value))) return API;
+	const words = args.slice(1);
+	if (words.some((word) => word.splits === true || word.expands === true))
+		return ENDPOINT;
 	const mergesThroughGraphql =
 		values.some(namesGraphql) &&
-		inputs.some((input) => {
+		parts.inputs.some((input) => {
 			const text = inputText(input, step, readFile);
 			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
 		});
 	if (mergesThroughGraphql) return API;
-	if (args.some((word) => word.expands === true)) return ENDPOINT;
-	const lastDynamic = args.findLastIndex((word) => word.dynamic);
-	return lastDynamic > 0 && !provablyGet(method, lastDynamic) ? ENDPOINT : NONE;
+	if (!words.some((word) => word.dynamic)) return NONE;
+	return writing || parts.dynamicFlag || parts.positional.length > 1
+		? ENDPOINT
+		: NONE;
 }
 
 function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
@@ -334,7 +344,7 @@ function stepVerdict(
 		case "endpoint":
 			return deny(
 				mergeDenial([
-					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. For a read, put -X GET after the last variable. Merge a PR with gh pr merge.",
+					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. In a read, put each variable in double quotes. Merge a PR with gh pr merge.",
 				]),
 			);
 		case "glob":

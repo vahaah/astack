@@ -4,6 +4,7 @@ export interface Word {
 	value: string;
 	dynamic: boolean;
 	expands?: boolean;
+	splits?: boolean;
 }
 
 export interface Redirect {
@@ -81,6 +82,9 @@ export function parseShell(src: string): SimpleCommand[] {
 		word ??= { value: "", dynamic: false };
 		word.value += text;
 		if (dynamic) word.dynamic = true;
+	};
+	const splits = (): void => {
+		if (word) word.splits = true;
 	};
 	const endWord = (): void => {
 		if (!word) return;
@@ -195,6 +199,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		}
 		if (c === "$" && src[i + 1] === "(") {
 			substitution();
+			splits();
 			continue;
 		}
 		if (c === "$" && src[i + 1] === "'") {
@@ -210,11 +215,13 @@ export function parseShell(src: string): SimpleCommand[] {
 		}
 		if (c === "$" && /[\w{@*#?$!-]/.test(src[i + 1] ?? "")) {
 			append("", true);
+			splits();
 			i++;
 			continue;
 		}
 		if (c === "`") {
 			backtickBody();
+			splits();
 			continue;
 		}
 		if (c === "|") {
@@ -248,6 +255,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		}
 		if ((c === "<" || c === ">") && src[i + 1] === "(") {
 			parenBody();
+			splits();
 			continue;
 		}
 		if (c === "<" && src.startsWith("<<<", i)) {
