@@ -76,7 +76,7 @@ Adding a rule pack does not start a reviewer.
 | `Bash` running `gh pr edit` | The `Part of` line and closing words in a new body or title | Deny as for `gh pr create`. |
 | `Bash` running `gh pr merge` | The merge grant, the review threads, CI on the PR head, closing words and `--admin` | Deny with each reason. See Merges below. |
 | `Bash` running `gh pr create`, or the GitHub MCP tool `create_pull_request` | Open PRs of the same author for the same branch or the same `Part of` ticket | Deny a second PR. One plan is one PR. When `gh` cannot read the list, allow. |
-| The GitHub MCP tools `merge_pull_request`, `create_pull_request` and `update_pull_request` | The merge path, the `Part of` line, closing words and headings | Deny a merge through MCP, so each merge goes through `gh pr merge`. Check the PR text as for `gh pr create`. |
+| Each MCP tool whose name holds a merge word, and the GitHub MCP tools `create_pull_request` and `update_pull_request` | The merge path, the `Part of` line, closing words and headings | Deny a merge through MCP on each server, also with a grant, so each merge goes through `gh pr merge`. A tool name that starts with get, list, read, search, view or find passes. Check the PR text as for `gh pr create`. |
 | `Bash` running `supabase db reset` or a package script that runs it, `git push --force` to `main`, `master`, `develop`, `staging`, `production` or a `release` branch, or `--no-verify` on `git commit` or `git push` | The owner gates | Deny, and ask the owner. |
 | `Bash` running `gh issue create` | Headings in the issue body | Deny when a heading is missing. Add a note for email addresses. |
 | A Linear MCP tool named `save_issue`, `create_issue` or `update_issue` | Headings in the issue description | Deny a new issue with a missing heading. Add a note on an update. Add a note for email addresses. |
@@ -175,7 +175,7 @@ astack refuses `gh pr merge` in these cases:
 - astack cannot read the PR. It reads the PR with `gh pr view` and one `gh api graphql` call.
 - The command has `--admin`, which skips the branch protection rules. This is an owner gate, also with a standing grant.
 
-A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. astack also refuses a merge through `gh api` on `pulls/<n>/merge` and through the GitHub MCP tool `merge_pull_request`. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
+A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. astack also refuses a merge through `gh api` on `pulls/<n>/merge`. It refuses each MCP tool whose name holds a merge word, such as `pull_request_merge`, also with a grant. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
 
 ```json
 {

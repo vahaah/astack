@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { mcpParts } from "../../src/astack/hook/decode/claude-code.ts";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
 import type {
 	Context,
@@ -620,29 +621,53 @@ describe("the merge guard", () => {
 		expect(run.exit).toBe(2);
 		expect(run.stderr).toContain("Do not merge with --admin");
 	});
+});
 
-	test("the GitHub MCP merge tool is denied", () => {
-		const verdict = guard(GREEN).run(
-			{
-				kind: "mcp",
-				server: "plugin_github_github",
-				tool: "merge_pull_request",
-				input: { owner: "acme", repo: "shop", pullNumber: 12 },
-			},
-			context(standing, "mcp", "PreToolUse"),
-		);
-		expect(outcome(verdict).stderr).toContain("Merge with gh pr merge");
-		const other = guard(GREEN).run(
-			{
-				kind: "mcp",
-				server: "plugin_github_github",
-				tool: "get_pull_request",
-				input: { owner: "acme", repo: "shop", pullNumber: 12 },
-			},
-			context(standing, "mcp", "PreToolUse"),
-		);
-		expect(other.kind).toBe("allow");
-	});
+describe("MCP merge tools", () => {
+	const schemas: { tools: { name: string }[] } = JSON.parse(
+		readFileSync(
+			resolve(import.meta.dir, "../fixtures/hook-input/mcp-tool-schemas.json"),
+			"utf8",
+		),
+	);
+	const captured = schemas.tools.map(({ name }) => name);
+	const merges = new Set([
+		"mcp__cocode__pull_request_merge",
+		"mcp__plugin_linear_linear__merge_diff",
+		"mcp__plugin_supabase_supabase__merge_branch",
+	]);
+
+	test.each([
+		...captured.map((name) => [name, merges.has(name)] as const),
+		["mcp__plugin_github_github__merge_pull_request", true],
+		["mcp__plugin_github_github__list_pull_requests", false],
+		["mcp__forge__mergePullRequest", true],
+		["mcp__forge__enable-automerge", true],
+		["mcp__forge__show_merged_prs", false],
+	])(
+		"[control:sg-mcp-merge] %s is denied, also after the owner's grant: %p",
+		(name, denied) => {
+			const handler = guard(GREEN);
+			prompt(handler, "merge #12 when green", "mcp");
+			const verdict = handler.run(
+				{
+					kind: "mcp",
+					...mcpParts(name),
+					input: { number: 12, expectedHeadSha: HEAD },
+				},
+				context(project, "mcp", "PreToolUse"),
+			);
+			expect(verdict).toEqual(
+				denied
+					? {
+							kind: "deny",
+							reason:
+								"astack blocked gh pr merge:\n- astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
+						}
+					: { kind: "allow" },
+			);
+		},
+	);
 });
 
 describe("the GitHub read", () => {

@@ -182,14 +182,30 @@ function shellVerdict(
 	);
 }
 
-const MCP_MERGE = /^(?:merge_pull_request|merge_pr)$/;
+const MERGE_TOKEN = /^(?:auto)?merg(?:e|es|ing)$/;
+const READ_VERBS = new Set(["get", "list", "read", "search", "view", "find"]);
+
+function nameTokens(name: string): readonly string[] {
+	return name
+		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+		.split(/[\s._-]+/)
+		.filter((token) => token !== "")
+		.map((token) => token.toLowerCase());
+}
+
+function isMcpMergeTool(tool: string): boolean {
+	const tokens = nameTokens(tool);
+	return (
+		!READ_VERBS.has(tokens[0] ?? "") &&
+		tokens.some((token) => MERGE_TOKEN.test(token))
+	);
+}
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {
-	if (!/github/i.test(event.server) || !MCP_MERGE.test(event.tool))
-		return ALLOW;
+	if (!isMcpMergeTool(event.tool)) return ALLOW;
 	return deny(
 		mergeDenial([
-			"Merge with gh pr merge, so astack can examine the PR first.",
+			"astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
 		]),
 	);
 }
