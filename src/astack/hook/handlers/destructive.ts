@@ -1,8 +1,12 @@
 import { join, resolve } from "node:path";
 import { repoRoot, runGit } from "../../git.ts";
-import { type GitInvocation, gitInvocation } from "../../git-command.ts";
+import {
+	type GitInvocation,
+	type GitRead,
+	readGit,
+} from "../../git-command.ts";
 import { canonicalRelative, readOptional } from "../../paths.ts";
-import { type ShellStep, shellSteps } from "../../shell.ts";
+import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
 	combineAll,
@@ -448,10 +452,12 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	);
 }
 
-function workLossReasons(step: ShellStep): readonly string[] {
-	const git = gitInvocation(step.values, step.dir);
-	const loss = git === undefined ? undefined : workLoss(git);
-	if (git === undefined || loss === undefined) return [];
+function workLossReasons(
+	step: ShellStep,
+	git: GitInvocation,
+): readonly string[] {
+	const loss = workLoss(git);
+	if (loss === undefined) return [];
 	const lost = lostPaths(loss, git.dir);
 	if (lost.length === 0) return [];
 	const effect =
@@ -464,9 +470,7 @@ function workLossReasons(step: ShellStep): readonly string[] {
 	];
 }
 
-function gitReasons(step: ShellStep): readonly string[] {
-	const git = gitInvocation(step.values, step.dir);
-	if (!git) return [];
+function gitReasons(git: GitInvocation): readonly string[] {
 	const flags = git.args.filter((arg) => arg.startsWith("-"));
 	if (git.sub === "commit") {
 		const noVerify = flags.some(
@@ -505,19 +509,65 @@ function gitReasons(step: ShellStep): readonly string[] {
 	return reasons;
 }
 
+const LOST_BY_VERB: ReadonlyMap<string, LostChange> = new Map([
+	["checkout", "tracked"],
+	["clean", "untracked"],
+	["reset", "tracked"],
+	["restore", "tracked"],
+	["switch", "tracked"],
+]);
+
+function shown(words: readonly Word[]): string {
+	return words
+		.map((word) => {
+			if (!word.dynamic) return word.value;
+			return word.value === "" ? "$(...)" : `$${word.value}`;
+		})
+		.join(" ");
+}
+
+function unreadableReasons(
+	step: ShellStep,
+	read: Extract<GitRead, { kind: "unreadable" }>,
+): readonly string[] {
+	const lost =
+		read.verb === undefined ? undefined : LOST_BY_VERB.get(read.verb);
+	if (
+		lost !== undefined &&
+		read.dir !== undefined &&
+		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir).length === 0
+	)
+		return [];
+	return [
+		`astack cannot read ${shown(step.words)}, because ${read.cause}. Write the git command with static words, such as a branch name or HEAD in place of a variable. ${OWNER_GATE}`,
+	];
+}
+
+function stepReasons(step: ShellStep): readonly string[] {
+	const read = readGit(step);
+	switch (read.kind) {
+		case "none":
+			return supabaseReasons(step);
+		case "unreadable":
+			return [...supabaseReasons(step), ...unreadableReasons(step, read)];
+		case "plain":
+			return [
+				...supabaseReasons(step),
+				...gitReasons(read.git),
+				...workLossReasons(step, read.git),
+			];
+	}
+}
+
 export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell"],
 	run: (event) => {
-		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/.test(event.command))
+		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
 		return combineAll(
 			shellSteps(event.command, event.cwd).map((step) =>
-				denial([
-					...supabaseReasons(step),
-					...gitReasons(step),
-					...workLossReasons(step),
-				]),
+				denial(stepReasons(step)),
 			),
 		);
 	},

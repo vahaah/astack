@@ -209,6 +209,77 @@ describe("the destructive command guard", () => {
 	);
 });
 
+describe("the plain form of a git step", () => {
+	const forms: readonly { readonly group: string; readonly command: string }[] =
+		JSON.parse(
+			readFileSync(
+				join(import.meta.dir, "../fixtures/guard-bypass.json"),
+				"utf8",
+			),
+		).forms;
+
+	test.each(
+		forms
+			.filter(
+				(form) =>
+					form.group === "wrapped-reset" || form.group === "dynamic-word",
+			)
+			.map((form) => form.command),
+	)("[control:sg-plain-form] %s is denied on a dirty tree", (command) => {
+		expect(
+			reason(destructive.run(shell(command, dirty), context(dirty))),
+		).toContain("owner gate");
+	});
+
+	test.each([
+		"git reset $(echo --hard)",
+		'git commit -m "$(cat msg.txt)"',
+		'cd "$dir" && git status',
+	])("%s passes on a clean tree", (command) => {
+		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+	});
+
+	test.each(["yarn commit -n", "echo reset --hard && git status"])(
+		"%s passes on a dirty tree, because its program is not git",
+		(command) => {
+			expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+				"allow",
+			);
+		},
+	);
+
+	test.each([
+		[
+			"M=--hard; git reset $M",
+			"astack cannot read git reset $M, because a variable or a command substitution gives a flag or an operand of git reset. Write the git command with static words, such as a branch name or HEAD in place of a variable. This is an owner gate, so stop and ask the owner.",
+		],
+		[
+			'git push -u origin "$(git branch --show-current)"',
+			"astack cannot read git push -u origin $(...), because a variable or a command substitution gives a flag or an operand of git push.",
+		],
+		[
+			'cd "$dir" && git reset --hard',
+			"astack cannot read git reset --hard, because an earlier cd goes to a folder that astack cannot read.",
+		],
+		[
+			"git $(echo reset) --hard",
+			"astack cannot read git $(...) --hard, because a variable or a command substitution gives the git subcommand.",
+		],
+		[
+			'"$GIT" reset --hard',
+			"astack cannot read $GIT reset --hard, because a variable gives the program.",
+		],
+	])(
+		"[control:sg-dynamic-word] %s is denied with its cause",
+		(command, text) => {
+			const where = command.startsWith("git push") ? repo : dirty;
+			expect(
+				reason(destructive.run(shell(command, where), context(where))),
+			).toContain(text);
+		},
+	);
+});
+
 describe("the clean selection of the work-loss guard", () => {
 	let count = 0;
 	function untrackedRepo(): string {
