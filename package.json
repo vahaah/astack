@@ -25,6 +25,7 @@
 		"@anthropic-ai/claude-code": "2.1.311",
 		"@biomejs/biome": "2.5.15",
 		"@types/bun": "1.4.3",
+		"fast-check": "4.10.2",
 		"typescript": "7.0.2"
 	},
 	"dependencies": {
