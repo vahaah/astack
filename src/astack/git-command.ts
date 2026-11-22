@@ -27,16 +27,22 @@ const PLACE_NAME =
 	"GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)";
 const PLACE_VARIABLE = new RegExp(`^${PLACE_NAME}(?:=|$)`);
 const PLACE_MENTION = new RegExp(`(?:^|\\W)${PLACE_NAME}(?:\\W|$)`);
-const DECLARES = new Set([
+const SHELL_STATE = new Set([
+	".",
+	"alias",
 	"declare",
+	"emulate",
 	"eval",
-	"export",
+	"float",
+	"integer",
 	"local",
 	"readonly",
+	"set",
+	"setopt",
+	"source",
 	"typeset",
+	"unsetopt",
 ]);
-const SOURCES = new Set([".", "source"]);
-const ALL_EXPORT = /^(?:-[A-Za-z]*a[A-Za-z]*|allexport)$/;
 
 export function isLongForm(flag: string, long: string): boolean {
 	return (
@@ -95,29 +101,23 @@ export function isPlaceVariable(word: Word): boolean {
 	return PLACE_VARIABLE.test(word.value);
 }
 
-export function placesLaterSteps(step: ShellStep): boolean {
-	const [program, ...args] = step.words;
-	const name = program?.dynamic === false ? program.value : undefined;
-	return (
-		program?.dynamic === true ||
-		[...step.env, ...step.words].some((word) =>
-			PLACE_MENTION.test(word.value),
-		) ||
-		(name !== undefined && SOURCES.has(name)) ||
-		(name === "set" &&
-			args.some((word) => word.dynamic || ALL_EXPORT.test(word.value))) ||
-		(name !== undefined &&
-			DECLARES.has(name) &&
-			args.some((word) => word.dynamic))
-	);
-}
-
 export function hasPlaceForm(step: ShellStep): boolean {
 	const git = gitWords(step.words, step.dir);
 	return (
 		step.env.some(isPlaceVariable) ||
 		git?.movesRepo === true ||
 		git?.dynamicPlace === true
+	);
+}
+
+export function movesPlace(step: ShellStep): boolean {
+	const [program, ...args] = step.words;
+	return (
+		hasPlaceForm(step) ||
+		program?.dynamic === true ||
+		(program !== undefined && SHELL_STATE.has(program.value)) ||
+		(program?.value === "export" && args.some((word) => word.dynamic)) ||
+		[...step.env, ...step.words].some((word) => PLACE_MENTION.test(word.value))
 	);
 }
 

@@ -41,10 +41,14 @@ A dynamic word gives no target. So do `--bare`, `--mirror` and `--separate-git-d
 `--git-dir`, `--work-tree`, a `core.worktree` setting and a place variable give no target too.
 A place variable is `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_CONFIG_PARAMETERS` or `GIT_CONFIG_COUNT`.
 
-A place variable counts in the env of the step, in an earlier step that names it and in the env of the hook.
-An earlier `set -a`, `source` or `.` step also removes the exemption.
-So does an earlier `export`, `declare`, `typeset`, `local`, `readonly` or `eval` with a dynamic word.
-A discard with a place form gets no exemption, so it gets the verdict of ADR 0010 D3.
+The hook reads the place forms of the whole command line, in any order of its steps.
+A loop or a function can run a step after a later step of the text.
+
+A place variable counts in the env of a step, in each step that names it and in the env of the hook.
+A step that can change the state of the shell also removes the exemption from the whole line.
+Such steps are `declare`, `typeset`, `local`, `readonly`, `float`, `integer`, `set`, `setopt`, `unsetopt`, `emulate`, `alias`, `eval`, `source` and `.`.
+So do a dynamic program and an `export` with a dynamic word.
+A line with a place form records no target and gets no exemption, so it gets the verdict of ADR 0010 D3.
 
 ### D4. A record starts pending, and the next shell call settles it
 

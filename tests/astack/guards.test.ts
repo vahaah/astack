@@ -1066,27 +1066,48 @@ describe("a repo that this session made", () => {
 		},
 	);
 
+	const DISCARDED = "discards the uncommitted changes in a.txt";
+
 	test.each([
-		"git --git-dir=REPO/.git reset --hard",
-		"git --work-tree=REPO reset --hard",
-		"GIT_DIR=REPO/.git git reset --hard",
-		"GIT_WORK_TREE=REPO git reset --hard",
-		"GIT_INDEX_FILE=REPO/.git/index git reset --hard",
-		"export GIT_DIR=REPO/.git && git reset --hard",
-		"GIT_DIR=REPO/.git; export GIT_DIR; git reset --hard",
-		"declare -x GIT_WORK_TREE=REPO; git reset --hard",
-		"set -a; GIT_WORK_TREE=REPO; git reset --hard",
-		'set -o allexport; read -r "$name" < place.txt; git reset --hard',
-		'eval "$SETUP"; git reset --hard',
-		"source ./setup.sh; git reset --hard",
+		["git --git-dir=REPO/.git reset --hard", DISCARDED],
+		["git --work-tree=REPO reset --hard", DISCARDED],
+		["GIT_DIR=REPO/.git git reset --hard", DISCARDED],
+		["GIT_WORK_TREE=REPO git reset --hard", DISCARDED],
+		["GIT_INDEX_FILE=REPO/.git/index git reset --hard", DISCARDED],
+		["export GIT_DIR=REPO/.git && git reset --hard", DISCARDED],
+		["GIT_DIR=REPO/.git; export GIT_DIR; git reset --hard", DISCARDED],
+		["declare -x GIT_DIR=REPO/.git; git reset --hard", DISCARDED],
+		["set -a; GIT_WORK_TREE=REPO; git reset --hard", DISCARDED],
+		[
+			'set -o allexport; read -r "$name" < place.txt; git reset --hard',
+			DISCARDED,
+		],
+		['eval "$SETUP"; git reset --hard', DISCARDED],
+		[
+			'eval "export GIT_WORK_TREE=$W"; git clean -fdx',
+			"deletes the untracked files new.txt",
+		],
+		[". ./env.sh; git checkout -- .", DISCARDED],
+		["source ./setup.sh; git reset --hard", DISCARDED],
+		[
+			"for i in 1 2; do git reset --hard; export GIT_WORK_TREE=REPO; done",
+			DISCARDED,
+		],
+		["f() { git reset --hard; }; declare -x GIT_DIR=REPO/.git; f", DISCARDED],
+		["declare -x $'GIT\\x5fDIR=REPO/.git'; git reset --hard", DISCARDED],
+		["set -k; git reset --hard GIT_WORK_TREE=REPO", DISCARDED],
+		[
+			'setopt allexport; read -r "$name" < place.txt; git reset --hard',
+			DISCARDED,
+		],
 	])(
 		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
-		(command) => {
+		(command, text) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
 			expect(
 				reason(sessionRun(command.replaceAll("REPO", dir), dir, state)),
-			).toContain("discards the uncommitted changes in a.txt");
+			).toContain(text);
 		},
 	);
 

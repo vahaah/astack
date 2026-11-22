@@ -6,11 +6,10 @@ import {
 	type GitInvocation,
 	type GitRead,
 	HOOKS_PATH_KEY,
-	hasPlaceForm,
 	isLongForm,
 	isPlaceVariable,
 	madeRepoTarget,
-	placesLaterSteps,
+	movesPlace,
 	readGit,
 } from "../../git-command.ts";
 import {
@@ -926,16 +925,12 @@ function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
 		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
 }
 
-function placedSteps(steps: readonly ShellStep[], env: Env): boolean[] {
-	const hookPlaced = Object.entries(env).some(
-		([key, value]) =>
-			value !== undefined && isPlaceVariable({ value: key, dynamic: false }),
-	);
-	return steps.map(
-		(step, index) =>
-			hookPlaced ||
-			hasPlaceForm(step) ||
-			steps.slice(0, index).some(placesLaterSteps),
+function placedLine(steps: readonly ShellStep[], env: Env): boolean {
+	return (
+		Object.entries(env).some(
+			([key, value]) =>
+				value !== undefined && isPlaceVariable({ value: key, dynamic: false }),
+		) || steps.some(movesPlace)
 	);
 }
 
@@ -954,27 +949,25 @@ export const handler = defineHandler({
 		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
 		const steps = shellSteps(event.command, event.cwd);
-		const placed = placedSteps(steps, context.env);
+		const placed = placedLine(steps, context.env);
+		const sessionRepo = sessionRepoTest(repos, placed);
 		const verdict = combineAll(
 			steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
 						exported: exportedSkips(steps, index),
 						env: context.env,
-						sessionRepo: sessionRepoTest(repos, placed[index] === true),
+						sessionRepo,
 					}),
 				),
 			),
 		);
-		if (verdict.kind !== "deny")
+		if (verdict.kind !== "deny" && !placed)
 			rememberRepos(
 				context.env,
 				context.session,
 				repos,
-				steps.flatMap((step, index) => {
-					const target = placed[index] ? undefined : madeRepoTarget(step);
-					return target === undefined ? [] : [target];
-				}),
+				steps.flatMap((step) => madeRepoTarget(step) ?? []),
 			);
 		return verdict;
 	},
