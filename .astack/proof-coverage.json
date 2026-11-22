@@ -4,7 +4,8 @@
 		"docs/reference/change-proof-contract.md",
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
-		"docs/reference/word-budget.md"
+		"docs/reference/word-budget.md",
+		"docs/reference/doctor.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -25,7 +26,13 @@
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
-		"tests/validate.test.ts"
+		"tests/validate.test.ts",
+		"tests/astack/codex-hooks.test.ts",
+		"tests/astack/version.test.ts",
+		"tests/astack/hardening-profile.test.ts",
+		"tests/astack/managed.test.ts",
+		"tests/astack/watch-pr/policy.test.ts",
+		"tests/dist/external.test.ts"
 	],
 	"links": [
 		{
@@ -234,6 +241,83 @@
 		{
 			"criterion": "WB-validate",
 			"controls": ["wb-validate-skip"]
+		},
+		{
+			"criterion": "DT-TRUST",
+			"controls": [
+				"dt-trust-modified",
+				"dt-trust-untrusted",
+				"dt-trust-disabled",
+				"dt-trust-missing",
+				"dt-trust-ok",
+				"dt-trust-entry-error",
+				"dt-trust-command",
+				"dt-reader-order"
+			]
+		},
+		{
+			"criterion": "DT-FALLBACK",
+			"controls": [
+				"dt-fallback-pinned",
+				"dt-fallback-modified",
+				"dt-fallback-command"
+			]
+		},
+		{
+			"criterion": "DT-READ-FAIL",
+			"controls": [
+				"dt-read-hang",
+				"dt-read-exit",
+				"dt-read-rpc-error",
+				"dt-read-no-codex",
+				"dt-reader-shape",
+				"dt-dist-cause"
+			]
+		},
+		{
+			"criterion": "DT-SKIP",
+			"controls": ["dt-skip", "dt-skip-unlisted", "dt-skip-write"]
+		},
+		{
+			"criterion": "CLI-VERSION",
+			"controls": [
+				"cli-version-claude",
+				"cli-version-cursor",
+				"cli-version-package",
+				"cli-version-none"
+			]
+		},
+		{
+			"criterion": "HP-RULES",
+			"controls": [
+				"hp-proof-gate",
+				"hp-ok",
+				"hp-missing",
+				"hp-no-block",
+				"dt-review-missing",
+				"dt-review-drift"
+			]
+		},
+		{
+			"criterion": "DT-BASE",
+			"controls": [
+				"dt-base-open",
+				"dt-base-classic",
+				"dt-base-cap",
+				"dt-base-gh-fail"
+			]
+		},
+		{
+			"criterion": "WP-DEADLINE",
+			"controls": [
+				"wp-deadline-simple",
+				"wp-deadline-queued",
+				"wp-deadline-retry"
+			]
+		},
+		{
+			"criterion": "CLI-MANAGED",
+			"controls": ["cli-managed"]
 		}
 	]
 }
