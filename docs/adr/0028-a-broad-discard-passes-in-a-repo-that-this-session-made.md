@@ -39,6 +39,7 @@ A folder with files, a file and a symlink give no record.
 
 A dynamic word gives no target. So do `--bare`, `--mirror` and `--separate-git-dir`.
 `--git-dir`, `--work-tree`, a `core.worktree` setting and a place variable give no target too.
+A `core.worktree` key in any case and in any word of a step is such a setting, as in `git clone -c` or `git config`.
 A place variable is `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_CONFIG_PARAMETERS` or `GIT_CONFIG_COUNT`.
 
 The hook reads the place forms of the whole command line, in any order of its steps.

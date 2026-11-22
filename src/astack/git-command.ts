@@ -22,7 +22,7 @@ type GitWords = {
 const CONFIG_ENV = "--config-env";
 const REPO_FLAGS = ["--git-dir", "--work-tree"];
 const PLACE_FLAGS = ["-c", CONFIG_ENV, ...REPO_FLAGS, "--namespace"];
-const WORK_TREE_KEY = /^core\.worktree$/i;
+const WORK_TREE_KEY = /core\.worktree/i;
 const PLACE_NAME =
 	"GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)";
 const PLACE_VARIABLE = new RegExp(`^${PLACE_NAME}(?:=|$)`);
@@ -89,9 +89,7 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 				dir: cwd,
 				config,
 				dynamicPlace,
-				movesRepo:
-					repoFlag ||
-					config.some((setting) => WORK_TREE_KEY.test(configKey(setting))),
+				movesRepo: repoFlag,
 			};
 		}
 	}
@@ -106,6 +104,7 @@ export function hasPlaceForm(step: ShellStep): boolean {
 	const git = gitWords(step.words, step.dir);
 	return (
 		step.env.some(isPlaceVariable) ||
+		step.words.some((word) => WORK_TREE_KEY.test(word.value)) ||
 		git?.movesRepo === true ||
 		git?.dynamicPlace === true
 	);
