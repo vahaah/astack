@@ -1,0 +1,63 @@
+import { afterAll, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { changedTestCommand, launcherTests } from "../scripts/check-fast.ts";
+
+const ROOT = resolve(import.meta.dir, "..");
+const scratch = mkdtempSync(join(tmpdir(), "astack-check-fast-"));
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+function git(cwd: string, ...args: string[]): string {
+	const result = spawnSync(
+		"git",
+		["-c", "user.name=Fast", "-c", "user.email=fast@example.invalid", ...args],
+		{ cwd, encoding: "utf8" },
+	);
+	if (result.status !== 0) throw new Error(result.stderr);
+	return result.stdout.trim();
+}
+
+test("the fast tests hold the three hook test files that reach turn.ts only through the bundle", () => {
+	expect(launcherTests(ROOT)).toEqual(
+		expect.arrayContaining([
+			"tests/astack/hook.test.ts",
+			"tests/astack/launcher.test.ts",
+			"tests/astack/ste-hook.test.ts",
+		]),
+	);
+});
+
+test("a committed change selects the test file that imports it and no other", () => {
+	const repo = join(scratch, "repo");
+	mkdirSync(join(repo, "src"), { recursive: true });
+	mkdirSync(join(repo, "tests"));
+	git(repo, "init", "-q", "-b", "main");
+	writeFileSync(join(repo, "src/a.ts"), "export const a = 1;\n");
+	writeFileSync(join(repo, "src/b.ts"), "export const b = 1;\n");
+	for (const name of ["a", "b"])
+		writeFileSync(
+			join(repo, `tests/${name}.test.ts`),
+			`import { expect, test } from "bun:test";\nimport { ${name} } from "../src/${name}.ts";\ntest("${name} changed", () => expect(${name}).toBe(1));\n`,
+		);
+	git(repo, "add", "-A");
+	git(repo, "commit", "-q", "-m", "base");
+	git(repo, "update-ref", "refs/remotes/origin/main", "HEAD");
+	git(
+		repo,
+		"symbolic-ref",
+		"refs/remotes/origin/HEAD",
+		"refs/remotes/origin/main",
+	);
+	git(repo, "checkout", "-q", "-b", "topic");
+	writeFileSync(join(repo, "src/a.ts"), "export const a = 2;\n");
+	git(repo, "commit", "-q", "-am", "change a");
+	const [command = "", ...args] = changedTestCommand(repo);
+	const run = spawnSync(command, args, { cwd: repo, encoding: "utf8" });
+	const output = `${run.stdout}${run.stderr}`;
+	expect(output).toContain("(fail) a changed");
+	expect(output).not.toContain("b changed");
+	expect(output).toContain("Ran 1 test across 1 file.");
+	expect(run.status).toBe(1);
+});
