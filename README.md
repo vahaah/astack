@@ -86,14 +86,14 @@ Hooks watch the build, the PR and the merge in clients that support hooks.
 
 ## Quickstart
 
-Install the signed release `v0.2.0`. See [the release list](https://github.com/vahaah/astack/releases).
+Install the signed release `v0.3.0`. See [the release list](https://github.com/vahaah/astack/releases).
 
 The CLI runs on Node 22 or later, or on Bun. `bun run check` and `bun run apply` need Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
 
 > **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `bun run apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
 
 ```sh
-ASTACK_TAG=v0.2.0
+ASTACK_TAG=v0.3.0
 ASTACK_RELEASE="$HOME/.local/share/astack/releases/$ASTACK_TAG"
 git clone --branch "$ASTACK_TAG" --depth 1 https://github.com/vahaah/astack.git "$ASTACK_RELEASE"
 ```

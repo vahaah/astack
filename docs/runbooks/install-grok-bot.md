@@ -8,13 +8,13 @@ The Grok Build plugin uses a separate installation procedure.
 ## Import a tagged release
 
 Choose a published release and review its verified tag first.
-The example below requires `v0.2.0` to exist publicly.
+The example below requires `v0.3.0` to exist publicly.
 Send this request to the Bot:
 
 ```text
-Install astack from the published signed tag v0.2.0.
-Download https://github.com/vahaah/astack/archive/refs/tags/v0.2.0.tar.gz.
-Extract the complete source into /workspace/astack/releases/v0.2.0.
+Install astack from the published signed tag v0.3.0.
+Download https://github.com/vahaah/astack/archive/refs/tags/v0.3.0.tar.gz.
+Extract the complete source into /workspace/astack/releases/v0.3.0.
 Strip the archive's first directory level so dist sits directly under that release folder.
 Keep that release folder for later tasks.
 Use its dist/grok-bot/skills folder as the private-skill source.

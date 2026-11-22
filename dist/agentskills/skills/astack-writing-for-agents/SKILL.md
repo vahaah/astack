@@ -3,7 +3,7 @@ name: "astack-writing-for-agents"
 description: "Write documents that agents read. Use for skills, AGENTS.md, CLAUDE.md and documents reached through context pointers."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
 ---
 

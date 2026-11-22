@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"change": "readme-and-proof-docs",
+	"change": "release-0.3.0-docs",
 	"base": "5dfee73ed4dedf18b5d04afc4f0a600f37fd78cf",
 	"scope": [
 		{
@@ -32,6 +32,36 @@
 			"path": ".astack/**",
 			"obligation": "CP-13",
 			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase", "AdmitSafe"]
+		},
+		{
+			"path": "CHANGELOG.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/runbooks/install-*.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/runbooks/publish.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/.claude-plugin/plugin.json",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "package.json",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
 		}
 	],
 	"domain": {
@@ -68,7 +98,7 @@
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
-			"criteria": ["CP-13", "SG-preserve"]
+			"criteria": ["CP-13", "SG-preserve", "SG-generated"]
 		}
 	},
 	"category": {

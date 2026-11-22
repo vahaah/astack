@@ -3,7 +3,7 @@ name: "astack-arena"
 description: "Run parallel candidates on one task. Use for /astack-arena, \"arena this\", \"throw it in the arena\", or substantial work that needs alternative designs. Choose a base, integrate useful parts from other candidates, and verify the result."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

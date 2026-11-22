@@ -1,4 +1,4 @@
-<!-- astack 0.2.0 -->
+<!-- astack 0.3.0 -->
 ## The astack CLI
 
 The skills run the `astack` CLI. When `astack` is not on PATH, run `node <plugin root>/bin/astack.js` in its place. The plugin root is the folder above the `skills` folder of the skill.
@@ -109,4 +109,4 @@ Plan migrations around table locks and rollout order.
 Test tenant access with the affected roles.
 Use the PostgreSQL checklist in `astack:code-review` for reviews.
 
-<!-- /astack 0.2.0 -->
+<!-- /astack 0.3.0 -->

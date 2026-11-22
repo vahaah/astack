@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.0
+
+This release keeps the proof of a PR valid when main moves. It also cuts the parts with no measured use and adds a word budget for skill text.
+
+### Change proof
+
+- With `--base <ref>`, `astack check proof` diffs from the merge base of the ref and HEAD. The manifest `base` can be older, but it must be an ancestor of that merge base. So a merge to main does not make the proof of an open PR stale. ADR 0012 records the rule.
+- A manifest base that is not an ancestor stops the proof, and the stop names both commits. The receipt prints the manifest base and the diff base.
+- `astack check ci-pins` applies the same ancestor rule to the CI proof records.
+- Each base read and each diff read ignores replace objects and grafts.
+- A move of main that changes the authority of a ratified ADR stops the proof. The stop names the ADR, both commits and the repair.
+- The proof contract names the base of each CI run. The refresh playbook and the modernize skill do not set the manifest base by hand.
+
+### Removed parts
+
+ADR 0013 records the keep rule. A part stays only with measured use or a live dependent. Each part below had 0 use in 30 days.
+
+- The skills `wait-what`, `wizard`, `blast-radius`, `correct`, `create-verification-skill`, `maintain-verification-skill`, `to-spec`, `to-questionnaire`, `implement`, `implement-spec` and `triage`. Each route that named one points to its successor. The plugin now holds 50 skills.
+- The `researcher` agent. The research skill starts a background general-purpose agent with the same brief.
+- `astack orch`. Its store data on disk stays.
+- `astack plan move` and `astack plan import`. `astack plan export`, `drift` and `keys` stay.
+- The agent-stack migration module and `docs/migration.md`. `apply --global --dry-run` prints the plan and the verify part only.
+- The hook tools `codex` and `grok-build`. Codex and Grok Build run `astack hook claude-code`.
+- The read of a string-only problems record in the Cursor stop hook. No astack revision wrote that record.
+
+### Word budget
+
+- `bun run budget` counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`, and it names that skill. `bun run check` runs it.
+- A cap rises only in a PR that moves text into that skill while the total falls by more. Review enforces that rule.
+
+### Other changes
+
+- The duplicate-skill report names the route successor of each cut skill. It never calls a cut skill superseded.
+- `bun run validate` prints a labelled SKIP when `claude` is not on PATH. `bun run dist` prints SKIP, not PASS, for a probe that did not run.
+- The README opens with a short description of astack.
+
 ## 0.2.0
 
 This release adds the tstack skills and the lessons from an analysis of approximately 3,000 agent sessions.

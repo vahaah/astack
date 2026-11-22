@@ -3,7 +3,7 @@ name: "astack-full-send"
 description: "Use for /astack-full-send or \"full send\". The owner does not watch the thread. The agent proves, reviews, files, babysits and merges the change on its own."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
   disable-model-invocation: "true"
 ---
