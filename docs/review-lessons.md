@@ -83,7 +83,7 @@ The Class and Rule cells are empty on the second guard of a class and on each gu
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > %s sends no fix commit to origin, except the push of a run with no PR or a PR from the same repository` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the origin scan finds each push to origin that a run for a PR from a fork can follow` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the origin scan reads each astack text, such as the create-pr playbook of the mode, which pushes a PR` |
-|  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > %s reads the fork fields of the PR, and pushes nothing to a fork that does not allow edits from maintainers` |
+|  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > [control:fork-link] create-pr holds each fork rule, each other playbook holds them or links to create-pr, and a text with neither fails` |
 |  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the create-pr playbook takes a PR from a fork that gh pr list finds by the name of the branch only when the branch holds the head of that PR` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `a run that names a PR reviews that PR > %s takes no checkout of a PR by the name of its head branch, which a branch of a fork can share with a local branch such as main` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `a run that names a PR reviews that PR > the name scan finds a checkout that a run takes by the name of the head branch of the PR` |
