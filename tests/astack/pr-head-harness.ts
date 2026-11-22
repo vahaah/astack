@@ -10,6 +10,12 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import {
+	buildTemplate,
+	copyRepo,
+	removeTemplate,
+	type Template,
+} from "../git-template.ts";
 
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
 function findGit(): string {
@@ -48,9 +54,12 @@ exec "$REAL_GIT" "$@"
 `;
 
 const worlds: string[] = [];
+let template: Template | undefined;
 
 export function removeWorlds(): void {
 	for (const dir of worlds) rmSync(dir, { recursive: true, force: true });
+	if (template !== undefined) removeTemplate(template);
+	template = undefined;
 }
 
 export type World = {
@@ -111,30 +120,45 @@ export function commit(cwd: string, subject: string): string {
 	return git(cwd, "rev-parse", "HEAD");
 }
 
-export function createWorld(): World {
-	const base = mkdtempSync(join(tmpdir(), "astack-pr-head-"));
-	worlds.push(base);
-	const origin = join(base, "origin.git");
-	const work = join(base, "work");
-	const other = join(base, "other");
-	const bin = join(base, "bin");
-	const state = join(base, "state");
-	git(base, "init", "-q", "--bare", "-b", "main", origin);
-	git(base, "clone", "-q", origin, work);
+function buildWorld(root: string): void {
+	const origin = join(root, "origin.git");
+	const work = join(root, "work");
+	git(root, "init", "-q", "--bare", "-b", "main", origin);
+	git(root, "clone", "-q", origin, work);
 	git(work, "checkout", "-q", "-b", "feature");
 	commit(work, "first");
 	git(work, "push", "-q", "origin", "feature");
-	git(base, "clone", "-q", "-b", "feature", origin, other);
-	mkdirSync(bin);
-	mkdirSync(join(state, "gh"), { recursive: true });
+	git(root, "clone", "-q", "-b", "feature", origin, join(root, "other"));
+	mkdirSync(join(root, "bin"));
+	mkdirSync(join(root, "state", "gh"), { recursive: true });
 	for (const [name, text] of [
 		["gh", GH_SHIM],
 		["git", GIT_SHIM],
 	] as const) {
-		writeFileSync(join(bin, name), text);
-		chmodSync(join(bin, name), 0o755);
+		writeFileSync(join(root, "bin", name), text);
+		chmodSync(join(root, "bin", name), 0o755);
 	}
-	return { base, work, other, bin, state };
+}
+
+export function createWorld(): World {
+	template ??= buildTemplate(
+		{
+			name: "astack-pr-head-template",
+			repos: ["origin.git", "work", "other"],
+			build: buildWorld,
+		},
+		tmpdir(),
+	);
+	const base = mkdtempSync(join(tmpdir(), "astack-pr-head-"));
+	worlds.push(base);
+	copyRepo(template, base);
+	return {
+		base,
+		work: join(base, "work"),
+		other: join(base, "other"),
+		bin: join(base, "bin"),
+		state: join(base, "state"),
+	};
 }
 
 export function script(world: World, call: number, reply: Reply): void {
