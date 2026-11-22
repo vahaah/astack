@@ -283,6 +283,7 @@ export function renderAstackProfile(
 		},
 		...(ste === undefined ? {} : { ste }),
 		...(project.hooks === undefined ? {} : { hooks: project.hooks }),
+		...(project.proof === undefined ? {} : { proof: project.proof }),
 		plan: { glossary: project.domain.glossary, adr: project.domain.adrDir },
 		...(project.keepPatterns.length > 0
 			? { commentKeep: project.keepPatterns }

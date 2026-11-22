@@ -1,12 +1,16 @@
 import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import type { Rung } from "../../src/astack/change-proof/rung.ts";
 import {
 	type HookConfig,
 	parseHookConfig,
 } from "../../src/astack/hook-profile.ts";
 import { MERGED_PATHS } from "../../src/astack/managed.ts";
-import { standingBaseProblems } from "../../src/astack/profile.ts";
+import {
+	proofProblems,
+	standingBaseProblems,
+} from "../../src/astack/profile.ts";
 import type { CiParityConfig } from "./ci-parity.ts";
 import { coversPath } from "./neutrality.ts";
 import { branchRefusal, expandBranchTemplate } from "./worktree.ts";
@@ -127,6 +131,7 @@ export type ProjectConfig = {
 	merge?: MergeConfig;
 	ste?: SteConfig;
 	hooks?: HookConfig;
+	proof?: { minRung: Rung };
 	domain: DomainConfig;
 	keepPatterns: string[];
 	lint: ProjectLint;
@@ -161,6 +166,7 @@ const topLevelKeys = new Set([
 	"merge",
 	"ste",
 	"hooks",
+	"proof",
 	"domain",
 	"keepPatterns",
 	"lint",
@@ -787,6 +793,7 @@ export function validateProjectConfig(
 	validateSte(errors, value.ste);
 	const hooks = parseHookConfig(value.hooks);
 	if (!hooks.ok) errors.push(...hooks.error);
+	if (value.proof !== undefined) errors.push(...proofProblems(value.proof));
 	validateDomain(errors, value.domain);
 	validateKeepPatterns(errors, value.keepPatterns);
 	validateLint(errors, value.lint);

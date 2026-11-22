@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { RUNGS, type Rung } from "./change-proof/rung.ts";
 import type { CommentPolicy } from "./comments/classify.ts";
 import { limitsFor } from "./comments/limits.ts";
 import { parseHookConfig } from "./hook-profile.ts";
@@ -249,6 +250,24 @@ function planProblems(value: unknown): string[] {
 	];
 }
 
+function isRung(value: unknown): value is Rung {
+	return RUNGS.some((rung) => rung === value);
+}
+
+export function proofProblems(value: unknown): string[] {
+	if (!isRecord(value)) return ["proof must be an object"];
+	return [
+		...unknownKeys(value, "proof", ["minRung"]),
+		...optional(
+			value,
+			"proof",
+			"minRung",
+			isRung,
+			`one of ${RUNGS.join(", ")}`,
+		),
+	];
+}
+
 function patternProblems(value: unknown): string[] {
 	if (!isStringList(value)) return ["commentKeep must be a string list"];
 	return value.flatMap((pattern) => {
@@ -287,6 +306,8 @@ function sectionProblems(key: string, value: unknown): string[] {
 			return isRecord(value) && isStringList(value.deny)
 				? unknownKeys(value, "neutral", ["deny"])
 				: ["neutral must be an object with a deny string list"];
+		case "proof":
+			return proofProblems(value);
 		case "maxCommentLines":
 			return isPositiveInteger(value)
 				? []
