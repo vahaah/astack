@@ -111,24 +111,25 @@ describe("flowSupersedes", () => {
 				["wizard", "astack:wizard", "not-in-flow"],
 				["writing-for-agents", "astack:mode", "not-in-flow"],
 			]);
-			const shipped = new Set(
-				readdirSync(join(root, "marketplace/plugins/astack/skills")),
-			);
-			const orphans = Object.entries(flowSupersedes)
-				.filter(
-					([, candidates]) => !candidates.some((name) => shipped.has(name)),
-				)
-				.map(([name]) => name);
-			expect(orphans).toEqual([
-				"ask-matt",
-				"handoff",
-				"teach",
-				"to-questionnaire",
-				"wait-what",
-				"wizard",
-			]);
 		},
 	);
+
+	test("names only the upstream skills whose successor the marketplace does not ship", () => {
+		const shipped = new Set(
+			readdirSync(join(root, "marketplace/plugins/astack/skills")),
+		);
+		const orphans = Object.entries(flowSupersedes)
+			.filter(([, candidates]) => !candidates.some((name) => shipped.has(name)))
+			.map(([name]) => name);
+		expect(orphans).toEqual([
+			"ask-matt",
+			"handoff",
+			"teach",
+			"to-questionnaire",
+			"wait-what",
+			"wizard",
+		]);
+	});
 });
 
 describe("parseSkillsTxt", () => {
