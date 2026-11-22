@@ -532,13 +532,26 @@ describe("integrated ADR ratification", () => {
 		return moved;
 	}
 
-	test.each([
-		["the governing ADR", GOVERNING, PROPOSAL],
-		["the process ADR", PROCESS, POLICY],
+	function landingSelected(): Candidate {
+		const repo = landingCandidate();
+		selectLanding(repo);
+		git(repo.root, "commit", "-q", "-am", "select the landing option");
+		return repo;
+	}
+
+	test.each<[string, string, () => Candidate]>([
+		["the governing ADR", GOVERNING, candidate],
+		["the process ADR", PROCESS, candidate],
+		[
+			"a governing ADR with a selected landing option",
+			GOVERNING,
+			landingSelected,
+		],
 	])(
 		"[control:proof-ratification-names-a-base-move] a move of main that edits %s stops with the ADR, both commits and the repair",
-		(_name, path, text) => {
-			const repo = candidate();
+		(_name, path, build) => {
+			const repo = build();
+			const text = readFileSync(join(repo.root, path), "utf8");
 			const moved = mainMoves(repo, path, `${text}\nAmended on main.\n`);
 			expect(run(repo.root, {}, ["--base", "origin/main"])).toEqual({
 				code: 1,
@@ -549,9 +562,7 @@ describe("integrated ADR ratification", () => {
 	);
 
 	test("[control:proof-landing-base-move] a move of main that changes only the selected Landed value still admits", () => {
-		const repo = landingCandidate();
-		selectLanding(repo);
-		git(repo.root, "commit", "-q", "-am", "select the landing option");
+		const repo = landingSelected();
 		const text = readFileSync(join(repo.root, GOVERNING), "utf8");
 		mainMoves(
 			repo,
