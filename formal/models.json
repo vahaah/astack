@@ -110,7 +110,14 @@
 			"records": [
 				"docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md"
 			],
-			"covers": [],
+			"covers": [
+				"src/astack/ste/events.ts",
+				"src/astack/ste/verdict.ts",
+				"src/astack/ste/state.ts",
+				"src/astack/hook/handlers/ste-reply.ts",
+				"src/astack/hook/handlers/comments.ts",
+				"src/astack/hook/handlers/ste-artifact.ts"
+			],
 			"text": []
 		},
 		{
@@ -182,8 +189,11 @@
 				}
 			},
 			"records": ["docs/adr/0020-plan-tools-share-one-adr-reader.md"],
-			"covers": ["src/astack/adr.ts"],
-			"text": []
+			"covers": ["src/astack/adr.ts", "src/astack/plan/check.ts"],
+			"text": [
+				"marketplace/plugins/astack/skills/plan/references/upkeep.md",
+				"marketplace/plugins/astack/skills/plan/references/sessions.md"
+			]
 		},
 		{
 			"name": "ProofAdmission",
@@ -284,7 +294,9 @@
 			"covers": [
 				"src/astack/change-proof/rung.ts",
 				"src/astack/change-proof/registry.ts",
-				"src/astack/cli/commands/check/proof.ts"
+				"src/astack/change-proof/admission.ts",
+				"src/astack/cli/commands/check/proof.ts",
+				"src/astack/profile.ts"
 			],
 			"text": []
 		},
@@ -348,7 +360,10 @@
 				"src/astack/hook/handlers/ste-artifact.ts",
 				"src/astack/hook/handlers/plan-file.ts"
 			],
-			"text": ["marketplace/plugins/astack/skills/full-stop/**"]
+			"text": [
+				"marketplace/plugins/astack/skills/full-stop/**",
+				"marketplace/plugins/astack/skills/full-send/**"
+			]
 		},
 		{
 			"name": "WordBudget",
@@ -435,11 +450,6 @@
 			"path": "src/astack/hook/handlers/pr-body.ts",
 			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
 			"control": "hook-fail-open"
-		},
-		{
-			"path": "src/astack/hook/handlers/ste-reply.ts",
-			"reason": "Its event lines carry no text, and its STE verdict only denies or advises",
-			"control": "tel-reply"
 		},
 		{
 			"path": "src/astack/hook/handlers/ticket.ts",

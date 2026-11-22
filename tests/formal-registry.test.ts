@@ -109,6 +109,39 @@ describe("the model registry of astack", () => {
 		},
 	);
 
+	test.each<[string, readonly string[]]>([
+		["marketplace/plugins/astack/skills/full-send/SKILL.md", ["SessionGuards"]],
+		["src/astack/ste/events.ts", ["FindingTelemetry"]],
+		["src/astack/hook/handlers/ste-reply.ts", ["FindingTelemetry"]],
+		["src/astack/plan/check.ts", ["PlanBoundary"]],
+		[
+			"marketplace/plugins/astack/skills/plan/references/upkeep.md",
+			["PlanBoundary"],
+		],
+		["src/astack/profile.ts", ["ProofLadder"]],
+		["src/astack/change-proof/admission.ts", ["ProofAdmission", "ProofLadder"]],
+	])(
+		"[control:rl-covers-mapped] a diff of %s, which a record maps to a model, runs %p at R4",
+		(path, models) => {
+			const manifest = REGISTRY.models.find(
+				(entry) => entry.name === "WordBudget",
+			);
+			if (manifest === undefined) throw new Error("no WordBudget model");
+			const ladder = deriveLadder({
+				changed: [{ path, present: true }],
+				registry: { base: REGISTRY, tree: REGISTRY },
+				floor: { base: "R0", tree: "R0" },
+				manifest,
+				inTree: (file) => TRACKED_SET.has(file),
+			});
+			expect(
+				ladder.ok && ladder.value.kind === "ladder"
+					? [ladder.value.rung, ...ladder.value.runs.map((run) => run.name)]
+					: ladder,
+			).toEqual(["R4", "WordBudget", ...models]);
+		},
+	);
+
 	test("[control:rl-fail-closed-tree] each tracked file under a fail-closed glob has a model glob or an unmodelled entry", () => {
 		const [manifest] = REGISTRY.models;
 		if (manifest === undefined) throw new Error("the registry has no model");
