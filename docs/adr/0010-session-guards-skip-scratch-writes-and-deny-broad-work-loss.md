@@ -65,6 +65,8 @@ A hook skip is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` fold
 A push of a source that `astack gates run` recorded as green can skip the hooks.
 A commit and a config write with a hook skip stay owner gates, because a new commit has no gate record.
 
+> Amended 2026-11-22: [ADR 0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) amends D3. A broad discard passes in a repo or worktree that this session made, and each other repo keeps this gate.
+
 ### D4. Attended detection stays fail-safe, and the merge denial names its cause
 
 `CLAUDE_CODE_SESSION_ATTENDED=0` or an `sdk` entrypoint makes a session unattended.

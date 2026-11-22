@@ -26,3 +26,4 @@
 | [0024](0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md) | Orchestrate supervises through the board, a status ask lists each waiting item, and watch-pr watches one PR | Accepted |
 | [0025](0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md) | Each text that reads a PR with gh runs the head check command | Accepted |
 | [0026](0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md) | One lexer reads TypeScript and JavaScript comments for the comment hook and the type hook | Accepted |
+| [0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) | A broad discard passes in a repo that this session made | Accepted |
