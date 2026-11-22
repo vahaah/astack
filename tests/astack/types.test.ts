@@ -127,6 +127,28 @@ describe("findHatches", () => {
 		).toEqual(["ts-expect-error"]);
 	});
 
+	test.each([
+		["obj.default / 2; // @ts-ignore"],
+		["obj.return / 2; // @ts-ignore"],
+	])(
+		"[control:cs-member-type] a slash after a member keyword divides, so %p keeps its directive",
+		(source) => {
+			expect(kinds(source)).toEqual(["ts-ignore"]);
+		},
+	);
+
+	test.each([
+		["const as = 4; as / 2; // @ts-ignore"],
+		["const satisfies = 4; satisfies / 2; // @ts-ignore"],
+		["const keyof = 4; keyof / 2; // @ts-ignore"],
+		["var let = 4; let / 2; // @ts-ignore"],
+	])(
+		"[control:cs-name-type] a slash after a name word divides, so %p keeps its directive",
+		(source) => {
+			expect(kinds(source)).toEqual(["ts-ignore"]);
+		},
+	);
+
 	test("never counts text in strings, templates, regexes, comments or JSX", () => {
 		expect(kinds(fixture("masked.tsx"), true)).toEqual([]);
 		expect(kinds(fixture("template.ts"))).toEqual(["cast:plain"]);

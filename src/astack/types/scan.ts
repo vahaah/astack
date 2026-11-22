@@ -72,7 +72,7 @@ const PUNCTUATORS = [
 	"**",
 ] as const;
 
-export const EXPRESSION_KEYWORDS: ReadonlySet<string> = new Set([
+const OPERAND_KEYWORDS: ReadonlySet<string> = new Set([
 	"return",
 	"typeof",
 	"instanceof",
@@ -88,12 +88,16 @@ export const EXPRESSION_KEYWORDS: ReadonlySet<string> = new Set([
 	"yield",
 	"await",
 	"extends",
+	"default",
+]);
+
+export const EXPRESSION_KEYWORDS: ReadonlySet<string> = new Set([
+	...OPERAND_KEYWORDS,
 	"as",
 	"satisfies",
 	"keyof",
 	"export",
 	"import",
-	"default",
 	"const",
 	"let",
 	"var",
@@ -192,11 +196,21 @@ function jsxStarts(src: string, at: number): boolean {
 	return /^<(?:[A-Za-z_$]|>)/.test(ahead);
 }
 
-function endsValue(draft: Draft | undefined, src: string): boolean {
+function isMemberDot(draft: Draft | undefined, src: string): boolean {
+	if (draft?.kind !== "punct") return false;
+	const text = src.slice(draft.start, draft.end);
+	return text === "." || text === "?.";
+}
+
+function endsValue(drafts: readonly Draft[], src: string): boolean {
+	const draft = drafts[drafts.length - 1];
 	if (!draft) return false;
 	switch (draft.kind) {
 		case "word":
-			return !EXPRESSION_KEYWORDS.has(src.slice(draft.start, draft.end));
+			return (
+				isMemberDot(drafts[drafts.length - 2], src) ||
+				!OPERAND_KEYWORDS.has(src.slice(draft.start, draft.end))
+			);
 		case "punct": {
 			const text = src.slice(draft.start, draft.end);
 			return text === ")" || text === "]" || text === "}";
@@ -256,7 +270,6 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 	const push = (kind: TokenKind, start: number, end: number): void => {
 		drafts.push({ kind, start, end });
 	};
-	const last = (): Draft | undefined => drafts[drafts.length - 1];
 	const blockComment = (at: number): number => {
 		const close = source.indexOf("*/", at + 2);
 		if (close < 0) return -1;
@@ -374,7 +387,7 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 			if (!template(i, "template-head")) return undefined;
 			continue;
 		}
-		if (c === "/" && !endsValue(last(), source)) {
+		if (c === "/" && !endsValue(drafts, source)) {
 			const end = regexEnd(source, i);
 			if (end > 0) {
 				push("regex", i, end);
@@ -385,7 +398,7 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 		if (
 			c === "<" &&
 			jsx &&
-			!endsValue(last(), source) &&
+			!endsValue(drafts, source) &&
 			jsxStarts(source, i)
 		) {
 			stack.push({ kind: "jsx", open: 1, inTag: true, typeArgs: 0, from: i });
