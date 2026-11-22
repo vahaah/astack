@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "domain-record",
-	"base": "2a629c3c2ea4215b779df477dba91e2f6d2d8df4",
+	"base": "0da3a395ff1371fab74ecdbc6a9d3caead1ff4fb",
 	"scope": [
 		{
 			"path": "src/astack/domain/notation.ts",

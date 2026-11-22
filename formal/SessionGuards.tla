@@ -56,6 +56,11 @@ Targets == {"head", "refs", "commit"}
 
 Broad(cmd) == cmd.scope \in {"tree", "folder"} /\ cmd.effect \in {"tracked", "worktree", "untracked"}
 
+Ids == {"made", "other"}
+Repos == {"none"} \cup Ids
+Records == {"none", "pending"} \cup Ids
+Settle(r, at) == IF r = "pending" THEN at ELSE r
+
 CodeKindLost(lost, kind) == CASE lost = "untracked" -> kind = "untracked"
                               [] lost = "tracked" -> kind # "untracked"
                               [] lost = "unstaged" -> kind \in {"unstaged", "both"}
@@ -84,11 +89,11 @@ After(cmd, t) == (t \ Touched(cmd, t))
 VARIABLES concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
           mode, merged, unauthorized, stopMerged, mcpMerged, faultMerged,
           file, step, writeChecked, commitChecked, tree, broadLoss, falseDenial,
-          green, recorded, acted, ungated
+          repo, record, window, sessionDenied, green, recorded, acted, ungated
 mergeVars == <<attended, baseAuthority, workingAuthority, said, saidBy, grant, mode,
                merged, unauthorized, stopMerged, mcpMerged, faultMerged>>
 writeVars == <<file, step, writeChecked, commitChecked>>
-gitVars == <<tree, broadLoss, falseDenial>>
+gitVars == <<tree, broadLoss, falseDenial, repo, record, window, sessionDenied>>
 pushVars == <<green, recorded, acted, ungated>>
 vars == <<concern, mergeVars, writeVars, gitVars, pushVars>>
 
@@ -107,7 +112,8 @@ MergeIdle == /\ attended = TRUE
              /\ MergeStart
 WriteStart == step = "new" /\ writeChecked = FALSE /\ commitChecked = FALSE
 WriteIdle == file = IdleFile /\ WriteStart
-GitIdle == tree = {} /\ broadLoss = FALSE /\ falseDenial = FALSE
+RepoIdle == repo = "none" /\ record = "none" /\ window = FALSE /\ sessionDenied = FALSE
+GitIdle == tree = {} /\ broadLoss = FALSE /\ falseDenial = FALSE /\ RepoIdle
 PushStart == recorded = FALSE /\ acted = FALSE /\ ungated = FALSE
 PushIdle == green = FALSE /\ PushStart
 
@@ -131,6 +137,7 @@ Init == \/ /\ concern = "merge"
            /\ tree \in SUBSET Changes
            /\ broadLoss = FALSE
            /\ falseDenial = FALSE
+           /\ RepoIdle
            /\ PushIdle
         \/ /\ concern = "push"
            /\ MergeIdle
@@ -189,15 +196,44 @@ Settled == /\ concern = "write"
            /\ step # "new"
            /\ UNCHANGED vars
 
+MakeRepo == /\ concern = "git"
+            /\ repo = "none"
+            /\ repo' \in {"none", "made"}
+            /\ record' = "pending"
+            /\ window' = TRUE
+            /\ UNCHANGED <<concern, tree, broadLoss, falseDenial, sessionDenied, mergeVars,
+                           writeVars, pushVars>>
+
+Shell == /\ concern = "git"
+         /\ record' = Settle(record, repo)
+         /\ window' = FALSE
+         /\ UNCHANGED <<concern, tree, broadLoss, falseDenial, repo, sessionDenied, mergeVars,
+                        writeVars, pushVars>>
+
+Appear == /\ concern = "git"
+          /\ ~window
+          /\ repo # "other"
+          /\ repo' = "other"
+          /\ UNCHANGED <<concern, tree, broadLoss, falseDenial, record, window, sessionDenied,
+                         mergeVars, writeVars, pushVars>>
+
+Exempt(r) == r \in Ids /\ r = repo
+
 RunGit == /\ concern = "git"
+          /\ repo # "none"
           /\ \E cmd \in Commands :
-               LET denied == CodeLost(cmd, tree) # {}
-               IN /\ falseDenial' = (falseDenial \/ (denied /\ GitLost(cmd, tree) = {}))
+               LET r == Settle(record, repo)
+                   denied == ~Exempt(r) /\ CodeLost(cmd, tree) # {}
+               IN /\ record' = r
+                  /\ window' = FALSE
+                  /\ falseDenial' = (falseDenial \/ (denied /\ GitLost(cmd, tree) = {}))
+                  /\ sessionDenied' = (sessionDenied \/ (denied /\ Broad(cmd) /\ r = repo))
                   /\ IF denied
                        THEN UNCHANGED <<tree, broadLoss>>
-                       ELSE /\ broadLoss' = (broadLoss \/ (Broad(cmd) /\ GitLost(cmd, tree) # {}))
+                       ELSE /\ broadLoss' = (broadLoss \/ (Broad(cmd) /\ GitLost(cmd, tree) # {}
+                                                          /\ repo # "made"))
                             /\ tree' = After(cmd, tree)
-          /\ UNCHANGED <<concern, mergeVars, writeVars, pushVars>>
+          /\ UNCHANGED <<concern, repo, mergeVars, writeVars, pushVars>>
 
 GatesRun == /\ concern = "push"
             /\ ~acted
@@ -216,8 +252,8 @@ Pushed == /\ concern = "push"
           /\ acted
           /\ UNCHANGED vars
 
-Next == Prompt \/ EditProfile \/ Merge \/ Write \/ Commit \/ Settled \/ RunGit
-        \/ GatesRun \/ Push \/ Pushed
+Next == Prompt \/ EditProfile \/ Merge \/ Write \/ Commit \/ Settled \/ MakeRepo \/ Shell
+        \/ Appear \/ RunGit \/ GatesRun \/ Push \/ Pushed
 Spec == Init /\ [][Next]_vars
 
 TypeOK == /\ concern \in Concerns
@@ -240,6 +276,10 @@ TypeOK == /\ concern \in Concerns
           /\ tree \subseteq Changes
           /\ broadLoss \in BOOLEAN
           /\ falseDenial \in BOOLEAN
+          /\ repo \in Repos
+          /\ record \in Records
+          /\ window \in BOOLEAN
+          /\ sessionDenied \in BOOLEAN
           /\ green \in BOOLEAN
           /\ recorded \in BOOLEAN
           /\ acted \in BOOLEAN
@@ -259,4 +299,5 @@ CommitSurfaceChecked == step = "committed" => commitChecked
 BroadLossDenied == ~broadLoss
 DenialNeedsLoss == ~falseDenial
 HookSkipNeedsGates == ~ungated
+SessionRepoPasses == ~sessionDenied
 =============================================================================

@@ -207,6 +207,13 @@ It is an owner gate.
 _Avoid_: Destructive command, cleanup
 _Code_: `workLossReasons`
 
+### Session repo
+
+A repo or worktree that a static `git init`, `git clone` or `git worktree add` of this session made in a new or empty folder.
+A broad discard passes there, and each other gate stays.
+_Avoid_: Scratch repo, temp repo
+_Code_: `sessionRepoAt`
+
 ### Plain form
 
 The command that a shell step runs, after astack drops reserved words and braces and unwraps a known wrapper or a static shell body.

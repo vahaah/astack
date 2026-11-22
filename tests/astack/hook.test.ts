@@ -789,6 +789,31 @@ describe("scratch files outside the project", () => {
 	);
 });
 
+describe("a repo that this session made", () => {
+	test("[control:sg-session-repo-bundle] the bundle passes a broad discard in a repo that git init made in the session, and denies it for another session", () => {
+		const base = mkdtempSync(join(tmpdir(), "astack-session-repo-"));
+		const made = join(base, "made");
+		const bash = (command: string, cwd: string, session: string) =>
+			runHook(inSession(tool("Bash", { command }, cwd), session));
+		const init = bash("git init made", base, "session-repo-hook");
+		git(base, "init", "-q", "-b", "main", "made");
+		git(made, "config", "user.email", "test@example.com");
+		git(made, "config", "user.name", "Test");
+		writeFileSync(join(made, "a.txt"), "a\n");
+		git(made, "add", ".");
+		git(made, "commit", "-q", "-m", "a");
+		writeFileSync(join(made, "a.txt"), "b\n");
+		const own = bash("git reset --hard", made, "session-repo-hook");
+		const other = bash("git reset --hard", made, "another-session");
+		rmSync(base, { recursive: true, force: true });
+		expect([init.status, own.status]).toEqual([0, 0]);
+		expect(decision(other)).toBe("deny");
+		expect(reason(other)).toContain(
+			"discards the uncommitted changes in a.txt",
+		);
+	});
+});
+
 describe("a write target that the hook cannot resolve", () => {
 	test("does not hide the type check of another write in the command", () => {
 		const file = join(project, "probe-unresolved.ts");
