@@ -32,7 +32,7 @@ For each seam, give one line on defects it catches and what it misses.
 Ask "What's the public interface, and which seams should we test?"
 This directs effort to critical paths and complex logic rather than every possible edge case.
 
-In an unattended run, such as an implementer inside `/astack-implement-spec`, take seams from the specification or ticket.
+In an unattended run, take seams from the plan or ticket.
 Ask only when no seam is agreed and the user is available.
 
 If the interface shape or seam placement is undecided, load `astack-codebase-design`.

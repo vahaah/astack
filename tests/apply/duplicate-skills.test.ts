@@ -57,7 +57,7 @@ describe("flowSupersedes", () => {
 		}
 	});
 
-	test("names a shipped successor for each upstream skill but the three that astack never shipped", () => {
+	test("[control:wb-successor] names a shipped successor for each upstream skill but the three that astack never shipped", () => {
 		const shipped = builtFlowSkills(join(root, "marketplace"));
 		if (!shipped.ok) throw new Error(shipped.error);
 		const names = new Set(shipped.value);

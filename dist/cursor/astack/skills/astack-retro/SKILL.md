@@ -71,8 +71,7 @@ Examples include saved dev-server logs and read-only access to external services
 ## Present candidates
 
 Order proposed improvements by severity.
-For a mistake repeated across sessions, suggest `/astack-correct` when astack is installed.
-Otherwise suggest a rule in the repo's `CLAUDE.md`.
+For a mistake repeated across sessions, suggest a rule in the repo's `CLAUDE.md`.
 For a skill change, suggest `/astack-reflect` when astack is installed.
 Otherwise describe the edit.
 

@@ -77,7 +77,7 @@ Put excluded work under Scope.
 
 - [ ] No open child ticket remains.
 - [ ] Not yet specified is empty.
-- [ ] A spec built from this map with /astack-to-spec is approved.
+- [ ] A spec built from this map is approved.
 
 ## Scope
 
@@ -85,7 +85,7 @@ Put excluded work under Scope.
 
 ## Verification
 
-The operator reads the spec that /astack-to-spec produces from this map and approves it.
+The operator reads the spec built from this map and approves it.
 
 ## Notes
 
@@ -164,7 +164,7 @@ An AFK ticket permits the agent to drive its work alone.
 
 Research is AFK.
 Use it to find facts in documentation, third-party APIs or resources outside the working directory, such as knowledge bases.
-Delegate to a background `Agent` with `subagent_type: "astack-researcher"`.
+Delegate to a background `Agent` with `subagent_type: "general-purpose"`.
 Follow `astack-research`: use primary sources and produce one cited file.
 The facts must settle a prerequisite for a decision.
 
@@ -243,7 +243,7 @@ Use this mode when the user supplies an initial idea.
 
 4. Create every child ticket whose question is already precise. Add blocking edges in a second pass after real issue IDs exist. Add cross-references in that pass too. Never use a placeholder such as `#<n>`, because it can link an unrelated issue. Dependencies determine frontier and blocked tickets. Leave questions that cannot yet be stated under Not yet specified.
 
-5. Start a background `Agent` with `subagent_type: "astack-researcher"` for each new research ticket. Run these research tasks in parallel. Save findings on a temporary `research/<name>` branch. Link it from the ticket as a context pointer. Push that branch without opening a PR. Never merge it.
+5. Start a background `Agent` with `subagent_type: "general-purpose"` for each new research ticket. Run these research tasks in parallel. Save findings on a temporary `research/<name>` branch. Link it from the ticket as a context pointer. Push that branch without opening a PR. Never merge it.
 
 6. Stop after charting. Resolve no ticket manually in that session.
 

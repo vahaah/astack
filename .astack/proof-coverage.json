@@ -3,7 +3,8 @@
 	"specs": [
 		"docs/reference/change-proof-contract.md",
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
-		"docs/reference/session-guards.md"
+		"docs/reference/session-guards.md",
+		"docs/reference/word-budget.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -20,7 +21,10 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
-		"tests/drift.test.ts"
+		"tests/drift.test.ts",
+		"tests/budget.test.ts",
+		"tests/apply/duplicate-skills.test.ts",
+		"tests/validate.test.ts"
 	],
 	"links": [
 		{
@@ -194,6 +198,22 @@
 				"sg-commit-staged",
 				"sg-work-loss-denied"
 			]
+		},
+		{
+			"criterion": "WB-cap",
+			"controls": ["wb-skill-over", "wb-total-over", "wb-no-cap"]
+		},
+		{
+			"criterion": "WB-ratchet",
+			"controls": ["wb-slack-note", "wb-lower"]
+		},
+		{
+			"criterion": "WB-cut",
+			"controls": ["wb-successor"]
+		},
+		{
+			"criterion": "WB-validate",
+			"controls": ["wb-validate-skip"]
 		}
 	]
 }

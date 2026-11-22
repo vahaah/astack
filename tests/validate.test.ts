@@ -633,7 +633,7 @@ describe("load gate", () => {
 		}
 	});
 
-	test("bun run validate with a key and no claude on PATH prints a labelled SKIP and exits 0", () => {
+	test("[control:wb-validate-skip] bun run validate with a key and no claude on PATH prints a labelled SKIP and exits 0", () => {
 		const bin = mkdtempSync(join(tmpdir(), "validate-bin-"));
 		roots.push(bin);
 		symlinkSync(process.execPath, join(bin, "bun"));

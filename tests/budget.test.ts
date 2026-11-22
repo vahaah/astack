@@ -45,7 +45,7 @@ describe("the skill word budget", () => {
 		]);
 	});
 
-	test("passes at each cap and fails one word over a cap with the skill name", () => {
+	test("[control:wb-skill-over] passes at each cap and fails one word over a cap with the skill name", () => {
 		expect(
 			budgetReport(counts(), { total: 10, skills: { alpha: 8, beta: 2 } }),
 		).toEqual({ problems: [], notes: [] });
@@ -55,20 +55,20 @@ describe("the skill word budget", () => {
 		).toEqual(["alpha: 8 words, over its cap of 7"]);
 	});
 
-	test("fails a total one word over its cap while each skill is under", () => {
+	test("[control:wb-total-over] fails a total one word over its cap while each skill is under", () => {
 		expect(
 			budgetReport(counts(), { total: 9, skills: { alpha: 8, beta: 2 } })
 				.problems,
 		).toEqual(["total: 10 words, over its cap of 9"]);
 	});
 
-	test("fails a skill with no cap", () => {
+	test("[control:wb-no-cap] fails a skill with no cap", () => {
 		expect(
 			budgetReport(counts(), { total: 10, skills: { alpha: 8 } }).problems,
 		).toEqual(["beta: 2 words, and scripts/lib/budget.json gives it no cap"]);
 	});
 
-	test("passes with a note on a cap above its count and a cap with no skill", () => {
+	test("[control:wb-slack-note] passes with a note on a cap above its count and a cap with no skill", () => {
 		expect(
 			budgetReport(counts(), {
 				total: 11,
@@ -84,7 +84,7 @@ describe("the skill word budget", () => {
 		});
 	});
 
-	test("lowers each cap to its count, drops a gone skill and never raises a cap", () => {
+	test("[control:wb-lower] lowers each cap to its count, drops a gone skill and never raises a cap", () => {
 		const budget: Budget = {
 			total: 12,
 			skills: { alpha: 9, beta: 1, gamma: 4 },

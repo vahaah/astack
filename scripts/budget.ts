@@ -9,11 +9,13 @@ export type Budget = {
 	readonly skills: Readonly<Record<string, number>>;
 };
 
+export type WordCounts = ReadonlyMap<string, number>;
+
 const BUDGET_FILE = "scripts/lib/budget.json";
 const SKILLS_DIR = "marketplace/plugins/astack/skills";
 const LOWER_HINT = "Run bun scripts/budget.ts --lower";
 
-function sum(counts: ReadonlyMap<string, number>): number {
+function sum(counts: WordCounts): number {
 	return [...counts.values()].reduce((total, count) => total + count, 0);
 }
 
@@ -41,7 +43,7 @@ export function parseBudget(raw: unknown): Result<Budget, string> {
 	return ok({ total: total.value, skills });
 }
 
-export function skillWords(skillsDir: string): ReadonlyMap<string, number> {
+export function skillWords(skillsDir: string): WordCounts {
 	const counts = new Map<string, number>();
 	for (const entry of readdirSync(skillsDir, { withFileTypes: true }).sort(
 		(a, b) => a.name.localeCompare(b.name),
@@ -66,10 +68,7 @@ export type BudgetReport = {
 	readonly notes: readonly string[];
 };
 
-export function budgetReport(
-	counts: ReadonlyMap<string, number>,
-	budget: Budget,
-): BudgetReport {
+export function budgetReport(counts: WordCounts, budget: Budget): BudgetReport {
 	const problems: string[] = [];
 	const notes: string[] = [];
 	const check = (name: string, count: number, cap: number) => {
@@ -95,10 +94,7 @@ export function budgetReport(
 	return { problems, notes };
 }
 
-export function lowerBudget(
-	counts: ReadonlyMap<string, number>,
-	budget: Budget,
-): Budget {
+export function lowerBudget(counts: WordCounts, budget: Budget): Budget {
 	const skills = Object.fromEntries(
 		Object.entries(budget.skills).flatMap(([name, cap]) => {
 			const count = counts.get(name);

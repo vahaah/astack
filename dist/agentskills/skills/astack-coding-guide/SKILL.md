@@ -21,7 +21,7 @@ A stricter repo rule wins.
 
 Follow these steps in order for every change.
 Only the user can start a skill that sets `disable-model-invocation`.
-Here, those skills are `/astack-mode`, `/astack-interrogate`, `/astack-reflect`, `/astack-implement`, `/astack-implement-spec` and `/astack-retro`.
+Here, those skills are `/astack-mode`, `/astack-interrogate`, `/astack-reflect` and `/astack-retro`.
 An agent reads each needed SKILL.md at the path from `astack skill-path <plugin>:<skill>`.
 Then it follows the skill.
 If the skill is unavailable, follow the plain description of its step.
@@ -151,13 +151,12 @@ It lands their commits in plan order.
 Each checkpoint goes to the PR with `astack session checkpoint`.
 
 A quick plan writes no file.
-The user starts it with `/astack-mode Feature playbook for <ticket>` or `/astack-implement <ticket>` for one ticket.
+The user starts it with `/astack-mode Feature playbook for <ticket>` for one ticket.
 
 Other routes fit work of another shape:
 
 | Shape | Command |
 |---|---|
-| One ticket whose sub-issues parallel implementers build off one integration branch | `/astack-implement-spec <ticket>` |
 | A reviewed stack of PRs that the user lands | `/astack-mode Autopilot-stack playbook for <ticket> from plan <slug>` |
 | A programme board under one coordinator | `/astack-mode Orchestrate playbook for <slug>`, with `astack board <index>` for the frontier |
 | Work only a person can do | None. Name the step to the user and stop |

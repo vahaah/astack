@@ -56,5 +56,5 @@ Do not write a wait script of your own.
 
 ## CLI commands
 
-The astack plugin ships `astack watch-pr` and `astack orch`.
-They need no separate install step and call `gh`.
+The astack plugin ships `astack watch-pr`.
+It needs no separate install step and calls `gh`.

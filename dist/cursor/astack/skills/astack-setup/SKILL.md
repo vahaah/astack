@@ -30,7 +30,6 @@ Inspect the repo's existing configuration:
 - Inspect `docs/adr/` and `src/*/docs/adr/`.
 - Inspect `docs/agents/` for earlier setup output.
 - Inspect `.scratch/` for an existing local Markdown tracker convention.
-- Check whether `astack-triage` is available. The full astack bundle includes it, but a target can omit a capability.
 - Check for monorepo evidence. Examples are `pnpm-workspace.yaml`, a `workspaces` field in `package.json`, or populated `packages/*` folders with their own `src/`.
 
 Monorepo evidence must identify a substantial multi-package repo.
@@ -44,13 +43,12 @@ Wait for one answer before the next section.
 Start each section with your recommendation.
 Add a one-line explanation only when a choice needs one.
 Skip choices that the inspection has already settled.
-Skip Section B when triage is unavailable.
 Skip the Section C question when no monorepo evidence exists.
 
 #### Section A: Issue tracker
 
 The tracker is where this repo records work.
-`astack-to-tickets`, `astack-triage` and `astack-to-spec` read and write this tracker.
+`astack-to-tickets` and `astack-write-ticket` read and write this tracker.
 They need its commands or workflow.
 For example, they can call `gh issue create` or write files under `.scratch/`.
 Ask the user to choose where they actually track this repo's work.
@@ -74,8 +72,7 @@ The user can enable external PR discovery later by editing the file.
 
 #### Section B: Triage label vocabulary
 
-Skip this section when `astack-triage` is unavailable.
-Otherwise ask exactly one question:
+Ask exactly one question:
 
 > Do you want to keep the default triage labels? Recommended: yes.
 
@@ -99,7 +96,7 @@ Show drafts before writing:
 
 - The `## Agent skills` block for the instruction file selected in step 4.
 - `docs/agents/issue-tracker.md` and `docs/agents/domain.md`.
-- `docs/agents/triage-labels.md` when triage is available and Section B ran.
+- `docs/agents/triage-labels.md`.
 
 Let the user edit the drafts.
 
@@ -134,9 +131,6 @@ Use this block:
 [one-line summary of layout: "single-context" or "multi-context"]. See `docs/agents/domain.md`.
 ```
 
-Include `### Triage labels` and its document only when triage is available and Section B ran.
-Otherwise omit both.
-
 When Section B ran on GitHub or GitLab, create each missing configured label.
 Use `gh label create` or `glab label create`.
 For Linear, use `save_issue_label`.
@@ -149,7 +143,7 @@ Use these seed documents:
 - [issue-tracker-gitlab.md](./issue-tracker-gitlab.md) for GitLab.
 - [issue-tracker-linear.md](./issue-tracker-linear.md) for Linear.
 - [issue-tracker-local.md](./issue-tracker-local.md) for local Markdown.
-- [triage-labels.md](./triage-labels.md) for label mapping when triage is available.
+- [triage-labels.md](./triage-labels.md) for label mapping.
 - [domain.md](./domain.md) for the domain layout and its consumer rules.
 
 For another tracker, write `docs/agents/issue-tracker.md` from the user's workflow description.

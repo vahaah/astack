@@ -5,9 +5,8 @@ description: "Research a question from primary sources and save cited findings. 
 
 # Research
 
-Start a background `Agent` with `subagent_type: "astack:researcher"` and `run_in_background: true`.
+Start a background `Agent` with `subagent_type: "general-purpose"` and `run_in_background: true`.
 Continue other work while it researches the question.
-The researcher cannot spawn agents.
 
 Give it these requirements:
 
