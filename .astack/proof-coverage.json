@@ -13,6 +13,7 @@
 		"docs/reference/programme-supervision.md",
 		"docs/reference/pr-head-check.md",
 		"docs/reference/law-controls.md",
+		"docs/reference/source-scan.md",
 		"docs/reference/pr-recipes.md"
 	],
 	"tests": [
@@ -73,6 +74,9 @@
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
 		"tests/property/verdict-monoid.test.ts",
+		"tests/astack/types.test.ts",
+		"tests/astack/lexer.test.ts",
+		"tests/keep-list.test.ts",
 		"tests/doc-facts.test.ts",
 		"tests/apply/flow-config.test.ts"
 	],
@@ -755,6 +759,26 @@
 		{
 			"criterion": "ADMIT-ORDER",
 			"controls": ["proof-stage-order"]
+		},
+		{
+			"criterion": "CS-REGEX",
+			"controls": ["cs-regex"]
+		},
+		{
+			"criterion": "CS-MEMBER",
+			"controls": ["cs-member-type", "cs-member-comment"]
+		},
+		{
+			"criterion": "CS-NAME",
+			"controls": ["cs-name-type", "cs-name-comment"]
+		},
+		{
+			"criterion": "CS-INCOMPLETE",
+			"controls": ["cs-incomplete"]
+		},
+		{
+			"criterion": "KEEP-TIE",
+			"controls": ["keep-tie-anchor", "keep-tie-copies"]
 		},
 		{
 			"criterion": "GH-READ",

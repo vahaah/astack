@@ -287,3 +287,11 @@ After `stop: HEAD does not hold PR_HEAD`, the one next step is a pull of the PR 
 Each other result stops the text.
 _Avoid_: Manual head check, head compare
 _Code_: `src/astack/cli/commands/check/pr-head.ts`
+
+### Source scan
+
+The one pass that splits a TS or JS file into tokens and comments for the comment hook and the type hook.
+A slash after a value is a division. A word after `.` or `?.` ends a value, and so does a keyword that takes no operand.
+A scan that a token does not close gives no comments, and the comment hook reads no part of that file.
+_Avoid_: Comment lexer, JS lexer
+_Code_: `src/astack/types/scan.ts`
