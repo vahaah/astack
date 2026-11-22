@@ -1,5 +1,5 @@
 {
-	"total": 133905,
+	"total": 133870,
 	"skills": {
 		"architect": 2119,
 		"arena": 1056,
@@ -45,7 +45,7 @@
 		"types": 4993,
 		"wayfinder": 1872,
 		"why": 6435,
-		"write-docs": 5825,
+		"write-docs": 5790,
 		"write-ticket": 4055
 	}
 }

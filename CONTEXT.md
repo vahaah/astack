@@ -29,6 +29,13 @@ Ratification history stays bound to it. It must be an ancestor of the diff base.
 _Avoid_: Current main tip
 _Code_: `ProofBase.manifest`
 
+### Change manifest
+
+The ChangeProof of one change at `.astack/proof/<change>.json`, which the change adds as a new file.
+The change deletes each manifest of its manifest base. A tree with no change manifest uses `.astack/proof.json`.
+_Avoid_: Shared proof file, default proof manifest
+_Code_: `chooseManifest`
+
 ### Diff base
 
 The commit that the scope check and the input snapshots read from.

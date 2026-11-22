@@ -451,6 +451,7 @@
 	"contractOnly": [
 		"**/*.md",
 		".astack/proof*.json",
+		".astack/proof/*.json",
 		"dist/**",
 		"marketplace/plugins/astack/bin/astack.js",
 		"rules/**",

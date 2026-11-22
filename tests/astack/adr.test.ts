@@ -71,6 +71,6 @@ test.each<[string, string, string | undefined]>([
 		"\n```text\n### D9. Fenced example\n```\n",
 	],
 	["D7", "a missing decision has no span", undefined],
-])("[control:cp-adr-decision] the span of %s: %s", (decision, _name, span) => {
+])("[control:cp-adr-span] the span of %s: %s", (decision, _name, span) => {
 	expect(decisionSpan(ADR, decision)).toBe(span);
 });

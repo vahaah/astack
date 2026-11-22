@@ -434,7 +434,7 @@ describe("astack check proof", () => {
 			"stop: proof domain: docs/adr/0001-gate.md has no nonempty D2 decision text",
 		],
 	])(
-		"[control:proof-adr-contract] [control:cp-adr-decision] the cited D2 of %s gives the domain verdict",
+		"[control:proof-adr-contract] the cited D2 of %s gives the domain verdict",
 		(_name, adr, last) => {
 			const repo = ladderRepo(scratch, {
 				change: { "docs/adr/0001-gate.md": adr },

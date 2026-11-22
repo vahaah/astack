@@ -153,7 +153,7 @@ describe("CI changes with required proof records", () => {
 		return { repo, result: run(repo, "trunk") };
 	}
 
-	test("[control:ci-proof-records] a manifest of the change under .astack/proof/ and each deleted manifest permit CI classification", () => {
+	test("[control:ci-proof-per-change] a manifest of the change under .astack/proof/ and each deleted manifest permit CI classification", () => {
 		const { result } = perChange(false);
 		expect(result.out).toEndWith(
 			"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n",
@@ -162,7 +162,7 @@ describe("CI changes with required proof records", () => {
 		expect(result.code).toBe(3);
 	});
 
-	test("[control:ci-proof-records] a second changed manifest under .astack/proof/ stops CI classification", () => {
+	test("[control:ci-proof-two-manifests] a second changed manifest under .astack/proof/ stops CI classification", () => {
 		const { repo } = perChange(true);
 		const trunk = git(repo.root, "rev-parse", "trunk");
 		refuses(

@@ -178,7 +178,7 @@ describe("the manifest of the change", () => {
 		expect(summary.lines[1]).toBe(`Change: own from base ${main.base}`);
 	});
 
-	test("[control:cp-manifest-search] two present manifests with no --base stop with both names", () => {
+	test("[control:cp-manifest-two] two present manifests with no --base stop with both names", () => {
 		const main = mainRepo();
 		change(main, {
 			name: "pair",
@@ -194,7 +194,7 @@ describe("the manifest of the change", () => {
 		});
 	});
 
-	test("[control:cp-manifest-search] a folder with no manifest directly under it reads .astack/proof.json", () => {
+	test("[control:cp-manifest-fallback] a folder with no manifest directly under it reads .astack/proof.json", () => {
 		const main = mainRepo({
 			".astack/proof/notes.md": "# Notes\n",
 			".astack/proof/old/nested.json": OLDER,
@@ -220,7 +220,7 @@ describe("the manifest of the change", () => {
 		});
 	});
 
-	test("[control:cp-manifest-base] a diff from the merge base that changes no manifest stops and names the merge base", () => {
+	test("[control:cp-manifest-base-none] a diff from the merge base that changes no manifest stops and names the merge base", () => {
 		const main = mainRepo();
 		git(main.root, "checkout", "-q", "-b", "docs");
 		writeFiles(main.root, { "docs/only.md": "# Only\n" });
@@ -279,7 +279,7 @@ describe("the manifest of the change", () => {
 		},
 	);
 
-	test("[control:cp-manifest-held] an unstaged delete of the base manifest admits", () => {
+	test("[control:cp-manifest-unstaged] an unstaged delete of the base manifest admits", () => {
 		const main = mainRepo();
 		unlinkSync(join(main.root, M0));
 		const scope = [".astack/proof/own.json", M0, "docs/own.md"];

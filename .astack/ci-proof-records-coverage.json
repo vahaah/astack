@@ -18,7 +18,9 @@
 				"ci-proof-record-blobs",
 				"ci-proof-manifest-mode",
 				"ci-proof-record-tool-pin",
-				"ci-proof-committed-inputs"
+				"ci-proof-committed-inputs",
+				"ci-proof-per-change",
+				"ci-proof-two-manifests"
 			]
 		}
 	]

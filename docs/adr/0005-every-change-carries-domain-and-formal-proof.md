@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-03
 Ticket: none
 Supersedes: none
-Amended by: 0008 D3 for integrated proposals, 0012 for an older proof base, and 0015 for rungs
+Amended by: 0008 D3 for proposals, 0012 for the base, 0015 for rungs and 0016 for manifests
 
 ## Context
 
@@ -65,6 +65,8 @@ The CI classifier can admit the committed default proof manifest and declared se
 It checks the actual base, strict file form, complete proof sections, references, and separate file roles.
 All other non-CI changes remain blocked. Classification does not make a failed current proof advisory.
 Remote required-check settings remain an owner action.
+
+> Amended 2026-11-22: D4 said "The CI classifier can admit the committed default proof manifest and declared separate proof records beside CI changes." [ADR 0016](0016-each-change-carries-its-own-proof-manifest.md) D7 lets it admit the manifest that `check proof --base` chooses at HEAD, its proof records and each deleted manifest.
 
 ### D5. ADR history stays explicit
 
