@@ -99,4 +99,4 @@ Keep the domain model current during the conversation:
 
 When the chosen candidate is worth building, pass it to `/astack-plan` when that skill is available.
 It designs the interface through `/astack-architect` and plans the change.
-If plan is unavailable, suggest `/astack-to-spec` when available.
+If plan is unavailable, use `/astack-write-ticket`.

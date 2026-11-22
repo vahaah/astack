@@ -22,7 +22,6 @@ const fixtures: string[] = [];
 const GENERATED = [
 	"dist",
 	"rules/astack.md",
-	"docs/migration.md",
 	"marketplace/plugins/astack/NOTICE",
 	"marketplace/plugins/astack/bin/astack.js",
 	".claude-plugin/marketplace.json",
@@ -51,7 +50,6 @@ function fixture(): string {
 		"package.json",
 		"LICENSE",
 		"NOTICE",
-		"docs/migration.md",
 	]) {
 		mkdirSync(dirname(join(dir, path)), { recursive: true });
 		cpSync(join(ROOT, path), join(dir, path), { recursive: true });

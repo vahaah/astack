@@ -50,7 +50,6 @@ describe("the command registry", () => {
 			"doctor",
 			"print",
 			"init",
-			"orch",
 			"watch-pr",
 			"check-comments",
 			"check-types",
@@ -99,12 +98,6 @@ describe("the command registry", () => {
 	});
 
 	test.each([
-		[
-			["orch", "--help"],
-			0,
-			"usage: astack orch [--store <dir>] [--json] [--force] <command>\n",
-			"",
-		],
 		[["watch-pr", "--help"], 0, "Usage: astack watch-pr [options]\n", ""],
 		[
 			["watch-pr", "--interval", "0"],
@@ -124,9 +117,7 @@ describe("the command registry", () => {
 
 	type HelpRow = [args: string[], usage: string, summary: string];
 	const helpRows: HelpRow[] = [
-		...COMMANDS.filter(
-			(command) => command.name !== "orch" && command.name !== "watch-pr",
-		).map(
+		...COMMANDS.filter((command) => command.name !== "watch-pr").map(
 			(command): HelpRow => [
 				[command.name, "--help"],
 				command.usage,
@@ -168,8 +159,8 @@ describe("the command registry", () => {
 
 	test("an unknown command or check exits 2", () => {
 		const unknown = capture();
-		expect(main(["frobnicate"], unknown.io)).toBe(2);
-		expect(unknown.err()).toStartWith("astack: unknown command frobnicate\n");
+		expect(main(["orch"], unknown.io)).toBe(2);
+		expect(unknown.err()).toStartWith("astack: unknown command orch\n");
 		const badCheck = capture();
 		expect(main(["check", "spelling"], badCheck.io)).toBe(2);
 		expect(badCheck.err()).toBe(

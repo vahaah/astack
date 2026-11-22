@@ -14,7 +14,7 @@ import { findingLine } from "../src/astack/ste/format.ts";
 import { loadSettings } from "../src/astack/ste/profile.ts";
 import { componentOrigin, componentPath } from "./build.ts";
 import { companionPaths, exampleCompanion } from "./lib/companion.ts";
-import { displayPath, listFiles, REPO_ROOT } from "./lib/files.ts";
+import { listFiles, REPO_ROOT } from "./lib/files.ts";
 import {
 	FrontmatterError,
 	listComponents,
@@ -1076,33 +1076,6 @@ function run(
 	};
 }
 
-export function checkClaudeValidate(dirs: string[]): CheckResult {
-	const findings: Finding[] = [];
-	const summary: string[] = [];
-	for (const dir of dirs) {
-		const result = run(
-			["claude", "plugin", "validate", dir, "--strict"],
-			REPO_ROOT,
-			60_000,
-		);
-		const output = `${result.stdout}${result.stderr}`.trim();
-		summary.push(`${displayPath(dir)}: exit ${result.exitCode}`);
-		if (result.exitCode !== 0) {
-			findings.push({
-				severity: "error",
-				file: dir,
-				message: `claude plugin validate --strict failed:\n${output}`,
-			});
-		}
-	}
-	return {
-		id: "claude-validate",
-		title: "claude plugin validate --strict",
-		findings,
-		summary,
-	};
-}
-
 export function pluginLogPattern(plugins: Plugin[]): RegExp {
 	const names = plugins.map((plugin) => plugin.name).join("|");
 	return new RegExp(
@@ -1166,20 +1139,23 @@ export function loadGateIsolated(
 
 const LOAD_GATE_TITLE = "load gate (claude -p --plugin-dir ... --debug-file)";
 
-export function skippedLoadGate(): CheckResult {
+function skippedLoadGate(reason: string): CheckResult {
 	return {
 		id: "load-gate",
 		title: LOAD_GATE_TITLE,
 		findings: [],
-		summary: [
-			"no ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN is set, so the gate does not run against your own config",
-		],
+		summary: [reason],
 		skipped: true,
 	};
 }
 
 export function checkLoadGate(plugins: Plugin[]): CheckResult {
-	if (!loadGateIsolated(process.env)) return skippedLoadGate();
+	if (!loadGateIsolated(process.env))
+		return skippedLoadGate(
+			"no ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN is set, so the gate does not run against your own config",
+		);
+	if (Bun.which("claude") === null)
+		return skippedLoadGate("no claude on PATH, so the gate cannot run");
 	const project = mkdtempSync(join(tmpdir(), "astack-load-gate-"));
 	const debugFile = join(project, "debug.log");
 	try {
@@ -1365,15 +1341,7 @@ export function validate(options: {
 	results.push(checkFrontmatter(checked));
 	results.push(checkSkillShapes(checked));
 	if (options.steRoot !== undefined) results.push(checkOwnSte(options.steRoot));
-	if (options.claude) {
-		results.push(
-			checkClaudeValidate([
-				options.marketplace,
-				...checked.map((plugin) => plugin.root),
-			]),
-		);
-		results.push(checkLoadGate(checked));
-	}
+	if (options.claude) results.push(checkLoadGate(checked));
 	return formatReport(results);
 }
 
@@ -1383,9 +1351,9 @@ Checks each plugin that the marketplace manifest lists (default marketplace/):
 residual Cursor-isms minus scripts/lib/residuals/pstack.allow, residual upstream names
 in flow minus scripts/lib/residuals/flow.allow, bare Skill tool callees in flow,
 subagent_type values, plugin paths, relative Markdown links, retired skill namespace calls,
-astack:<name> names, frontmatter, skill body shape, the ASD-STE100 deny rules on astack's own text, claude plugin
-validate --strict, and a load gate.
---no-claude skips the last two.`;
+astack:<name> names, frontmatter, skill body shape, the ASD-STE100 deny rules on astack's own text, and a load gate.
+bun run dist runs claude plugin validate --strict on the built marketplace.
+--no-claude skips the load gate.`;
 
 function main(): number {
 	const { values } = parseArgs({

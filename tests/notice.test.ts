@@ -104,7 +104,7 @@ describe("the notice test", () => {
 		expect(originFindings(items, runs).gaps).toEqual([]);
 	});
 
-	test("each module of src/astack names in PATH_ORIGINS each upstream that it shares a run of 24 words with, a length that common code idioms do not reach, and the scan finds pstack in orch and watch-pr", () => {
+	test("each module of src/astack names in PATH_ORIGINS each upstream that it shares a run of 24 words with, a length that common code idioms do not reach, and the scan finds pstack in watch-pr", () => {
 		const codeRunLength = 24;
 		const codeRuns = readUpstreamRuns(codeRunLength);
 		const copiedBy = (path: string) =>
@@ -115,10 +115,7 @@ describe("the notice test", () => {
 					),
 				),
 			].sort();
-		expect(["src/astack/orch", "src/astack/watch-pr"].map(copiedBy)).toEqual([
-			["pstack"],
-			["pstack"],
-		]);
+		expect(copiedBy("src/astack/watch-pr")).toEqual(["pstack"]);
 		const gaps = readdirSync(join(ROOT, "src/astack"))
 			.map((name) => `src/astack/${name}`)
 			.flatMap((path) =>

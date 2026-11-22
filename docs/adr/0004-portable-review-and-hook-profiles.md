@@ -60,6 +60,11 @@ Unreadable files and unavailable handlers report a verification limit.
 
 Old string-only records have no reliable provenance.
 Deliver them once as unverified reports without guessing their handler or scope.
+
+Amended 2026-11-22 by [ADR 0013](0013-astack-keeps-a-part-only-on-measured-use.md) D4.
+No revision of astack ever wrote an old string-only record, so Cursor no longer reads or delivers one.
+The two sentences above no longer apply. The rest of D4 stays.
+
 Store baselines only in private local state.
 Never include them in public release evidence.
 

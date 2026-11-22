@@ -25,7 +25,7 @@ Grilling makes facts your job and decisions the owner's.
 - Resolve an empirical fork by running the check, even when it is quicker to ask.
   Run `astack skill-path astack:principles references/never-block-on-the-human.md` for this rule.
   Read the path it prints.
-- Knowledge that only a third party holds is a human call about who to ask. Suggest the owner runs `/astack:to-questionnaire`.
+- Knowledge that only a third party holds is a human call about who to ask. Ask the owner who holds it.
 
 ## What reaches the owner
 

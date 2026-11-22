@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { builtFlowSkills } from "../../scripts/apply.ts";
 import {
@@ -55,6 +56,54 @@ describe("flowSupersedes", () => {
 		for (const name of shipped.value) {
 			expect(candidates.has(name)).toBe(true);
 		}
+	});
+
+	test("[control:wb-successor] maps each cut upstream skill to the skill of its route, and a flat copy of it is never superseded", () => {
+		const flow = builtFlowSkills(join(root, "marketplace"));
+		if (!flow.ok) throw new Error(flow.error);
+		const cut = [
+			"implement",
+			"implement-spec",
+			"to-questionnaire",
+			"to-spec",
+			"triage",
+			"wait-what",
+			"wizard",
+		];
+		const found = findDuplicateSkills({
+			entries: cut.map(link),
+			lock: {
+				skills: Object.fromEntries(
+					cut.map((name) => [name, { source: "mattpocock/skills" }]),
+				),
+			},
+			flowSkills: flow.value,
+		});
+		expect(
+			found.map(({ name, flowSkill, verdict }) => [name, flowSkill, verdict]),
+		).toEqual([
+			["implement", "astack:mode", "not-in-flow"],
+			["implement-spec", "astack:plan", "not-in-flow"],
+			["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
+			["to-spec", "astack:write-ticket", "not-in-flow"],
+			["triage", "astack:write-ticket", "not-in-flow"],
+			["wait-what", "astack:wait-what", "not-in-flow"],
+			["wizard", "astack:wizard", "not-in-flow"],
+		]);
+		const shipped = new Set(
+			readdirSync(join(root, "marketplace/plugins/astack/skills")),
+		);
+		const orphans = Object.entries(flowSupersedes)
+			.filter(([, candidates]) => !candidates.some((name) => shipped.has(name)))
+			.map(([name]) => name);
+		expect(orphans).toEqual([
+			"ask-matt",
+			"handoff",
+			"teach",
+			"to-questionnaire",
+			"wait-what",
+			"wizard",
+		]);
 	});
 });
 
@@ -282,6 +331,28 @@ describe("duplicateReportLines", () => {
 		expect(
 			lines.filter((line) => line.includes("2: mattpocock/skills grilling")),
 		).toEqual(["  2: mattpocock/skills grilling"]);
+	});
+
+	test("names the successor of a cut skill, and claims none for a cut skill with no successor", () => {
+		const found = findDuplicateSkills({
+			entries: [link("triage"), link("wizard")],
+			lock: {
+				skills: {
+					triage: { source: "mattpocock/skills" },
+					wizard: { source: "mattpocock/skills" },
+				},
+			},
+			flowSkills: ["tdd"],
+		});
+		expect(
+			duplicateReportLines({ skills: found, shown, flowBuilt: true }),
+		).toEqual([
+			"Report only. Apply never removes a user skill.",
+			"",
+			"Not in the built astack plugin, so nothing supersedes them yet. Keep them:",
+			"- ~/.claude/skills/triage -> ~/.agents/skills/triage, from mattpocock/skills; astack ships /astack:write-ticket",
+			"- ~/.claude/skills/wizard -> ~/.agents/skills/wizard, from mattpocock/skills; astack ships no successor",
+		]);
 	});
 
 	test("reports none found when nothing collides", () => {

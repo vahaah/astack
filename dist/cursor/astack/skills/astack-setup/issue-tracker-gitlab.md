@@ -20,7 +20,6 @@ Inside a clone, `glab` identifies it automatically.
 MRs as a request surface: no.
 
 Set the flag to `yes` only if the repo treats external merge requests as feature requests.
-`/astack-triage` reads this flag.
 When enabled, MRs use the same labels and states as issues.
 
 - Read an MR with `glab mr view <number> --comments`.

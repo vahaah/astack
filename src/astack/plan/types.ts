@@ -2,19 +2,14 @@ export const TIERS = ["standard", "programme", "brief"] as const;
 export type Tier = (typeof TIERS)[number];
 
 export const STATUSES = ["draft", "active", "paused"] as const;
-export type Status = (typeof STATUSES)[number];
 
 export const HOMES = ["repo", "linear", "github"] as const;
-export type Home = (typeof HOMES)[number];
 
 export const SESSION_STATES = ["done", "now", "next", "later"] as const;
-export type SessionState = (typeof SESSION_STATES)[number];
 
 export const MILESTONE_STATES = ["exited", "now", "next", "later"] as const;
-export type MilestoneState = (typeof MILESTONE_STATES)[number];
 
 export const DECISION_KINDS = ["goal", "decision", "rule", "tech"] as const;
-export type DecisionKind = (typeof DECISION_KINDS)[number];
 
 export const STEP_CHECKPOINTS = ["report", "approve ui", "approve one-way"];
 

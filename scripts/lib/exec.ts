@@ -78,16 +78,3 @@ export async function git(
 ): Promise<ExecResult> {
 	return run(["git", "-C", cwd, ...args], { cwd, timeoutSeconds: 120 });
 }
-
-export async function gitText(
-	cwd: string,
-	args: readonly string[],
-): Promise<string> {
-	const result = await git(cwd, args);
-	if (result.exitCode !== 0) {
-		throw new Error(
-			`git ${args.join(" ")} failed in ${cwd}: ${result.stderr.trim()}`,
-		);
-	}
-	return result.stdout.trim();
-}

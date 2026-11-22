@@ -32,6 +32,7 @@ export type CheckReport = {
 	readonly id: string;
 	readonly errors: readonly string[];
 	readonly summary: string;
+	readonly skipped?: true;
 };
 
 function text(tree: FileTree, path: string): string | undefined {

@@ -1,7 +1,7 @@
 import type { Region } from "../comments/added.ts";
 import type { HookGroup, HookPolicy } from "../hook-profile.ts";
 
-export const TOOLS = ["claude-code", "codex", "cursor", "grok-build"] as const;
+export const TOOLS = ["claude-code", "cursor"] as const;
 export type Tool = (typeof TOOLS)[number];
 
 export const HOOK_EVENTS = [

@@ -164,8 +164,5 @@ Report that limit and name the variable.
 ## 7. Offer verification when useful
 
 Check for a `.claude/skills/verify-*` skill or an existing real-app driver.
-If none exists, offer `/astack-create-verification-skill` once.
-Explain that it creates a local skill to drive the app as a user and prove changes.
-
-On acceptance, read `../astack-create-verification-skill/SKILL.md` and follow it.
-On refusal, continue without another offer.
+If none exists, name `astack-control-ui` and `astack-control-cli` once.
+They drive the app as a user and prove changes.

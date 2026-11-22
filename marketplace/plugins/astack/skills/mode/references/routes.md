@@ -44,11 +44,10 @@ For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 ## Other routes
 
 - A small ask that the agent can misread: `astack:sharpen`.
-- Issues and requests that someone else wrote: `/astack:triage`. The tickets of a plan skip it.
+- Issues and requests that someone else wrote: `astack:write-ticket`. A bug report takes the Bug fix playbook.
 - How our code works: `astack:how`. Why it has this shape: `astack:why`. Facts outside the repo: `astack:research`.
 - A question that talk cannot settle: `astack:prototype` when a person judges the result. The `astack:mode` Prototype playbook when the agent can see the result.
-- A question that only another person can answer: `astack:to-questionnaire`.
-- Steps that only a person can do, such as dashboards and secrets: `astack:wizard`.
+- A question or a step that only a person can settle: name it to the owner and stop.
 - A behavior that you build test-first with no plan: `astack:tdd`.
 - A ticket or a document outside a plan: `astack:write-ticket` or `astack:write-docs`.
 - Codebase upkeep: `astack:improve-codebase-architecture`. Then take the selected candidate into `/astack:plan`.

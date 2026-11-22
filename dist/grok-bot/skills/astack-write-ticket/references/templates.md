@@ -216,7 +216,7 @@ Who or what confirms the answer: the user in a live session, primary-source cita
 
 The engineering skills add their own sections under the shared headings.
 
-| Heading | Spec from `astack-to-spec` | Slice from `astack-to-tickets` |
+| Heading | Umbrella spec | Slice from `astack-to-tickets` |
 |---|---|---|
 | Problem | The user's problem | Why the slice matters, with `Part of <spec>` on the first line |
 | Outcome | The solution as the user experiences it | The result to build |
@@ -224,10 +224,6 @@ The engineering skills add their own sections under the shared headings.
 | Scope | Included and excluded work | This slice, with sibling slices excluded by name |
 | Verification | Testing decisions and agreed seams | The seam and its command or demonstration |
 | Extra sections | User stories, implementation decisions and further notes | Constraints only for limits the implementer cannot discover |
-
-`astack-triage` posts an agent brief as a comment on an existing issue.
-It keeps its own `##` headings.
-This rubric does not score that comment.
 
 ## Review finding
 

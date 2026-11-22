@@ -315,7 +315,7 @@ test("comment suppression handoff recognizes only an enabled type handler", () =
 	expect(neither.propose("value.ts", GOOD_TYPE, suppression)).toEqual(SILENT);
 });
 
-test("Cursor retains disabled baselines, required records, and unclassified legacy reports", () => {
+test("Cursor retains disabled baselines and required records", () => {
 	const flow = fixture();
 	const plan = "---\nplan: sample\ntier: standard\n---\n# A plan\n";
 	flow.edit("value.ts", GOOD_TYPE, BAD_TYPE);
@@ -333,19 +333,6 @@ test("Cursor retains disabled baselines, required records, and unclassified lega
 		followup_message: expect.stringContaining("it adds a checkbox"),
 	});
 	expect(JSON.stringify(minimal)).not.toContain("unsafe cast");
-	const legacy = join(flow.state, "cursor", flow.session, "problems.json");
-	writeFileSync(legacy, JSON.stringify(["legacy unsafe cast report"]));
-	const report = flow.cursor("stop", { status: "completed" });
-	expect(report).toEqual({
-		followup_message: expect.stringContaining(
-			"unverified reports from an older cache",
-		),
-	});
-	expect(JSON.stringify(report)).toContain("legacy unsafe cast report");
-	expect(JSON.stringify(report)).toContain("it adds a checkbox");
-	expect(
-		JSON.stringify(flow.cursor("stop", { status: "completed" })),
-	).not.toContain("legacy");
 	rmSync(join(flow.dir, "value.ts"));
 	mkdirSync(join(flow.dir, "value.ts"));
 	const dormant = flow.cursor("stop", { status: "completed" });

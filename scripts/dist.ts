@@ -86,8 +86,10 @@ export function staticChecks(rendered: Rendered): CheckReport[] {
 function externalChecks(out: string, rendered: Rendered): CheckReport[] {
 	const { components, marketplace } = rendered.build;
 	const plugins = marketplace.plugins.map((plugin) => plugin.name);
+	const marketplaces =
+		out === join(REPO_ROOT, "dist") ? [REPO_ROOT, out] : [out];
 	return [
-		claudeValidate(out, plugins),
+		claudeValidate(marketplaces, out, plugins),
 		codexProbe(
 			out,
 			plugins.map((plugin) => ({
@@ -103,8 +105,13 @@ function print(reports: readonly CheckReport[]): number {
 	let errors = 0;
 	for (const report of reports) {
 		errors += report.errors.length;
+		const status = report.skipped
+			? "SKIP"
+			: report.errors.length > 0
+				? "FAIL"
+				: "PASS";
 		console.log(
-			`${report.errors.length > 0 ? "FAIL" : "PASS"} ${report.id}${report.summary ? `: ${report.summary}` : ""}`,
+			`${status} ${report.id}${report.summary ? `: ${report.summary}` : ""}`,
 		);
 		for (const error of report.errors)
 			console.log(`  ${error.replaceAll("\n", "\n    ")}`);

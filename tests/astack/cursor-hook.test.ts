@@ -694,33 +694,6 @@ describe("fresh Cursor file judgments", () => {
 		expect(flow.stop()).toEqual({});
 	});
 
-	test("legacy strings survive edits and receive one explicitly unverified report", () => {
-		const flow = liveCursor();
-		const cache = join(flow.state, "cursor", flow.session);
-		mkdirSync(cache, { recursive: true });
-		writeFileSync(
-			join(cache, "problems.json"),
-			JSON.stringify(["Old plan warning"]),
-		);
-		flow.edit(GOOD_TYPE, "export const value = 2;\n");
-		expect(
-			flow.call("beforeShellExecution", {
-				command: "echo ready",
-				cwd: flow.dir,
-			}),
-		).toEqual({ permission: "allow" });
-		expect(flow.call("stop", { status: "aborted" })).toEqual({});
-		const report = flow.stop();
-		expect(report).toEqual({
-			followup_message: expect.stringContaining(
-				"unverified reports from an older cache",
-			),
-		});
-		expect(JSON.stringify(report)).toContain("Old plan warning");
-		expect(JSON.stringify(report)).not.toContain(EDIT_FOLLOWUP);
-		expect(flow.stop()).toEqual({});
-	});
-
 	test("refresh keeps the STE ledger unchanged and creates no reply claim", () => {
 		const flow = liveCursor({ name: "note.md" });
 		mkdirSync(join(flow.dir, ".astack"));

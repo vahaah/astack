@@ -28,7 +28,6 @@ Without a matching repo template, it checks the ticket headings.
 PRs as a request surface: no.
 
 Set the flag to `yes` only if the repo treats external PRs as feature requests.
-`/astack:triage` reads this flag.
 When enabled, PRs use the same labels and states as issues.
 
 Use the checkout of the PR before acting on it.

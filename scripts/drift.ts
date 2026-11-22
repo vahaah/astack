@@ -3,11 +3,9 @@ import { join, relative, resolve } from "node:path";
 import {
 	type BuildOutcome,
 	buildCard,
-	buildMigrationDoc,
 	buildNotice,
 	buildSourceInstall,
 	repoCardPaths,
-	repoMigrationDocPaths,
 	repoNoticePaths,
 } from "./build.ts";
 import { render } from "./dist/render.ts";
@@ -87,14 +85,6 @@ async function prerequisites(problems: string[]): Promise<void> {
 		await buildCard(repoCardPaths, "check"),
 		problems,
 	);
-	const migration = await buildMigrationDoc(repoMigrationDocPaths, "check");
-	if (migration.ok)
-		generatedFile(
-			relative(ROOT, repoMigrationDocPaths.target),
-			migration.value,
-			problems,
-		);
-	else problems.push(migration.error);
 	const notice = await buildNotice(repoNoticePaths, "check");
 	if (notice.ok)
 		generatedFile(

@@ -41,7 +41,6 @@ export const command: Command = {
 	name: "hook",
 	summary:
 		"Reads a hook payload on stdin and runs the hook handlers. Exits 2 with the reason on stderr to deny. Fails open.",
-	usage:
-		"hook <claude-code|codex|grok-build> <event>\nhook cursor <cursor event>",
+	usage: "hook claude-code <event>\nhook cursor <cursor event>",
 	run,
 };

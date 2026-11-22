@@ -85,12 +85,10 @@ The board is a view.
 Do not commit the board.
 
 A quick plan writes no file.
-Start that work with `/astack:implement` for one ticket.
-Or name the feature playbook to `/astack:mode`.
+Start that work for one ticket with the Feature playbook of `/astack:mode`.
 
 | Shape | Start |
 |---|---|
-| One ticket with parallel child tickets on one branch | `/astack:implement-spec <ticket>` |
 | A stack of pull requests | `/astack:mode` Autopilot-stack for that ticket and plan |
 | A programme | `/astack:mode` Orchestrate for the plan, and `astack board` for the frontier |
 | Work that only a person can do | None. Name the step and stop. |

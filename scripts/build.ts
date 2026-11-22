@@ -2,15 +2,12 @@ import { dirname, relative, resolve } from "node:path";
 import { NODE_FLOOR } from "../src/astack/cli/commands/doctor.ts";
 import { parseMarketplace } from "../src/astack/marketplace.ts";
 import { err, ok, type Result } from "../src/astack/result.ts";
-import { companionPaths, exampleCompanion } from "./lib/companion.ts";
 import {
 	FrontmatterError,
 	listComponents,
 	type PluginComponent,
 	readComponentValues,
 } from "./lib/frontmatter.ts";
-import { readMachinePaths } from "./lib/global.ts";
-import { migrationPaths, renderMigrationDoc } from "./lib/migration.ts";
 import {
 	AGENT_ORIGINS,
 	MIT_PERMISSION,
@@ -76,28 +73,6 @@ export async function buildCard(
 		paths.target,
 		renderCard(await Bun.file(paths.source).text()),
 		mode,
-	);
-}
-
-export type MigrationDocPaths = { machine: string; target: string };
-
-export const repoMigrationDocPaths: MigrationDocPaths = {
-	machine: companionPaths(exampleCompanion(repoRoot)).machine,
-	target: resolve(repoRoot, "docs/migration.md"),
-};
-
-export async function buildMigrationDoc(
-	paths: MigrationDocPaths,
-	mode: "write" | "check",
-): Promise<Result<BuildOutcome, string>> {
-	const machine = await readMachinePaths(paths.machine);
-	if (!machine.ok) return machine;
-	return ok(
-		await writeOrCompare(
-			paths.target,
-			renderMigrationDoc(migrationPaths(machine.value)),
-			mode,
-		),
 	);
 }
 
@@ -367,11 +342,6 @@ async function main(args: readonly string[]): Promise<number> {
 		for (const error of notice.error) console.error(error);
 		return 1;
 	}
-	const migration = await buildMigrationDoc(repoMigrationDocPaths, mode);
-	if (!migration.ok) {
-		console.error(migration.error);
-		return 1;
-	}
 	const sourceInstall = await buildSourceInstall(repoRoot, mode);
 	if (!sourceInstall.ok) {
 		for (const error of sourceInstall.error) console.error(error);
@@ -379,7 +349,6 @@ async function main(args: readonly string[]): Promise<number> {
 	}
 	const outcomes = [
 		{ file: "rules/astack.md", outcome: await buildCard(repoCardPaths, mode) },
-		{ file: "docs/migration.md", outcome: migration.value },
 		{ file: "marketplace/plugins/astack/NOTICE", outcome: notice.value },
 		...sourceInstall.value,
 	];

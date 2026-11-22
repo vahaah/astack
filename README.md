@@ -13,8 +13,8 @@
 
 astack is a plugin for AI coding agents. Its skills and rules give the agent one path from a goal to a merged pull request. The path is plan, build test-first on a branch, run the gates, review, open the PR, harden and merge. The agent stops before each decision that belongs to you. One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients.
 
-- **61 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 63.
-- **Six agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `researcher`, `delegate` and `comment-judge` are used by the skills. Those four are not limited to Read, Grep and Glob.
+- **50 skills** in the plugin for plans, code, review, PR delivery, the domain model, research, tickets, documents and tool control. The Grok Bot build adds `astack-rules` and `astack-sync`, giving 52.
+- **Five agents.** `typescript-reviewer` and `postgres-reviewer` are read-only (Read, Grep and Glob only). `explorer`, `delegate` and `comment-judge` are used by the skills. Those three are not limited to Read, Grep and Glob.
 - **Five shared rules files** in `rules/`: `astack`, `coding`, `comments`, `typescript` and `postgres`.
 - **Hooks** for Claude Code, Codex, Cursor and Grok Build. They check reply language, types, comments, PR and ticket text. They also guard merges and destructive commands. They fail open. If a handler throws, the action is allowed.
 - **A CLI** (`astack`) for sessions, the board, `doctor` and repository checks, including `astack check proof`.
@@ -25,7 +25,7 @@ astack is a plugin for AI coding agents. Its skills and rules give the agent one
 | Layer | What runs | Where | What it guarantees |
 |---|---|---|---|
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
-| Hooks | `astack hook <client> <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
+| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
 | CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate still requires the manifest `base` |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
@@ -33,8 +33,8 @@ astack is a plugin for AI coding agents. Its skills and rules give the agent one
 ```mermaid
 flowchart TD
   goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
-  plan --> spec["Spec and tickets (to-spec, to-tickets)"]
-  spec --> build["Build on a branch, failing test first (implement, tdd)"]
+  plan --> spec["Spec and tickets (write-ticket, to-tickets)"]
+  spec --> build["Build on a branch, failing test first (tdd)"]
   build --> gates{"Gates: lint, types, tests, astack check …"}
   gates -->|fail| build
   gates --> proof{"change-proof: contract, ADRs, TLC positive, negative and restored runs"}
@@ -180,7 +180,7 @@ The full guide is [docs/workflow.md](docs/workflow.md). The rule card routes eac
 
 | Shape of the work | Start with |
 |---|---|
-| One ticket | `/astack:implement` |
+| One ticket | The `/astack:mode` Feature playbook |
 | One plan session | `astack session start <plan>` |
 | A stack of pull requests | Autopilot-stack |
 | A programme | `astack board <plan>`, then Orchestrate |
@@ -428,9 +428,8 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
 | `astack check stack-config` | Compare watched files with the record from `astack stack start`. It prints a restart command and never runs it |
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
-| `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export, import, move and drift. These print write plans and never call a tracker |
+| `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
 | `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
-| `astack orch` | Read and write the plain-file store of an orchestrate run. A missing record exits 2 |
 | `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
@@ -451,7 +450,7 @@ The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption
 
 ## Hooks in detail
 
-Claude Code, Codex and Grok Build call `astack hook <client> <event>`. Their events are session start, prompt submit, tool use and stop. On those clients a deny exits 2 and writes the reason on stderr.
+Claude Code, Codex and Grok Build call `astack hook claude-code <event>`. Their events are session start, prompt submit, tool use and stop. On those clients a deny exits 2 and writes the reason on stderr.
 
 Cursor calls `astack hook cursor <event>`. `encodeCursor` always exits 0 and writes JSON on stdout. A deny before a shell, an MCP call or a tool is `{"permission":"deny"}`. A deny of the prompt is `{"continue":false}`.
 

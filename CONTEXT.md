@@ -131,3 +131,16 @@ A git command that discards uncommitted work that `git status` shows in the whol
 It is an owner gate.
 _Avoid_: Destructive command, cleanup
 _Code_: `workLossReasons`
+
+### Skill word budget
+
+The cap on the `*.md` words of each skill tree and on their total, in `scripts/lib/budget.json`.
+`bun run budget` fails when a skill or the total passes its cap.
+_Avoid_: Size limit, token budget
+_Code_: `budgetReport`
+
+### Zero-use part
+
+A skill, agent, command or module with no measured use in 30 days and no live dependent.
+A live dependent is code, a route, a test or an accepted ADR that needs the part.
+_Avoid_: Unused code, dead skill

@@ -48,4 +48,4 @@ The owner often starts with "I am building <ticket>", and asks for an interview 
 - Each out-of-scope finding goes to the drafts file through `astack plan draft`. The owner files a draft with "agree" through `astack:write-ticket`.
 - Never edit the description of a product spec ticket. Put an addendum in a comment.
 - Only a programme makes session sub-issues and decision issues, and only through `astack plan export` after a dry run.
-- A plan moves to the tracker only when the owner asks. `tracker.md` has the commands.
+- Export a plan to the tracker only when the owner asks. `tracker.md` has the commands.

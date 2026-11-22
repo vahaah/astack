@@ -3,7 +3,6 @@ import {
 	lstatSync,
 	mkdirSync,
 	readdirSync,
-	readFileSync,
 	readlinkSync,
 	realpathSync,
 	symlinkSync,
@@ -39,21 +38,6 @@ import {
 	readMachinePaths,
 	tildePath,
 } from "./lib/global.ts";
-import {
-	codexState,
-	describeMigration,
-	LEAKED_PROJECTS,
-	type MigrationPaths,
-	type MigrationState,
-	migrationPaths,
-	migrationPending,
-	migrationRefusal,
-	NEW_LINKS,
-	NEW_PLUGINS,
-	OLD_LINKS,
-	OLD_MARKETPLACE,
-	settingsState,
-} from "./lib/migration.ts";
 import {
 	dryRunProject,
 	scratchDefault,
@@ -318,91 +302,6 @@ async function builtPluginRefusals(): Promise<string[]> {
 	);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
-
-function listNames(dir: string): string[] {
-	try {
-		return readdirSync(dir);
-	} catch {
-		return [];
-	}
-}
-
-async function migrationState(
-	paths: MigrationPaths,
-	home: string,
-	configDir: string,
-): Promise<MigrationState> {
-	const expand = (path: string) => expandHome(path, home);
-	const plugins = join(configDir, "plugins");
-	const known = await readJson(join(plugins, "known_marketplaces.json"));
-	const installed = await readJson(join(plugins, "installed_plugins.json"));
-	const installedIds = Object.keys(
-		isRecord(installed) && isRecord(installed.plugins) ? installed.plugins : {},
-	);
-	const astack = isRecord(known) ? known.astack : undefined;
-	const astackSource = isRecord(astack) ? astack.source : undefined;
-	const newRules = join(expand(paths.newRoot), "rules");
-	const rules = join(configDir, "rules");
-	const codexConfig = readText(join(home, ".codex", "config.toml"));
-	const codex = codexConfig === undefined ? undefined : codexState(codexConfig);
-	return {
-		oldMarketplace: isRecord(known) && OLD_MARKETPLACE in known,
-		oldPlugins: installedIds.filter((id) => id.endsWith(`@${OLD_MARKETPLACE}`)),
-		astackMarketplace:
-			isRecord(astackSource) && typeof astackSource.path === "string"
-				? astackSource.path
-				: undefined,
-		astackPlugins: NEW_PLUGINS.filter((id) => userInstalled(installed, id)),
-		oldRoot: existsSync(expand(paths.oldRoot)),
-		newRoot: existsSync(expand(paths.newRoot)),
-		rootIsOld: repoRoot === expand(paths.oldRoot),
-		savedCache: existsSync(
-			join(expand(paths.saved), `${OLD_MARKETPLACE}-cache`),
-		),
-		oldCache: existsSync(join(plugins, "cache", OLD_MARKETPLACE)),
-		oldLinks: OLD_LINKS.filter(
-			(name) => linkProbe(join(rules, name)).kind !== "missing",
-		),
-		newLinks: NEW_LINKS.filter(([source, link]) => {
-			const probed = linkProbe(join(rules, link));
-			return (
-				probed.kind === "symlink" &&
-				resolve(rules, probed.target ?? "") === join(newRules, source)
-			);
-		}).length,
-		tracked: settingsState(
-			await readJson(join(expand(paths.dotfiles), "settings.json")),
-		),
-		live: settingsState(await readJson(join(configDir, "settings.json"))),
-		strayConfig:
-			configDir === join(home, ".claude") &&
-			existsSync(join(configDir, ".claude.json")),
-		leakedProjects: listNames(join(configDir, "projects")).filter((name) =>
-			new Bun.Glob(LEAKED_PROJECTS).match(name),
-		).length,
-		codex: codex?.settings,
-		codexAstack: codex?.astack ?? false,
-		cursorAstack: existsSync(
-			join(home, ".cursor/plugins/local/astack/.cursor-plugin/plugin.json"),
-		),
-	};
-}
-
-function userInstalled(installed: unknown, id: string): boolean {
-	return installedIn(installed).present.includes(id);
-}
-
 function realDir(path: string): string | undefined {
 	try {
 		const real = realpathSync(path);
@@ -571,7 +470,7 @@ async function applyGlobal(
 		console.error(machine.error);
 		return 2;
 	}
-	const paths = migrationPaths(machine.value);
+	const paths = machine.value;
 	const profileDirs = [paths.config, ...paths.profiles];
 	const home = homedir();
 	const profileDir = resolve(
@@ -601,13 +500,8 @@ async function applyGlobal(
 		...(skillsTxt === undefined ? {} : { skillsTxt }),
 		flowSkills: flowSkills.value,
 	});
-	const migration = await migrationState(paths, home, configDir);
-	const pending = migrationPending(migration);
-	const planRoot = migration.rootIsOld
-		? expandHome(paths.newRoot, home)
-		: repoRoot;
 	const steps = planGlobal({
-		root: planRoot,
+		root: repoRoot,
 		home,
 		configDir,
 		knownMarketplaces: await readJson(
@@ -636,23 +530,8 @@ async function applyGlobal(
 		`Claude config dir: ${tildePath(configDir, home)}${configDir === profileDir ? "" : ` (the plugins dir of ${tildePath(profileDir, home)} links here, so installs record this path)`}`,
 	);
 	console.log();
-	console.log("## Migration from agent-stack");
-	console.log();
-	console.log(
-		pending
-			? "The agent-stack install is still active. Do these steps in order. docs/migration.md holds the same steps."
-			: "No agent-stack install is active. docs/migration.md holds these steps.",
-	);
-	console.log();
-	for (const line of describeMigration(paths, migration)) console.log(line);
-	console.log();
 	console.log("## Plan");
 	console.log();
-	if (migration.rootIsOld)
-		console.log(
-			`This plan is for ${paths.newRoot}, the path after the rename of the migration.`,
-		);
-	if (migration.rootIsOld) console.log();
 	steps.forEach((step, index) => {
 		const [first, ...rest] = describeStep(step, home);
 		console.log(`${index + 1}. ${first}`);
@@ -684,11 +563,6 @@ async function applyGlobal(
 				: "Dry run: nothing was changed.",
 		);
 		return refused ? 1 : 0;
-	}
-	const migrationRefused = migrationRefusal(migration);
-	if (migrationRefused !== undefined) {
-		console.error(migrationRefused);
-		return 1;
 	}
 	if (refused) {
 		console.error(
