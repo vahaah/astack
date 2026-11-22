@@ -4,8 +4,6 @@ import type { CommentLimits, CommentSize, LengthKind } from "./limits.ts";
 import { parseSuppression } from "./suppressions.ts";
 import type { CommentLine, CommentUnit } from "./units.ts";
 
-export type Verdict = "deny" | "keep" | "judge";
-
 export type DenyRule =
 	| "narration"
 	| "provenance"
