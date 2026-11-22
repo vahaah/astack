@@ -531,18 +531,6 @@ function modelCheck(
 		dependencies,
 	});
 	if (!plan.ok) return plan;
-	const known = new Set([
-		...model.invariants,
-		...model.properties,
-		...plan.value.actions,
-	]);
-	const ref = proof.scope
-		.flatMap((row) => row.modelRefs)
-		.find((name) => !known.has(name));
-	if (ref !== undefined)
-		return err(
-			`a scope row cites ${ref}, which is no configured property and no model action`,
-		);
 	const action = proof.abstraction.relation.find(
 		(row) => !plan.value.actions.has(row.modelAction),
 	);

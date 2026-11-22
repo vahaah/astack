@@ -77,6 +77,12 @@ export const PROOF_FILES: Files = {
 	"formal/Gate.cfg": GATE_CFG,
 };
 
+type ScopeRow = {
+	path: string;
+	obligation: string;
+	modelRefs?: readonly string[];
+};
+
 export function validProof(base: string) {
 	const dependencies: string[] = [];
 	const carrier: Record<string, string> = {
@@ -93,19 +99,20 @@ export function validProof(base: string) {
 		{ law: "monad-right", status: "witnessed", witness: "model:TypeOK" },
 		{ law: "monad-assoc", status: "witnessed", witness: "control:C1" },
 	];
+	const scope: ScopeRow[] = [
+		{ path: ".astack/**", obligation: "P1" },
+		{ path: "CONTEXT.md", obligation: "P1" },
+		{ path: "docs/**", obligation: "P1" },
+		{ path: "spec/**", obligation: "P1" },
+		{ path: "tests/**", obligation: "P1" },
+		{ path: "src/**", obligation: "P1" },
+		{ path: "formal/*", obligation: "P1" },
+	];
 	return {
 		version: 1,
 		change: "gate-admission",
 		base,
-		scope: [
-			{ path: ".astack/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "CONTEXT.md", obligation: "P1", modelRefs: ["TypeOK"] },
-			{ path: "docs/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "spec/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "tests/**", obligation: "P1", modelRefs: ["Admit"] },
-			{ path: "src/**", obligation: "P1", modelRefs: ["Admit"] },
-			{ path: "formal/*", obligation: "P1", modelRefs: ["Ends"] },
-		],
+		scope,
 		domain: {
 			context: "Gate admission",
 			glossary: "CONTEXT.md",

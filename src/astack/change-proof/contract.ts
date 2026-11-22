@@ -64,7 +64,6 @@ export type FileLink = { readonly path: string; readonly symbol: string };
 export type ScopeRow = {
 	readonly path: string;
 	readonly obligation: string;
-	readonly modelRefs: readonly string[];
 };
 
 export const GOVERNING_METADATA = ["landed-header-value"] as const;
@@ -236,7 +235,7 @@ export function isRepoPath(path: string): boolean {
 
 type Sink = { first: string | undefined };
 
-type Fields = {
+export type Fields = {
 	at(key: string): string;
 	fail(key: string, message: string): void;
 	value(key: string): unknown;
@@ -505,6 +504,48 @@ function readExpectation(fields: Fields): Expectation {
 	};
 }
 
+export const MODEL_KEYS = [
+	"module",
+	"config",
+	"dependencies",
+	"bounds",
+	"fairness",
+	"invariants",
+	"properties",
+] as const;
+
+export function readModel(model: Fields): ModelContract {
+	return {
+		module: model.path("module", ".tla"),
+		config: model.path("config", ".cfg"),
+		dependencies: model.paths("dependencies", 0, ".tla"),
+		bounds: model.texts("bounds", 1),
+		fairness: model.texts("fairness", 0),
+		invariants: model.texts("invariants", 1, TLA_NAME, "a TLA+ name"),
+		properties: model.texts("properties", 0, TLA_NAME, "a TLA+ name"),
+	};
+}
+
+export const NEGATIVE_KEYS = [
+	"file",
+	"action",
+	"original",
+	"replacement",
+	"defect",
+	"expect",
+] as const;
+
+export function readNegative(negative: Fields): NegativeControl {
+	return {
+		file: negative.path("file", ".tla"),
+		action: negative.text("action", TLA_NAME, "a TLA+ name"),
+		original: negative.text("original"),
+		replacement: negative.string("replacement"),
+		defect: negative.text("defect"),
+		expect: negative.object("expect", ["kind", "name"], readExpectation),
+	};
+}
+
 function readProof(fields: Fields): ChangeProof {
 	if (fields.value("version") !== 1) fields.fail("version", "must be 1");
 	return {
@@ -518,7 +559,6 @@ function readProof(fields: Fields): ChangeProof {
 			(row) => ({
 				path: row.path("path"),
 				obligation: row.text("obligation", CRITERION, "a criterion ID"),
-				modelRefs: row.texts("modelRefs", 1, TLA_NAME, "a TLA+ name"),
 			}),
 		),
 		domain: fields.object(
@@ -704,39 +744,8 @@ function readProof(fields: Fields): ChangeProof {
 				omitted: abstraction.texts("omitted", 0),
 			}),
 		),
-		model: fields.object(
-			"model",
-			[
-				"module",
-				"config",
-				"dependencies",
-				"bounds",
-				"fairness",
-				"invariants",
-				"properties",
-			],
-			(model) => ({
-				module: model.path("module", ".tla"),
-				config: model.path("config", ".cfg"),
-				dependencies: model.paths("dependencies", 0, ".tla"),
-				bounds: model.texts("bounds", 1),
-				fairness: model.texts("fairness", 0),
-				invariants: model.texts("invariants", 1, TLA_NAME, "a TLA+ name"),
-				properties: model.texts("properties", 0, TLA_NAME, "a TLA+ name"),
-			}),
-		),
-		negative: fields.object(
-			"negative",
-			["file", "action", "original", "replacement", "defect", "expect"],
-			(negative) => ({
-				file: negative.path("file", ".tla"),
-				action: negative.text("action", TLA_NAME, "a TLA+ name"),
-				original: negative.text("original"),
-				replacement: negative.string("replacement"),
-				defect: negative.text("defect"),
-				expect: negative.object("expect", ["kind", "name"], readExpectation),
-			}),
-		),
+		model: fields.object("model", MODEL_KEYS, readModel),
+		negative: fields.object("negative", NEGATIVE_KEYS, readNegative),
 		limits: fields.texts("limits", 1),
 	};
 }

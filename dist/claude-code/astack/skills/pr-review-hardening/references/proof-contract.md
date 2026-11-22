@@ -30,7 +30,7 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 | Record | Keys of [proof-example.json](proof-example.json) |
 |---|---|
 | `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
-| `scope` | `[{path, obligation, modelRefs}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
+| `scope` | `[{path, obligation}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
 | `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
 | `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
 | `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |

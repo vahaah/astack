@@ -203,7 +203,6 @@ describe("astack check proof", () => {
 			manifest.scope.push({
 				path: ".gitignore",
 				obligation: "P1",
-				modelRefs: ["AdmitFresh"],
 			});
 			writeFileSync(path, JSON.stringify(manifest));
 			git(repo.root, "rm", "--cached", "-q", ".astack/proof.json");
@@ -329,7 +328,6 @@ describe("astack check proof", () => {
 				p.scope.push({
 					path: ".gitignore",
 					obligation: "P1",
-					modelRefs: ["AdmitFresh"],
 				});
 			},
 			{

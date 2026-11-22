@@ -258,6 +258,35 @@ describe("admitChangeProof", () => {
 		);
 	});
 
+	test("[control:rl-schema] a scope row may omit modelRefs, and a modelRefs name that no model defines still admits", () => {
+		const proof = parsed((p) => {
+			p.scope[0] = {
+				path: ".astack/**",
+				obligation: "P1",
+				modelRefs: ["Gone"],
+			};
+		});
+		if (!proof.ok) throw new Error(proof.error.message);
+		expect(proof.value.scope[1]).toEqual({
+			path: "CONTEXT.md",
+			obligation: "P1",
+		});
+		expect(admitChangeProof(proof.value, facts(SNAPSHOT))).toEqual(
+			ok({
+				change: "gate-admission",
+				base: BASE,
+				diffBase: DIFF_BASE,
+				head: SNAPSHOT.head,
+				digest: SNAPSHOT.digest,
+				files: 13,
+				positive: COUNTS,
+				negative: VIOLATION,
+				action: "Admit",
+				restored: COUNTS,
+			}),
+		);
+	});
+
 	test("[control:proof-stale-digest] rejects evidence when an input file changed during the runs, and names it", () => {
 		expect(
 			admitChangeProof(validChangeProof(), facts(changedEntries(1))),
