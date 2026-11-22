@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseRegistry } from "../../src/astack/change-proof/registry.ts";
 import { REGISTRY_PATH } from "../../src/astack/change-proof/rung.ts";
+import type {
+	BaseAuthority,
+	PullRequestState,
+} from "../../src/astack/pr/github.ts";
+import { DEFAULT_MERGE_PROFILE } from "../../src/astack/pr/profile.ts";
 
 type TlaValue =
 	| string
@@ -518,4 +523,105 @@ export function push(
 	recorded: boolean,
 ): boolean {
 	return !skips || (target === "head" && recorded);
+}
+
+export function oneOf<T>(table: Readonly<Record<string, T>>, name: string): T {
+	const found = table[name];
+	if (found === undefined) throw new Error(`no conformance form for ${name}`);
+	return found;
+}
+
+export const CLAUSE_TEXT: Readonly<Record<string, string>> = {
+	merge: "Merge it.",
+	mergeOne: "Merge #12.",
+	negatedMerge: "Do not merge.",
+	fullSend: "Full send.",
+	negatedFullSend: "No full send.",
+	fullStop: "Full stop.",
+	other: "Fix the tests.",
+};
+export const PR_OF: Readonly<Record<number, { number: number; base: string }>> =
+	{
+		1: { number: 12, base: "main" },
+		2: { number: 34, base: "dev" },
+	};
+const HEAD_SHA = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+
+function committed(merge: object): BaseAuthority {
+	return {
+		kind: "committed",
+		commit: HEAD_SHA,
+		profile: { ...DEFAULT_MERGE_PROFILE, ...merge },
+	};
+}
+
+export const AUTHORITY: Readonly<Record<string, BaseAuthority>> = {
+	turn: committed({}),
+	standing: committed({ authority: "standing" }),
+	base: committed({ standingBases: ["main"] }),
+	unread: { kind: "unread", reason: "the conformance test gives no profile" },
+};
+
+export function pullRequest(
+	n: number,
+	authority: BaseAuthority,
+): PullRequestState {
+	const { number, base } = oneOf(PR_OF, String(n));
+	return {
+		number,
+		url: `https://github.com/o/r/pull/${number}`,
+		title: "feat: x",
+		body: "Part of ABC-1",
+		base,
+		head: HEAD_SHA,
+		openThreads: 0,
+		threadsListed: true,
+		checks: "success",
+		checkedHead: HEAD_SHA,
+		authority,
+	};
+}
+
+export function orderedPrompts(
+	model: SessionGuardsModel,
+): readonly (readonly string[])[] {
+	return model.prompts.flatMap((p) =>
+		p.length === 1 ? [p] : [p, [...p].reverse()],
+	);
+}
+
+export function promptPayload(
+	session: string,
+	project: string,
+	clauses: readonly string[],
+	source: string,
+): string {
+	const text = clauses.map((clause) => oneOf(CLAUSE_TEXT, clause)).join(" ");
+	const sources: Readonly<Record<string, object>> = {
+		user: { prompt: text, source: "user" },
+		none: { prompt: text },
+		frame: { prompt: `[Workflow harness] ${text}` },
+		machine: { prompt: text, source: "agent" },
+	};
+	return JSON.stringify({
+		session_id: session,
+		cwd: project,
+		hook_event_name: "UserPromptSubmit",
+		...oneOf(sources, source),
+	});
+}
+
+export function toolPayload(
+	session: string,
+	project: string,
+	name: string,
+	input: object,
+): string {
+	return JSON.stringify({
+		session_id: session,
+		cwd: project,
+		hook_event_name: "PreToolUse",
+		tool_name: name,
+		tool_input: input,
+	});
 }

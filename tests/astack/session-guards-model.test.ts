@@ -15,24 +15,25 @@ import {
 } from "../../src/astack/hook/handlers/destructive.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { isScratchPath } from "../../src/astack/paths.ts";
-import type {
-	BaseAuthority,
-	PullRequestState,
-	ReadPullRequest,
-} from "../../src/astack/pr/github.ts";
-import { DEFAULT_MERGE_PROFILE } from "../../src/astack/pr/profile.ts";
+import type { ReadPullRequest } from "../../src/astack/pr/github.ts";
 import {
+	AUTHORITY,
 	type Change,
 	type Command,
 	codeLost,
 	loadSessionGuards,
 	MERGE_START,
 	merge,
+	oneOf,
+	orderedPrompts,
 	pinFailures,
 	prompt,
+	promptPayload,
+	pullRequest,
 	push,
 	readSessionGuards,
 	scratch,
+	toolPayload,
 } from "./session-guards-model.ts";
 
 const ROOT = join(import.meta.dir, "../..");
@@ -56,12 +57,6 @@ function context(cwd: string, env: Context["env"]): Context {
 		today: "2026-11-22",
 		session: "conformance",
 	};
-}
-
-function oneOf<T>(table: Readonly<Record<string, T>>, name: string): T {
-	const found = table[name];
-	if (found === undefined) throw new Error(`no conformance form for ${name}`);
-	return found;
 }
 
 describe("the SessionGuards model reader", () => {
@@ -262,102 +257,13 @@ describe("[control:sg-conformance-push] the push guard answers each target of th
 	});
 });
 
-const CLAUSE_TEXT: Readonly<Record<string, string>> = {
-	merge: "Merge it.",
-	mergeOne: "Merge #12.",
-	negatedMerge: "Do not merge.",
-	fullSend: "Full send.",
-	negatedFullSend: "No full send.",
-	fullStop: "Full stop.",
-	other: "Fix the tests.",
-};
-const PR_OF: Readonly<Record<number, { number: number; base: string }>> = {
-	1: { number: 12, base: "main" },
-	2: { number: 34, base: "dev" },
-};
-const HEAD_SHA = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
-
-function committed(merge: object): BaseAuthority {
-	return {
-		kind: "committed",
-		commit: HEAD_SHA,
-		profile: { ...DEFAULT_MERGE_PROFILE, ...merge },
-	};
-}
-
-const AUTHORITY: Readonly<Record<string, BaseAuthority>> = {
-	turn: committed({}),
-	standing: committed({ authority: "standing" }),
-	base: committed({ standingBases: ["main"] }),
-	unread: { kind: "unread", reason: "the conformance test gives no profile" },
-};
-
-function pullRequest(n: number, authority: BaseAuthority): PullRequestState {
-	const { number, base } = oneOf(PR_OF, String(n));
-	return {
-		number,
-		url: `https://github.com/o/r/pull/${number}`,
-		title: "feat: x",
-		body: "Part of ABC-1",
-		base,
-		head: HEAD_SHA,
-		openThreads: 0,
-		threadsListed: true,
-		checks: "success",
-		checkedHead: HEAD_SHA,
-		authority,
-	};
-}
-
-function orderedPrompts(): readonly (readonly string[])[] {
-	return MODEL.prompts.flatMap((p) =>
-		p.length === 1 ? [p] : [p, [...p].reverse()],
-	);
-}
-
-function promptPayload(
-	session: string,
-	project: string,
-	clauses: readonly string[],
-	source: string,
-): string {
-	const text = clauses.map((clause) => oneOf(CLAUSE_TEXT, clause)).join(" ");
-	const sources: Readonly<Record<string, object>> = {
-		user: { prompt: text, source: "user" },
-		none: { prompt: text },
-		frame: { prompt: `[Workflow harness] ${text}` },
-		machine: { prompt: text, source: "agent" },
-	};
-	return JSON.stringify({
-		session_id: session,
-		cwd: project,
-		hook_event_name: "UserPromptSubmit",
-		...oneOf(sources, source),
-	});
-}
-
-function toolPayload(
-	session: string,
-	project: string,
-	name: string,
-	input: object,
-): string {
-	return JSON.stringify({
-		session_id: session,
-		cwd: project,
-		hook_event_name: "PreToolUse",
-		tool_name: name,
-		tool_input: input,
-	});
-}
-
 describe("[control:sg-conformance-merge] the merge guard answers each merge of the model", () => {
 	test("each prompt, source, attended state, base authority and PR gives the merge verdict of the model, and an MCP merge and a failed PR read give a deny", () => {
 		const project = join(TEMP, "merge-project");
 		mkdirSync(project, { recursive: true });
 		const stateDir = join(TEMP, "merge-state");
 		let id = 0;
-		const verdicts = orderedPrompts().flatMap((clauses) =>
+		const verdicts = orderedPrompts(MODEL).flatMap((clauses) =>
 			MODEL.sources.flatMap((source) =>
 				[true, false].flatMap((attended) =>
 					MODEL.baseAuthorities.flatMap((authority) =>
@@ -430,7 +336,7 @@ describe("[control:sg-conformance-merge] the merge guard answers each merge of t
 			),
 		);
 		expect(verdicts.length).toBe(
-			orderedPrompts().length *
+			orderedPrompts(MODEL).length *
 				MODEL.sources.length *
 				2 *
 				MODEL.baseAuthorities.length *
