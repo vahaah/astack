@@ -56,6 +56,7 @@ const LEADING: readonly Step[] = [
 const TRAILING_STEPS: readonly Step[] = [
 	mask(/\$\{[^}\s]+\}|\$[A-Za-z_][A-Za-z0-9_]*/g),
 	mask(/(?<![\w-])--?[A-Za-z][\w-]*/g),
+	mask(/(?<![\w.,])\d+(?:,\d{3})*(?:\.\d+)? (?:ms|s|min|h|KB|MB|GB|px)\b/g),
 	mask(/\bv?\d+(?:\.\d+)+(?:-[\w.]+)?\b/g),
 	mask(/\b[A-Z][A-Z0-9]+-\d+\b/g),
 	mask(/(?<![\w&])#\d+\b/g),

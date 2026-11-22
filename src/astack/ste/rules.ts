@@ -139,7 +139,7 @@ const sentenceLength: SentenceRule = (sentence) => {
 			"sentence-length",
 			sentence,
 			sentence.words.slice(0, 8).join(" "),
-			`${count} words. A ${sentence.kind} sentence has ${limit} words or fewer. Split it.`,
+			`${count} words. A ${sentence.kind} sentence has ${limit} words or fewer. Split it, or put a list of 3 or more items in a bullet list.`,
 		),
 	];
 };

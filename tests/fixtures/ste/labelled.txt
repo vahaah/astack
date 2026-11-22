@@ -294,6 +294,7 @@
 - The dashboard shows the active users, the failed jobs and the response time for each service.
 - The team keeps the old API for one more quarter because two clients still call it.
 - Each worker takes one job from the queue and runs it with a timeout of thirty seconds.
+- The hook took 12 ms on run one, 3.4 MB of memory, 40 KB of the budget, 8 s on run two and 9 min on run three.
 
 # rule: word-list
 + Ensure that the port is free.
