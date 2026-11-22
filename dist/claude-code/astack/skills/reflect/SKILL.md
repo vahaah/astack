@@ -61,7 +61,8 @@ The user can change its home.
 
 ## 4. Apply the accepted items
 
-- A skill edit goes to that skill. A new skill follows the `Authoring or modifying a skill` playbook of `astack:mode`.
+- Make a skill edit in its source checkout, never in a project copy or an installed copy. A plugin cache is an installed copy. Look for the checkout at the loaded path, then in the current repo, such as `marketplace/plugins/astack/skills/<name>/SKILL.md`. Then ask the user. With no source checkout, the edit goes to Backlog.
+- A new skill follows the `Authoring or modifying a skill` playbook of `astack:mode`.
 - `CLAUDE.md` and `AGENTS.md` enter each context. Add only a pointer, or a rule for a mistake that repeats.
 - A file in `.claude/rules/` holds one line for each judgment rule.
 - A doc holds reference material. Extend an existing doc first.

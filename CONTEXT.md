@@ -195,6 +195,20 @@ The cap on the `*.md` words of each skill tree and on their total, in `scripts/l
 _Avoid_: Size limit, token budget
 _Code_: `budgetReport`
 
+### Installed copy
+
+A skill folder that an install or a build wrote, such as a plugin cache or `dist/`.
+An agent reads it, but never edits it, because the next install or build replaces it.
+_Avoid_: Plugin copy, local skill
+_Code_: `marketplace/plugins/astack/skills/reflect/SKILL.md`
+
+### Source checkout
+
+A git work tree that tracks a skill, outside an installed copy and the apply `managed` list.
+An accepted skill edit goes there. With no source checkout, the edit goes to Backlog.
+_Avoid_: Source copy, repo copy
+_Code_: `marketplace/plugins/astack/skills/reflect/SKILL.md`
+
 ### Finding event
 
 One JSON line in the `events.jsonl` file of a session folder for one STE or comment finding of a hook.

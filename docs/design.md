@@ -198,7 +198,7 @@ The card also holds the standing rules. They apply without the mode.
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only on an owner call. Follow-ups update the open PR.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before a claim, and open each cited file first. A zero result needs a positive control.
 - State. The plan, the tracker and git hold state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
-- Replies. Write in STE. Give the result first. Do not repeat agreed items. Fix a broken skill or rule in astack, never in a project copy.
+- Replies. Write in STE. Give the result first. Do not repeat agreed items. Fix a broken skill or rule in astack, never in a project copy or an installed copy.
 
 ## 5. The long-term development model and astack:plan
 
