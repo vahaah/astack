@@ -39,7 +39,6 @@ With no Agent tool, do the exploration and the explanation yourself.
 A request to teach also asks why the code has its shape.
 Then also follow `why` on the same target.
 Read the file that `astack skill-path astack:why` prints.
-Keep `why` narrow, such as git and one or two named sources, unless the reasons are the question.
 Weave its reasons into each heading.
 Keep its confidence words, because its uncertainty is part of the evidence.
 
