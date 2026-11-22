@@ -183,9 +183,28 @@ const SAFE_COUNT = RESULT_BLOCK.replace(
 	"",
 );
 
+const TUPLES = `
+export function pair(grant: MergeGrant): [MergeGrant, Verdict] {
+	return [grant, judge(grant)];
+}
+
+export function split(grant: MergeGrant): [Verdict, MergeGrant] {
+	return [judge(grant), grant];
+}
+
+export function many(grant: MergeGrant): MergeGrant[] {
+	return [grant, grant];
+}
+`;
+
+const TUPLE_BLOCK = `context Proof
+step pair : MergeGrant -> (MergeGrant, Verdict)
+step split : MergeGrant -> (MergeGrant, Verdict)
+step many : MergeGrant -> (MergeGrant, MergeGrant)`;
+
 describe("the tsc witness", () => {
 	test(
-		"[control:witness-wrong-type] a linked mergeGrantIn that returns MergeGrant[] fails at its block line in each reading, and the corrected fixture passes",
+		"[control:witness-wrong-type] a linked mergeGrantIn that returns MergeGrant[] fails at its block line in each reading, a tuple in the other order and an array for a tuple fail at their lines, and the corrected fixture passes",
 		async () => {
 			const wrong = GRANT.replace(
 				"Result<MergeGrant, GrantProblem> {",
@@ -226,12 +245,21 @@ describe("the tsc witness", () => {
 						"effect",
 					),
 				),
+				tupleOrderAndArray: lines(
+					await verdict(
+						witnessRepo({ "src/grant.ts": GRANT + TUPLES }),
+						TUPLE_BLOCK,
+						["src/grant.ts#pair", "src/grant.ts#split", "src/grant.ts#many"],
+						"result",
+					),
+				),
 			};
 			expect(results).toEqual({
 				result: "pass",
 				resultWrong: [3, 5],
 				effect: "pass",
 				effectWrong: [2],
+				tupleOrderAndArray: [3, 4],
 			});
 		},
 		heavyTestTimeout,

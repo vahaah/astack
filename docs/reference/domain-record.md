@@ -16,6 +16,6 @@ The [ladder model](../../formal/ProofLadder.tla) examines the law rung.
 ## Claim boundary
 
 The witness compares the declared types with the exported types by name, and a type that only `export *` gives is no export of the scan.
-A step check reads a readonly array and a mutable array of one type as one type. A flow pair still needs the assignment.
+A step check reads a readonly array and a mutable array of one type as one type. It reads a readonly tuple and a mutable tuple in the same way, but it keeps the order and the length of each tuple. A flow pair still needs the assignment.
 The ladder model takes the law kind as a true observation of the block.
 The witness reads the tsc of the repo, so a repo with no `node_modules/.bin/tsc` stops a manifest with `domain.plan`.

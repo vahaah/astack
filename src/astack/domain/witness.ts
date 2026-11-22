@@ -72,7 +72,7 @@ export function scanExports(text: string): ModuleExports {
 
 const HEADER = [
 	"type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? true : false;",
-	"type Plain<T> = [T] extends [readonly (infer U)[]] ? Plain<U>[] : T;",
+	"type Plain<T> = [T] extends [readonly unknown[]] ? { -readonly [K in keyof T]: Plain<T[K]> } : T;",
 	"type Same<A, D> = Equals<Plain<A>, Plain<D>> extends true ? true : { readonly linked: A; readonly declared: D };",
 	"type Fits<A, D> = [A] extends [D] ? true : { readonly gives: A; readonly takes: D };",
 	"type Expect<T extends true> = T;",
