@@ -823,24 +823,53 @@ describe("integrated ADR ratification", () => {
 		},
 	);
 
-	test(
-		"[control:cp-record-decision] a record whose D1 and D2 each hold a Category composition admits a manifest that cites D2, and each title that D2 lacks comes from the whole file",
-		() => {
+	const composition = (d1: string, d2: string): string =>
+		`${existingRecord.replace("parseGate >=> admitGate preserves rejection.", d1)}\n### D2. Admit only parsed input\n\n#### Category composition\n\n${d2}\n`;
+
+	test.each([
+		[
+			"the arrows under D2 admit, and each title that D2 lacks comes from the whole file",
+			composition(
+				"An older composition.",
+				"parseGate >=> admitGate preserves rejection.",
+			),
+			undefined,
+		],
+		[
+			"a D2 section with no arrow stops, also when D1 holds the arrows",
+			composition(
+				"parseGate >=> admitGate preserves rejection.",
+				"An older composition.",
+			),
+			`${RECORD} does not explain parseGate in Category composition`,
+		],
+	])(
+		"[control:cp-record-decision] a record whose D1 and D2 each hold a Category composition, cited at D2: %s",
+		(_name, record, stop) => {
 			const repo = candidate(
 				`${PROPOSAL}\n### D2. Admit only parsed input\n\nThe gate parses input first.\n`,
 			);
 			repo.manifest.domain.adrs = [{ ...reference(repo), decision: "D2" }];
 			save(repo);
-			writeFileSync(
-				join(repo.root, RECORD),
-				`${existingRecord.replace("parseGate >=> admitGate preserves rejection.", "An older composition.")}\n### D2. Admit only parsed input\n\n#### Category composition\n\nparseGate >=> admitGate preserves rejection.\n`,
-			);
+			writeFileSync(join(repo.root, RECORD), record);
 			const result = run(repo.root);
-			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
-				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			expect({
+				code: result.code,
+				last: result.out.trimEnd().split("\n").at(-1),
+				err: result.err,
+			}).toEqual(
+				stop === undefined
+					? {
+							code: 0,
+							last: `ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+							err: "",
+						}
+					: {
+							code: 1,
+							last: `stop: proof domain: ${stop}`,
+							err: rule("domain"),
+						},
 			);
-			expect(result.err).toBe("");
-			expect(result.code).toBe(0);
 		},
 		heavyTestTimeout,
 	);

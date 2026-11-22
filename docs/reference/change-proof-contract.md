@@ -36,7 +36,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-manifest-base] With `--base`, two manifests that the diff from the merge base changes stop with both names. A diff that changes none stops and names the merge base. A manifest that the merge base holds stops with its path, also in `check ci-pins`.
 - [criterion:CP-manifest-held] A tree that keeps a manifest of its manifest base stops with that path, also when the change rewrites it as its own. `.astack/proof.json` beside a folder manifest stops too. An unstaged delete of the base manifest admits.
 - [criterion:CP-adr-decision] An Accepted ordinary ADR that explains the arrows only under the cited decision passes the domain stage. A decision with only subsections passes, and an empty decision stops.
-- [criterion:CP-record-decision] A proof record whose D1 and D2 each hold a Category composition admits a manifest that cites D2. A title that the D2 span lacks comes from the whole record. A record with a missing section still stops.
+- [criterion:CP-record-decision] A proof record whose D1 and D2 each hold a Category composition admits a manifest that cites D2. A D2 section with no arrow stops, also when D1 holds the arrows. A title that the D2 span lacks comes from the whole record. A record with a missing section still stops.
 
 ## Claim boundary
 
