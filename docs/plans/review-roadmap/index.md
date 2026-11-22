@@ -25,7 +25,7 @@ The programme has 36 blocks in 8 milestones, and each block is one PR.
 - `bun run check` takes 200.7 s, and it runs `check:proof` twice.
 - No check compares the effects and laws of the proof contract with the code. TLC reads only the model files, so a code mutation cannot fail TLC.
 - CONTEXT.md holds glossary terms, but it names no bounded context.
-- ADRs 0011 to 0019 belong to index blocks. B01 takes ADR 0011, B05 takes 0014, B13 takes 0020, B03 takes 0021, B09 takes 0022, B20 takes 0023 and B14 takes 0024.
+- ADRs 0011 to 0019 belong to index blocks. B01 takes ADR 0011, B05 takes 0014, B13 takes 0020, B03 takes 0021 and B09 takes 0022. B20 takes 0023, B14 takes 0024 and B15 takes 0025.
 
 ## Goal
 
@@ -173,6 +173,7 @@ Blocks.
 - Which STE rules B11 softens. B09 must record a sample with labels for each rule.
 - How the B06 registry reuses a model run, and how B07 finds a manifest with no `--base`.
 - How the B28 witness reads generic steps, and whether a 15-line block fits real plans.
+- Which block corrects the launcher sentence of the engine and the stub fallback. Both say that the launcher exits 0 with no runtime, but it exits 1. ADR 0025 names this fix.
 
 ## Premises
 

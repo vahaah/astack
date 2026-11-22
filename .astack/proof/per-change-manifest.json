@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "per-change-manifest",
-	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
+	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
 	"scope": [
 		{
 			"path": ".astack/proof/per-change-manifest.json",
@@ -390,17 +390,17 @@
 			{
 				"law": "monad-left",
 				"status": "witnessed",
-				"witness": "model:ResultLeftIdentity"
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-right",
 				"status": "witnessed",
-				"witness": "model:ResultRightIdentity"
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-assoc",
 				"status": "witnessed",
-				"witness": "model:ResultAssociativity"
+				"witness": "control:result-monad-laws"
 			}
 		],
 		"typedWitness": "src/astack/cli/commands/check/proof.ts"
@@ -471,8 +471,7 @@
 			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 			"Each failure kind maps to one section of the proof contract.",
 			"Seven manifest observations: one, fallback, several, none, merged, held and beside. Only a run with --base can find none or merged.",
-			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
-			"Finite Result laws use two values, two errors and all total functions between them."
+			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 		],
 		"fairness": ["WF_vars(Next)"],
 		"invariants": [
@@ -490,10 +489,7 @@
 			"MovedAuthorityStops",
 			"StaleStopNamesPaths",
 			"StopNamesSection",
-			"OneManifestPerChange",
-			"ResultLeftIdentity",
-			"ResultRightIdentity",
-			"ResultAssociativity"
+			"OneManifestPerChange"
 		],
 		"properties": ["EventuallyTerminal"]
 	},

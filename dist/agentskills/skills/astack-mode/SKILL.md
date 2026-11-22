@@ -47,13 +47,13 @@ Read the state. Run each command as its own Bash call, in parallel. Never chain 
 astack check-plan --brief
 git status --short --branch
 git log --oneline -5
-git rev-parse HEAD
-gh pr view --json number,state,isDraft,reviewDecision,mergeStateStatus,headRefOid
+astack check pr-head
 ```
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
-
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR. When they differ, the first step is a push of the local commits or a pull of the remote ones. Then read the state again.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
+After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again. When `UNPUSHED` lists a commit, push it first.
+When the branch has a PR, read `gh pr view --json number,state,isDraft,reviewDecision,mergeStateStatus`.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 Then take the first row that matches, and do that step. Do not only name it.
 
@@ -63,7 +63,7 @@ Then take the first row that matches, and do that step. Do not only name it.
 | The branch is behind its base and the owner asked for a sync before | `references/refresh.md` |
 | The branch has a finished build and no PR | `references/create-pr.md` |
 | The open PR is green, has no open threads, and the profile wants a hardening run that did not run on this head | `astack-pr-review-hardening` |
-| The open PR is green and clean | Report it as ready to merge. Merge only with a grant, through the `astack-mode` Shipping playbook |
+| The open PR is green and clean | Read what the merge starts, as the Shipping playbook says. Report it as ready to merge, and name each publish or deploy job, or say that there is none. Merge only with a grant, through that playbook |
 | A plan has a `now` step with no branch that meets its Exit | Build that step with the route that the plan names. Read `references/resume.md` |
 | A draft plan has open questions | `/astack-plan <slug>`. It asks the queued round |
 | Nothing above | Ask the owner what to build. Recommend one option from the tracker frontier |

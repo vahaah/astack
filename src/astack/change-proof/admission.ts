@@ -1,6 +1,6 @@
 import { adrProse, decisionSpan } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
-import { err, ok, type Result } from "../result.ts";
+import { all, andThen, err, map, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
 import {
 	type AdrReference,
@@ -190,12 +190,16 @@ function linkCheck(
 		: fail(`${link.path} does not mention the symbol ${link.symbol}`);
 }
 
-function first(checks: readonly (() => Check)[]): Check {
-	for (const check of checks) {
-		const result = check();
-		if (!result.ok) return result;
-	}
-	return PASS;
+function first<E>(
+	checks: readonly (() => Result<unknown, E>)[],
+): Result<undefined, E> {
+	return map(
+		checks.reduce<Result<unknown, E>>(
+			(done, check) => andThen(done, check),
+			ok(undefined),
+		),
+		() => undefined,
+	);
 }
 
 function headings(text: string): readonly string[] {
@@ -557,37 +561,42 @@ export function planModelFiles(
 	negative: NegativeControl,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<ModelPlan, string> {
-	const module = textOf(files, model.module);
-	if (!module.ok) return module;
-	const config = textOf(files, model.config);
-	if (!config.ok) return config;
-	const dependencies = new Map<string, string>();
-	for (const path of model.dependencies) {
-		const text = textOf(files, path);
-		if (!text.ok) return text;
-		dependencies.set(path, text.value);
-	}
-	return planModel(model, negative, {
-		module: module.value,
-		config: config.value,
-		dependencies,
-	});
+	return andThen(textOf(files, model.module), (module) =>
+		andThen(textOf(files, model.config), (config) =>
+			andThen(
+				all(
+					model.dependencies.map((path) =>
+						map(textOf(files, path), (text) => [path, text] as const),
+					),
+				),
+				(dependencies) =>
+					planModel(model, negative, {
+						module,
+						config,
+						dependencies: new Map(dependencies),
+					}),
+			),
+		),
+	);
 }
 
 function modelCheck(
 	proof: ChangeProof,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<ModelPlan, string> {
-	const plan = planModelFiles(proof.model, proof.negative, files);
-	if (!plan.ok) return plan;
-	const action = proof.abstraction.relation.find(
-		(row) => !plan.value.actions.has(row.modelAction),
+	return andThen(
+		planModelFiles(proof.model, proof.negative, files),
+		(planned) => {
+			const action = proof.abstraction.relation.find(
+				(row) => !planned.actions.has(row.modelAction),
+			);
+			if (action !== undefined)
+				return err(
+					`abstraction relation cites ${action.modelAction}, which is no action of the model`,
+				);
+			return ok(planned);
+		},
 	);
-	if (action !== undefined)
-		return err(
-			`abstraction relation cites ${action.modelAction}, which is no action of the model`,
-		);
-	return plan;
 }
 
 function stageOf<T>(
@@ -601,19 +610,16 @@ export function checkReferences(
 	proof: ChangeProof,
 	view: RepoView,
 ): Result<ModelPlan, Rejection> {
-	const domain = stageOf("domain", domainCheck(proof, view));
-	if (!domain.ok) return domain;
 	const linked = linkedControls(proof, view.files);
-	const category = stageOf(
-		"category",
-		categoryCheck(proof, view.files, linked),
+	return andThen(
+		first([
+			() => stageOf("domain", domainCheck(proof, view)),
+			() => stageOf("category", categoryCheck(proof, view.files, linked)),
+			() => stageOf("controls", linked),
+			() => stageOf("controls", scopeCheck(proof, view)),
+		]),
+		() => stageOf("model", modelCheck(proof, view.modelFiles)),
 	);
-	if (!category.ok) return category;
-	const controls = stageOf("controls", linked);
-	if (!controls.ok) return controls;
-	const scope = stageOf("controls", scopeCheck(proof, view));
-	if (!scope.ok) return scope;
-	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
 
 const STALE_NAMES = 10;

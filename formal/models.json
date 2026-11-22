@@ -233,6 +233,58 @@
 			]
 		},
 		{
+			"name": "PrHeadCheck",
+			"model": {
+				"module": "formal/PrHeadCheck.tla",
+				"config": "formal/PrHeadCheck.cfg",
+				"dependencies": [],
+				"bounds": [
+					"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+					"One check, one decision and at most one pull after a head stop."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"ActOnlyOnHeldHead",
+					"NoPrOnlyOnMessage",
+					"OtherResultStops"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/PrHeadCheck.tla",
+				"action": "Decide",
+				"original": "acted' = (result = \"ok\")",
+				"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+				"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
+				"expect": {
+					"kind": "invariant",
+					"name": "ActOnlyOnHeldHead"
+				}
+			},
+			"records": [
+				"docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md"
+			],
+			"covers": ["src/astack/cli/commands/check/pr-head.ts"],
+			"text": [
+				"marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/file-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/full-send/SKILL.md",
+				"marketplace/plugins/astack/skills/full-stop/SKILL.md",
+				"marketplace/plugins/astack/skills/modernize/SKILL.md",
+				"marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+				"marketplace/plugins/astack/skills/why/SKILL.md",
+				"marketplace/plugins/astack/skills/plan/references/sessions.md",
+				"marketplace/plugins/astack/skills/mode/SKILL.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+				"marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+				"marketplace/plugins/astack/skills/mode/references/create-pr.md",
+				"marketplace/plugins/astack/skills/mode/references/resume.md"
+			]
+		},
+		{
 			"name": "ProofAdmission",
 			"model": {
 				"module": "formal/ProofAdmission.tla",
@@ -242,8 +294,7 @@
 					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 					"Each failure kind maps to one section of the proof contract.",
 					"Seven manifest observations: one, fallback, several, none, merged, held and beside. Only a run with --base can find none or merged.",
-					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
-					"Finite Result laws use two values, two errors and all total functions between them."
+					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 				],
 				"fairness": ["WF_vars(Next)"],
 				"invariants": [
@@ -261,10 +312,7 @@
 					"MovedAuthorityStops",
 					"StaleStopNamesPaths",
 					"StopNamesSection",
-					"OneManifestPerChange",
-					"ResultLeftIdentity",
-					"ResultRightIdentity",
-					"ResultAssociativity"
+					"OneManifestPerChange"
 				],
 				"properties": ["EventuallyTerminal"]
 			},
@@ -285,13 +333,15 @@
 				"docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
 				"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 				"docs/adr/0012-change-proof-accepts-an-older-base.md",
-				"docs/adr/0014-each-proof-stop-names-its-cause.md"
+				"docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"docs/adr/0017-law-claims-run-on-code.md"
 			],
 			"covers": [
 				"src/astack/change-proof/**",
 				"src/astack/cli/commands/check/proof.ts",
 				"scripts/check-proof.ts",
-				"src/astack/result.ts"
+				"src/astack/result.ts",
+				"src/astack/hook/events.ts"
 			],
 			"text": []
 		},
@@ -482,11 +532,6 @@
 		{
 			"path": "src/astack/hook/encode/index.ts",
 			"reason": "The encoders print the combined verdict, and they decide nothing",
-			"control": "sg-guard-error"
-		},
-		{
-			"path": "src/astack/hook/events.ts",
-			"reason": "It defines the handler and verdict shapes, and it decides nothing",
 			"control": "sg-guard-error"
 		},
 		{

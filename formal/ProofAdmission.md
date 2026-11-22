@@ -44,7 +44,7 @@ candidate       = parseChangeProof >=> admitForFacts
 ```
 
 `>=>` preserves a failed parse and calls admission only for a parsed value.
-[ADR 0006](../docs/adr/0006-internal-composition-records-follow-domain-effects.md) D2 gives its laws and proof sketch.
+[ADR 0017](../docs/adr/0017-law-claims-run-on-code.md) D1 gives its laws, and the `result-monad-laws` control examines them on code.
 
 Tool execution stays in the I/O edge.
 The declared order is the judge order positive, negative, restored, as in `ProofAdmission`.

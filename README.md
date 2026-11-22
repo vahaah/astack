@@ -13,7 +13,7 @@
 
 astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you at each decision that is yours, such as a plan choice or a merge. To start, follow the [Quickstart](#quickstart).
 
-- 46 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
+- 44 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
@@ -53,7 +53,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 ```mermaid
 flowchart TD
   goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
-  plan --> spec["Spec and tickets (write-ticket, to-tickets)"]
+  plan --> spec["Spec and tickets (write-ticket)"]
   spec --> build["Build on a branch, failing test first (tdd)"]
   build --> gates{"Gates: lint, types, tests, astack check …"}
   gates -->|fail| build
@@ -320,8 +320,8 @@ What it does **not** prove:
 
 What the code does:
 
-- **One typed composition, checked on a model.** `parseChangeProof` maps text to `Result<ChangeProof, Rejection>`. `admitChangeProof` maps that value to `Result<Admitted, Rejection>`. `astack check proof` parses first. A bad parse stops before the model runs. Admission runs after the three TLC runs. `tests/astack/proof-composition.ts` defines `proofForSnapshot`, which returns the first rejection and does not admit a bad parse. There is no generic `bind` helper. [ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) gives the identity and associativity argument on paper. TLC checks `ResultLeftIdentity`, `ResultRightIdentity` and `ResultAssociativity` on a finite encoding of the Result carrier. That encoding uses two values, two errors and all total functions between them. TLC does not check the TypeScript functions. The manifest field `typedWitness` names a separate file. Admission checks that this file names each arrow symbol.
-- **Composition records in each manifest.** The `category` section names objects, arrows, effects, equality and, for each law, either a witness or a reason it does not apply. `readLaw` in `src/astack/change-proof/contract.ts` requires a reason when a law is `not_applicable`. A pure carrier cannot witness a monad law. `lawProblem` in that file rejects the claim. ADR 0006 states the same rule.
+- **One typed composition, with its laws checked on code.** `parseChangeProof` maps text to `Result<ChangeProof, Rejection>`. `admitChangeProof` maps that value to `Result<Admitted, Rejection>`. `astack check proof` parses first. A bad parse stops before the model runs. Admission runs after the three TLC runs. `tests/astack/proof-composition.ts` defines `proofForSnapshot` with `andThen`, so it returns the first rejection and does not admit a bad parse. `src/astack/result.ts` exports `map`, `andThen` and `all`. [ADR 0017](docs/adr/0017-law-claims-run-on-code.md) gives the identity and associativity argument. The property controls in `tests/property/` examine the monad, functor and `all` laws on the real functions. They use generated values and arrows. A run examines 100 cases, so it is evidence and not a proof for each value. The manifest field `typedWitness` names a separate file. Admission checks that this file names each arrow symbol.
+- **Composition records in each manifest.** The `category` section names objects, arrows, effects and equality. It lists each law that it claims or needs, with a witness or a reason that the law does not apply. A functor or monoid claim needs both of its witnesses. `readLaw` in `src/astack/change-proof/contract.ts` requires a reason when a law is `not_applicable`. A pure carrier cannot witness a monad law. `lawProblem` in that file rejects the claim. ADR 0006 states the same rule.
 
 What is only analogy:
 
@@ -373,7 +373,7 @@ Use the local-copy procedure in [`dist/cursor/astack/README.md`](dist/cursor/ast
 
 ### Grok Bot
 
-Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 48 skills.
+Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 46 skills.
 
 ### Other Agent Skills clients
 

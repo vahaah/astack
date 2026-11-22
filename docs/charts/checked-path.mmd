@@ -1,6 +1,6 @@
 flowchart TD
   goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
-  plan --> spec["Spec and tickets (write-ticket, to-tickets)"]
+  plan --> spec["Spec and tickets (write-ticket)"]
   spec --> build["Build on a branch, failing test first (tdd)"]
   build --> gates{"Gates: lint, types, tests, astack check …"}
   gates -->|fail| build

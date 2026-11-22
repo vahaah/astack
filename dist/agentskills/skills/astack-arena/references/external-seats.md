@@ -1,24 +1,25 @@
 # External seats
 
-Claude Code's Agent tool runs Claude models only.
-Use a CLI through Bash for a panel seat on another model family.
+Use a CLI through Bash for a seat on another model family.
 The `astack-models.md` rule uses these external values:
 
 - `codex` runs `codex exec` on codex's configured default model.
 - `codex:<model>` runs `codex exec -m <model>`.
 - `cursor-agent:<model>` runs `cursor-agent -p --model <model>`.
+- `claude` runs `claude -p`, and `claude:<model>` adds `--model <model>`. Only the `sol-loop reviewer` takes them.
+
+`codex` is OpenAI, `claude` is Anthropic, and `cursor-agent:<model>` takes the family of its model.
 
 ## Check the CLI
 
-Before fan-out, run `command -v codex` or `command -v cursor-agent`.
+Before fan-out, run `command -v <cli>`.
 For cursor-agent, check sign-in with `cursor-agent status` too.
 If the CLI is missing or signed out, use a Claude subagent on `sonnet` for that seat.
-Report the fallback and the resulting gap in model diversity.
+Report the fallback and the gap in model diversity.
 
 ## Write the brief
 
 Write the full seat prompt to a file, such as `<out>/brief.md`.
-The CLI cannot load Claude Code skills by name.
 Give absolute paths for every skill, reference and principle.
 Inline any file that the CLI cannot read from disk.
 
@@ -26,14 +27,16 @@ Inline any file that the CLI cannot read from disk.
 
 Start each seat with a Bash call that sets `run_in_background: true`.
 Put those calls in the same message as the Agent spawns.
-Bash reports the result when each process exits.
 
 Use these forms for a read-only reviewer or judge:
 
 ```bash
 codex exec -s read-only -C <repo> -o <out>/result.md - < <out>/brief.md
 cursor-agent -p --mode ask --model <model> --workspace <repo> --output-format text "$(cat <out>/brief.md)" > <out>/result.md
+cd <repo> && claude -p --permission-mode plan --add-dir <out> < <out>/brief.md > <out>/result.md
 ```
+
+In a Codex session, ask for one escalation for `claude`, which needs the network and writes its session files. A refusal is a blocker.
 
 Give a runner or worker its own worktree before it writes:
 

@@ -3,7 +3,7 @@ name: "astack-rules"
 description: "Use at the start of every task. The astack standing rules for plans, code, comments, tickets, PRs and replies."
 metadata:
   astack-version: "0.3.0"
-  astack-skills: "astack-architect,astack-arena,astack-babysit-pr,astack-benchmark-checklist,astack-code-review,astack-codebase-design,astack-coding-guide,astack-coding-rules,astack-control-cli,astack-control-ui,astack-council,astack-deslop,astack-diagnosing-bugs,astack-domain-modeling,astack-figure-it-out,astack-file-pr,astack-full-send,astack-full-stop,astack-grilling,astack-how,astack-in-your-own-words,astack-interrogate,astack-leaving-pr-comments,astack-mode,astack-modernize,astack-no-comments,astack-plan,astack-pr-review-hardening,astack-principles,astack-recall,astack-reflect,astack-retro,astack-rules,astack-setup,astack-setup-models,astack-sharpen,astack-show-me-your-work,astack-sol-loop,astack-swarm,astack-sync,astack-takeover,astack-tdd,astack-to-tickets,astack-types,astack-wayfinder,astack-why,astack-write-docs,astack-write-ticket"
+  astack-skills: "astack-architect,astack-arena,astack-babysit-pr,astack-benchmark-checklist,astack-code-review,astack-codebase-design,astack-coding-guide,astack-coding-rules,astack-control-cli,astack-control-ui,astack-council,astack-deslop,astack-diagnosing-bugs,astack-domain-modeling,astack-figure-it-out,astack-file-pr,astack-full-send,astack-full-stop,astack-grilling,astack-how,astack-in-your-own-words,astack-interrogate,astack-leaving-pr-comments,astack-mode,astack-modernize,astack-no-comments,astack-plan,astack-pr-review-hardening,astack-principles,astack-recall,astack-reflect,astack-retro,astack-rules,astack-setup,astack-setup-models,astack-sharpen,astack-show-me-your-work,astack-sol-loop,astack-swarm,astack-sync,astack-takeover,astack-tdd,astack-types,astack-why,astack-write-docs,astack-write-ticket"
 ---
 
 # astack rules
@@ -29,11 +29,11 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
 | "update from main" | Mode playbook `refresh.md` |
 | "merge", "merge when green", "merge and release" | The `astack-mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
-| "full send", "full stop", "council", "sol loop" | That astack skill, read by path. Only "full send" grants a merge |
+| "full send", "full stop", "council", "sol loop" | That astack skill. Only "full send" grants a merge |
 | UI polish, mobile | `astack-control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack-mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack-mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
 
 ### Standing rules
 
@@ -51,9 +51,9 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 
 ## Coding
 
-When the astack plugin is installed, load `astack-coding-rules` before you write, change or review code. If you cannot load it, read the SKILL.md that `astack skill-path astack:coding-rules` prints. The session that owns the ticket also loads `astack-coding-guide` and runs its daily workflow in order, from `/astack-plan` to the merged PR.
+When the astack plugin is installed, load `astack-coding-rules` before you write, change or review code. The session that owns the ticket also runs the daily workflow of `astack-coding-guide`.
 
-These rules hold in every repo, with or without the astack plugin. A stricter repo rule wins. Tickets follow `/astack-write-ticket`, and docs and PR bodies follow `/astack-write-docs`.
+These rules hold in every repo, with or without the astack plugin. Tickets follow `/astack-write-ticket`, and docs and PR bodies follow `/astack-write-docs`.
 
 ### Change
 
@@ -64,7 +64,7 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 ### Root cause
 
 - Reproduce the failure first, then fix its cause and every instance of the same pattern inside the scope fence.
-- These are not fixes: a guard where it crashed, a catch that swallows the error, `as any`, `!` and a suppression. A retry, a sleep, a longer timeout, a skipped test, a weaker assertion and a regenerated snapshot are not fixes either.
+- These are not fixes: a guard where it crashed, a catch that swallows the error, `as any`, `!` and a suppression. A retry, a sleep, a longer timeout, a skipped test, a weaker assertion and a regenerated snapshot are not fixes either. A new gate's baseline or ignore list of current findings is a suppression too. Fix them, or ask once with the count and an expand, migrate, contract plan.
 
 ### Types and edges
 
@@ -90,7 +90,7 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 ### Comments
 
 - The comments rule decides which comments stay. Never shorten a comment to pass the hook.
-- A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. The comment hook passes the license headers that the astack README names. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
+- A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
 
 This section applies to files that match `**/*.ts`, `**/*.mts`, `**/*.cts`, `**/*.tsx`, `**/*.js`, `**/*.jsx`, `**/*.mjs`, `**/*.cjs`, `**/*.sql`, `**/*.swift`, `**/*.kt`, `**/*.kts`, `**/*.go`, `**/*.rs`, `**/*.css`, `**/*.scss`, `**/*.less`, `**/*.py`, `**/*.sh`, `**/*.bash`, `**/*.zsh`.
 

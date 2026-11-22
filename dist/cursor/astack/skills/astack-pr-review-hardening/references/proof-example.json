@@ -131,24 +131,14 @@
 				"witness": "control:C1"
 			},
 			{
-				"law": "functor-id",
-				"status": "not_applicable",
-				"reason": "no map changes"
-			},
-			{
-				"law": "functor-comp",
-				"status": "not_applicable",
-				"reason": "no map changes"
-			},
-			{
 				"law": "monad-left",
 				"status": "witnessed",
-				"witness": "model:TypeOK"
+				"witness": "control:C1"
 			},
 			{
 				"law": "monad-right",
 				"status": "witnessed",
-				"witness": "model:TypeOK"
+				"witness": "control:C1"
 			},
 			{
 				"law": "monad-assoc",

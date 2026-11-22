@@ -120,13 +120,13 @@ For `o`, `[g, f]` means that `f` runs first.
 For `>=>`, `[f, g]` means that `f` runs first.
 Reassociation never permits a change in effect order.
 
-Record all eight law statuses.
+Record each claimed or needed law.
 Composed arrows need left identity, right identity, and associativity witnesses.
 A Result or Promise<Result> monad claim needs all three monad witnesses.
-A functor claim needs both identity and composition witnesses.
-Pure and artifact records state why monad laws do not apply.
+A functor or monoid claim needs both of its witnesses.
+Pure and artifact records cannot claim monad laws.
 An inapplicable law cannot replace an applicable witness.
-Witnesses name checked model properties or linked implementation controls.
+Witnesses name linked implementation controls. A `model:` witness is deprecated.
 The typed witness mentions the real arrow symbols and belongs in the repo's normal compiler or document checks.
 
 Each abstraction explains what callers must know and what the module hides.

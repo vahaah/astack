@@ -205,22 +205,4 @@ StaleStopNamesPaths == status = "rejected" /\ firstFailure = "stale" => named = 
 StopNamesSection == status = "rejected" => section = Sections[firstFailure]
 OneManifestPerChange == status = "admitted" => base.manifest \in {"one", "fallback"}
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
-
-Values == {0, 1}
-Errors == {"invalid", "missing"}
-Ok(value) == [kind |-> "ok", item |-> value]
-Err(error) == [kind |-> "error", reason |-> error]
-Results == {Ok(value) : value \in Values} \cup {Err(error) : error \in Errors}
-Functions == [Values -> Results]
-Unit == [value \in Values |-> Ok(value)]
-Bind(result, fn) == IF result.kind = "error" THEN result ELSE fn[result.item]
-Compose(left, right) == [value \in Values |-> Bind(left[value], right)]
-
-ResultLeftIdentity == /\ status \in States
-                      /\ \A value \in Values, fn \in Functions : Bind(Ok(value), fn) = fn[value]
-ResultRightIdentity == /\ status \in States
-                       /\ \A result \in Results : Bind(result, Unit) = result
-ResultAssociativity == /\ status \in States
-                       /\ \A result \in Results, left \in Functions, right \in Functions :
-                            Bind(Bind(result, left), right) = Bind(result, Compose(left, right))
 =============================================================================

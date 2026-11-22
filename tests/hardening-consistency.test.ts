@@ -52,6 +52,12 @@ const read = (path: string) => readFileSync(join(root, path), "utf8");
 const engine = "marketplace/plugins/astack/skills/pr-review-hardening";
 const stub = readFileSync(reviewFallbackSource, "utf8");
 const fallbackPath = "templates/pr-review-hardening.stub.FALLBACK.md";
+const headLine =
+	"Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.";
+const failureLine =
+	"A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.";
+const repairSentence =
+	"After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again.";
 
 function paragraphStarting(text: string, start: string): string {
 	const line = text.split("\n").find((entry) => entry.startsWith(start));
@@ -1545,7 +1551,7 @@ describe("the head of the PR on every path", () => {
 		expect(order).toEqual([...order].sort((a, b) => a - b));
 	});
 
-	test("each text that runs the command takes only exit 0 with an ok: last line or exit 3 with a no_pr: last line", () => {
+	test("[control:ph-pair] each text that runs the command takes only exit 0 with an ok: last line or exit 3 with a no_pr: last line, and after a stop only the repair sentence", () => {
 		const callers = [
 			...markdownUnder("marketplace/plugins/astack"),
 			...markdownUnder("rules"),
@@ -1556,10 +1562,46 @@ describe("the head of the PR on every path", () => {
 			[`${engine}/SKILL.md`, engineHeadCheck],
 			[fallbackPath, stubCommandBlock],
 		] as const;
-		expect(callers).toEqual(scopes.map(([path]) => path));
+		const others = callers.filter(
+			(path) => !scopes.some(([scope]) => scope === path),
+		);
+		const strayResults = (text: string): string[] =>
+			text
+				.split("\n")
+				.map((line) =>
+					[headLine, failureLine, repairSentence].reduce(
+						(rest, sentence) => rest.replaceAll(sentence, ""),
+						line,
+					),
+				)
+				.filter((rest) =>
+					/`ok:`|`ok: HEAD|`no_pr:|`stop: (?:HEAD|gh|git)\b|pr-head.*\b(?:exit|fail|pass)|\b(?:exit|fail|pass).*pr-head/.test(
+						rest,
+					),
+				);
+		expect(callers).toEqual(
+			expect.arrayContaining(scopes.map(([path]) => path)),
+		);
 		for (const [, text] of scopes)
 			for (const sentence of commandHeadCheck.slice(2, 7))
 				expect(text).toContain(sentence);
+		const triage =
+			"marketplace/plugins/astack/skills/mode/references/comments-triage.md";
+		expect(others).toContain(triage);
+		expect(
+			others.filter(
+				(path) =>
+					!read(path).includes(headLine) || strayResults(read(path)).length > 0,
+			),
+		).toEqual([]);
+		const actsAfterStop =
+			"After `stop: HEAD does not hold PR_HEAD`, reply on each thread.";
+		const mutated = read(triage).replace(repairSentence, actsAfterStop);
+		const mutatedLines = mutated
+			.split("\n")
+			.filter((line) => line.includes(actsAfterStop));
+		expect(mutatedLines).toHaveLength(1);
+		expect(strayResults(mutated)).toEqual(mutatedLines);
 	});
 
 	test("a local branch that is only ahead of the PR goes on, and the report names its commits", () => {
@@ -2225,10 +2267,12 @@ describe("a failed gh is never a run with no PR", () => {
 		}
 	});
 
-	const prHeadCheck =
+	const manualHeadCheck =
 		"The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.";
 	const noPrRule =
 		"There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.";
+	const seed =
+		"marketplace/plugins/astack/skills/setup/issue-tracker-github.md";
 	const ownForms: readonly (readonly [string, string])[] = [
 		[
 			`${engine}/SKILL.md`,
@@ -2242,13 +2286,17 @@ describe("a failed gh is never a run with no PR", () => {
 			"marketplace/plugins/astack/README.md",
 			"It says what the merge guard reads, and has no step that acts on a PR.",
 		],
+		[
+			seed,
+			"Setup copies this seed into a product repo, where an agent can run with no astack. So it keeps the manual head check and the no-PR rule.",
+		],
 	];
 	const noPrListRule =
 		"There is no PR only when `gh pr list` exits 0 and prints no PR. Each other failure of `gh pr list` is an error, not a missing PR. Print the error of gh, and stop.";
 	const prRead =
 		/\bgh pr (?:view|list|status|checks|diff)\b|\bgh api\b[^\n]*\bpulls\b|\bheadRefOid\b/;
 	const lookups: readonly (readonly [RegExp, string])[] = [
-		[/\bgh pr (?:view|status)\b/, noPrRule],
+		[/\bgh pr (?:view|status)\b/, failureLine],
 		[/\bgh pr list\b/, noPrListRule],
 	];
 	const { describesOnly } = scanRows;
@@ -2271,35 +2319,61 @@ describe("a failed gh is never a run with no PR", () => {
 					),
 			);
 	const prReaders = scanned.filter((path) => readLines(path).length > 0);
-	const missingRules = (path: string, text = read(path)): string[] =>
-		readLines(path, text).flatMap((line) =>
-			lookups
-				.filter(([lookup, rule]) => lookup.test(line) && !text.includes(rule))
-				.map(([, rule]) => rule),
-		);
+	const holds = (text: string, rule: string): boolean =>
+		rule === failureLine
+			? text.includes(headLine) && text.indexOf(rule) > text.indexOf(headLine)
+			: text.includes(rule);
+	const missingRules = (path: string, text = read(path)): string[] => [
+		...new Set(
+			readLines(path, text).flatMap((line) =>
+				lookups
+					.filter(([lookup, rule]) => lookup.test(line) && !holds(text, rule))
+					.map(([, rule]) => rule),
+			),
+		),
+	];
+	const resume = "marketplace/plugins/astack/skills/mode/references/resume.md";
+	const triage =
+		"marketplace/plugins/astack/skills/mode/references/comments-triage.md";
+	const createPr =
+		"marketplace/plugins/astack/skills/mode/references/create-pr.md";
 
-	test("the no-PR rule of the other astack texts takes only the no-PR message of gh as no PR", () => {
+	test("the setup seed keeps the manual head check, and its no-PR rule takes only the no-PR message of gh as no PR", () => {
+		expect(
+			[manualHeadCheck, noPrRule].filter((rule) => !read(seed).includes(rule)),
+		).toEqual([]);
 		expect(
 			noPrMessages.filter((message) => !isNoPr(noPrRule, message)),
 		).toEqual([]);
 		expect(failures.filter((message) => isNoPr(noPrRule, message))).toEqual([]);
 	});
 
-	test("each astack text and profile that reads a PR with gh compares the head of the PR with the local head", () => {
+	test("[control:ph-line] each astack text and profile that reads a PR with gh runs the head check command, and none keeps the manual check", () => {
 		expect(
-			prReaders.filter((path) => !read(path).includes(prHeadCheck)),
+			prReaders.filter(
+				(path) =>
+					!read(path).includes(headLine) ||
+					read(path).includes(manualHeadCheck),
+			),
 		).toEqual([]);
 	});
 
-	test("each astack text and profile that looks up a PR with gh stops on a failure of gh that is not the no-PR answer", () => {
-		expect(prReaders.filter((path) => missingRules(path).length > 0)).toEqual(
-			[],
-		);
+	test("[control:ph-later] each astack text and profile that looks up a PR with gh view holds the failure line after the head line, and none keeps the old no-PR rule", () => {
+		expect(
+			prReaders.filter(
+				(path) =>
+					missingRules(path).length > 0 || read(path).includes(noPrRule),
+			),
+		).toEqual([]);
+		const without = read(resume).replace(failureLine, "");
+		expect(missingRules(resume, without)).toEqual([failureLine]);
+		expect(missingRules(resume, `${failureLine}\n${without}`)).toEqual([
+			failureLine,
+		]);
 	});
 
-	test("the scan finds a lookup through gh pr list that reads an empty list as no PR, and each row of the reason table still names a line", () => {
-		const triage =
-			"marketplace/plugins/astack/skills/mode/references/comments-triage.md";
+	test("[control:ph-list] create-pr keeps the list rule, and the scan finds a lookup through gh pr list that reads an empty list as no PR", () => {
+		expect(read(createPr)).toContain(noPrListRule);
 		expect(
 			missingRules(
 				triage,
@@ -2308,23 +2382,53 @@ describe("a failed gh is never a run with no PR", () => {
 						"`gh pr view --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`",
 						"`gh pr list --head <branch> --state open --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`",
 					)
-					.replace(noPrRule, "When the list is empty, there is no PR."),
+					.replace(failureLine, "When the list is empty, there is no PR."),
 			),
 		).toEqual([noPrListRule]);
+	});
+
+	test("each row of the reason table still names a line", () => {
 		expect(
 			describesOnly.filter((row) => !read(row.path).includes(row.line)),
 		).toEqual([]);
 	});
 
-	test("the scan finds a text that runs gh pr view, a text that runs gh pr list and a text that only names headRefOid, and each own form still reads a PR", () => {
+	test("the scan finds a text that runs gh pr view, a text that runs gh pr list and a text that creates a PR through gh api, and each own form still reads a PR", () => {
 		expect(prReaders).toEqual(
 			expect.arrayContaining([
-				"marketplace/plugins/astack/skills/mode/references/resume.md",
-				"marketplace/plugins/astack/skills/mode/references/create-pr.md",
-				"marketplace/plugins/astack/skills/plan/references/sessions.md",
+				resume,
+				createPr,
+				"marketplace/plugins/astack/skills/file-pr/SKILL.md",
 			]),
 		);
 		expect(ownForms.filter(([path]) => !prRead.test(read(path)))).toEqual([]);
+	});
+});
+
+describe("the ready report names what the merge starts", () => {
+	const shipping = read(
+		"marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+	);
+	const readyRow = paragraphStarting(
+		read("marketplace/plugins/astack/skills/mode/SKILL.md"),
+		"| The open PR is green and clean |",
+	);
+	const readStarted = "Read what the merge starts";
+	const holdDeploy =
+		"Land a deployment only when the owner's words in this turn name that release or deployment.";
+
+	test("the ready report reads the started workflows before it asks for the merge, names each publish or deploy job, and a deploy still needs the owner's words", () => {
+		expect(readyRow.indexOf(readStarted)).toBeGreaterThan(-1);
+		expect(readyRow.indexOf(readStarted)).toBeLessThan(
+			readyRow.indexOf("Report it as ready to merge"),
+		);
+		expect(readyRow).toContain(
+			"name each publish or deploy job, or say that there is none",
+		);
+		const section = shipping.indexOf("\n## What the merge starts\n");
+		expect(section).toBeGreaterThan(-1);
+		expect(section).toBeLessThan(shipping.indexOf("\n## Steps\n"));
+		expect(shipping).toContain(holdDeploy);
 	});
 });
 

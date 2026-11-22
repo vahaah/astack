@@ -42,7 +42,7 @@ Run `glab issue view <number> --comments`.
 
 ## Wayfinding operations
 
-`/astack-wayfinder` uses one map issue and child issues for its tickets.
+`/astack-plan` uses one map issue and child issues for its tickets.
 
 ### Map
 

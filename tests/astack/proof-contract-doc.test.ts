@@ -136,7 +136,7 @@ describe("the proof contract reference", () => {
 				"the diff from the merge base adds",
 			],
 			domain: ["glossary", "integratedAt"],
-			category: ["must compose"],
+			category: ["must compose", "monoid"],
 			controls: ["no row is idle", "spec-links.md"],
 			rung: ["uncovered fail-closed path", "deleted registry"],
 			model: ["A positive result needs"],
