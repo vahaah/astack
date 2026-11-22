@@ -508,8 +508,21 @@ describe("the whole-tree discard forms", () => {
 		'git archive HEAD "$P" | tar -x',
 		"git archive --forma tar HEAD docs | tar -x",
 		"git archive notes.txt docs | tar -x",
+		"git archive HEAD docs | tar -x --strip-components=1",
+		"git archive HEAD docs | tar -xP",
+		'git archive HEAD docs | tar -x "$OPT"',
+		"git archive HEAD docs | tar --extr",
+		"git archive HEAD docs | tar -x",
+		"git archive --format=tar HEAD docs | tar -x",
+		"git archive HEAD docs | tar -xvf -",
+		"git archive HEAD docs | tar xf -",
+		"git archive HEAD docs | tar xC .",
+		"git archive HEAD docs | tar -x --direc=.",
+		"git archive HEAD docs | TAR_OPTIONS=--strip-components=1 tar -x",
+		'git archive HEAD | tar -x -C "$D"',
+		"git archive HEAD | tar -xCv ../repo",
 	])(
-		"%s is read as the whole tree, because astack cannot read its paths with certainty",
+		"%s is the whole tree of the tar folder, so it is denied on a dirty tree",
 		(command) => {
 			const said = reason(
 				destructive.run(shell(command, dirty), context(dirty)),
@@ -517,6 +530,7 @@ describe("the whole-tree discard forms", () => {
 			expect(said).toContain(
 				"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
 			);
+			expect(said).toContain("owner gate");
 		},
 	);
 
@@ -530,64 +544,12 @@ describe("the whole-tree discard forms", () => {
 		writeFileSync(join(broken, ".git/index"), "not an index");
 		const said = reason(
 			destructive.run(
-				shell("git archive HEAD docs | tar -x -C ../broken", dirty),
-				context(dirty),
+				shell("git archive HEAD | tar -x", broken),
+				context(broken),
 			),
 		);
 		expect(said).toContain("git status fails in");
 		expect(said).toContain("owner gate");
-	});
-
-	test.each([
-		"git archive HEAD docs | tar -x --strip-components=1",
-		"git archive HEAD docs | tar -x --transform s/docs/src/",
-		"git archive HEAD docs | tar -xP",
-		'git archive HEAD docs | tar -x "$OPT"',
-		"git archive HEAD docs | tar --extr",
-	])(
-		"%s is read as the whole tree, because astack cannot read the tar step with certainty",
-		(command) => {
-			expect(
-				reason(destructive.run(shell(command, dirty), context(dirty))),
-			).toContain(
-				"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
-			);
-		},
-	);
-
-	test.each([
-		"git archive HEAD | tar -x --directory=../dirty",
-		"git archive HEAD | tar -C../dirty -x",
-		"git archive HEAD | tar -xC ../dirty",
-	])("%s extracts into the dirty folder that tar names", (command) => {
-		expect(reason(destructive.run(shell(command), context(repo)))).toContain(
-			"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
-		);
-	});
-
-	test.each([
-		'git archive HEAD | tar -x -C "$D"',
-		"git archive HEAD | tar -xCv ../dirty",
-		"git archive HEAD | tar -x -C ../dirty -C ../repo",
-	])(
-		"%s is denied, because astack cannot find the tar folder with certainty",
-		(command) => {
-			expect(reason(destructive.run(shell(command), context(repo)))).toContain(
-				"astack cannot find the folder that tar extracts into with certainty.",
-			);
-		},
-	);
-
-	test.each([
-		"git archive --format=tar HEAD docs | tar -x",
-		"git archive HEAD docs | tar -xvf -",
-		"git archive HEAD docs | tar xf -",
-		"git archive HEAD docs | tar -x --directory=.",
-		"git archive -v HEAD docs | tar -x",
-	])("%s names its paths, so it passes on a dirty tree", (command) => {
-		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
-			"allow",
-		);
 	});
 
 	test.each(wholeTree)("%s passes on a clean tree", (command) => {
@@ -601,7 +563,6 @@ describe("the whole-tree discard forms", () => {
 		"git apply <(git diff HEAD)",
 		"git archive -o out.tar HEAD",
 		"git archive HEAD | tar -t",
-		"git archive HEAD docs | tar -x",
 		"git read-tree HEAD",
 	])("the named-file or read form %s passes on a dirty tree", (command) => {
 		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(

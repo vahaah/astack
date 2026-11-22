@@ -506,118 +506,23 @@ function workLossReasons(
 		: lossReasons(step.values.join(" "), loss, git.dir);
 }
 
-type TarExtract = {
-	readonly dir: string | undefined;
-	readonly certain: boolean;
-};
+const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
+const TAR_EXTRACT =
+	/^(?:--extract|--get|-[A-Za-z]*x[A-Za-z]*|[A-Za-z]*x[A-Za-z]*)$/;
 
-const TAR_PLAIN_LETTERS = "ktvpm";
-const TAR_PLAIN_LONG = [
-	"--keep-old-files",
-	"--list",
-	"--preserve-permissions",
-	"--touch",
-	"--verbose",
-];
-const TAR_EXTRACT_LONG = ["--extract", "--get"];
-
-function tarExtract(step: ShellStep): TarExtract | undefined {
+function tarExtracts(step: ShellStep): boolean {
 	const [program, ...args] = step.words;
-	if (program === undefined || basename(program.value) !== "tar")
-		return undefined;
-	const dirs: (Word | undefined)[] = [];
-	let extract = false;
-	let certain = !args.some((arg) => arg.dynamic || arg.expands === true);
-	for (let at = 0; at < args.length; at++) {
-		const arg = args[at];
-		if (arg === undefined) continue;
-		const text = arg.value;
-		const directory = /^--directory(?:=([\s\S]*))?$/.exec(text);
-		const letters =
-			at === 0 && /^[A-Za-z]+$/.test(text)
-				? text
-				: /^-[A-Za-z]/.test(text)
-					? text.slice(1)
-					: undefined;
-		if (directory) {
-			dirs.push(
-				directory[1] === undefined
-					? args[++at]
-					: { value: directory[1], dynamic: arg.dynamic },
-			);
-		} else if (TAR_EXTRACT_LONG.includes(text)) extract = true;
-		else if (
-			text === "--file=-" ||
-			(text === "--file" && args[at + 1]?.value === "-")
-		)
-			at += text === "--file" ? 1 : 0;
-		else if (text.startsWith("--")) {
-			if (!TAR_PLAIN_LONG.includes(text)) {
-				certain = false;
-				extract = true;
-			}
-		} else if (letters !== undefined) {
-			for (let i = 0; i < letters.length; i++) {
-				const letter = letters.charAt(i);
-				const last = i === letters.length - 1;
-				if (letter === "x") extract = true;
-				else if (letter === "C" && i === 0 && !last) {
-					dirs.push({ value: letters.slice(1), dynamic: arg.dynamic });
-					break;
-				} else if (letter === "C" && last) dirs.push(args[++at]);
-				else if (letter === "C") dirs.push(undefined);
-				else if (letter === "f" && last && args[at + 1]?.value === "-") at++;
-				else if (!TAR_PLAIN_LETTERS.includes(letter)) {
-					certain = false;
-					extract = true;
-				}
-			}
-		}
-	}
-	if (!extract) return undefined;
-	const [target] = dirs;
-	if (dirs.length === 0) return { dir: step.dir, certain };
-	return dirs.length === 1 && target !== undefined && !target.dynamic
-		? { dir: resolve(step.dir, target.value), certain }
-		: { dir: undefined, certain };
-}
-
-const ARCHIVE_PLAIN_FLAGS = [
-	"-l",
-	"--list",
-	"-v",
-	"--verbose",
-	"--worktree-attributes",
-];
-const ARCHIVE_NAMED_VALUES = ["--exec", "--format", "--mtime", "--output"];
-
-function archivePathspecs(
-	step: ShellStep,
-	git: GitInvocation,
-	dir: string,
-): readonly string[] {
-	if (git.dir !== dir || step.words.some((word) => word.dynamic))
-		return WHOLE_TREE;
-	const plain: string[] = [];
-	for (let at = 0; at < git.args.length; at++) {
-		const arg = git.args[at] ?? "";
-		if (arg === "--") {
-			plain.push(...git.args.slice(at + 1));
-			break;
-		}
-		const name = arg.split("=")[0] ?? "";
-		if (!arg.startsWith("-")) plain.push(arg);
-		else if (
-			!ARCHIVE_PLAIN_FLAGS.includes(arg) &&
-			!/^-\d$/.test(arg) &&
-			!(arg.includes("=") && ARCHIVE_NAMED_VALUES.includes(name))
-		)
-			return WHOLE_TREE;
-	}
-	const [tree, ...paths] = plain;
-	return tree === undefined || paths.length === 0 || !isTreeish(git.dir, tree)
-		? WHOLE_TREE
-		: paths;
+	if (program === undefined || basename(program.value) !== "tar") return false;
+	const lists = args.some((arg, at) =>
+		at === 0
+			? TAR_LIST.test(arg.value)
+			: /^(?:--list|-[A-Za-z]*t)/.test(arg.value),
+	);
+	return (
+		!lists ||
+		step.env.length > 0 ||
+		args.some((arg) => arg.dynamic || TAR_EXTRACT.test(arg.value))
+	);
 }
 
 function statusFails(dir: string): boolean {
@@ -633,28 +538,21 @@ function extractReasons(
 ): readonly string[] {
 	if (step.simple.piped !== true || previous === undefined) return [];
 	const source = readGit(previous);
-	const tar = tarExtract(step);
-	if (source.kind !== "plain" || source.git.sub !== "archive" || !tar)
+	if (
+		source.kind !== "plain" ||
+		source.git.sub !== "archive" ||
+		!tarExtracts(step)
+	)
 		return [];
 	const command = `${previous.values.join(" ")} | ${step.values.join(" ")}`;
-	const { dir } = tar;
-	if (dir === undefined)
+	if (statusFails(step.dir))
 		return [
-			`${command} extracts files, but astack cannot find the folder that tar extracts into with certainty. ${OWNER_GATE}`,
-		];
-	if (statusFails(dir))
-		return [
-			`${command} extracts files, and git status fails in ${dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
+			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
 		];
 	return lossReasons(
 		command,
-		{
-			lost: "tracked",
-			pathspecs: tar.certain
-				? archivePathspecs(previous, source.git, dir)
-				: WHOLE_TREE,
-		},
-		dir,
+		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		step.dir,
 	);
 }
 
