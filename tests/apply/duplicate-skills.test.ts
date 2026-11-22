@@ -69,6 +69,7 @@ describe("flowSupersedes", () => {
 		"triage",
 		"wait-what",
 		"wizard",
+		"writing-for-agents",
 	];
 
 	test.each([
@@ -108,6 +109,7 @@ describe("flowSupersedes", () => {
 				["triage", "astack:write-ticket", "not-in-flow"],
 				["wait-what", "astack:wait-what", "not-in-flow"],
 				["wizard", "astack:wizard", "not-in-flow"],
+				["writing-for-agents", "astack:mode", "not-in-flow"],
 			]);
 			const shipped = new Set(
 				readdirSync(join(root, "marketplace/plugins/astack/skills")),

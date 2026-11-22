@@ -26,7 +26,7 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	"wait-what": ["wait-what"],
 	wayfinder: ["wayfinder"],
 	wizard: ["wizard"],
-	"writing-for-agents": ["writing-for-agents"],
+	"writing-for-agents": ["mode"],
 };
 
 const cutSkills: ReadonlySet<string> = new Set([
@@ -40,6 +40,7 @@ const cutSkills: ReadonlySet<string> = new Set([
 	"triage",
 	"wait-what",
 	"wizard",
+	"writing-for-agents",
 ]);
 
 export type UserSkillEntry = {

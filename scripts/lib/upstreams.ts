@@ -135,7 +135,6 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["why", ["pstack"]],
 		["write-docs", ["mattpocock-skills", "pstack"]],
 		["write-ticket", ["mattpocock-skills", "pstack"]],
-		["writing-for-agents", ["mattpocock-skills"]],
 	]);
 
 export const AGENT_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> =
