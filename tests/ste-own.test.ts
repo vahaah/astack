@@ -162,13 +162,14 @@ describe("the Comment Sicko quote", () => {
 });
 
 describe("the own text of astack", () => {
-	test("walks the own roots, skips the card copy, node_modules and each listed exempt file", () => {
+	test("[control:ste-own-formal] walks the own roots, also formal, and skips the card copy, node_modules and each listed exempt file", () => {
 		const root = repo({
 			"README.md": "# A\n",
 			"AGENTS.md": "# B\n",
 			"rules/coding.md": "# C\n",
 			"rules/astack.md": "# copy\n",
 			"docs/design.md": "# D\n",
+			"formal/a.md": "# E\n",
 			"templates/pr-review-hardening.stub.SKILL.md": "# H\n",
 			"examples/companion/projects/acme/pr-review-hardening.profile.md":
 				"# I\n",
@@ -184,6 +185,7 @@ describe("the own text of astack", () => {
 			"README.md",
 			"docs/design.md",
 			"examples/companion/projects/acme/pr-review-hardening.profile.md",
+			"formal/a.md",
 			"marketplace/plugins/astack/skills/a/SKILL.md",
 			"rules/coding.md",
 			"templates/pr-review-hardening.stub.SKILL.md",
