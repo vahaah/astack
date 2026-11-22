@@ -10,7 +10,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/plan` | Plan mode, concise, unresolved questions last. With "I am building", run `astack:plan` in plan mode. After approval, first write `docs/plans/<slug>.md` |
 | `/grilling` | `astack:grilling` on the frontier. One recommendation and lettered options for each question |
 | "go", "do your recommendation", "use best practices and our previous decisions" | A delegation grant. Write `delegate: on` in the plan. "agree", "next" and "approve" continue |
-| "resume" | Mode playbook `resume.md`. Read the plan, the tracker and git, then continue from the next step |
+| "resume", "status", "what waits on me" | `resume.md`. A status ask gets Catch up, which only reads and starts no work |
 | `/goal`, "continue the board" | Programme tier and the `astack:mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
 | a hotfix, "I need it fast" | Quick tier. One grill round at most |
 | a bug, an error report, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |

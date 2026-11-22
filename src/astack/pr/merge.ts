@@ -39,9 +39,8 @@ function fileText(
 	dir: string,
 ): string | undefined {
 	if (word.dynamic) return undefined;
-	return word.value === "-"
-		? command.stdin
-		: readOptional(resolve(dir, word.value));
+	if (word.value !== "-") return readOptional(resolve(dir, word.value));
+	return command.stdinDynamic === true ? undefined : command.stdin;
 }
 
 type FlagWord = { readonly name: string; readonly value: Word | undefined };
@@ -166,7 +165,7 @@ export function preflightReasons(inputs: MergeInputs): readonly string[] {
 		);
 	if (inputs.setsEnv)
 		reasons.push(
-			"Do not put NAME=value words, such as GH_REPO, before gh pr merge. astack reads the PR without them, so it can read a different PR. Use --repo to name a different repo.",
+			"Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with a wrapper that resets it, such as env -i, env -u, exec -c, doas, or sudo with no -E. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
 		);
 	if (inputs.call.dynamic)
 		reasons.push(

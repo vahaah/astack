@@ -124,7 +124,7 @@ Use the mode's exact role labels below.
 Replace the whole file on each run so repeated runs stay idempotent.
 
 ```conf
-# pstack model configuration. astack skills read these lines; nothing else does.
+# astack model configuration. astack skills read these lines; nothing else does.
 # One line per role. Delete a line to fall back to the skill default.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Agent `model`). Alias entries in a panel list still count toward its fan-out.
 # External seats (codex, codex:<model>, cursor-agent:<model>) are valid only on the panel lines, the sol-loop reviewer and the cross-judge pool.

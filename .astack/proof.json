@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "proof-ladder",
-	"base": "605610cc26c0b65ca9a5b3451d2ab01477a5c573",
+	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
 	"scope": [
 		{
 			"path": ".astack/**",

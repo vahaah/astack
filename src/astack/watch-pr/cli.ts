@@ -2,14 +2,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import { parseArgs } from "node:util";
 import type { Io } from "../cli/io.ts";
 import { err, ok, type Result } from "../result.ts";
+import { GhGitHubReader, resolveContext, WatcherQueryError } from "./github.ts";
 import {
-	discoverStack,
-	GhGitHubReader,
-	resolveContext,
-	WatcherQueryError,
-} from "./github.ts";
-import {
-	runQueued,
 	runSimple,
 	statusQueryVerdict,
 	verdictFactory,
@@ -17,14 +11,13 @@ import {
 } from "./policy.ts";
 import { renderJson, renderPretty } from "./render.ts";
 import type * as T from "./types.ts";
-import { isPrNumber, nonEmpty } from "./types.ts";
+import { isPrNumber } from "./types.ts";
 
 export interface CliOptions {
 	readonly owner: string | null;
 	readonly repo: string | null;
 	readonly pr: T.PrNumber | null;
 	readonly mode: T.WatchMode;
-	readonly stackPrs: readonly T.PrNumber[];
 	readonly statusOnly: boolean;
 	readonly pretty: boolean;
 	readonly polling: T.PollingOptions;
@@ -38,27 +31,11 @@ const FLAGS = {
 	owner: { type: "string", arg: "<owner>", help: "GitHub repository owner" },
 	repo: { type: "string", arg: "<repo>", help: "GitHub repository name" },
 	pr: { type: "string", arg: "<number>", help: "pull request number" },
-	stack: { type: "boolean", help: "watch the connected open stack" },
-	"queued-stack": {
-		type: "boolean",
-		help: "watch the captured stack until all PRs merge",
-	},
-	"stack-prs": {
-		type: "string",
-		arg: "<n,...>",
-		help: "frozen bottom-to-top queue (queued mode only)",
-	},
 	interval: {
 		type: "string",
 		arg: "<seconds>",
 		help: "poll interval",
 		default: "60",
-	},
-	"sweep-interval": {
-		type: "string",
-		arg: "<seconds>",
-		help: "whole-stack sweep interval",
-		default: "300",
 	},
 	timeout: {
 		type: "string",
@@ -100,7 +77,7 @@ function flagLine(
 const HELP = [
 	"Usage: astack watch-pr [options]",
 	"",
-	"Watch one pull request, a connected stack, or an immutable queued stack.",
+	"Watch one pull request.",
 	"JSON (NDJSON while polling) is the default; --pretty renders human text.",
 	"",
 	"Options:",
@@ -134,19 +111,6 @@ const positiveInteger: Parse<number> = (raw) => {
 const prNumber: Parse<T.PrNumber> = (raw) => {
 	const parsed = Number(raw.trim().replace(/^#/, ""));
 	return isPrNumber(parsed) ? ok(parsed) : err("must be a positive integer");
-};
-
-const stackPrList: Parse<T.NonEmpty<T.PrNumber>> = (raw) => {
-	const numbers: T.PrNumber[] = [];
-	for (const part of raw.split(",")) {
-		const parsed = prNumber(part);
-		if (!parsed.ok) return parsed;
-		numbers.push(parsed.value);
-	}
-	if (new Set(numbers).size !== numbers.length)
-		return err("contains a duplicate PR");
-	const list = nonEmpty(numbers);
-	return list === null ? err("cannot be empty") : ok(list);
 };
 
 function flagValue<V>(
@@ -187,28 +151,11 @@ export function parseWatchArgs(
 	if (!read.ok) return read;
 	const values = read.value.values;
 	if (values.help) return ok({ kind: "help" });
-	if (values.stack && values["queued-stack"])
-		return err(
-			"error: option '--stack' cannot be used with option '--queued-stack'",
-		);
-	if (values["stack-prs"] !== undefined && !values["queued-stack"])
-		return err("error: --stack-prs requires --queued-stack");
 	const pr =
 		values.pr === undefined ? ok(null) : flagValue("pr", values.pr, prNumber);
 	if (!pr.ok) return pr;
-	const stackPrs =
-		values["stack-prs"] === undefined
-			? ok([])
-			: flagValue("stack-prs", values["stack-prs"], stackPrList);
-	if (!stackPrs.ok) return stackPrs;
 	const interval = flagValue("interval", values.interval, positiveNumber);
 	if (!interval.ok) return interval;
-	const sweepInterval = flagValue(
-		"sweep-interval",
-		values["sweep-interval"],
-		positiveNumber,
-	);
-	if (!sweepInterval.ok) return sweepInterval;
 	const timeout = flagValue("timeout", values.timeout, nonNegativeNumber);
 	if (!timeout.ok) return timeout;
 	const maxQueryErrors = flagValue(
@@ -223,17 +170,11 @@ export function parseWatchArgs(
 			owner: values.owner ?? null,
 			repo: values.repo ?? null,
 			pr: pr.value,
-			mode: values["queued-stack"]
-				? "queued-stack"
-				: values.stack
-					? "stack"
-					: "single",
-			stackPrs: stackPrs.value,
+			mode: "single",
 			statusOnly: values["status-only"] ?? false,
 			pretty: values.pretty ?? false,
 			polling: {
 				interval: interval.value,
-				sweepInterval: sweepInterval.value,
 				timeout: timeout.value,
 				maxQueryErrors: maxQueryErrors.value,
 				allowDraft: values["allow-draft"] ?? false,
@@ -281,19 +222,14 @@ export async function main(
 	const render = options.pretty ? renderPretty : renderJson;
 	const emit = (verdict: T.ProgressVerdict): void =>
 		runtime.stdout(render(verdict));
-	let contexts: T.NonEmpty<T.PrContext>;
+	let context: T.PrContext;
 	try {
-		const seed = await resolveContext({
+		context = await resolveContext({
 			reader: runtime.reader,
 			owner: options.owner,
 			repo: options.repo,
-			pr: options.pr ?? options.stackPrs[0] ?? null,
+			pr: options.pr,
 		});
-		contexts =
-			nonEmpty(options.stackPrs.map((number) => ({ ...seed, number }))) ??
-			(options.mode === "single"
-				? [seed]
-				: await discoverStack(runtime.reader, seed));
 	} catch (error) {
 		if (!(error instanceof WatcherQueryError)) throw error;
 		const verdict = statusQueryVerdict(
@@ -304,17 +240,13 @@ export async function main(
 		runtime.stdout(render(verdict));
 		return verdict.exitCode;
 	}
-	const dependencies = { reader: runtime.reader, clock: runtime.clock, emit };
-	const verdict =
-		options.mode === "queued-stack" && !options.statusOnly
-			? await runQueued({ dependencies, contexts, options: options.polling })
-			: await runSimple({
-					dependencies,
-					contexts,
-					mode: options.mode,
-					statusOnly: options.statusOnly,
-					options: options.polling,
-				});
+	const verdict = await runSimple({
+		dependencies: { reader: runtime.reader, clock: runtime.clock, emit },
+		contexts: [context],
+		mode: options.mode,
+		statusOnly: options.statusOnly,
+		options: options.polling,
+	});
 	runtime.stdout(render(verdict));
 	return verdict.exitCode;
 }

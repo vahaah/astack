@@ -1,4 +1,6 @@
+import { resolve } from "node:path";
 import { unattendedReason } from "../../attended.ts";
+import { readOptional } from "../../paths.ts";
 import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
@@ -10,12 +12,8 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
-import {
-	ENV_ASSIGNMENT,
-	type ShellStep,
-	shellSteps,
-	type Word,
-} from "../../shell.ts";
+import { kindOf } from "../../repo-facts.ts";
+import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
 	type Context,
@@ -27,7 +25,6 @@ import {
 	type Verdict,
 } from "../events.ts";
 
-const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
 const GRAPHQL = /graphql/i;
 const PERCENT = /%/;
 
@@ -50,9 +47,10 @@ const WRITE_METHOD_IN_TEXT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/;
 const WRITE_METHOD_VALUE =
 	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
-const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
-const GH_WORD = /\bgh\b/;
+const MERGE_TEXT = /merg/i;
+const NAMES_GH = /\bgh\b|\bpr\s+merge\b/i;
+const MAY_MERGE = /\bgh\b|\bpr\s+merge\b|[*?[{]/i;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -63,20 +61,163 @@ type GhMerge = {
 	readonly setsEnv: boolean;
 };
 
-type MergeCommand = { readonly kind: "none" | "api" | "unreadable" } | GhMerge;
+type MergeCommand =
+	| {
+			readonly kind:
+				| "none"
+				| "api"
+				| "endpoint"
+				| "glob"
+				| "stdin"
+				| "unreadable";
+	  }
+	| GhMerge;
 
 const NONE: MergeCommand = { kind: "none" };
 const UNREADABLE: MergeCommand = { kind: "unreadable" };
+const API: MergeCommand = { kind: "api" };
+const ENDPOINT: MergeCommand = { kind: "endpoint" };
+const GLOB: MergeCommand = { kind: "glob" };
+const STDIN: MergeCommand = { kind: "stdin" };
 
-function isApiMerge(args: readonly string[]): boolean {
-	if (args[0] !== "api") return false;
-	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
-	if (args.some(namesGraphql) && args.some((value) => UNREAD_QUERY.test(value)))
-		return true;
-	return (
-		args.some((value) => MERGE_PATH.test(value)) &&
-		args.some((value) => METHOD_CHANGING_FLAG.test(value))
-	);
+type ReadFile = (path: string) => string | undefined;
+
+const READS_NO_FILE: ReadFile = () => undefined;
+
+type GraphqlInput = {
+	readonly kind: "field" | "typed" | "input";
+	readonly word: Word;
+};
+
+const API_SHORT_VALUES = "XfFHpqt";
+const API_LONG_VALUES = [
+	"--cache",
+	"--header",
+	"--hostname",
+	"--jq",
+	"--preview",
+	"--template",
+];
+const INPUT_FLAG = /^--(input|field|raw-field)(?:=([\s\S]*))?$/;
+const METHOD_FLAG = /^--method(?:=([\s\S]*))?$/;
+
+function shortInput(letter: string, word: Word): GraphqlInput | undefined {
+	if (letter === "f") return { kind: "field", word };
+	if (letter === "F") return { kind: "typed", word };
+	return undefined;
+}
+
+type ApiParts = {
+	readonly inputs: readonly GraphqlInput[];
+	readonly method: Word | undefined;
+	readonly positional: readonly Word[];
+	readonly dynamicFlag: boolean;
+};
+
+function apiParts(args: readonly Word[]): ApiParts {
+	const inputs: GraphqlInput[] = [];
+	const positional: Word[] = [];
+	let method: Word | undefined;
+	let dynamicFlag = false;
+	for (let index = 1; index < args.length; index++) {
+		const word = args[index];
+		if (word === undefined) continue;
+		if (!word.value.startsWith("-")) {
+			positional.push(word);
+			continue;
+		}
+		dynamicFlag ||= word.dynamic;
+		const attached = (value: string): Word => ({
+			value,
+			dynamic: word.dynamic,
+		});
+		const long = INPUT_FLAG.exec(word.value);
+		const methodFlag = METHOD_FLAG.exec(word.value);
+		if (long) {
+			const value = long[2] === undefined ? args[++index] : attached(long[2]);
+			const kind =
+				long[1] === "input" ? "input" : long[1] === "field" ? "typed" : "field";
+			if (value) inputs.push({ kind, word: value });
+		} else if (methodFlag) {
+			const value =
+				methodFlag[1] === undefined ? args[++index] : attached(methodFlag[1]);
+			method = value;
+		} else if (API_LONG_VALUES.includes(word.value)) index++;
+		else if (/^-[A-Za-z]/.test(word.value)) {
+			const at = [...word.value.slice(1)].findIndex((letter) =>
+				API_SHORT_VALUES.includes(letter),
+			);
+			if (at < 0) continue;
+			const rest = word.value.slice(at + 2);
+			const value = rest === "" ? args[++index] : attached(rest);
+			const letter = word.value.charAt(at + 1);
+			if (letter === "X") method = value;
+			const input = value && shortInput(letter, value);
+			if (input) inputs.push(input);
+		}
+	}
+	return { inputs, method, positional, dynamicFlag };
+}
+
+function writes(values: readonly string[], parts: ApiParts): boolean {
+	const staticGet =
+		parts.inputs.length === 0 &&
+		parts.method !== undefined &&
+		!parts.method.dynamic &&
+		parts.method.value === "GET";
+	return !staticGet && values.some((value) => METHOD_CHANGING_FLAG.test(value));
+}
+
+function inputText(
+	input: GraphqlInput,
+	step: ShellStep,
+	readFile: ReadFile,
+): string | undefined {
+	const { kind, word } = input;
+	if (word.dynamic) return undefined;
+	if (kind === "field") return word.value;
+	const value = word.value.slice(word.value.indexOf("=") + 1);
+	const path =
+		kind === "input"
+			? word.value
+			: value.startsWith("@")
+				? value.slice(1)
+				: undefined;
+	if (path === undefined) return word.value;
+	const text =
+		path !== "-"
+			? readFile(path)
+			: step.simple.stdinDynamic === true
+				? undefined
+				: step.simple.stdin;
+	return kind === "input" && text !== undefined ? decodedEscapes(text) : text;
+}
+
+function apiCall(
+	step: ShellStep,
+	args: readonly Word[],
+	readFile: ReadFile,
+): MergeCommand {
+	const values = args.map((word) => word.value);
+	if (values[0] !== "api") return NONE;
+	if (values.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return API;
+	const parts = apiParts(args);
+	const writing = writes(values, parts);
+	if (writing && values.some((value) => MERGE_PATH.test(value))) return API;
+	const words = args.slice(1);
+	if (words.some((word) => word.splits === true || word.expands === true))
+		return ENDPOINT;
+	const mergesThroughGraphql =
+		values.some(namesGraphql) &&
+		parts.inputs.some((input) => {
+			const text = inputText(input, step, readFile);
+			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
+		});
+	if (mergesThroughGraphql) return API;
+	if (!words.some((word) => word.dynamic)) return NONE;
+	return writing || parts.dynamicFlag || parts.positional.length > 1
+		? ENDPOINT
+		: NONE;
 }
 
 function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
@@ -104,24 +245,44 @@ function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
 	return NONE;
 }
 
-function mergeCommand(step: ShellStep): MergeCommand {
-	let words = step.words;
-	let setsEnv = words.length < step.simple.words.length;
-	let wrapper = WRAPPER.exec(words[0]?.value ?? "")?.[1];
-	while (wrapper !== undefined) {
-		words = words.slice(1);
-		while (wrapper === "env" && ENV_ASSIGNMENT.test(words[0]?.value ?? "")) {
-			setsEnv = true;
-			words = words.slice(1);
-		}
-		const next = words[0];
-		if (next?.dynamic || next?.value.startsWith("-")) return UNREADABLE;
-		wrapper = WRAPPER.exec(next?.value ?? "")?.[1];
+function fileReader(step: ShellStep): ReadFile {
+	return (path) => {
+		const file = resolve(step.dir, path);
+		return kindOf(file) === "file" ? readOptional(file) : undefined;
+	};
+}
+
+function expandsUpToSubcommand(args: readonly Word[]): boolean {
+	const named: string[] = [];
+	let ambiguous = false;
+	for (let at = 0; at < args.length; at++) {
+		const word = args[at];
+		if (word === undefined) continue;
+		const settled = !ambiguous && (named.length === 2 || named[0] === "api");
+		if (word.expands === true)
+			return !settled || (named[0] === "pr" && named[1] === "merge");
+		if (settled) continue;
+		if (REPO_FLAG.test(word.value)) {
+			if (args[at + 1]?.expands === true) return true;
+			at++;
+		} else if (MAY_TAKE_NEXT_WORD.test(word.value)) ambiguous = true;
+		else if (!word.value.startsWith("-")) named.push(word.value);
 	}
-	const [program, ...args] = words;
+	return false;
+}
+
+function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
+	if (step.unreadable === "stdin") return STDIN;
+	if (step.unreadable !== undefined && step.unreadable !== "folder")
+		return UNREADABLE;
+	const [program, ...args] = step.words;
+	if (program?.expands === true) return GLOB;
 	if (program === undefined || !GH.test(program.value)) return NONE;
-	if (isApiMerge(args.map((word) => word.value))) return { kind: "api" };
-	return prMerge(args, setsEnv);
+	const api = apiCall(step, args, readFile);
+	if (api.kind !== "none") return api;
+	return expandsUpToSubcommand(args)
+		? GLOB
+		: prMerge(args, step.env.length > 0 || step.unsetsEnv);
 }
 
 function mergeVerdict(
@@ -149,18 +310,27 @@ function mergeVerdict(
 	return reasons.length > 0 ? deny(mergeDenial(reasons)) : ALLOW;
 }
 
-function holdsMergeWord(step: ShellStep): boolean {
-	return step.values.some((value) => value.includes("merge"));
+function mayMerge(step: ShellStep, source: string): boolean {
+	return [source, ...step.values, ...(step.simple.substitutions ?? [])].some(
+		(value) => MERGE_TEXT.test(value),
+	);
 }
 
-function examinesMerge(step: ShellStep): boolean {
-	const merge = mergeCommand(step);
+function examinesMerge(
+	step: ShellStep,
+	source: string,
+	readFile: ReadFile,
+): boolean {
+	const merge = mergeCommand(step, readFile);
 	switch (merge.kind) {
 		case "none":
 			return false;
 		case "unreadable":
-			return holdsMergeWord(step);
+			return mayMerge(step, source);
 		case "api":
+		case "endpoint":
+		case "glob":
+		case "stdin":
 		case "merge":
 			return true;
 	}
@@ -168,11 +338,12 @@ function examinesMerge(step: ShellStep): boolean {
 
 function stepVerdict(
 	step: ShellStep,
+	source: string,
 	chained: boolean,
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	const merge = mergeCommand(step);
+	const merge = mergeCommand(step, fileReader(step));
 	switch (merge.kind) {
 		case "none":
 			return ALLOW;
@@ -182,8 +353,26 @@ function stepVerdict(
 					"Merge with gh pr merge, so astack can examine the PR first.",
 				]),
 			);
+		case "endpoint":
+			return deny(
+				mergeDenial([
+					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. In a read, put each variable in double quotes. Merge a PR with gh pr merge.",
+				]),
+			);
+		case "stdin":
+			return deny(
+				mergeDenial([
+					"astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
+				]),
+			);
+		case "glob":
+			return deny(
+				mergeDenial([
+					"astack cannot read this gh command, because the shell can expand a glob or a brace in a word up to its subcommand or after pr merge. Quote that word.",
+				]),
+			);
 		case "unreadable":
-			return holdsMergeWord(step)
+			return mayMerge(step, source)
 				? deny(
 						mergeDenial([
 							"astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
@@ -200,11 +389,13 @@ function shellVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	if (!GH_WORD.test(event.command)) return ALLOW;
+	if (!MAY_MERGE.test(event.command)) return ALLOW;
 	const steps = shellSteps(event.command, event.cwd);
 	const chained = steps.length > 1;
 	return combineAll(
-		steps.map((step) => stepVerdict(step, chained, context, read)),
+		steps.map((step) =>
+			stepVerdict(step, event.command, chained, context, read),
+		),
 	);
 }
 
@@ -315,7 +506,14 @@ function decodedEscapes(text: string): string {
 }
 
 function runsGhMerge(value: string): boolean {
-	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
+	return (
+		NAMES_GH.test(value) &&
+		shellSteps(value, "").some((step) =>
+			step.words[0]?.expands === true
+				? mayMerge(step, value)
+				: examinesMerge(step, value, READS_NO_FILE),
+		)
+	);
 }
 
 function quotedWord(item: string): string {
@@ -379,7 +577,9 @@ function failedVerdict(
 ): Verdict | undefined {
 	const merges =
 		(event.kind === "shell" &&
-			shellSteps(event.command, event.cwd).some(examinesMerge)) ||
+			shellSteps(event.command, event.cwd).some((step) =>
+				examinesMerge(step, event.command, fileReader(step)),
+			)) ||
 		(event.kind === "mcp" && isMcpMerge(event));
 	if (!merges) return undefined;
 	const cause = error instanceof Error ? error.message : String(error);

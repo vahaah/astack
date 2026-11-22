@@ -111,8 +111,9 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
    Step 5's move of the next PR is the only permitted branch or base change.
    A merge uses the branch and base that exist at that moment.
    A recorded verdict does not freeze them.
-   Watch with `astack watch-pr --queued-stack --stack-prs <bottom-to-top>` from `playbooks/babysit.md`.
-   Run it under `/loop` until it reports `COMPLETE` at the ceiling.
+   Wait for the checks with `astack watch-pr --pr <n>`.
+   A `READY` is not proof of a merge.
+   Read back each merge under `/loop` until the ceiling PR merges.
    A base can move to trunk when its parent merges.
    Treat that move as expected.
    Diagnose a stalled merge before you change anything.

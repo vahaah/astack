@@ -21,3 +21,4 @@
 | [0021](0021-doctor-reports-the-trust-that-codex-enforces.md) | Doctor reports the trust that Codex enforces, a drifted review profile and an unprotected base | Accepted |
 | [0022](0022-each-hook-finding-leaves-an-event-line-with-no-text.md) | Each hook finding leaves an event line with no text | Accepted |
 | [0023](0023-heavy-test-files-copy-one-template-repo.md) | Heavy test files copy one template repo, and the suite runs at the 5 s default | Accepted |
+| [0024](0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md) | Orchestrate supervises through the board, a status ask lists each waiting item, and watch-pr watches one PR | Accepted |

@@ -68,9 +68,17 @@ function declares(path: string, name: string): boolean {
 function mappedFiles(module: string, record: string): readonly string[] {
 	const text = section(read(record), "Implementation correspondence");
 	const model = read(module);
-	const ticked = [...text.matchAll(/`[^`\n]+`/g)].map((match) =>
-		match[0].slice(1, -1),
+	const quoted = [...text.matchAll(/(?:\b[a-z][a-z-]* )?`[^`\n]+`/g)].map(
+		(match) => {
+			const tick = match[0].indexOf("`");
+			const owner = match[0].slice(0, tick).trim();
+			return {
+				name: match[0].slice(tick + 1, -1),
+				root: SKILLS.has(owner) ? `${SKILL_ROOT}${owner}/` : "",
+			};
+		},
 	);
+	const ticked = quoted.map((tick) => tick.name);
 	const symbols = ticked
 		.filter((name) => /^[A-Za-z_]\w*$/.test(name))
 		.filter((name) => !new RegExp(`\\b${name}\\b`).test(model))
@@ -79,11 +87,15 @@ function mappedFiles(module: string, record: string): readonly string[] {
 				(path) => `${name} ${path}`,
 			),
 		);
-	const files = ticked
-		.filter((name) => /^[\w./-]+\.\w+$/.test(name))
-		.flatMap((name) =>
+	const files = quoted
+		.filter(({ name }) => /^[\w./-]+\.\w+$/.test(name))
+		.flatMap(({ name, root }) =>
 			[...SOURCES, ...SKILL_FILES]
-				.filter((path) => path === name || path.endsWith(`/${name}`))
+				.filter(
+					(path) =>
+						path.startsWith(root) &&
+						(path === name || path.endsWith(`/${name}`)),
+				)
 				.map((path) => `${name} ${path}`),
 		);
 	const skills = [

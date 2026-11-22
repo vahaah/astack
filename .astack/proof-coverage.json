@@ -9,7 +9,8 @@
 		"docs/reference/doctor.md",
 		"docs/reference/finding-telemetry.md",
 		"docs/reference/test-fixtures.md",
-		"docs/reference/proof-ladder.md"
+		"docs/reference/proof-ladder.md",
+		"docs/reference/programme-supervision.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -29,6 +30,7 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/property/shell-wrapper-law.test.ts",
 		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
@@ -60,7 +62,10 @@
 		"tests/formal-registry.test.ts",
 		"tests/astack/profile.test.ts",
 		"tests/apply/projects.test.ts",
-		"tests/apply/render.test.ts"
+		"tests/apply/render.test.ts",
+		"tests/astack/watch-pr/cli.test.ts",
+		"tests/supervision-text.test.ts",
+		"tests/old-names.test.ts"
 	],
 	"links": [
 		{
@@ -262,7 +267,8 @@
 				"sg-relayed-prompt",
 				"sg-unattended-channel",
 				"sg-machine-prompt",
-				"sg-doctor-unattended"
+				"sg-doctor-unattended",
+				"sg-attended-note"
 			]
 		},
 		{
@@ -304,8 +310,29 @@
 			"controls": [
 				"sg-work-loss-denied",
 				"sg-explicit-discard-passes",
-				"sg-clean-tree-passes"
+				"sg-clean-tree-passes",
+				"sg-whole-tree"
 			]
+		},
+		{
+			"criterion": "SG-plain-form",
+			"controls": ["sg-plain-form", "sg-wrapper-law"]
+		},
+		{
+			"criterion": "SG-dynamic-word",
+			"controls": ["sg-dynamic-word"]
+		},
+		{
+			"criterion": "SG-api-merge",
+			"controls": ["sg-api-merge"]
+		},
+		{
+			"criterion": "SG-hook-skip",
+			"controls": ["sg-hook-skip"]
+		},
+		{
+			"criterion": "SG-gates-run",
+			"controls": ["sg-gates-run"]
 		},
 		{
 			"criterion": "SG-generated",
@@ -446,11 +473,7 @@
 		},
 		{
 			"criterion": "WP-DEADLINE",
-			"controls": [
-				"wp-deadline-simple",
-				"wp-deadline-queued",
-				"wp-deadline-retry"
-			]
+			"controls": ["wp-deadline-simple", "wp-deadline-retry"]
 		},
 		{
 			"criterion": "CLI-MANAGED",
@@ -606,6 +629,30 @@
 		{
 			"criterion": "RL-LEGACY",
 			"controls": ["rl-legacy"]
+		},
+		{
+			"criterion": "WP-ONE-PR",
+			"controls": ["wp-one-pr", "wp-text-commands"]
+		},
+		{
+			"criterion": "WP-SINGLE-JSON",
+			"controls": ["wp-single-json"]
+		},
+		{
+			"criterion": "OR-NO-STORE",
+			"controls": ["or-no-store", "or-kept-rules"]
+		},
+		{
+			"criterion": "CU-LIST",
+			"controls": ["cu-list"]
+		},
+		{
+			"criterion": "CU-CHECKPOINT",
+			"controls": ["cu-checkpoint"]
+		},
+		{
+			"criterion": "AN-NAMES",
+			"controls": ["an-names", "an-models-header"]
 		}
 	]
 }

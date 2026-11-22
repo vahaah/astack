@@ -160,6 +160,27 @@ It is an owner gate.
 _Avoid_: Destructive command, cleanup
 _Code_: `workLossReasons`
 
+### Plain form
+
+The command that a shell step runs, after astack drops reserved words and braces and unwraps a known wrapper or a static shell body.
+A step that a variable hides is unreadable.
+_Avoid_: Normalized command, raw command
+_Code_: `shellSteps`
+
+### Hook skip
+
+A git commit or push that runs without the git hooks of the repo.
+It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder where HEAD does not hold each active hook as an executable file. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too.
+_Avoid_: Bypass, quiet push
+_Code_: `skipForm`
+
+### Gate record
+
+The record that `astack gates run` writes in the state folder when each gate that applies exits 0 at a clean HEAD.
+A hook-skip push of a recorded source passes.
+_Avoid_: Green stamp, gate cache
+_Code_: `GateRecord`
+
 ### Skill word budget
 
 The cap on the `*.md` words of each skill tree and on their total, in `scripts/lib/budget.json`.
@@ -221,3 +242,11 @@ A git repo, or a folder of repos, that a heavy test file builds once and copies 
 Each copy points its git config at itself, so a write in a copy never reaches the template or another copy.
 _Avoid_: Shared repo, golden repo
 _Code_: `buildTemplate`
+
+### Waiting item
+
+A call that only the owner can take.
+Examples are a green PR with no merge grant, an open question, a draft finding and an owner gate.
+A status ask lists each waiting item on its own line. A checkpoint reply names up to 3 and gives their count past 3.
+_Avoid_: Pending call, owner todo
+_Code_: `marketplace/plugins/astack/skills/mode/references/resume.md`

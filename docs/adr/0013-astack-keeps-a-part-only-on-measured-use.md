@@ -29,6 +29,8 @@ The duplicate-skill map of `scripts/lib/duplicate-skills.ts` names the skill of 
 When the route sends the work to the owner, the map keeps the cut name, and the report says that astack ships no successor.
 The report never calls a cut skill superseded, so it never prints a command that removes the copy of a user.
 
+> Amended 2026-11-22: A wrapper skill with at most 3 uses in 30 days can also fold into the skill or playbook that already routes its work. Rows 15 to 18 of the refocus cut list give this fold rule, and the owner accepted that list. The home takes the rules that the routes need, and each route points to the home. `scripts/lib/duplicate-skills.ts` lists each cut name. The report gives a cut name the verdict not-in-flow from any source, so it prints no removal command for it.
+
 ### D2. A word budget caps each skill and the total
 
 `bun run budget` counts the words of each `*.md` file in each skill tree under `marketplace/plugins/astack/skills/`.
@@ -112,6 +114,8 @@ These parts go in the same PR as this ADR:
 
 The cut skills held 9,287 words.
 After the cut and the repointed routes, the budget holds 50 skills and 140,953 words, under the plan target of 141,500.
+
+> Amended 2026-11-22: A second set folds four wrapper skills under the fold rule of D1. research becomes the research brief of plan stage S1. improve-codebase-architecture becomes the Survey section of codebase-design. prototype becomes the "Person-judged prototype" section of the mode Prototype playbook. writing-for-agents moves into the mode authoring playbook. Under D2, the cap of plan rises from 14,280 to 14,299, the cap of codebase-design from 1,532 to 1,739 and the cap of mode from 29,155 to 30,081. The rises add 1,152 words, and the total cap falls by 4,288 words. The budget then holds 46 skills and 136,513 words.
 
 ### D4. Cursor no longer delivers old string-only records
 

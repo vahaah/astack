@@ -67,7 +67,7 @@ On export, each question with `Binds.` becomes a decision issue.
 It blocks the units that the question binds.
 
 7. Write the brief of each block that can start in the next two sessions.
-8. Start one background `astack:research` subagent for each research question. Each one pushes a `research/<slug>-<topic>` branch and opens no PR.
+8. Start one background subagent with the S1 research brief of `stages.md` for each research question. Each one pushes a `research/<slug>-<topic>` branch and opens no PR.
 9. Stop. Charting settles no decision by hand.
 
 ## Run the board

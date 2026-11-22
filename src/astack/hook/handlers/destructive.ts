@@ -1,13 +1,26 @@
-import { join, resolve } from "node:path";
+import { realpathSync, statSync } from "node:fs";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { loadGateRecord } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
-import { type GitInvocation, gitInvocation } from "../../git-command.ts";
-import { canonicalRelative, readOptional } from "../../paths.ts";
-import { type ShellStep, shellSteps } from "../../shell.ts";
+import {
+	type GitInvocation,
+	type GitRead,
+	HOOKS_PATH_KEY,
+	readGit,
+} from "../../git-command.ts";
+import {
+	canonical,
+	canonicalRelative,
+	readOptional,
+	toPosix,
+} from "../../paths.ts";
+import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
 	combineAll,
 	defineHandler,
 	deny,
+	type Env,
 	type Verdict,
 } from "../events.ts";
 
@@ -323,8 +336,43 @@ function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
 	};
 }
 
+const STDIN_FILE = /^\/(?:dev\/stdin|dev\/fd\/\d+|proc\/self\/fd\/\d+)$/;
+
+function applyLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-p", "-C", "--directory"]);
+	const long = (name: string) => flags.some((flag) => isLongForm(flag, name));
+	const indexOnly = long("--cached") && !long("--index");
+	const patches = [...plain, ...(dashed ?? [])].filter(
+		(patch) => !STDIN_FILE.test(patch),
+	);
+	return hasFlag(flags, "--reverse", "R") && !indexOnly && patches.length === 0
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function readTreeLoss(args: readonly string[]): WorkLoss | undefined {
+	return args.includes("-u") && args.includes("--reset")
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function checkoutIndexLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags } = operands(args, ["--stage"]);
+	return hasFlag(flags, "--force", "f") &&
+		hasFlag(flags, "--all", "a") &&
+		!flags.some((flag) => isLongForm(flag.split("=")[0] ?? "", "--prefix"))
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
 function workLoss(git: GitInvocation): WorkLoss | undefined {
 	switch (git.sub) {
+		case "apply":
+			return applyLoss(git.args);
+		case "read-tree":
+			return readTreeLoss(git.args);
+		case "checkout-index":
+			return checkoutIndexLoss(git.args);
 		case "reset":
 			return resetLoss(git.args, git.dir);
 		case "checkout":
@@ -448,11 +496,72 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	);
 }
 
-function workLossReasons(step: ShellStep): readonly string[] {
-	const git = gitInvocation(step.values, step.dir);
-	const loss = git === undefined ? undefined : workLoss(git);
-	if (git === undefined || loss === undefined) return [];
-	const lost = lostPaths(loss, git.dir);
+function workLossReasons(
+	step: ShellStep,
+	git: GitInvocation,
+): readonly string[] {
+	const loss = workLoss(git);
+	return loss === undefined
+		? []
+		: lossReasons(step.values.join(" "), loss, git.dir);
+}
+
+const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
+const TAR_EXTRACT =
+	/^(?:--extract|--get|-[A-Za-z]*x[A-Za-z]*|[A-Za-z]*x[A-Za-z]*)$/;
+
+function tarExtracts(step: ShellStep): boolean {
+	const [program, ...args] = step.words;
+	if (program === undefined || basename(program.value) !== "tar") return false;
+	const lists = args.some((arg, at) =>
+		at === 0
+			? TAR_LIST.test(arg.value)
+			: /^(?:--list|-[A-Za-z]*t)/.test(arg.value),
+	);
+	return (
+		!lists ||
+		step.env.length > 0 ||
+		args.some((arg) => arg.dynamic || TAR_EXTRACT.test(arg.value))
+	);
+}
+
+function statusFails(dir: string): boolean {
+	return (
+		repoRoot(dir) !== undefined &&
+		!runGit(dir, [...READ_ONLY_GIT, "status", "--porcelain=v1", "-z"]).ok
+	);
+}
+
+function extractReasons(
+	step: ShellStep,
+	previous: ShellStep | undefined,
+): readonly string[] {
+	if (step.simple.piped !== true || previous === undefined) return [];
+	const source = readGit(previous);
+	if (
+		source.kind !== "plain" ||
+		source.git.sub !== "archive" ||
+		!tarExtracts(step)
+	)
+		return [];
+	const command = `${previous.values.join(" ")} | ${step.values.join(" ")}`;
+	if (statusFails(step.dir))
+		return [
+			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
+		];
+	return lossReasons(
+		command,
+		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		step.dir,
+	);
+}
+
+function lossReasons(
+	command: string,
+	loss: WorkLoss,
+	dir: string,
+): readonly string[] {
+	const lost = lostPaths(loss, dir);
 	if (lost.length === 0) return [];
 	const effect =
 		loss.lost === "untracked"
@@ -460,32 +569,251 @@ function workLossReasons(step: ShellStep): readonly string[] {
 			: "discards the uncommitted changes in";
 	const more = lost.length > 3 ? ` and ${lost.length - 3} more` : "";
 	return [
-		`${step.values.join(" ")} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
+		`${command} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
 	];
 }
 
-function gitReasons(step: ShellStep): readonly string[] {
-	const git = gitInvocation(step.values, step.dir);
-	if (!git) return [];
-	const flags = git.args.filter((arg) => arg.startsWith("-"));
-	if (git.sub === "commit") {
-		const noVerify = flags.some(
-			(flag) => flag === "--no-verify" || /^-[A-Za-z]*n[A-Za-z]*$/.test(flag),
-		);
-		return noVerify
-			? [
-					`git commit --no-verify skips the git hooks of the repo. ${OWNER_GATE}`,
-				]
-			: [];
+const SKIP_VARIABLE = /^(?:HUSKY|LEFTHOOK)=(?:0|false)$/i;
+const PUSHES_UNRECORDED = ["--all", "--branches", "--mirror", "--tags"];
+const PUSH_VALUE_FLAGS = [
+	"-o",
+	"--exec",
+	"--push-option",
+	"--receive-pack",
+	"--repo",
+];
+
+type ShellState = {
+	readonly exported: readonly Word[];
+	readonly env: Env;
+};
+
+function isSkipVariable(word: Word): boolean {
+	return !word.dynamic && SKIP_VARIABLE.test(word.value);
+}
+
+function gitText(dir: string, args: string[]): string | undefined {
+	const result = runGit(dir, args);
+	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
+}
+
+const HOOK_NAMES = [
+	"applypatch-msg",
+	"commit-msg",
+	"fsmonitor-watchman",
+	"p4-changelist",
+	"p4-post-changelist",
+	"p4-pre-submit",
+	"p4-prepare-changelist",
+	"post-applypatch",
+	"post-checkout",
+	"post-commit",
+	"post-index-change",
+	"post-merge",
+	"post-receive",
+	"post-rewrite",
+	"post-update",
+	"pre-applypatch",
+	"pre-auto-gc",
+	"pre-commit",
+	"pre-merge-commit",
+	"pre-push",
+	"pre-rebase",
+	"pre-receive",
+	"prepare-commit-msg",
+	"proc-receive",
+	"push-to-checkout",
+	"reference-transaction",
+	"sendemail-validate",
+	"update",
+];
+
+function isExecutable(path: string): boolean {
+	const stat = statSync(path, { throwIfNoEntry: false });
+	return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
+}
+
+function activeHooks(root: string): readonly string[] | undefined {
+	const folder = gitText(root, [
+		...READ_ONLY_GIT,
+		"rev-parse",
+		"--git-path",
+		"hooks",
+	]);
+	if (folder === undefined) return undefined;
+	const dir = resolve(root, folder);
+	return HOOK_NAMES.filter((name) => isExecutable(join(dir, name)));
+}
+
+const EXECUTABLE_BLOB = /^100755 blob [0-9a-f]+\t([\s\S]*)$/;
+
+function headHooks(root: string, path: string): ReadonlySet<string> {
+	const prefix = path === "" ? "" : `${path}/`;
+	const listed = runGit(root, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-z",
+		"--full-tree",
+		"HEAD",
+		"--",
+		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
+	]);
+	if (!listed.ok) return new Set();
+	return new Set(
+		listed.stdout
+			.toString("utf8")
+			.split("\0")
+			.flatMap((entry) => {
+				const tracked = EXECUTABLE_BLOB.exec(entry)?.[1];
+				const name = tracked?.slice(prefix.length);
+				return tracked === `${prefix}${name}` &&
+					name !== undefined &&
+					HOOK_NAMES.includes(name)
+					? [name]
+					: [];
+			}),
+	);
+}
+
+function realFolder(path: string): string | undefined {
+	try {
+		return realpathSync(path);
+	} catch {
+		return undefined;
 	}
+}
+
+function hooksFolder(root: string, folder: string): string | undefined {
+	if (folder === "" || folder.split(/[\\/]/).includes("..")) return undefined;
+	const top = canonical(root);
+	const real = realFolder(resolve(root, folder));
+	if (real === undefined || real !== resolve(top, folder)) return undefined;
+	const path = relative(top, real);
+	return path.startsWith("..") || isAbsolute(path) ? undefined : toPosix(path);
+}
+
+function tracksHooks(dir: string, folder: string): boolean {
+	const root = repoRoot(dir);
+	const path = root === undefined ? undefined : hooksFolder(root, folder);
+	const active = root === undefined ? undefined : activeHooks(root);
+	if (root === undefined || path === undefined || active === undefined)
+		return false;
+	const tracked = headHooks(root, path);
+	return tracked.size > 0 && active.every((name) => tracked.has(name));
+}
+
+function turnsHooksOff(setting: string, dir: string): boolean {
+	const at = setting.indexOf("=");
+	const key = at < 0 ? setting : setting.slice(0, at);
+	return (
+		HOOKS_PATH_KEY.test(key) &&
+		!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1))
+	);
+}
+
+function noVerify(git: GitInvocation, flags: readonly string[]): boolean {
+	return flags.some(
+		(flag) =>
+			isLongForm(flag, "--no-verify") ||
+			(git.sub === "commit" && /^-[A-Za-z]*n[A-Za-z]*$/.test(flag)),
+	);
+}
+
+function skipForm(
+	step: ShellStep,
+	git: GitInvocation,
+	flags: readonly string[],
+	shell: ShellState,
+): string | undefined {
+	if (noVerify(git, flags)) return `git ${git.sub} --no-verify`;
+	const variables = [...shell.exported, ...step.env]
+		.filter(isSkipVariable)
+		.map((word) => word.value);
+	return variables.length > 0 ||
+		git.config.some((setting) => turnsHooksOff(setting, git.dir))
+		? [...variables, ...step.values].join(" ")
+		: undefined;
+}
+
+function recorded(spec: string, dir: string, env: Env): boolean {
+	const source = spec.replace(/^\+/, "").split(":")[0] ?? "";
+	if (source === "") return false;
+	const sha = gitText(dir, [
+		"rev-parse",
+		"--verify",
+		"--quiet",
+		`${source}^{commit}`,
+	]);
+	return sha !== undefined && loadGateRecord(env, sha) !== undefined;
+}
+
+function skipPushReasons(
+	form: string,
+	git: GitInvocation,
+	refspecs: readonly string[],
+	shell: ShellState,
+): readonly string[] {
+	const skips = `${form} skips the git hooks of the repo`;
+	if (git.args.some((arg) => PUSHES_UNRECORDED.includes(arg)))
+		return [
+			`${skips}, and it pushes refs that astack gates run cannot record. ${OWNER_GATE}`,
+		];
+	const sources = refspecs.length === 0 ? ["HEAD"] : refspecs;
+	const missing = sources.filter((spec) => !recorded(spec, git.dir, shell.env));
+	return missing.length === 0
+		? []
+		: [
+				`${skips}. astack gates run has no green record for ${missing.join(", ")}, so this is an owner gate. Ask the owner, or run astack gates run --base <ref> on a clean tree, then push again.`,
+			];
+}
+
+function hooksPathReasons(
+	step: ShellStep,
+	git: GitInvocation,
+): readonly string[] {
+	const { flags, plain } = operands(git.args, [
+		"-f",
+		"--blob",
+		"--comment",
+		"--default",
+		"--file",
+		"--type",
+		"--value",
+	]);
+	const verbs = ["get", "list", "set", "unset"];
+	const action = verbs.includes(plain[0] ?? "") ? plain[0] : undefined;
+	const [key, value] = action === undefined ? plain : plain.slice(1);
+	if (key === undefined || !HOOKS_PATH_KEY.test(key)) return [];
+	const unsets =
+		action === "unset" || flags.some((flag) => /^--unset(?:-all)?$/.test(flag));
+	const reads =
+		action === "get" ||
+		action === "list" ||
+		flags.some((flag) => /^(?:--get|--list|-l)/.test(flag)) ||
+		(!unsets && value === undefined);
+	if (reads || (!unsets && value !== undefined && tracksHooks(git.dir, value)))
+		return [];
+	return [
+		`${step.values.join(" ")} skips the git hooks of the repo. ${OWNER_GATE}`,
+	];
+}
+
+function gitReasons(
+	step: ShellStep,
+	git: GitInvocation,
+	shell: ShellState,
+): readonly string[] {
+	if (git.sub === "config") return hooksPathReasons(step, git);
+	const flags = git.args.filter((arg) => arg.startsWith("-"));
+	const form = skipForm(step, git, flags, shell);
+	if (git.sub === "commit")
+		return form === undefined
+			? []
+			: [`${form} skips the git hooks of the repo. ${OWNER_GATE}`];
 	if (git.sub !== "push") return [];
-	const reasons: string[] = [];
-	if (flags.includes("--no-verify"))
-		reasons.push(
-			`git push --no-verify skips the git hooks of the repo. ${OWNER_GATE}`,
-		);
-	const plainArgs = git.args.filter((arg) => !arg.startsWith("-"));
-	const refspecs = plainArgs.slice(1);
+	const refspecs = operands(git.args, PUSH_VALUE_FLAGS).plain.slice(1);
+	const reasons: string[] =
+		form === undefined ? [] : [...skipPushReasons(form, git, refspecs, shell)];
 	const forced =
 		flags.some(
 			(flag) =>
@@ -505,19 +833,84 @@ function gitReasons(step: ShellStep): readonly string[] {
 	return reasons;
 }
 
+const LOST_BY_VERB: ReadonlyMap<string, LostChange> = new Map([
+	["apply", "tracked"],
+	["checkout", "tracked"],
+	["checkout-index", "tracked"],
+	["clean", "untracked"],
+	["read-tree", "tracked"],
+	["reset", "tracked"],
+	["restore", "tracked"],
+	["switch", "tracked"],
+]);
+
+function shown(words: readonly Word[]): string {
+	return words
+		.map((word) => {
+			if (!word.dynamic) return word.value;
+			return word.value === "" ? "$(...)" : `$${word.value}`;
+		})
+		.join(" ");
+}
+
+function unreadableReasons(
+	step: ShellStep,
+	read: Extract<GitRead, { kind: "unreadable" }>,
+): readonly string[] {
+	const lost =
+		read.verb === undefined ? undefined : LOST_BY_VERB.get(read.verb);
+	if (
+		lost !== undefined &&
+		read.dir !== undefined &&
+		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir).length === 0
+	)
+		return [];
+	return [
+		`astack cannot read ${shown(step.words)}, because ${read.cause}. Write the git command with static words, such as a branch name or HEAD in place of a variable. ${OWNER_GATE}`,
+	];
+}
+
+function stepReasons(
+	step: ShellStep,
+	previous: ShellStep | undefined,
+	shell: ShellState,
+): readonly string[] {
+	const read = readGit(step);
+	switch (read.kind) {
+		case "none":
+			return [...supabaseReasons(step), ...extractReasons(step, previous)];
+		case "unreadable":
+			return [...supabaseReasons(step), ...unreadableReasons(step, read)];
+		case "plain":
+			return [
+				...supabaseReasons(step),
+				...gitReasons(step, read.git, shell),
+				...workLossReasons(step, read.git),
+			];
+	}
+}
+
+function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
+	return steps
+		.slice(0, index)
+		.filter((step) => step.values[0] === "export")
+		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
+}
+
 export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell"],
-	run: (event) => {
-		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/.test(event.command))
+	run: (event, context) => {
+		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
 		return combineAll(
-			shellSteps(event.command, event.cwd).map((step) =>
-				denial([
-					...supabaseReasons(step),
-					...gitReasons(step),
-					...workLossReasons(step),
-				]),
+			shellSteps(event.command, event.cwd).map((step, index, steps) =>
+				denial(
+					stepReasons(step, steps[index - 1], {
+						exported: exportedSkips(steps, index),
+						env: context.env,
+					}),
+				),
 			),
 		);
 	},

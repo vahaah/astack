@@ -158,6 +158,41 @@
 			"text": []
 		},
 		{
+			"name": "OwnerCatchUp",
+			"model": {
+				"module": "formal/OwnerCatchUp.tla",
+				"config": "formal/OwnerCatchUp.cfg",
+				"dependencies": [],
+				"bounds": [
+					"4 waiting items, so a reply over 3 items and a reply over 4 items are both reachable.",
+					"One reply at a time, after each raise or settle of an item."
+				],
+				"fairness": [],
+				"invariants": ["TypeOK", "CatchUpListsEach", "CheckpointHidesNothing"],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/OwnerCatchUp.tla",
+				"action": "CatchUp",
+				"original": "listed |-> waiting,",
+				"replacement": "listed |-> IF Cardinality(waiting) > FoldAt THEN {} ELSE waiting,",
+				"defect": "A catch-up that folds 4 waiting items into a count, as the old checkpoint did with the open questions, hides each item from the owner.",
+				"expect": {
+					"kind": "invariant",
+					"name": "CatchUpListsEach"
+				}
+			},
+			"records": [
+				"docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md"
+			],
+			"covers": [],
+			"text": [
+				"marketplace/plugins/astack/skills/mode/SKILL.md",
+				"marketplace/plugins/astack/skills/mode/references/resume.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md"
+			]
+		},
+		{
 			"name": "PlanBoundary",
 			"model": {
 				"module": "formal/PlanBoundary.tla",
@@ -311,7 +346,8 @@
 				"bounds": [
 					"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
 					"Each combination of four path facts for one write and an optional commit.",
-					"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects."
+					"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+					"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
 				],
 				"fairness": [],
 				"invariants": [
@@ -326,19 +362,20 @@
 					"ScratchSkipped",
 					"CommitSurfaceChecked",
 					"BroadLossDenied",
-					"DenialNeedsLoss"
+					"DenialNeedsLoss",
+					"HookSkipNeedsGates"
 				],
 				"properties": []
 			},
 			"negative": {
 				"file": "formal/SessionGuards.tla",
-				"action": "Merge",
-				"original": "/\\ ProfileCovers(baseAuthority, n) \\/ n \\in grant",
-				"replacement": "/\\ ProfileCovers(workingAuthority, n) \\/ n \\in grant",
-				"defect": "The merge guard reads the working-tree profile, so an uncommitted edit of merge.authority gives standing merge authority with no owner word.",
+				"action": "Push",
+				"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+				"replacement": "/\\ ~skips \\/ target = \"head\"",
+				"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
 				"expect": {
 					"kind": "invariant",
-					"name": "MergeNeedsAuthority"
+					"name": "HookSkipNeedsGates"
 				}
 			},
 			"records": [
@@ -356,6 +393,7 @@
 				"src/astack/ste/session.ts",
 				"src/astack/shell.ts",
 				"src/astack/git-command.ts",
+				"src/astack/gates.ts",
 				"src/astack/paths.ts",
 				"src/astack/hook/handlers/comments.ts",
 				"src/astack/hook/handlers/types.ts",
