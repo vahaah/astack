@@ -68,6 +68,9 @@ function proof(
 const lastLine = (text: string): string =>
 	text.trimEnd().split("\n").at(-1) ?? "";
 
+const rule = (section: string): string =>
+	`rule: read the section "${section}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
+
 describe("astack check proof", () => {
 	test.each(["check proof", "check-proof"])(
 		"[control:proof-valid-triple] %s admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run",
@@ -124,7 +127,7 @@ describe("astack check proof", () => {
 		);
 		expect(proof(shallow)).toEqual({
 			code: 1,
-			err: "",
+			err: rule("Base"),
 			out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
 		});
 		const verified = join(scratch, "release-verify");
@@ -215,7 +218,7 @@ describe("astack check proof", () => {
 			child.on("close", (code) => done({ code, out, err }));
 		});
 		expect(changed).toBe(true);
-		expect(run.err).toBe("");
+		expect(run.err).toBe(rule("Base"));
 		expect(run.code).toBe(1);
 		expect(lastLine(run.out)).toBe(
 			"stop: proof stale: the candidate inputs changed during the proof: the index",
@@ -262,7 +265,7 @@ describe("astack check proof", () => {
 			child.on("close", (code) => done({ code, out, err }));
 		});
 		expect(changed).toBe(true);
-		expect(run.err).toBe("");
+		expect(run.err).toBe(rule("Base"));
 		expect(readFileSync(launcher, "utf8")).toBe(content);
 		expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
 		expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
@@ -565,7 +568,7 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(2);
 	});
 
-	test("a manifest with an unknown key is a schema error", () => {
+	test("[control:proof-stop-section] a schema stop keeps its stdout line and writes the section of its stage to stderr", () => {
 		const repo = proofRepo(scratch, (p) => {
 			Object.assign(p, { receipt: "stored" });
 		});
@@ -573,6 +576,7 @@ describe("astack check proof", () => {
 		expect(run.out).toBe(
 			'stop: proof schema: the proof has the unknown key "receipt"\n',
 		);
+		expect(run.err).toBe(rule("Required records"));
 		expect(run.code).toBe(2);
 	});
 

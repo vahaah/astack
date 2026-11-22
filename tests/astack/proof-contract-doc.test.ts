@@ -1,7 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
+import {
+	parseChangeProof,
+	STAGE_SECTIONS,
+	STAGES,
+} from "../../src/astack/change-proof/contract.ts";
 
 const REFERENCES = join(
 	import.meta.dir,
@@ -75,5 +79,11 @@ describe("the proof contract reference", () => {
 				.map((key) => `${record}: ${key}`);
 		});
 		expect([...new Set(missing)]).toEqual([]);
+	});
+
+	test("[control:proof-stop-section] the section of each stop stage is a heading of the proof contract", () => {
+		expect(
+			STAGES.filter((stage) => !SECTIONS.has(slug(STAGE_SECTIONS[stage]))),
+		).toEqual([]);
 	});
 });

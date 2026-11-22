@@ -27,6 +27,7 @@ import {
 	DEFAULT_PROOF_MANIFEST,
 	parseChangeProof,
 	type Rejection,
+	STAGE_SECTIONS,
 	type Stage,
 } from "../../../change-proof/contract.ts";
 import {
@@ -86,6 +87,9 @@ function options(args: readonly string[]): Result<Options, string> {
 
 function stop(io: Io, rejection: Rejection): number {
 	io.out(`stop: proof ${rejection.stage}: ${rejection.message}\n`);
+	io.err(
+		`rule: read the section "${STAGE_SECTIONS[rejection.stage]}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`,
+	);
 	return rejection.stage === "schema" ? 2 : 1;
 }
 
