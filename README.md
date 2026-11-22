@@ -5,19 +5,19 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
-    <img alt="astack lockup. From goal to merged PR, with you at every decision. Two rows: Goal, Plan, Build, Proof with a turnstile, then Review, PR, Harden and Merge with an end-of-proof mark. The return arrow is labelled f compose g. Build notes failing test first. Merge notes with your grant. Caption: composition as analogy; only the proof parse→admit composition is checked." src="docs/hero-light.svg" width="720">
+    <img alt="The astack name and the tagline above two rows of steps. The first row is Goal, Plan, Build and Proof. The second row is Review, PR, Harden and Merge. Build starts with a failing test. Merge needs your grant. A return arrow has the label f compose g. The caption says that this composition is an analogy. astack checks only the parse and admit steps of the proof as a composition." src="docs/hero-light.svg" width="720">
   </picture>
 </p>
 
 <p align="center"><a href="#quickstart">Install</a> · <a href="#how-it-works">Workflow</a> · <a href="marketplace/plugins/astack/skills/mode/references/card.md">Rule card</a></p>
 
-astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you before each merge or other owner decision. To start, follow the [Quickstart](#quickstart).
+astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you at each decision that is yours, such as a plan choice or a merge. To start, follow the [Quickstart](#quickstart).
 
-- 50 skills for plans, builds, reviews, pull requests, tickets, documents and tool control.
-- 5 agents: 2 read-only language reviewers and 3 helpers that the skills start.
-- 5 rules files, and hooks with 12 handlers that check replies, types, comments and PR text, and guard merges and destructive commands.
-- The `astack` CLI for sessions, the board, `doctor` and 13 repository checks.
-- A [change proof](#change-proof) for each change: a TLA+ model check that passes, with its domain contract and decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
+- 50 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
+- 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
+- 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
+- Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
+- The `astack` CLI for plan sessions and 13 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
 
 ## Contents
 
