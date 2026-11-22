@@ -7,10 +7,7 @@ export type ProfileBlock = { language: "yaml" | "json"; source: string };
 
 export type ParsedProfile = { data: unknown; issues: ProfileIssue[] };
 
-type Check = {
-	(value: unknown, path: string, issues: ProfileIssue[]): void;
-	readonly keys?: readonly string[];
-};
+type Check = (value: unknown, path: string, issues: ProfileIssue[]) => void;
 
 const FENCE = /^(`{3,}|~{3,})\s*([\w-]*)/;
 
@@ -134,55 +131,42 @@ const oneOf =
 		}
 	};
 
-const list = (item: Check): Check =>
-	Object.assign(
-		(value: unknown, path: string, issues: ProfileIssue[]) => {
-			if (!Array.isArray(value)) {
-				issues.push({ path, message: "must be a list" });
-				return;
-			}
-			value.forEach((entry, position) => {
-				item(entry, `${path}[${position}]`, issues);
-			});
-		},
-		{ keys: (item.keys ?? []).map((key) => `[].${key}`) },
-	);
+const list =
+	(item: Check): Check =>
+	(value, path, issues) => {
+		if (!Array.isArray(value)) {
+			issues.push({ path, message: "must be a list" });
+			return;
+		}
+		value.forEach((entry, position) => {
+			item(entry, `${path}[${position}]`, issues);
+		});
+	};
 
-const nullable = (check: Check): Check =>
-	Object.assign(
-		(value: unknown, path: string, issues: ProfileIssue[]) => {
-			if (value !== null) check(value, path, issues);
-		},
-		{ keys: check.keys ?? [] },
-	);
+const nullable =
+	(check: Check): Check =>
+	(value, path, issues) => {
+		if (value !== null) check(value, path, issues);
+	};
 
-const object = (shape: Record<string, Check>, required: string[] = []): Check =>
-	Object.assign(
-		(value: unknown, path: string, issues: ProfileIssue[]) => {
-			if (!isRecord(value)) {
-				issues.push({ path, message: "must be a mapping" });
-				return;
-			}
-			for (const key of required) {
-				if (!(key in value))
-					issues.push({ path: join(path, key), message: "is required" });
-			}
-			for (const [key, entry] of Object.entries(value)) {
-				const check = shape[key];
-				if (check) check(entry, join(path, key), issues);
-				else
-					issues.push({ path: join(path, key), message: "is not a known key" });
-			}
-		},
-		{
-			keys: Object.entries(shape).flatMap(([key, check]) => [
-				key,
-				...(check.keys ?? []).map((child) =>
-					child.startsWith("[]") ? `${key}${child}` : `${key}.${child}`,
-				),
-			]),
-		},
-	);
+const object =
+	(shape: Record<string, Check>, required: string[] = []): Check =>
+	(value, path, issues) => {
+		if (!isRecord(value)) {
+			issues.push({ path, message: "must be a mapping" });
+			return;
+		}
+		for (const key of required) {
+			if (!(key in value))
+				issues.push({ path: join(path, key), message: "is required" });
+		}
+		for (const [key, entry] of Object.entries(value)) {
+			const check = shape[key];
+			if (check) check(entry, join(path, key), issues);
+			else
+				issues.push({ path: join(path, key), message: "is not a known key" });
+		}
+	};
 
 function join(path: string, key: string): string {
 	return path === "" ? key : `${path}.${key}`;
@@ -357,169 +341,7 @@ const profileShape = object(
 	["version", "gates", "test"],
 );
 
-export const PROFILE_KEYS: readonly string[] = profileShape.keys ?? [];
-
-export const PROFILE_LEAF_KEYS: readonly string[] = PROFILE_KEYS.filter(
-	(key) =>
-		!PROFILE_KEYS.some(
-			(other) => other.startsWith(`${key}.`) || other.startsWith(`${key}[].`),
-		),
-);
-
 export const DEFAULT_MAX_ITERATIONS = 2;
-
-export const FALLBACK_KEYS: readonly string[] = [
-	"base.default",
-	"base.from_pr",
-	"base.sync",
-	"iterations.min",
-	"iterations.max",
-	"push",
-	"guardrails",
-	"gates",
-	"gates[].name",
-	"gates[].command",
-	"gates[].env",
-	"gates[].requires",
-	"gates[].setup",
-	"gates[].when_changed",
-	"gates[].ci_env",
-	"gates[].after",
-	"gates[].tools",
-	"gates[].rewrites",
-	"test",
-	"test.name",
-	"test.command",
-	"test.env",
-	"test.requires",
-	"test.setup",
-	"test.when_changed",
-	"test.ci_env",
-	"test.after",
-	"test.tools",
-	"test.rewrites",
-	"metrics",
-	"metrics.command",
-	"metrics.never_increase",
-	"reviewers.select",
-	"reviewers.agents",
-	"reviewers.checklists",
-	"reviewers.notes",
-	"typescript.rules",
-	"test_adequacy",
-	"ledger.carry_over",
-	"prepasses",
-	"prepasses[].when",
-	"prepasses[].sources",
-	"comments.keep_patterns",
-	"forbidden.commands",
-	"forbidden.paths",
-	"conventions.branch.create",
-	"conventions.branch.pattern",
-	"conventions.commit.subject",
-	"conventions.commit.trailers",
-	"proof.pr_comment",
-	"proof.on_unclean",
-	"threads.answer",
-	"merge.after_clean_stop",
-	"merge.conditions",
-];
-
-function definesKey(data: unknown, key: string): boolean {
-	const [head = "", ...rest] = key.split(".");
-	if (data === null) return true;
-	if (head.endsWith("[]")) {
-		const items = isRecord(data) ? data[head.slice(0, -2)] : undefined;
-		if (!Array.isArray(items)) return false;
-		return items.every((item) => definesKey(item, rest.join(".")));
-	}
-	if (!isRecord(data) || !(head in data)) return false;
-	return rest.length === 0 || definesKey(data[head], rest.join("."));
-}
-
-export function missingFallbackKeys(data: unknown): string[] {
-	return FALLBACK_KEYS.filter((key) => !definesKey(data, key));
-}
-
-type UnreadKey = {
-	readonly key: string;
-	readonly fallback: "absent" | { readonly value: unknown };
-};
-
-export const FALLBACK_UNREAD: readonly UnreadKey[] = [
-	{ key: "type_coverage", fallback: { value: null } },
-	{ key: "typescript.boundary_cast_marker", fallback: { value: null } },
-	{ key: "reviewers.extra", fallback: { value: [] } },
-	{ key: "prepasses[].name", fallback: { value: "contract-coverage" } },
-	{ key: "forbidden.code", fallback: { value: [] } },
-	{ key: "forbidden.gate_flags", fallback: { value: [] } },
-	{ key: "gates[].optional", fallback: { value: false } },
-	{ key: "test.optional", fallback: { value: false } },
-	{ key: "metrics.fallback", fallback: "absent" },
-	{ key: "merge.fallback", fallback: "absent" },
-];
-
-type ExemptKey = { readonly key: string; readonly reason: string };
-
-export const FALLBACK_EXEMPT: readonly ExemptKey[] = [
-	{
-		key: "version",
-		reason:
-			"validateProfile reads the schema version. No step of the run reads it.",
-	},
-	{
-		key: "after_create_pr",
-		reason:
-			"The create-pr playbook reads it to start one run. No step of the run reads it.",
-	},
-	{
-		key: "conventions.pr",
-		reason: "No step of the engine or the stub edits the PR title or body.",
-	},
-	{
-		key: "conventions.ticket",
-		reason: "No step of the engine or the stub reads a ticket key.",
-	},
-	{
-		key: "gates[].side_effects",
-		reason:
-			"It tells the reader of the profile what a gate changes outside the tree. validateProfile requires it with a setup or a start, and no step of the run reads it.",
-	},
-	{
-		key: "test.side_effects",
-		reason:
-			"It tells the reader of the profile what the test gate changes outside the tree. validateProfile requires it with a setup or a start, and no step of the run reads it.",
-	},
-	{
-		key: "merge.command",
-		reason:
-			"The stub runs it only when merge.after_clean_stop is merge, and validateProfile requires it then. A profile that only reports leaves it out.",
-	},
-];
-
-function valuesAt(data: unknown, key: string): unknown[] {
-	const [head = "", ...rest] = key.split(".");
-	if (head.endsWith("[]")) {
-		const items = isRecord(data) ? data[head.slice(0, -2)] : undefined;
-		return Array.isArray(items)
-			? items.flatMap((item) => valuesAt(item, rest.join(".")))
-			: [];
-	}
-	if (!isRecord(data) || !(head in data)) return [];
-	return rest.length === 0
-		? [data[head]]
-		: valuesAt(data[head], rest.join("."));
-}
-
-export function unreadFallbackKeys(data: unknown): string[] {
-	return FALLBACK_UNREAD.filter(({ key, fallback }) =>
-		valuesAt(data, key).some(
-			(value) =>
-				fallback === "absent" ||
-				JSON.stringify(value) !== JSON.stringify(fallback.value),
-		),
-	).map(({ key }) => key);
-}
 
 export function validateProfile(data: unknown): ProfileIssue[] {
 	const issues: ProfileIssue[] = [];
@@ -531,7 +353,6 @@ export function validateProfile(data: unknown): ProfileIssue[] {
 	checkGateOrder(data, issues);
 	issues.push(...gateFixers(data));
 	issues.push(...gateForbiddenCommands(data));
-	checkBoundaryCastMarker(data, issues);
 	checkMerge(data.merge, issues);
 	return issues;
 }
@@ -906,38 +727,19 @@ function ciEnvEntry(item: Readonly<Record<string, unknown>>): CiEnvEntry[] {
 	return typeof value === "string" ? [{ kind: "copy", name, value }] : [];
 }
 
-function checkBoundaryCastMarker(
-	data: Record<string, unknown>,
-	issues: ProfileIssue[],
-): void {
-	const typescript = data.typescript;
-	if (
-		!isRecord(typescript) ||
-		typeof typescript.boundary_cast_marker !== "string"
-	)
-		return;
-	const marker = typescript.boundary_cast_marker;
-	const comments = isRecord(data.comments) ? data.comments : {};
-	const patterns = Array.isArray(comments.keep_patterns)
-		? comments.keep_patterns
-		: [];
-	const kept = patterns.some(
-		(entry) => typeof entry === "string" && safeTest(entry, `${marker} reason`),
-	);
-	if (!kept) {
-		issues.push({
-			path: "typescript.boundary_cast_marker",
-			message: "needs a comments.keep_patterns entry that matches it",
-		});
-	}
-}
-
-function safeTest(source: string, sample: string): boolean {
-	try {
-		return new RegExp(source).test(sample);
-	} catch {
-		return false;
-	}
+function unkeptMarker(
+	data: unknown,
+	keep: readonly RegExp[],
+): ProfileIssue | undefined {
+	if (!isRecord(data) || !isRecord(data.typescript)) return undefined;
+	const marker = data.typescript.boundary_cast_marker;
+	if (typeof marker !== "string") return undefined;
+	return keep.some((pattern) => pattern.test(`${marker} reason`))
+		? undefined
+		: {
+				path: "typescript.boundary_cast_marker",
+				message: `no commentKeep pattern of the repo matches ${JSON.stringify(marker)}`,
+			};
 }
 
 const CHECKS_CI_ON_HEAD = (condition: string): boolean =>
@@ -982,6 +784,7 @@ function schemaRepair(issue: ProfileIssue): string {
 
 export function reviewProfileProblems(
 	markdown: string,
+	keep: readonly RegExp[],
 ): ReviewProfileProblem[] {
 	const block = extractProfileBlock(markdown);
 	if (!block) return [{ path: "", message: NO_BLOCK, repair: NO_BLOCK_REPAIR }];
@@ -995,35 +798,25 @@ export function reviewProfileProblems(
 			},
 		];
 	const { data } = parsed;
-	const missing = missingFallbackKeys(data);
-	const unread = unreadFallbackKeys(data);
+	const marker = unkeptMarker(data, keep);
 	return [
 		...validateProfile(data).map((issue) => ({
 			...issue,
 			repair: schemaRepair(issue),
 		})),
+		...(marker === undefined
+			? []
+			: [
+					{
+						...marker,
+						repair:
+							"Add a pattern that matches the marker to commentKeep in .astack/profile.json. Apply writes that list from keepPatterns of the project config",
+					},
+				]),
 		...proofGateIssues(data).map((issue) => ({
 			...issue,
 			repair: `Copy the change-proof gate from the Template section of ${REFERENCE}`,
 		})),
-		...(missing.length === 0
-			? []
-			: [
-					{
-						path: "",
-						message: `the stub fallback reads ${missing.join(", ")}, which the profile does not define`,
-						repair: `Define each key as ${REFERENCE} says`,
-					},
-				]),
-		...(unread.length === 0
-			? []
-			: [
-					{
-						path: "",
-						message: `the profile sets ${unread.join(", ")} away from the default, but the stub fallback does not follow them`,
-						repair: "Keep each at its default, or teach the stub to follow it",
-					},
-				]),
 	];
 }
 
@@ -1043,8 +836,9 @@ export type ReviewProfileState =
 export function reviewProfileState(
 	path: string,
 	text: string | undefined,
+	keep: readonly RegExp[],
 ): ReviewProfileState {
 	if (text === undefined) return { kind: "missing", path };
 	if (extractProfileBlock(text) === null) return { kind: "no-block", path };
-	return { kind: "checked", path, problems: reviewProfileProblems(text) };
+	return { kind: "checked", path, problems: reviewProfileProblems(text, keep) };
 }

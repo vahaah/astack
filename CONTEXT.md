@@ -264,6 +264,14 @@ Apply, `astack check hardening-profile` and doctor read one list of these rules,
 _Avoid_: Profile lint, profile schema
 _Code_: `reviewProfileProblems`
 
+### Review stub
+
+The thin `pr-review-hardening` skill that apply writes into a repo and each skill mirror.
+It invokes the engine `astack:pr-review-hardening`, and it holds no copy of the loop.
+With no plugin, it runs no step and gives one install line.
+_Avoid_: Fallback loop, loop copy
+_Code_: `renderReviewCopies`
+
 ### Fixture template
 
 A git repo, or a folder of repos, that a heavy test file builds once and copies for each test.

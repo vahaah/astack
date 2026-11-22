@@ -10,7 +10,7 @@ The [model](../../formal/FixtureIsolation.tla) examines one template, two copies
 - [criterion:FX-TREE] `commitTree` writes the exact files, links and bytes of each branch. Two copies of one template get the same commit ids.
 - [criterion:FX-ATOMIC] A build that throws leaves no template and no build folder.
 - [criterion:FX-OWN-DIR] Two builds of one spec give two folders, and the cleanup removes each of them.
-- [criterion:FX-REAL-SCAN] The test file of `check:companion` starts the real profile scan once. That scan names each problem of a companion with 5 scan mutations.
+- [criterion:FX-REAL-SCAN] The test file of `check:companion` starts the real profile scan once. That scan names each problem of a companion with 4 scan mutations.
 
 ## Claim boundary
 

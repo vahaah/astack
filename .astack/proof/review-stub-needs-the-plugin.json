@@ -1,0 +1,607 @@
+{
+	"version": 1,
+	"change": "review-stub-needs-the-plugin",
+	"base": "6b8ee08456566d3f1699da500101410f54e086bc",
+	"scope": [
+		{
+			"path": "scripts/lib/render.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": [
+				"RunStub",
+				"NoStepWithoutEngine",
+				"InstallOnlyWhenAbsent",
+				"Apply"
+			]
+		},
+		{
+			"path": "templates/pr-review-hardening.stub.*",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "NoStepWithoutEngine", "InstallOnlyWhenAbsent"]
+		},
+		{
+			"path": "tests/apply/review-*.test.ts",
+			"obligation": "RS-RETIRE",
+			"modelRefs": [
+				"RunStub",
+				"NoStepWithoutEngine",
+				"InstallOnlyWhenAbsent",
+				"Apply",
+				"NoFallbackAfterUpdate"
+			]
+		},
+		{
+			"path": "scripts/lib/removals.ts",
+			"obligation": "RS-RETIRE",
+			"modelRefs": ["Apply", "NoFallbackAfterUpdate"]
+		},
+		{
+			"path": "src/astack/managed.ts",
+			"obligation": "RS-RETIRE",
+			"modelRefs": ["Apply", "NoFallbackAfterUpdate"]
+		},
+		{
+			"path": "scripts/lib/notices.ts",
+			"obligation": "RS-RETIRE",
+			"modelRefs": ["Apply"]
+		},
+		{
+			"path": "src/astack/pr-review-profile.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Check", "OneKeepList", "PreflightAcceptsApplied"]
+		},
+		{
+			"path": "src/astack/cli/commands/check/hardening-profile.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Check", "OneKeepList"]
+		},
+		{
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Check", "OneKeepList"]
+		},
+		{
+			"path": "scripts/lib/keep-forms.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Apply", "OneKeepList"]
+		},
+		{
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Check", "OneKeepList"]
+		},
+		{
+			"path": "tests/apply/keep-forms.test.ts",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Apply", "OneKeepList"]
+		},
+		{
+			"path": "scripts/check-companion.ts",
+			"obligation": "RS-RULES",
+			"modelRefs": ["Apply", "Check"]
+		},
+		{
+			"path": "tests/pr-review-profile.test.ts",
+			"obligation": "RS-RULES",
+			"modelRefs": ["Check", "PreflightAcceptsApplied"]
+		},
+		{
+			"path": "tests/check-companion.test.ts",
+			"obligation": "RS-RULES",
+			"modelRefs": ["Check"]
+		},
+		{
+			"path": "tests/astack/review-stub-composition.ts",
+			"obligation": "RS-RULES",
+			"modelRefs": ["RunStub", "Apply", "Check"]
+		},
+		{
+			"path": "tests/astack/hardening-profile.test.ts",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply", "Check", "PreflightAcceptsApplied", "OneKeepList"]
+		},
+		{
+			"path": "tests/apply/render.test.ts",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply", "Check", "PreflightAcceptsApplied", "OneKeepList"]
+		},
+		{
+			"path": "tests/apply/ci-parity-apply.test.ts",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply"]
+		},
+		{
+			"path": "tests/apply/projects.test.ts",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply"]
+		},
+		{
+			"path": "tests/fixtures/ci-parity/profile-tail.yml",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply"]
+		},
+		{
+			"path": "examples/companion/projects/acme/**",
+			"obligation": "RS-WINDOW",
+			"modelRefs": ["Apply", "PreflightAcceptsApplied"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/**",
+			"obligation": "RS-ONE-LIST",
+			"modelRefs": ["Check", "OneKeepList", "NoStepWithoutEngine"]
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "RS-ONE-LIST",
+			"modelRefs": ["OneKeepList", "NoStepWithoutEngine"]
+		},
+		{
+			"path": "docs/review-lessons.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["NoStepWithoutEngine"]
+		},
+		{
+			"path": "tests/review-lessons.test.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["NoStepWithoutEngine"]
+		},
+		{
+			"path": "tests/tracker-schema.test.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub"]
+		},
+		{
+			"path": "scripts/skill-load-report.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "InstallOnlyWhenAbsent"]
+		},
+		{
+			"path": "tests/skill-load-report.test.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "InstallOnlyWhenAbsent"]
+		},
+		{
+			"path": "scripts/bench-pr-head.ts",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub"]
+		},
+		{
+			"path": "docs/runbooks/*.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub"]
+		},
+		{
+			"path": "AGENTS.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "Apply"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "Apply"]
+		},
+		{
+			"path": "docs/install-repo.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub", "Apply"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": ["RunStub"]
+		},
+		{
+			"path": "docs/reference/review-stub.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": [
+				"RunStub",
+				"Apply",
+				"Check",
+				"TypeOK",
+				"NoStepWithoutEngine",
+				"InstallOnlyWhenAbsent",
+				"NoFallbackAfterUpdate",
+				"PreflightAcceptsApplied",
+				"OneKeepList"
+			]
+		},
+		{
+			"path": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+			"obligation": "RS-INSTALL",
+			"modelRefs": [
+				"RunStub",
+				"Apply",
+				"Check",
+				"TypeOK",
+				"NoStepWithoutEngine",
+				"InstallOnlyWhenAbsent",
+				"NoFallbackAfterUpdate",
+				"PreflightAcceptsApplied",
+				"OneKeepList"
+			]
+		},
+		{
+			"path": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
+			"obligation": "RS-KEEP",
+			"modelRefs": ["Check", "OneKeepList"]
+		},
+		{
+			"path": "formal/ReviewStub.*",
+			"obligation": "RS-RETIRE",
+			"modelRefs": [
+				"RunStub",
+				"Apply",
+				"Check",
+				"TypeOK",
+				"NoStepWithoutEngine",
+				"InstallOnlyWhenAbsent",
+				"NoFallbackAfterUpdate",
+				"PreflightAcceptsApplied",
+				"OneKeepList"
+			]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "RS-RETIRE",
+			"modelRefs": ["NoFallbackAfterUpdate"]
+		},
+		{
+			"path": "tests/keep-list.test.ts",
+			"obligation": "KEEP-TIE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/reference/source-scan.md",
+			"obligation": "KEEP-TIE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/reference/pr-head-check.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/reference/test-fixtures.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "scripts/lib/render.ts",
+			"symbol": "Rendered"
+		},
+		"terms": [
+			"Review stub",
+			"Hardening profile rule",
+			"ChangeProof",
+			"Model registry"
+		],
+		"invariants": [
+			{
+				"name": "A loop step runs only through the engine",
+				"modelRef": "NoStepWithoutEngine"
+			},
+			{
+				"name": "The stub gives the install line only when the plugin is absent",
+				"modelRef": "InstallOnlyWhenAbsent"
+			},
+			{
+				"name": "After an apply update the repo holds no fallback copy",
+				"modelRef": "NoFallbackAfterUpdate"
+			},
+			{
+				"name": "The profile check fails only on an unkept marker that apply also refuses",
+				"modelRef": "PreflightAcceptsApplied"
+			},
+			{
+				"name": "The marker rule reads only the keep list of the repo",
+				"modelRef": "OneKeepList"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+				"decision": "D5"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"RS-INSTALL",
+				"RS-RETIRE",
+				"RS-RULES",
+				"RS-KEEP",
+				"RS-WINDOW",
+				"RS-ONE-LIST",
+				"KEEP-TIE",
+				"WB-ratchet",
+				"SG-preserve",
+				"SG-generated"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "artifact",
+			"contract": "Apply maps a project config and its companion folder to the review stubs, the profile and their problems. Each stub holds the install line and no copy of the loop, and each problem has its repair."
+		},
+		"objects": [
+			{
+				"name": "ProjectConfig",
+				"link": {
+					"path": "scripts/lib/projects.ts",
+					"symbol": "ProjectConfig"
+				}
+			},
+			{
+				"name": "Rendered",
+				"link": {
+					"path": "scripts/lib/render.ts",
+					"symbol": "Rendered"
+				}
+			},
+			{
+				"name": "ProfileText",
+				"link": {
+					"path": "src/astack/pr-review-profile.ts",
+					"symbol": "markdown"
+				}
+			},
+			{
+				"name": "KeepList",
+				"link": {
+					"path": "src/astack/profile.ts",
+					"symbol": "commentKeep"
+				}
+			},
+			{
+				"name": "ReviewProfileProblem",
+				"link": {
+					"path": "src/astack/pr-review-profile.ts",
+					"symbol": "ReviewProfileProblem"
+				}
+			},
+			{
+				"name": "RemovalInput",
+				"link": {
+					"path": "scripts/lib/removals.ts",
+					"symbol": "RemovalInput"
+				}
+			},
+			{
+				"name": "RemovalPlan",
+				"link": {
+					"path": "scripts/lib/removals.ts",
+					"symbol": "RemovalPlan"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "renderReviewCopies",
+				"from": "ProjectConfig",
+				"to": "Rendered",
+				"link": {
+					"path": "scripts/lib/render.ts",
+					"symbol": "renderReviewCopies"
+				},
+				"effects": ["fs-read"]
+			},
+			{
+				"name": "reviewProfileProblems",
+				"from": "ProfileText",
+				"to": "ReviewProfileProblem",
+				"link": {
+					"path": "src/astack/pr-review-profile.ts",
+					"symbol": "reviewProfileProblems"
+				},
+				"effects": []
+			},
+			{
+				"name": "planRemovals",
+				"from": "RemovalInput",
+				"to": "RemovalPlan",
+				"link": {
+					"path": "scripts/lib/removals.ts",
+					"symbol": "planRemovals"
+				},
+				"effects": []
+			}
+		],
+		"composites": [],
+		"equality": "Two rendered results are equal when their artifact lists and their problem lists are equal in order. Two removal plans are equal when their removal lists and their refusal lists are equal in order.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "id-right",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "assoc",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-left",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-right",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-assoc",
+				"status": "not_applicable",
+				"reason": "renderReviewCopies calls reviewProfileProblems with the keep list inline, and planRemovals runs apart in apply. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			}
+		],
+		"typedWitness": "tests/astack/review-stub-composition.ts"
+	},
+	"abstraction": {
+		"hides": "The stub source, the install mark and the install line, the mirror paths, the retired path list and the order of the profile rules.",
+		"callersKnow": [
+			"renderReviewCopies gives each primary and mirrored stub with the install line, the profile and the problems of the profile.",
+			"A template with no install mark and a profile that sets comments are apply problems, each with its repair.",
+			"reviewProfileProblems reports a boundary cast marker that no pattern of the given keep list matches.",
+			"planRemovals deletes a tracked fallback once, with its retired reason."
+		],
+		"deletionTest": "Without the retired entry, each product repo keeps a stale fallback that strayCopies reports on each apply.",
+		"alternatives": [
+			{
+				"name": "A one-page minimum loop in the stub",
+				"rejectedBecause": "It is a second copy that drifts from the engine."
+			},
+			{
+				"name": "The plugin ids alone as the install line",
+				"rejectedBecause": "A reader cannot install an id before the add of its marketplace."
+			},
+			{
+				"name": "A plain removal of the managed path",
+				"rejectedBecause": "planRemovals refuses the old entry, and strayCopies reports the file."
+			},
+			{
+				"name": "A drop of the comments key now",
+				"rejectedBecause": "It stops each applied product profile at preflight until its apply."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "scripts/lib/render.ts",
+					"symbol": "renderReviewCopies"
+				},
+				"modelAction": "RunStub"
+			},
+			{
+				"concrete": {
+					"path": "scripts/lib/removals.ts",
+					"symbol": "planRemovals"
+				},
+				"modelAction": "Apply"
+			},
+			{
+				"concrete": {
+					"path": "scripts/lib/render.ts",
+					"symbol": "retiredCommentsProblem"
+				},
+				"modelAction": "Apply"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr-review-profile.ts",
+					"symbol": "reviewProfileProblems"
+				},
+				"modelAction": "Check"
+			}
+		],
+		"omitted": [
+			"Done stands for the end of a run after the three steps.",
+			"The model does not read the stub text, the install line or a regular expression. The render, stub and profile tests examine them.",
+			"The deleted parity tests, lesson rows and checklist items have no model state. The lessons test and review examine them.",
+			"The load report and the head bench read no fallback, and their own tests examine them."
+		]
+	},
+	"model": {
+		"module": "formal/ReviewStub.tla",
+		"config": "formal/ReviewStub.cfg",
+		"dependencies": [],
+		"bounds": [
+			"One repo with a plugin that is present or absent, an old tracked copy or none, and a profile that sets comments or not.",
+			"A boundary cast marker or none, and a keep list that matches it or not.",
+			"Each order of one stub run, one apply update and one profile check."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"NoStepWithoutEngine",
+			"InstallOnlyWhenAbsent",
+			"NoFallbackAfterUpdate",
+			"PreflightAcceptsApplied",
+			"OneKeepList"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/ReviewStub.tla",
+		"action": "Apply",
+		"original": "/\\ tracked' = FALSE",
+		"replacement": "/\\ tracked' = tracked",
+		"defect": "An apply that drops the fallback from the managed list but keeps no retired entry leaves the old copy in each repo.",
+		"expect": {
+			"kind": "invariant",
+			"name": "NoFallbackAfterUpdate"
+		}
+	},
+	"limits": [
+		"The finite model takes the result of each step as a true observation, and it covers one repo and one run of each step.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The model does not check the engine text, the docs or the plan. Review and the STE, budget, validate and drift gates examine them.",
+		"An applied product repo keeps its old stub and fallback copy until its next apply, which is outside this change.",
+		"Exact-head CI, review and every ordinary gate stay required."
+	]
+}

@@ -14,7 +14,6 @@ const ownFiles: readonly string[] = [
 	MANAGED_PATHS.profile,
 	MANAGED_PATHS.notice,
 	MANAGED_PATHS.reviewStub,
-	MANAGED_PATHS.reviewFallback,
 	MANAGED_PATHS.reviewProfile,
 ];
 
@@ -39,12 +38,17 @@ export type RemovalInput = {
 
 export function planRemovals(input: RemovalInput): RemovalPlan {
 	const { project, written, previous, probe } = input;
+	const retiredNow: readonly Removal[] = project.artifacts.reviewStub
+		? RETIRED_PATHS.map(({ path, reason }) => ({ path, reason }))
+		: [];
 	const candidates: Removal[] = [
-		...(project.artifacts.reviewStub
-			? RETIRED_PATHS.map(({ path, reason }) => ({ path, reason }))
-			: []),
+		...retiredNow,
 		...(previous ?? [])
-			.filter((path) => !written.includes(path))
+			.filter(
+				(path) =>
+					!written.includes(path) &&
+					!retiredNow.some((entry) => entry.path === path),
+			)
 			.map((path) => ({
 				path,
 				reason: "astack apply no longer writes it.",

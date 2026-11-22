@@ -44,7 +44,7 @@ Validate at these edges in particular:
 
 If validation and narrowing are both impossible, the cast stays and still counts against the metrics budget. Put the reason in the commit body and in the final report.
 
-If the profile sets `typescript.boundary_cast_marker`, the cast also carries a comment that starts with that marker and states why. The profile then lists a keep pattern for the marker, so the comment gate keeps it. Without a marker, write no comment on the cast.
+If the profile sets `typescript.boundary_cast_marker`, the cast also carries a comment that starts with that marker and states why. `commentKeep` in `.astack/profile.json` then holds a pattern that matches the marker, so the comment gate keeps it. Without a marker, write no comment on the cast.
 
 ## Strictness flags
 

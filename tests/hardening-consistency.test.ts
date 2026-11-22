@@ -9,30 +9,19 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix, relative } from "node:path";
+import { join, relative } from "node:path";
 import {
 	profileDirFor,
 	projectNames,
 	reviewProfileName,
 	validateProjectConfig,
 } from "../scripts/lib/projects.ts";
-import {
-	renderReviewCopies,
-	reviewFallbackSource,
-} from "../scripts/lib/render.ts";
 import { exemptPaths } from "../scripts/lib/ste-exempt.ts";
 import { marketplacePlugins, originItems } from "../scripts/validate.ts";
 import {
-	FALLBACK_EXEMPT,
-	FALLBACK_KEYS,
-	FALLBACK_UNREAD,
 	FIXER_FLAGS,
-	missingFallbackKeys,
-	PROFILE_KEYS,
-	PROFILE_LEAF_KEYS,
 	parseProfile,
 	profileGates,
-	validateProfile,
 } from "../src/astack/pr-review-profile.ts";
 import {
 	astack,
@@ -50,8 +39,6 @@ import {
 const root = join(import.meta.dir, "..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 const engine = "marketplace/plugins/astack/skills/pr-review-hardening";
-const stub = readFileSync(reviewFallbackSource, "utf8");
-const fallbackPath = "templates/pr-review-hardening.stub.FALLBACK.md";
 const headLine =
 	"Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.";
 const failureLine =
@@ -104,48 +91,6 @@ const markdownUnder = (dir: string): string[] =>
 		.filter((path) => path.endsWith(".md"))
 		.map((path) => join(dir, path));
 
-describe("the fallback that the guards read is the file that the stub links to", () => {
-	const acme = validateProjectConfig(
-		JSON.parse(readFileSync(join(exampleProjects, "acme.json"), "utf8")),
-		"acme",
-	);
-	const rendered = renderReviewCopies(acme, join(exampleProjects, "acme"));
-
-	test("the rendered stub links to the text of the guards and holds no fallback sentence", () => {
-		const entry = rendered.artifacts.find((artifact) =>
-			artifact.path.endsWith("/SKILL.md"),
-		);
-		expect(rendered.problems).toEqual([]);
-		if (entry === undefined) throw new Error("no rendered stub");
-		const target = /\[FALLBACK\.md\]\(([^)]+)\)/.exec(entry.content)?.[1];
-		if (target === undefined) throw new Error("no fallback link");
-		const linked = posix.normalize(
-			posix.join(posix.dirname(entry.path), target),
-		);
-		expect(
-			rendered.artifacts.find((artifact) => artifact.path === linked)?.content,
-		).toBe(stub);
-		for (const sentence of [
-			"Each iteration:",
-			"Gate run:",
-			"Preflight:",
-			"Decide:",
-		])
-			expect(entry.content).not.toContain(sentence);
-	});
-
-	test("a stub that does not link to its fallback fails the render", () => {
-		expect(
-			renderReviewCopies(acme, join(exampleProjects, "acme"), {
-				stub: join(root, "README.md"),
-				fallback: reviewFallbackSource,
-			}).problems,
-		).toEqual([
-			`${join(root, "README.md")} has no link to FALLBACK.md, so a repo without the plugin cannot reach the fallback`,
-		]);
-	});
-});
-
 describe("the profile scans", () => {
 	const writtenBy = (projects: string): string[] =>
 		projectNames(projects).flatMap((name) => {
@@ -174,6 +119,27 @@ describe("the profile scans", () => {
 	});
 });
 
+describe("the one keep list of the repo", () => {
+	const retiredRow =
+		"| `comments` | object | none | Retired. The comment gate and the marker rule read only `commentKeep` in `.astack/profile.json`. The check command passes a profile that still sets `comments.keep_patterns`, and apply refuses it. |";
+
+	test("[control:rs-one-list] RUN_CONFIG names only commentKeep, and comments.keep_patterns stays only in the retired row of references/profile.md", () => {
+		expect(
+			stepWith(read(`${engine}/SKILL.md`), "Print `RUN_CONFIG`."),
+		).toContain(
+			"Last are the keep patterns of `commentKeep` in `.astack/profile.json`.",
+		);
+		expect(
+			markdownUnder(engine).flatMap((path) =>
+				read(path)
+					.split("\n")
+					.filter((line) => line.includes("keep_patterns"))
+					.map((line) => `${path}: ${line}`),
+			),
+		).toEqual([`${engine}/references/profile.md: ${retiredRow}`]);
+	});
+});
+
 describe("severity labels", () => {
 	const labels = paragraphStarting(
 		read(`${engine}/references/review.md`),
@@ -185,11 +151,6 @@ describe("severity labels", () => {
 			expect(labels).toContain(label);
 		expect(labels).toContain("`normal`");
 		expect(labels).toContain("unclear label");
-	});
-
-	test("the stub fallback uses the same labels as the engine", () => {
-		expect(stub).toContain(labels);
-		expect(stub).not.toContain("Reproduce every Critical or Important finding");
 	});
 
 	test("the engine never narrows the labels to three buckets", () => {
@@ -223,11 +184,6 @@ describe("commits of a finding", () => {
 	test.each(files)("%s states the rule in the same words", (path) => {
 		expect(read(path)).toContain(commitRule());
 		expect(read(path).toLowerCase()).not.toContain("one commit per finding");
-	});
-
-	test("the stub states the rule in the same words", () => {
-		expect(stub).toContain(commitRule());
-		expect(stub.toLowerCase()).not.toContain("one commit per finding");
 	});
 
 	const redCommit =
@@ -270,7 +226,6 @@ describe("commits of a finding", () => {
 			...profilePaths,
 		];
 		expect(paths.filter((path) => redCommit.test(read(path)))).toEqual([]);
-		expect(redCommit.test(stub)).toBe(false);
 	});
 
 	test("the scan of astack texts reads each project profile, whose guardrails the run prints each iteration", () => {
@@ -302,49 +257,13 @@ describe("commits of a finding", () => {
 	});
 });
 
-describe("arguments of the stub fallback", () => {
-	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
-
-	test("the fallback parses the arguments with the engine's sentences", () => {
-		expect(fallback).toContain(
-			sentencesFrom(engineSkill, "A bare word is the base branch.", "if any."),
-		);
-	});
-
-	test("the fallback reads the PR's base with the engine's command", () => {
-		const command = "`gh pr view <n> --json baseRefName`";
-		expect(engineSkill).toContain(command);
-		expect(fallback).toContain(command);
-	});
-});
-
-describe("gate run of the stub fallback", () => {
+describe("the gate run", () => {
 	const gate = read(`${engine}/references/gate.md`);
-	const gateRun = paragraphStarting(stub, "Gate run:");
-
-	test.each(["GIT_STATUS_BEFORE_GATE", "GIT_STATUS_AFTER_GATE"])(
-		"prints %s as the engine does",
-		(label) => {
-			const line = `\`git status --short\` as \`${label}\``;
-			expect(gate).toContain(line);
-			expect(gateRun).toContain(line);
-		},
-	);
-
-	test("a changed tracked file stops the run in principled incompletion", () => {
-		expect(gateRun).toContain(
-			"If a tracked file changed after the restore, print its `git diff`. The gate is red, and the run stops with principled incompletion.",
-		);
-	});
 
 	const restore =
 		"Before the subshell of a gate opens, record `git -C <WORKTREE> diff --name-only`. Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list. It uses `git -C <WORKTREE> checkout -- <path>`. It prints `<NAME>_RESTORED=<path>` for each restored path that `git -C <WORKTREE> diff --name-only` showed before the restore. A `rewrites` path that changed before the gate stays as it is, so the status check after the gates shows it.";
 
-	test.each([
-		["references/gate.md", gate],
-		["the stub fallback", gateRun],
-	])(
+	test.each([["references/gate.md", gate]])(
 		"%s restores only the rewrites that the gate itself made, so an earlier write or an uncommitted change stays red",
 		(_, text) => {
 			expect(text).toContain(restore);
@@ -354,7 +273,6 @@ describe("gate run of the stub fallback", () => {
 	test.each([
 		["references/gate.md", gate],
 		["references/profile.md", read(`${engine}/references/profile.md`)],
-		["the stub fallback", gateRun],
 	])(
 		"%s restores a rewrite from the root, so a cd in the gate command cannot move its pathspec",
 		(_, text) => {
@@ -367,21 +285,9 @@ describe("gate run of the stub fallback", () => {
 		const at = gate.indexOf(restore);
 		expect(at).toBeGreaterThan(-1);
 		expect(at).toBeLessThan(gate.indexOf("as `GIT_STATUS_AFTER_GATE`"));
-		expect(gateRun.indexOf(restore)).toBeLessThan(
-			gateRun.indexOf("as `GIT_STATUS_AFTER_GATE`"),
-		);
 		expect(gate).toContain(
 			"no gate changed a tracked file that its `rewrites` does not name.",
 		);
-	});
-
-	test("the baseline and every iteration do the gate run", () => {
-		expect(paragraphStarting(stub, "Baseline:")).toContain(
-			"Baseline: do the gate run once.",
-		);
-		expect(
-			paragraphStarting(stub.slice(stub.indexOf("Each iteration:")), "6. "),
-		).toContain("6. Do the gate run.");
 	});
 });
 
@@ -390,19 +296,15 @@ describe("gate entries that fix the tree", () => {
 		read(`${engine}/references/gate.md`),
 		"A gate command must not write tracked files",
 	);
-	const rule = paragraphStarting(stub, "- Gates are read-only.");
 
-	test.each([
-		["references/gate.md", readOnly],
-		["the stub fallback", rule],
-	])("%s names each fixer flag that the profile check refuses", (_, text) => {
-		for (const { flag } of FIXER_FLAGS) expect(text).toContain(`\`${flag}\``);
-	});
+	test.each([["references/gate.md", readOnly]])(
+		"%s names each fixer flag that the profile check refuses",
+		(_, text) => {
+			for (const { flag } of FIXER_FLAGS) expect(text).toContain(`\`${flag}\``);
+		},
+	);
 
-	test.each([
-		["references/gate.md", readOnly],
-		["the stub fallback", rule],
-	])(
+	test.each([["references/gate.md", readOnly]])(
 		"%s refuses a fixer flag in a setup command and a prerequisite, not only in the gate command",
 		(_, text) => {
 			expect(text).toContain("`setup` command");
@@ -414,13 +316,9 @@ describe("gate entries that fix the tree", () => {
 describe("the shell and the directory of each gate entry", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const gateRun = sentencesFrom(gate, "## Run it", "## Green");
 
-	test.each([
-		["references/gate.md", gateRun],
-		["the stub fallback", paragraphStarting(stub, "Gate run:")],
-	])(
+	test.each([["references/gate.md", gateRun]])(
 		"%s runs the subshell of each gate with bash, as GitHub Actions runs a run step",
 		(_, text) => {
 			expect(text).toContain("`bash -c '<gate script>'`");
@@ -433,8 +331,6 @@ describe("the shell and the directory of each gate entry", () => {
 	test.each([
 		["the preflight of SKILL.md", stepWith(engineSkill, prerequisites)],
 		["the gate run of references/gate.md", gateRun],
-		["the preflight of the stub fallback", stepWith(fallback, prerequisites)],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
 	])(
 		"%s runs each check, start, setup command and gate command in its own subshell from the root",
 		(_, text) => {
@@ -444,7 +340,6 @@ describe("the shell and the directory of each gate entry", () => {
 
 	test.each([
 		["the preflight of SKILL.md", stepWith(engineSkill, prerequisites)],
-		["the preflight of the stub fallback", stepWith(fallback, prerequisites)],
 	])(
 		"%s runs each check and start with bash, because zsh does not split the word list of a for loop",
 		(_, text) => {
@@ -484,674 +379,10 @@ describe("the shell and the directory of each gate entry", () => {
 	);
 });
 
-describe("keys the stub fallback reads", () => {
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
-	const dotted = [...fallback.matchAll(/`([a-z_]+(?:\[\])?(?:\.[a-z_]+)+)`/g)]
-		.map((match) => match[1] ?? "")
-		.filter((key) => !/\.(?:json|toml|md|ts|ya?ml)$/.test(key));
-
-	test("a file name is not a key", () => {
-		expect(fallback).toContain("`package.json`");
-		expect(dotted).not.toContain("package.json");
-		expect(dotted).toContain("base.from_pr");
-	});
-
-	test("every dotted key in the fallback is a listed fallback key", () => {
-		expect(dotted.filter((key) => !FALLBACK_KEYS.includes(key))).toEqual([]);
-	});
-
-	test("the fallback names every listed key", () => {
-		expect(
-			FALLBACK_KEYS.filter((key) => !fallback.includes(`\`${key}\``)),
-		).toEqual([]);
-	});
-
-	const placedKeys = [
-		...FALLBACK_KEYS,
-		...FALLBACK_UNREAD.map(({ key }) => key),
-		...FALLBACK_EXEMPT.map(({ key }) => key),
-	];
-	const isWithin = (key: string, outer: string) =>
-		key === outer ||
-		key.startsWith(`${outer}.`) ||
-		key.startsWith(`${outer}[].`);
-	const unplaced = (leaves: readonly string[]) => {
-		const wholes = placedKeys.filter(
-			(outer) =>
-				!placedKeys.some((key) => key !== outer && isWithin(key, outer)),
-		);
-		return leaves.filter(
-			(leaf) => !wholes.some((outer) => isWithin(leaf, outer)),
-		);
-	};
-
-	test("the schema keys reach into lists of gates and nullable blocks", () => {
-		expect(PROFILE_LEAF_KEYS).toEqual(
-			expect.arrayContaining([
-				"gates[].env[].name",
-				"test.side_effects",
-				"metrics.command",
-				"proof.pr_comment.heading",
-			]),
-		);
-		expect(PROFILE_LEAF_KEYS).not.toContain("gates");
-		expect(PROFILE_KEYS).toContain("gates");
-	});
-
-	test("each leaf key of the profile schema is read by the fallback, reported by apply or exempt with a reason", () => {
-		expect(unplaced(PROFILE_LEAF_KEYS)).toEqual([]);
-	});
-
-	const wholeBlocks: Readonly<Record<string, readonly string[]>> = {
-		"gates[].env": ["[].name", "[].why"],
-		"gates[].requires": ["[].name", "[].check", "[].on_missing", "[].start"],
-		"gates[].ci_env": ["[].name", "[].value", "[].why"],
-		"gates[].tools": [".bun", ".supabase"],
-		"gates[].rewrites": ["[].path", "[].why"],
-		"test.env": ["[].name", "[].why"],
-		"test.requires": ["[].name", "[].check", "[].on_missing", "[].start"],
-		"test.ci_env": ["[].name", "[].value", "[].why"],
-		"test.tools": [".bun", ".supabase"],
-		"test.rewrites": ["[].path", "[].why"],
-		"reviewers.checklists": ["[].path", "[].use"],
-		"proof.pr_comment": [".heading", ".extra"],
-		"proof.on_unclean": [".draft", ".label", ".post_to"],
-		type_coverage: [".command", ".min_percent"],
-		"reviewers.extra": ["[].name", "[].invoke", "[].when"],
-		"conventions.pr": [".title", ".body_first_line", ".forbidden_body_words"],
-		"conventions.ticket": [".key_pattern"],
-	};
-
-	test("each block that the fallback reads whole holds only the child keys that the table records, so a new key inside it needs a decision", () => {
-		const wholes = placedKeys.filter(
-			(outer) =>
-				!placedKeys.some((key) => key !== outer && isWithin(key, outer)),
-		);
-		const found: Readonly<Record<string, readonly string[]>> =
-			Object.fromEntries(
-				wholes.flatMap((outer) => {
-					const children = PROFILE_LEAF_KEYS.filter(
-						(leaf) => leaf !== outer && isWithin(leaf, outer),
-					).map((leaf) => leaf.slice(outer.length));
-					return children.length === 0 ? [] : [[outer, children]];
-				}),
-			);
-		expect(found).toEqual(wholeBlocks);
-	});
-
-	test("a new key beside the listed keys of a block has no place, and a key inside a block that the fallback reads whole has one", () => {
-		expect(
-			unplaced([
-				"reviewers.focus",
-				"gates[].retries",
-				"proof.pr_comment.heading",
-				"gates[].env[].name",
-			]),
-		).toEqual(["reviewers.focus", "gates[].retries"]);
-	});
-
-	const runTexts = [
-		"SKILL.md",
-		"references/gate.md",
-		"references/review.md",
-		"references/fix.md",
-		"references/comments.md",
-		"references/typescript.md",
-	];
-	const exemptRunReads: Readonly<Record<string, string>> = {
-		"merge.command":
-			"The stub runs the merge command of the profile in its merge sentence when merge.after_clean_stop is merge, as the engine does.",
-	};
-
-	test("a text that a step of the run reads names no exempt key, other than a key that the stub follows in its own words", () => {
-		expect(
-			FALLBACK_EXEMPT.flatMap(({ key }) =>
-				runTexts
-					.filter((path) => read(`${engine}/${path}`).includes(`\`${key}\``))
-					.filter(() => exemptRunReads[key] === undefined)
-					.map((path) => `${path}: ${key}`),
-			),
-		).toEqual([]);
-		expect(
-			Object.keys(exemptRunReads).filter(
-				(key) =>
-					!FALLBACK_EXEMPT.some((entry) => entry.key === key) ||
-					!runTexts.some((path) =>
-						read(`${engine}/${path}`).includes(`\`${key}\``),
-					),
-			),
-		).toEqual([]);
-	});
-
-	const sample = parseProfile(
-		read("examples/companion/projects/acme/pr-review-hardening.profile.md"),
-	).data;
-	const withNull = (data: unknown, path: string): unknown => {
-		const [head = "", ...rest] = path.split(".");
-		if (typeof data !== "object" || data === null || Array.isArray(data))
-			return data;
-		const record: Readonly<Record<string, unknown>> = { ...data };
-		return {
-			...record,
-			[head]: rest.length === 0 ? null : withNull(record[head], rest.join(".")),
-		};
-	};
-	const nullableBlocks = [
-		...new Set(
-			FALLBACK_KEYS.flatMap((key) => {
-				const block = key.split(".").slice(0, -1).join(".");
-				return block === "" || block.includes("[]") ? [] : [block];
-			}),
-		),
-	].filter(
-		(block) =>
-			!validateProfile(withNull(sample, block)).some(
-				(issue) => issue.path === block,
-			),
-	);
-	const nullableKeys = FALLBACK_KEYS.flatMap((key) =>
-		nullableBlocks
-			.filter((block) => key.startsWith(`${block}.`))
-			.map((block) => ({ block, key })),
-	);
-	const namesKey = (sentence: string, block: string, key: string) =>
-		sentence.includes(`\`${key}\``) ||
-		(key === `${block}.command` && sentence.includes(`the ${block} command`));
-	const isConditional = (sentence: string, block: string, key: string) =>
-		[
-			`\`${block}\` is not \`null\``,
-			`\`${block}\` is set`,
-			`if ${block} ran`,
-			`\`${key}\` set to`,
-			`\`${key}\` is`,
-		].some((condition) =>
-			sentence.toLowerCase().includes(condition.toLowerCase()),
-		);
-
-	test("a profile can set metrics and typescript to null, and the scan reads the keys under them", () => {
-		expect(validateProfile(sample)).toEqual([]);
-		expect(nullableBlocks).toEqual(["metrics", "typescript"]);
-		expect(nullableKeys.map(({ key }) => key)).toEqual([
-			"metrics.command",
-			"metrics.never_increase",
-			"typescript.rules",
-		]);
-	});
-
-	test.each([
-		["the stub fallback", fallback],
-		...runTexts.map((path): [string, string] => [
-			path,
-			read(`${engine}/${path}`),
-		]),
-	])(
-		"%s runs or prints a key of a block that a profile can set to null only when the block is not null",
-		(_, text) => {
-			expect(
-				text
-					.split("\n")
-					.flatMap(sentencesOf)
-					.filter((sentence) =>
-						nullableKeys.some(
-							({ block, key }) =>
-								namesKey(sentence, block, key) &&
-								!isConditional(sentence, block, key),
-						),
-					),
-			).toEqual([]);
-		},
-	);
-
-	test("each listed key is a key of the profile schema, in one list only", () => {
-		expect(placedKeys.filter((key) => !PROFILE_KEYS.includes(key))).toEqual([]);
-		expect(
-			placedKeys.filter((key, index) => placedKeys.indexOf(key) !== index),
-		).toEqual([]);
-	});
-
-	const review = read(`${engine}/references/review.md`);
-
-	test.each([
-		[
-			"the ledger path",
-			sentencesFrom(
-				review,
-				"Keep one ledger per branch at",
-				"replaced by `-`.",
-			),
-		],
-		[
-			"the rename of an earlier ledger",
-			"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty.",
-		],
-		[
-			"the rule that a fixed or advisory entry comes back only when its blob changed",
-			"An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since.",
-		],
-		[
-			"the blob of each entry",
-			"`git rev-parse HEAD:<file>` when the entry was last decided",
-		],
-	])(
-		"the stub fallback states %s, which it needs to follow ledger.carry_over as the engine does",
-		(_, sentence) => {
-			expect(review).toContain(sentence);
-			expect(fallback).toContain(sentence);
-		},
-	);
-
-	type HowTo = {
-		readonly stub: string;
-		readonly file: string;
-		readonly engine: string;
-	};
-	const gateHowTo: Readonly<Record<string, HowTo>> = {
-		name: {
-			stub: "`<NAME>` is the `gates[].name` or the `test.name` of the gate in upper case, with `-` replaced by `_`.",
-			file: "references/gate.md",
-			engine:
-				"`<NAME>` is the gate's `name` in upper case with `-` replaced by `_`.",
-		},
-		command: {
-			stub: "Print each command as the profile writes it, with no variable expanded, and its exit code and output.",
-			file: "references/gate.md",
-			engine:
-				"Otherwise print `<NAME>_CMD=<command>`, with the command as the profile writes it.",
-		},
-		env: {
-			stub: "For each gate that applies, every `env` variable must be set.",
-			file: "SKILL.md",
-			engine: "print each `env` name as `set` or `missing`, never its value.",
-		},
-		requires: {
-			stub: "Then run the `check` of each prerequisite in `requires` in the CI environment of the gate.",
-			file: "SKILL.md",
-			engine:
-				"Run the `check` of each prerequisite in `requires` in the CI environment of the gate",
-		},
-		setup: {
-			stub: "Before each gate, check its `env` and prerequisites again and run its `setup` commands in order.",
-			file: "references/gate.md",
-			engine:
-				"Then run each `setup` command in order, and print each one with its exit code.",
-		},
-		when_changed: {
-			stub: "An empty `when_changed` means that the gate applies to every diff.",
-			file: "references/gate.md",
-			engine: "A gate with an empty `when_changed` applies to every diff.",
-		},
-		ci_env: {
-			stub: "Before its prerequisites, its `setup` commands and its command, the run exports `CI=true`, then each `ci_env` entry that has a `value`.",
-			file: "references/gate.md",
-			engine:
-				"Before its prerequisites, its `setup` commands and its command, the run exports `CI=true`, then each `ci_env` entry that has a `value`.",
-		},
-		after: {
-			stub: "A gate that names gates in `after` runs only when each of them exited 0 earlier in the same gate run.",
-			file: "references/gate.md",
-			engine:
-				"A gate that names gates in `after` runs only when each of them exited 0 earlier in the same gate run.",
-		},
-		tools: {
-			stub: "Each gate runs bun and the Supabase CLI at the versions in its `tools`, and so does each script that it starts.",
-			file: "references/gate.md",
-			engine:
-				"Each gate runs bun and the Supabase CLI at the versions in its `tools`, and so does each script that it starts.",
-		},
-		rewrites: {
-			stub: "Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list.",
-			file: "references/gate.md",
-			engine:
-				"Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list.",
-		},
-	};
-	const prepass: HowTo = {
-		stub: "Run each entry of `prepasses` whose `prepasses[].when` fits this PR, once, before the baseline.",
-		file: "SKILL.md",
-		engine: "Run each entry of `prepasses` whose `when` applies to this PR",
-	};
-	const merge: HowTo = {
-		stub: "Merge only when `merge.after_clean_stop` is `merge` and every line of `merge.conditions` holds.",
-		file: "SKILL.md",
-		engine:
-			"If the stop is clean and `merge.after_clean_stop` is `merge`, compare each line of `merge.conditions` with git and GitHub.",
-	};
-	const howTo: Readonly<Record<string, HowTo>> = {
-		"base.default": {
-			stub: "else `base.default`.",
-			file: "SKILL.md",
-			engine: "Otherwise use `base.default`.",
-		},
-		"base.from_pr": {
-			stub: "else the PR's base when `base.from_pr` is true and a PR exists",
-			file: "SKILL.md",
-			engine:
-				"Otherwise, when `base.from_pr` is true and a PR exists, use its base",
-		},
-		"base.sync": {
-			stub: "With `base.sync` set to `merge`, run `git merge origin/<base>`. With `none`, print `git log --oneline HEAD..origin/<base>` and stop with principled incompletion.",
-			file: "SKILL.md",
-			engine:
-				"With `base.sync` set to `merge`, run `git merge origin/<base>`. With `none`, print `git log --oneline HEAD..origin/<base>` and stop with principled incompletion.",
-		},
-		"iterations.min": {
-			stub: "at least `iterations.min` iterations have run",
-			file: "SKILL.md",
-			engine: "A clean stop needs at least `iterations.min` iterations.",
-		},
-		"iterations.max": {
-			stub: "the run reached `iterations.max`",
-			file: "SKILL.md",
-			engine:
-				"For each iteration `n` up to `iterations.max`, from 1 or from the first iteration of a resumed run:",
-		},
-		push: {
-			stub: "Push as `push` says.",
-			file: "SKILL.md",
-			engine: "and push as the profile says",
-		},
-		guardrails: {
-			stub: "Print these rules at the start of every iteration, followed by the profile's `guardrails`:",
-			file: "SKILL.md",
-			engine:
-				"Print these at the start of every iteration, followed by each line of the profile's `guardrails`:",
-		},
-		gates: {
-			stub: "Run every gate that applies, then the test gate",
-			file: "references/gate.md",
-			engine: "For each entry of `gates`, then `test`:",
-		},
-		test: {
-			stub: "Run every gate that applies, then the test gate",
-			file: "references/gate.md",
-			engine: "For each entry of `gates`, then `test`:",
-		},
-		...Object.fromEntries(
-			Object.entries(gateHowTo).flatMap(([key, row]) => [
-				[`gates[].${key}`, row],
-				[`test.${key}`, row],
-			]),
-		),
-		metrics: {
-			stub: "A `metrics` value of `null` means no metrics.",
-			file: "references/gate.md",
-			engine: "Without `metrics`, print `METRICS=UNAVAILABLE`.",
-		},
-		"metrics.command": {
-			stub: "When `metrics` is not `null`, run `metrics.command`.",
-			file: "references/gate.md",
-			engine: "If `metrics` is set, run `metrics.command`",
-		},
-		"metrics.never_increase": {
-			stub: "When `metrics` is not `null`, no key in `metrics.never_increase` may rise.",
-			file: "references/gate.md",
-			engine:
-				"each key in `metrics.never_increase` is no higher than in the previous iteration",
-		},
-		"reviewers.select": {
-			stub: "With `reviewers.select` set to `all`, launch every agent in `reviewers.agents`. Otherwise launch `code-reviewer`, plus each agent in `reviewers.agents` that fits what the diff changes.",
-			file: "references/review.md",
-			engine: "`applicable`: `code-reviewer` always.",
-		},
-		"reviewers.agents": {
-			stub: "With `reviewers.select` set to `all`, launch every agent in `reviewers.agents`.",
-			file: "references/review.md",
-			engine: "`all`: every agent in `reviewers.agents`, every iteration.",
-		},
-		"reviewers.checklists": {
-			stub: "Then examine the diff against each file in `reviewers.checklists`.",
-			file: "references/review.md",
-			engine:
-				"After the reviewers return, read each file in `reviewers.checklists` and check the diff against the part its `use` names.",
-		},
-		"reviewers.notes": {
-			stub: "Give each one every line of `reviewers.notes`.",
-			file: "references/review.md",
-			engine: "every line of `reviewers.notes`.",
-		},
-		"typescript.rules": {
-			stub: "With `typescript.rules` set to true, a fix proves or narrows a type.",
-			file: "SKILL.md",
-			engine:
-				"`references/typescript.md` applies when `typescript.rules` is true.",
-		},
-		"ledger.carry_over": {
-			stub: "with `ledger.carry_over` set to `true`, start from the previous run's records. An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since.",
-			file: "references/review.md",
-			engine:
-				"An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since.",
-		},
-		"comments.keep_patterns": {
-			stub: "A comment stays too when it fits in 2 lines and one of its lines matches `comments.keep_patterns`, with or without its comment marker. A pattern that starts with a comment marker matches only a line with that marker. A pattern keeps only the lines that it matches. Delete the comment when another line, or the `rest` group of a pattern, holds a form that the hook denies. Those forms are provenance, narration, a `file:line` reference, the file's own path, a banner and commented-out code.",
-			file: "references/comments.md",
-			engine:
-				"A comment survives when one of its lines matches a pattern, with or without its comment marker. A pattern that starts with a comment marker, such as `^-- `, matches only a line with that marker. A pattern keeps only the lines that it matches.",
-		},
-		"forbidden.commands": {
-			stub: "never run a command that matches `forbidden.commands`.",
-			file: "references/fix.md",
-			engine: "Never run a command in `forbidden.commands`",
-		},
-		"forbidden.paths": {
-			stub: "No dependency, lockfile, migration or CI edits, and nothing under `forbidden.paths`.",
-			file: "references/fix.md",
-			engine: "touches a path in `forbidden.paths`;",
-		},
-		"conventions.branch.create": {
-			stub: "If you are on it, create a branch named by `conventions.branch.create`.",
-			file: "SKILL.md",
-			engine:
-				"If the current branch is the base branch, create a new branch from it named by `conventions.branch.create`.",
-		},
-		"conventions.branch.pattern": {
-			stub: "When `conventions.branch.pattern` is not null, the name must match it.",
-			file: "SKILL.md",
-			engine:
-				"When `conventions.branch.pattern` is set, the name must match it.",
-		},
-		"conventions.commit.subject": {
-			stub: "Write each commit subject from `conventions.commit.subject`.",
-			file: "references/fix.md",
-			engine:
-				"Write each subject from `conventions.commit.subject` with the finding id filled in.",
-		},
-		"conventions.commit.trailers": {
-			stub: "End each commit with a trailer for each key in `conventions.commit.trailers`.",
-			file: "references/fix.md",
-			engine: "Keep the trailers named in `conventions.commit.trailers`.",
-		},
-		test_adequacy: {
-			stub: "With `test_adequacy` set to `control-per-clause`, a planted control covers a contract clause when the control fails without the code of the clause.",
-			file: "references/review.md",
-			engine:
-				"With `test_adequacy: control-per-clause`, a contract clause is covered when at least one planted control fails if the clause's code is removed.",
-		},
-		prepasses: prepass,
-		"prepasses[].when": prepass,
-		"prepasses[].sources": {
-			stub: "For `contract-coverage`, build a clause-to-control matrix over the specs that `prepasses[].sources` names.",
-			file: "references/review.md",
-			engine:
-				"`contract-coverage`: build a clause-to-control matrix over the specs in `sources`.",
-		},
-		"threads.answer": {
-			stub: "If `threads.answer` is true, answer each review-bot thread on the PR before the merge.",
-			file: "SKILL.md",
-			engine: "If `threads.answer` is true, answer the PR's review-bot threads",
-		},
-		"proof.pr_comment": {
-			stub: "If `proof.pr_comment` is set, post a comment on the PR.",
-			file: "references/gate.md",
-			engine:
-				"When `proof.pr_comment` is set and the branch has a PR, post a comment after each iteration",
-		},
-		"proof.on_unclean": {
-			stub: "On an unclean stop, do what `proof.on_unclean` says when it is not `null`.",
-			file: "SKILL.md",
-			engine:
-				"If the stop is not clean and `proof.on_unclean` is set, do what it says.",
-		},
-		"merge.after_clean_stop": merge,
-		"merge.conditions": merge,
-	};
-
-	test("each key that the fallback reads has a row that tells how the stub follows it", () => {
-		expect(Object.keys(howTo).sort()).toEqual([...FALLBACK_KEYS].sort());
-	});
-
-	test.each(Object.entries(howTo))(
-		"the stub fallback states how to follow %s, and the engine holds the sentence that the stub follows",
-		(_, row) => {
-			expect(fallback).toContain(row.stub);
-			expect(read(`${engine}/${row.file}`)).toContain(row.engine);
-		},
-	);
-
-	test.each(profilePaths)("%s defines every key the fallback reads", (path) => {
-		expect(missingFallbackKeys(parseProfile(read(path)).data)).toEqual([]);
-	});
-
-	test("a null block satisfies the keys under it, and an absent key does not", () => {
-		expect(
-			missingFallbackKeys({ metrics: null, proof: { pr_comment: null } }),
-		).toContain("proof.on_unclean");
-		expect(
-			missingFallbackKeys({ metrics: null, proof: { pr_comment: null } }),
-		).not.toContain("metrics.never_increase");
-	});
-
-	test("the key check of the stub fallback, as apply does, finds no missing key under a null block, so a run with metrics: null goes on", () => {
-		const keyCheck = sentencesOf(
-			paragraphStarting(fallback, "Read the YAML block in the profile."),
-		);
-		const stop =
-			"If a key that this section names is missing, stop with principled incompletion.";
-		const nullBlock =
-			"A `null` block, such as `metrics: null`, holds no key, so no key under it is missing.";
-		expect(keyCheck).toContain(stop);
-		expect(keyCheck.indexOf(nullBlock)).toBe(keyCheck.indexOf(stop) + 1);
-		expect(missingFallbackKeys({ metrics: null })).not.toContain(
-			"metrics.command",
-		);
-	});
-
-	test("a gate key that the fallback reads is defined on every gate, and an empty gate list needs none", () => {
-		const bare = { name: "lint", command: "bun run lint" };
-		const full = {
-			...bare,
-			env: [],
-			requires: [],
-			setup: [],
-			when_changed: [],
-			ci_env: [],
-			after: [],
-			tools: {},
-			rewrites: [],
-		};
-		const gateKeys = (data: unknown) =>
-			missingFallbackKeys(data).filter(
-				(key) => key.startsWith("gates[]") || key.startsWith("test."),
-			);
-		expect(gateKeys({ gates: [full, bare], test: full })).toEqual([
-			"gates[].env",
-			"gates[].requires",
-			"gates[].setup",
-			"gates[].when_changed",
-			"gates[].ci_env",
-			"gates[].after",
-			"gates[].tools",
-			"gates[].rewrites",
-		]);
-		expect(gateKeys({ gates: [], test: bare })).toEqual([
-			"test.env",
-			"test.requires",
-			"test.setup",
-			"test.when_changed",
-			"test.ci_env",
-			"test.after",
-			"test.tools",
-			"test.rewrites",
-		]);
-		expect(gateKeys({ gates: [full], test: full })).toEqual([]);
-	});
-});
-
-describe("the proof, the commits and the stop of the stub fallback", () => {
-	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
-	const gateBullets = (heading: string): string[] => {
-		const from = gate.indexOf(`\n## ${heading}\n`);
-		if (from === -1) throw new Error(`no section ${heading}`);
-		const to = gate.indexOf("\n## ", from + 1);
-		return gate
-			.slice(from, to === -1 ? undefined : to)
-			.split("\n")
-			.filter((line) => line.startsWith("- "));
-	};
-	const commentFields: Readonly<Record<string, string>> = {
-		"- the head SHA the iteration ended on;":
-			"the head SHA that the iteration ended on",
-		"- the iteration number;": "the iteration number",
-		"- the blocking finding count;": "the blocking finding count",
-		"- each gate command as the profile writes it, with its exit code, `SKIPPED`, `UNAVAILABLE`, `NOT_STARTED` or `BLOCKED`;":
-			"each gate command as the profile writes it, with its exit code, `SKIPPED`, `UNAVAILABLE`, `NOT_STARTED` or `BLOCKED`",
-		"- the mode, and each advisory gate of mode `ci_proof` with its proof;":
-			"It also holds the mode, and each advisory gate of mode `ci_proof` with its proof.",
-		"- the decision;": "Then it holds the decision",
-		"- every item in `proof.pr_comment.extra`.":
-			"each item of its `extra` list",
-	};
-	const uncleanSteps: Readonly<Record<string, string>> = {
-		"- if `draft` is true, return the PR to draft with `gh pr ready <n> --undo`;":
-			"With `draft` set to true, return the PR to draft with `gh pr ready <n> --undo`.",
-		"- if `label` is set, add it, creating it first with `gh label create` if it is missing;":
-			"When `label` is set, add that label to the PR. Create the label first with `gh label create` when it is missing.",
-		"- post the unresolved findings with their exact reasons to each place in `post_to`. `issue` means the issue the PR body's first line names.":
-			"Post each unresolved finding with its exact reason to each place in `post_to`. The place `issue` is the issue that the first line of the PR body names.",
-	};
-
-	test("each field of the PR comment of the engine has one row", () => {
-		expect(Object.keys(commentFields)).toEqual(gateBullets("PR comment"));
-	});
-
-	test.each(Object.entries(commentFields))(
-		"the PR comment of the stub fallback holds the field of %p",
-		(_, field) => {
-			expect(stepWith(fallback, "If `proof.pr_comment` is set")).toContain(
-				field,
-			);
-		},
-	);
-
-	test("each step of the unclean stop of the engine has one row", () => {
-		expect(Object.keys(uncleanSteps)).toEqual(gateBullets("Unclean stop"));
-	});
-
-	test.each(Object.entries(uncleanSteps))(
-		"the unclean stop of the stub fallback does the step of %p",
-		(_, step) => {
-			expect(paragraphStarting(fallback, "After the stop")).toContain(step);
-		},
-	);
-
-	test("the stub fallback takes the value of each trailer key from the session", () => {
-		expect(fallback).toContain(
-			"End each commit with a trailer for each key in `conventions.commit.trailers`. Take its value from this session, such as the URL of the session.",
-		);
-	});
-
-	test("the stub fallback runs only the contract-coverage prepass, and stops on another", () => {
-		expect(stepWith(fallback, "Run each entry of `prepasses`")).toContain(
-			"Stop with principled incompletion on an entry with another name.",
-		);
-	});
-});
-
 describe("gates that mirror CI", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const profile = read(`${engine}/references/profile.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const mirror =
 		"The profile's gates mirror the blocking jobs of the repo's CI.";
 	const notStarted =
@@ -1161,7 +392,6 @@ describe("gates that mirror CI", () => {
 		["SKILL.md", engineSkill],
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])(
 		"%s says the gates mirror CI and a gate that cannot start stops the run",
 		(_, text) => {
@@ -1181,14 +411,12 @@ describe("gates that mirror CI", () => {
 describe("the CI environment of a gate", () => {
 	const gate = read(`${engine}/references/gate.md`);
 	const profile = read(`${engine}/references/profile.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const ciEnvironment =
 		"Each gate runs in the CI environment of its jobs. Before its prerequisites, its `setup` commands and its command, the run exports `CI=true`, then each `ci_env` entry that has a `value`. An entry with a `why` and no `value` leaves its variable as the session has it, and that holds for `CI` too. The run never sets `GITHUB_ACTIONS` or another `GITHUB_` or `RUNNER_` variable, because no gate runs on GitHub Actions.";
 
 	test.each([
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])(
 		"%s exports CI=true and the CI values, and never fakes the runner",
 		(_, text) => {
@@ -1199,10 +427,7 @@ describe("the CI environment of a gate", () => {
 	const environmentLine =
 		"`<NAME>_ENV` lists the names that the run exports as `<name>=<value>`, which are `CI` and each `ci_env` entry that has a `value`. It lists each other name of the `ci_env` and `env` of the gate as `<name>=set` or `<name>=unset`.";
 
-	test.each([
-		["references/gate.md", gate],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
-	])(
+	test.each([["references/gate.md", gate]])(
 		"%s prints a value of the profile, and only set or unset for a value of the session",
 		(_, text) => {
 			expect(text).toContain(environmentLine);
@@ -1214,7 +439,6 @@ describe("the CI environment of a gate", () => {
 describe("values that the run prints", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const secrets =
 		"Never print a value from the session or from a file. Such a value can be a secret, such as a token, a key or a database URL.";
 
@@ -1224,10 +448,6 @@ describe("values that the run prints", () => {
 			sentencesFrom(engineSkill, "## Rules for the whole run", "## Preflight"),
 		],
 		["references/gate.md", gate],
-		[
-			"the rules of the stub fallback",
-			sentencesFrom(fallback, "Print these rules at the start", "Preflight:"),
-		],
 	])("%s never prints a value of the session or of a file", (_, text) => {
 		expect(text).toContain(secrets);
 	});
@@ -1270,7 +490,6 @@ describe("values that the run prints", () => {
 	test.each([
 		["SKILL.md", engineSkill],
 		["references/gate.md", gate],
-		["the stub fallback", fallback],
 	])(
 		"%s has no sentence that prints a value of the session or of a file",
 		(_, text) => {
@@ -1288,19 +507,18 @@ describe("values that the run prints", () => {
 
 	const unexpanded = "as the profile writes it, with no variable expanded";
 
-	test.each([
-		["references/gate.md", gate],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
-	])("%s prints each command with no variable expanded", (_, text) => {
-		expect(text).toContain(unexpanded);
-	});
+	test.each([["references/gate.md", gate]])(
+		"%s prints each command with no variable expanded",
+		(_, text) => {
+			expect(text).toContain(unexpanded);
+		},
+	);
 });
 
 describe("the tool versions of a gate", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const profile = read(`${engine}/references/profile.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const pinned =
 		"Each gate runs bun and the Supabase CLI at the versions in its `tools`, and so does each script that it starts.";
 	const local =
@@ -1309,7 +527,6 @@ describe("the tool versions of a gate", () => {
 	test.each([
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])(
 		"%s runs the pinned versions, and a version that bunx cannot get is a note",
 		(_, text) => {
@@ -1324,7 +541,6 @@ describe("the tool versions of a gate", () => {
 	test.each([
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])(
 		"%s says that CI runs the pins and gates the merge, so a version note is advisory",
 		(_, text) => {
@@ -1338,10 +554,7 @@ describe("the tool versions of a gate", () => {
 		);
 	});
 
-	test.each([
-		["references/gate.md", gate],
-		["the stub fallback", fallback],
-	])(
+	test.each([["references/gate.md", gate]])(
 		"%s gets each version through bunx and puts it first on PATH",
 		(_, text) => {
 			expect(text).toContain(
@@ -1362,7 +575,6 @@ describe("the tool versions of a gate", () => {
 		["SKILL.md", engineSkill],
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])("%s never stops a gate on the local version of a tool", (_, text) => {
 		expect(text).not.toMatch(/test "\$\((?:bun|supabase) --version\)"/);
 		expect(text).not.toContain("compares the version with the pin");
@@ -1371,7 +583,6 @@ describe("the tool versions of a gate", () => {
 
 describe("a run that names a PR reviews that PR", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const view =
 		"`gh pr view <n> --json headRefName,headRefOid,baseRefName,state,isCrossRepository`";
 	const sentences = [
@@ -1382,13 +593,9 @@ describe("a run that names a PR reviews that PR", () => {
 		"Never create a review branch in a run with `--pr`.",
 	];
 
-	test.each(sentences)(
-		"the engine and the stub fallback say %s",
-		(sentence) => {
-			expect(engineSkill).toContain(sentence);
-			expect(fallback).toContain(sentence);
-		},
-	);
+	test.each(sentences)("SKILL.md says %s", (sentence) => {
+		expect(engineSkill).toContain(sentence);
+	});
 
 	test("the run checks out the PR before it loads the profile, so the profile of the PR head applies", () => {
 		const before = (text: string, first: string, second: string) => {
@@ -1397,7 +604,6 @@ describe("a run that names a PR reviews that PR", () => {
 			expect(at).toBeLessThan(text.indexOf(second));
 		};
 		before(engineSkill, view, "## Load the profile");
-		before(fallback, view, "Read the YAML block in the profile.");
 	});
 
 	const takesByName = (text: string): string[] =>
@@ -1438,7 +644,6 @@ describe("a run that names a PR reviews that PR", () => {
 		...markdownUnder("marketplace/plugins/astack").map(
 			(path) => [path, read(path)] as const,
 		),
-		["the stub fallback", fallback] as const,
 		...profilePaths.map((path) => [path, read(path)] as const),
 	])(
 		"%s takes no checkout of a PR by the name of its head branch, which a branch of a fork can share with a local branch such as main",
@@ -1449,7 +654,6 @@ describe("a run that names a PR reviews that PR", () => {
 
 	test.each([
 		["SKILL.md", engineSkill],
-		["the stub fallback", fallback],
 		[
 			"the comments triage of the mode",
 			read(
@@ -1469,7 +673,6 @@ describe("a run that names a PR reviews that PR", () => {
 describe("the head of the PR on every path", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const onlyWithPr = [
 		[
 			"SKILL.md",
@@ -1477,14 +680,6 @@ describe("the head of the PR on every path", () => {
 				engineSkill,
 				"## Review the PR that --pr names",
 				"The fix commits go on the local branch of the PR.",
-			),
-		],
-		[
-			"the stub fallback",
-			sentencesFrom(
-				fallback,
-				"With `--pr <n>` in `$ARGUMENTS`",
-				"Never switch the branch of this checkout.",
 			),
 		],
 	] as const;
@@ -1498,70 +693,28 @@ describe("the head of the PR on every path", () => {
 		"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
 		"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
 	];
-	const manualHeadCheck = [
-		"Without `--pr`, read `gh pr view --json number,headRefOid` for the current branch.",
-		"Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.",
-		"Print `HEAD` as the output of `git rev-parse HEAD`, and `PR_HEAD` as `headRefOid`. When `git merge-base --is-ancestor <headRefOid> HEAD` fails, stop with principled incompletion before the baseline.",
-		"Print `git log --oneline <headRefOid>..HEAD` as `UNPUSHED`. CI did not test these commits, so the final report names each one.",
-	];
 
-	const withCommand =
-		"When `command -v astack` succeeds, do the head check with the command:";
-	const byHand = "When `command -v astack` fails, do the head check by hand:";
 	const engineHeadCheck = sentencesFrom(
 		engineSkill,
 		"## The head check",
 		"## Authority",
 	);
-	const stubCommandBlock = fallback.slice(
-		fallback.indexOf(withCommand),
-		fallback.indexOf(byHand),
-	);
-	const stubManualBlock = fallback.slice(
-		fallback.indexOf(byHand),
-		fallback.indexOf("Print `WORKTREE` as the output"),
-	);
 
 	test.each(commandHeadCheck)(
-		"the engine and the command block of the stub fallback check the head of every PR with one command, with --pr or without it: %s",
+		"the engine checks the head of every PR with one command, with --pr or without it: %s",
 		(sentence) => {
 			expect(engineHeadCheck).toContain(sentence);
-			expect(stubCommandBlock).toContain(sentence);
 			for (const [, text] of onlyWithPr) expect(text).not.toContain(sentence);
 		},
 	);
-
-	test.each(manualHeadCheck)(
-		"only the manual block of the stub fallback keeps the manual head check: %s",
-		(sentence) => {
-			expect(stubManualBlock).toContain(sentence);
-			expect(engineSkill).not.toContain(sentence);
-			for (const [, text] of onlyWithPr) expect(text).not.toContain(sentence);
-		},
-	);
-
-	test("the stub fallback runs the command when astack is on the PATH, and does the manual head check by hand otherwise", () => {
-		const order = [
-			fallback.indexOf(withCommand),
-			fallback.indexOf("1. Run `astack check pr-head`"),
-			fallback.indexOf(byHand),
-			fallback.indexOf(manualHeadCheck[0] ?? ""),
-		];
-		expect(order.every((at) => at > -1)).toBe(true);
-		expect(order).toEqual([...order].sort((a, b) => a - b));
-	});
 
 	test("[control:ph-pair] each text that runs the command takes only exit 0 with an ok: last line or exit 3 with a no_pr: last line, and after a stop only the repair sentence", () => {
 		const callers = [
 			...markdownUnder("marketplace/plugins/astack"),
 			...markdownUnder("rules"),
-			...markdownUnder("templates"),
 			...profilePaths,
 		].filter((path) => read(path).includes("astack check pr-head"));
-		const scopes = [
-			[`${engine}/SKILL.md`, engineHeadCheck],
-			[fallbackPath, stubCommandBlock],
-		] as const;
+		const scopes = [[`${engine}/SKILL.md`, engineHeadCheck]] as const;
 		const others = callers.filter(
 			(path) => !scopes.some(([scope]) => scope === path),
 		);
@@ -1605,8 +758,7 @@ describe("the head of the PR on every path", () => {
 	});
 
 	test("a local branch that is only ahead of the PR goes on, and the report names its commits", () => {
-		for (const text of [engineSkill, fallback])
-			expect(text).not.toContain("When they differ, stop");
+		expect(engineSkill).not.toContain("When they differ, stop");
 		expect(gate).toContain(
 			"Unpushed commits: the `UNPUSHED` list of the last head check. CI did not test these commits.",
 		);
@@ -1614,8 +766,6 @@ describe("the head of the PR on every path", () => {
 
 	const push =
 		"In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`.";
-	const readPrHead =
-		"Then read the `headRefOid` of the PR again and do the head check again.";
 	const checkAgain = "Then do the head check again.";
 
 	test.each([
@@ -1623,11 +773,6 @@ describe("the head of the PR on every path", () => {
 			"the decision step of SKILL.md",
 			stepWith(engineSkill, "7. Decide."),
 			checkAgain,
-		],
-		[
-			"the decision step of the stub fallback",
-			stepWith(fallback, "Print a gate summary and a decision."),
-			readPrHead,
 		],
 	])(
 		"%s pushes an unpushed head of the PR, then reads the head of the PR again before the summary",
@@ -1650,11 +795,6 @@ describe("the head of the PR on every path", () => {
 			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
 			"In a run with a PR, `PR_HEAD` is still not `HEAD` after step 7, because the run cannot push. The report names each commit of `UNPUSHED`.",
 		],
-		[
-			"the decision of the stub fallback",
-			sentencesFrom(fallback, "Decide:", "After the stop"),
-			"It also applies in a run with a PR when `PR_HEAD` is still not `HEAD` after step 7, because the run cannot push. Then the report names each commit of `UNPUSHED`.",
-		],
 	])(
 		"%s stops clean only on the head of the PR, and stops with principled incompletion on a commit that the run cannot push",
 		(_, text, cannotPush) => {
@@ -1662,9 +802,6 @@ describe("the head of the PR on every path", () => {
 			expect(text).toContain(cannotPush);
 		},
 	);
-
-	const again =
-		"When the run has a PR, read its `headRefOid` again and do the head check again. A push to the PR can move its head.";
 
 	const gateAgain =
 		"When the run has a PR, do the head check again. A push to the PR can move its head.";
@@ -1675,11 +812,6 @@ describe("the head of the PR on every path", () => {
 			sentencesFrom(gate, "## Run it", "## Green"),
 			gateAgain,
 		],
-		[
-			"the gate run of the stub fallback",
-			paragraphStarting(stub, "Gate run:"),
-			again,
-		],
 	])("%s checks the head of the PR again", (_, text, sentence) => {
 		expect(text).toContain(sentence);
 	});
@@ -1688,7 +820,6 @@ describe("the head of the PR on every path", () => {
 describe("the branch of the fix commits", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const fix = read(`${engine}/references/fix.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const onCurrentBranch =
 		"Without `--pr`, the fix commits go on the current branch, or on the branch that this step creates.";
 	const pushedBranch =
@@ -1769,15 +900,6 @@ describe("the branch of the fix commits", () => {
 				"## The head check",
 			),
 		],
-		[
-			"the stub fallback",
-			fallback,
-			sentencesFrom(
-				fallback,
-				"With `--pr <n>` in `$ARGUMENTS`",
-				"Never switch the branch of this checkout.",
-			),
-		],
 	] as const;
 	const scopeTexts: readonly (readonly [string, string, string])[] = [
 		...prParts,
@@ -1847,10 +969,7 @@ describe("the branch of the fix commits", () => {
 		},
 	);
 
-	test.each([
-		["references/fix.md", fix],
-		["the stub fallback", fallback],
-	])(
+	test.each([["references/fix.md", fix]])(
 		"%s pushes the branch of the fix commits, and pushes a branch with no upstream with git push -u origin <branch>",
 		(_, text) => {
 			expect(text).toContain(pushedBranch);
@@ -1858,10 +977,7 @@ describe("the branch of the fix commits", () => {
 		},
 	);
 
-	test.each([
-		["references/fix.md", fix],
-		["the stub fallback", fallback],
-	])(
+	test.each([["references/fix.md", fix]])(
 		"%s pushes the fixes of a PR from a fork to the head branch in the head repository, never to origin",
 		(_, text) => {
 			expect(text).toContain(forkPush);
@@ -1875,12 +991,6 @@ describe("the branch of the fix commits", () => {
 			stepWith(engineSkill, "If the current branch is the base branch"),
 			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
 			"The PR is from a fork that does not allow edits from maintainers.",
-		],
-		[
-			"the stub fallback",
-			stepWith(fallback, "Never commit on the base branch."),
-			sentencesFrom(fallback, "Decide:", "After the stop"),
-			"It also applies when the PR is from a fork that does not allow edits from maintainers.",
 		],
 	])(
 		"the preflight of %s reads the head repository of the PR, and stops with no fix commit on a fork that does not allow edits from maintainers",
@@ -1906,7 +1016,6 @@ describe("the branch of the fix commits", () => {
 					originTarget.test(sentence.replace(forkNegation, "")),
 			);
 	const pushTexts: readonly (readonly [string, string])[] = [
-		["the stub fallback", fallback],
 		...[
 			...markdownUnder("marketplace/plugins/astack"),
 			...markdownUnder("rules"),
@@ -1966,7 +1075,6 @@ describe("the branch of the fix commits", () => {
 describe("the dependencies of every run", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const install = [
 		"Install the dependencies in `WORKTREE` with a frozen lockfile, as the install step of CI does, such as `bun install --frozen-lockfile`.",
 		"Do this in every run.",
@@ -1978,10 +1086,6 @@ describe("the dependencies of every run", () => {
 			"the preflight of SKILL.md",
 			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
 		],
-		[
-			"the preflight of the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
-		],
 	])(
 		"%s installs the dependencies as CI does in every worktree, not only in a new one",
 		(_, text) => {
@@ -1990,26 +1094,23 @@ describe("the dependencies of every run", () => {
 	);
 
 	test("the step that makes a worktree for --pr installs nothing of its own", () => {
-		for (const text of [engineSkill, fallback])
-			expect(stepWith(text, "`gh pr checkout <n> --branch")).not.toContain(
-				"install",
-			);
+		expect(stepWith(engineSkill, "`gh pr checkout <n> --branch")).not.toContain(
+			"install",
+		);
 	});
 
 	test.each([
 		["references/gate.md", sentencesFrom(gate, "## Run it", "## Green")],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
 	])("%s installs the dependencies again", (_, text) => {
 		expect(text).toContain("Run the install of the preflight again.");
 	});
 });
 
-describe("the base, the diff and the gates of the stub fallback match the engine", () => {
+describe("the base, the diff and the gates of the run", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const profile = read(`${engine}/references/profile.md`);
 	const review = read(`${engine}/references/review.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 
 	test.each([
 		"Run `git fetch origin <base>`. When it fails, or when `git rev-parse --verify origin/<base>` fails, stop with principled incompletion. The local base branch can be behind, so the run never diffs against it.",
@@ -2017,13 +1118,12 @@ describe("the base, the diff and the gates of the stub fallback match the engine
 		"CI tests the merge of the branch into the base, so the gates need every commit of the base. When `git merge-base --is-ancestor origin/<base> HEAD` fails, the branch lacks base commits. With `base.sync` set to `merge`, run `git merge origin/<base>`. With `none`, print `git log --oneline HEAD..origin/<base>` and stop with principled incompletion.",
 		"Print `BASE_SHA` as the output of `git rev-parse origin/<base>`. Every diff of the run is `git diff <BASE_SHA>...HEAD`.",
 		"Print `WORKTREE` as the output of `git rev-parse --show-toplevel`. Start every command of the run with `cd <WORKTREE> &&`, because a tool call can start in another directory.",
-	])("the engine and the stub fallback say %s", (sentence) => {
+	])("the engine says %s", (sentence) => {
 		expect(engineSkill).toContain(sentence);
-		expect(fallback).toContain(sentence);
 	});
 
 	test("no run diffs against the local base branch", () => {
-		for (const text of [engineSkill, gate, profile, review, fallback])
+		for (const text of [engineSkill, gate, profile, review])
 			expect(text).not.toMatch(/(?<!origin\/)<base>\.\.\.HEAD/);
 	});
 
@@ -2033,7 +1133,6 @@ describe("the base, the diff and the gates of the stub fallback match the engine
 	test.each([
 		["SKILL.md", engineSkill],
 		["references/review.md", review],
-		["the stub fallback", fallback],
 	])(
 		"%s gives each reviewer the absolute worktree and the pinned SHAs",
 		(_, text) => {
@@ -2041,23 +1140,13 @@ describe("the base, the diff and the gates of the stub fallback match the engine
 		},
 	);
 
-	test("the stub fallback gives each reviewer the notes of the profile, as the engine does", () => {
-		expect(review).toContain("every line of `reviewers.notes`");
-		expect(fallback).toContain(
-			"Give each one every line of `reviewers.notes`.",
-		);
-	});
-
 	const globs = sentencesFrom(
 		profile,
 		"A glob matches the whole repo-relative path.",
 		"prints the paths that make the gate apply.",
 	);
 
-	test.each([
-		["references/gate.md", gate],
-		["the stub fallback", fallback],
-	])(
+	test.each([["references/gate.md", gate]])(
 		"%s states what * and ** match, as the profile reference does",
 		(_, text) => {
 			expect(globs).toContain("`*` matches inside one folder");
@@ -2071,8 +1160,8 @@ describe("the base, the diff and the gates of the stub fallback match the engine
 		"never a finding of its own.",
 	);
 
-	test("a gate whose earlier gate did not pass is BLOCKED in the engine and in the stub fallback", () => {
-		expect(fallback).toContain(blocked);
+	test("a gate whose earlier gate did not pass is BLOCKED in the engine", () => {
+		expect(blocked).toContain("print `<NAME>_EXIT=BLOCKED`");
 		expect(gate).toContain("no gate is `NOT_STARTED` or `BLOCKED`");
 	});
 
@@ -2082,12 +1171,8 @@ describe("the base, the diff and the gates of the stub fallback match the engine
 		"The run cannot stop clean while it stays red.",
 	);
 
-	test("a red gate that the PR made is a finding, and a pre-existing red is never fixed, in the engine and in the stub fallback", () => {
+	test("a red gate that the PR made is a finding, and a pre-existing red is never fixed, in the engine", () => {
 		expect(redGate).toContain("never fix it");
-		expect(fallback).toContain(redGate);
-		expect(fallback).toContain(
-			"The gate findings of the last gate run are blocking findings too.",
-		);
 	});
 });
 
@@ -2168,7 +1253,6 @@ describe("a gate run sees only the commit", () => {
 
 	test.each([
 		["references/gate.md", sentencesFrom(gate, "## Run it", "## Green")],
-		["the gate run of the stub fallback", paragraphStarting(stub, "Gate run:")],
 	])(
 		"%s stops on an untracked or uncommitted file before the first gate",
 		(_, text) => {
@@ -2191,7 +1275,6 @@ describe("a gate run sees only the commit", () => {
 
 describe("a frozen install starts with no node_modules", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const prune =
 		"First delete the `node_modules` folder next to each `package.json` that git tracks, with `cd <WORKTREE> && git ls-files -z ':(glob)**/package.json' | while IFS= read -r -d '' file; do rm -rf -- \"$(dirname -- \"$file\")/node_modules\"; done`. A frozen install keeps a package that the lockfile no longer lists, and CI installs into a new checkout.";
 
@@ -2199,10 +1282,6 @@ describe("a frozen install starts with no node_modules", () => {
 		[
 			"the preflight of SKILL.md",
 			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
-		],
-		[
-			"the preflight of the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
 		],
 	])("%s deletes node_modules before the frozen install", (_, text) => {
 		expect(text).toContain(prune);
@@ -2217,7 +1296,6 @@ describe("a frozen install starts with no node_modules", () => {
 
 describe("a failed gh is never a run with no PR", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const ruleStart = "The run has no PR only when gh exits 1 and";
 	const noPrMessages = [
 		'No pull requests found for branch "main"',
@@ -2228,12 +1306,6 @@ describe("a failed gh is never a run with no PR", () => {
 		"HTTP 401: Bad credentials (https://api.github.com/graphql)",
 		"error connecting to api.github.com",
 	];
-
-	function ruleOf(text: string): string {
-		const from = text.indexOf(ruleStart);
-		if (from === -1) throw new Error(`no sentence starts with "${ruleStart}"`);
-		return text.slice(from, text.indexOf(". ", from) + 1);
-	}
 
 	function isNoPr(rule: string, message: string): boolean {
 		const matcher = /`([^`]+)`/.exec(rule)?.[1];
@@ -2250,20 +1322,8 @@ describe("a failed gh is never a run with no PR", () => {
 
 	afterAll(removeWorlds);
 
-	test("the stub fallback takes the no-PR message of gh as no PR, with an uppercase or a lowercase first letter", () => {
-		const rule = ruleOf(fallback);
-		expect(noPrMessages.filter((message) => !isNoPr(rule, message))).toEqual(
-			[],
-		);
-	});
-
-	test("the stub fallback never takes another failure of gh as no PR", () => {
-		const rule = ruleOf(fallback);
-		expect(failures.filter((message) => isNoPr(rule, message))).toEqual([]);
-	});
-
-	test("the command and the manual rule of the stub fallback classify each gh answer the same way", () => {
-		const rule = ruleOf(fallback);
+	test("the command and the manual rule of the setup seed classify each gh answer the same way", () => {
+		const rule = noPrRule;
 		const messages = [...noPrMessages, ...failures];
 		const world = createWorld();
 		const byCommand = messages.map((message, at) => {
@@ -2276,16 +1336,14 @@ describe("a failed gh is never a run with no PR", () => {
 		expect(byRule).toContain(false);
 	});
 
-	test("SKILL.md leaves the no-PR rule to the command, and it and the stub fallback stop the run on each other failure", () => {
+	test("SKILL.md leaves the no-PR rule to the command, and stops the run on each other failure", () => {
 		expect(engineSkill).not.toContain(ruleStart);
 		expect(engineSkill).not.toContain("grep -qi");
-		for (const text of [engineSkill, fallback]) {
-			expect(text).toContain(
-				"Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.",
-			);
-			expect(text).not.toContain("When it finds no PR, the run has no PR");
-			expect(text).not.toContain("that `gh pr view --json number` finds");
-		}
+		expect(engineSkill).toContain(
+			"Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.",
+		);
+		expect(engineSkill).not.toContain("When it finds no PR, the run has no PR");
+		expect(engineSkill).not.toContain("that `gh pr view --json number` finds");
 	});
 
 	const manualHeadCheck =
@@ -2485,11 +1543,7 @@ describe("each diff runs against the fetched base", () => {
 		).toEqual([]);
 	});
 
-	test.each([
-		...texts,
-		"templates/pr-review-hardening.stub.SKILL.md",
-		fallbackPath,
-	])(
+	test.each([...texts, "templates/pr-review-hardening.stub.SKILL.md"])(
 		"%s runs no git command against the local base branch, which can be behind",
 		(path) => {
 			expect(gitOnBase(read(path))).toEqual([]);
@@ -2499,7 +1553,6 @@ describe("each diff runs against the fetched base", () => {
 
 describe("the node_modules delete in a checkout that the run did not create", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const ask =
 		"A dev server or another session can use the `node_modules` folders of a checkout that the run did not create, such as the current checkout. So before the first delete in such a checkout, print `WORKTREE` and ask the owner. Without a yes, stop with principled incompletion. The yes holds for each later install of the run.";
 
@@ -2507,10 +1560,6 @@ describe("the node_modules delete in a checkout that the run did not create", ()
 		[
 			"the preflight of SKILL.md",
 			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
-		],
-		[
-			"the preflight of the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
 		],
 	])("%s asks the owner before the first delete", (_, text) => {
 		expect(text).toContain(ask);
@@ -2529,7 +1578,6 @@ describe("the node_modules delete in a checkout that the run did not create", ()
 describe("when_changed reads both paths of a rename", () => {
 	const gate = read(`${engine}/references/gate.md`);
 	const profile = read(`${engine}/references/profile.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const listed = "`git diff --name-only --no-renames <BASE_SHA>...HEAD`";
 	const reason =
 		"CI splits a rename into a delete and an add, so `--no-renames` lists both paths.";
@@ -2537,7 +1585,6 @@ describe("when_changed reads both paths of a rename", () => {
 	test.each([
 		["references/gate.md", gate],
 		["references/profile.md", profile],
-		["the stub fallback", fallback],
 	])("%s lists the old path of a rename", (_, text) => {
 		expect(text).toContain(listed);
 		expect(text).toContain(reason);
@@ -2551,7 +1598,6 @@ describe("when_changed reads both paths of a rename", () => {
 describe("a PR that changes CI", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const ciPins = read(`${engine}/references/ci-pins.md`);
 	const ciPinsPointer =
 		"When the exit code is not 0, or when the diff changes a CI file, read `references/ci-pins.md` for what each exit code means.";
@@ -2567,51 +1613,34 @@ describe("a PR that changes CI", () => {
 		"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
 		"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
 	];
-	const recorded = {
-		engine:
-			"It records the mode in the ledger, in each `GATE_SUMMARY` and in each PR comment.",
-		stub: "It records the mode in the ledger, in each gate summary and in each PR comment.",
-	};
+	const recorded =
+		"It records the mode in the ledger, in each `GATE_SUMMARY` and in each PR comment.";
 	const exitOne = /\bwhen it does not exit 0\b/i;
 	const everyVersionFile =
 		"`-version-file` input, stop with principled incompletion";
-	const noCli =
-		"When `command -v astack` fails, the run cannot do this check. Then stop with principled incompletion when the diff changes a path under `.github/workflows/` or `.github/actions/`, or a version file. Also stop when it changes a path in the folder of a local action that a workflow uses.";
 
 	test.each([
 		[
 			"the preflight of SKILL.md, with the reference that it points to",
 			reachEngine(sentencesFrom(engineSkill, "## Preflight", "## Baseline")),
 		],
-		[
-			"the preflight of the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
-		],
 	])("%s stops, because the gates mirror the CI that apply read", (_, text) => {
 		for (const sentence of ciCheck) expect(text).toContain(sentence);
 		expect(text).not.toContain(everyVersionFile);
 	});
 
-	test("the preflight of SKILL.md points to the reference of the exit codes, and the stub fallback keeps each of its sentences", () => {
+	test("the preflight of SKILL.md points to the reference of the exit codes", () => {
 		expect(sentencesFrom(engineSkill, "## Preflight", "## Baseline")).toContain(
 			ciPinsPointer,
 		);
 		expect(engineSkill).toContain("- `references/ci-pins.md`: ");
-		const preflight = sentencesFrom(fallback, "Preflight:", "Gate run:");
-		for (const line of sectionLines(ciPins, "What each exit code means"))
-			expect(preflight).toContain(line);
 	});
 
 	test.each([
 		[
 			"the preflight of SKILL.md",
 			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
-			recorded.engine,
-		],
-		[
-			"the preflight of the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
-			recorded.stub,
+			recorded,
 		],
 	])(
 		"%s goes on in mode ci_proof only on exit 3 with a ci_proof: last line, and records the mode",
@@ -2625,23 +1654,17 @@ describe("a PR that changes CI", () => {
 		},
 	);
 
-	test("the reviewers of mode ci_proof learn that only they examine the CI files and each tool that a run step installs, in the engine and in the stub", () => {
+	test("the reviewers of mode ci_proof learn that only they examine the CI files and each tool that a run step installs, in the engine", () => {
 		const review = sentencesFrom(
 			read(`${engine}/references/review.md`),
 			"Every reviewer prompt carries:",
 			"## The ledger",
 		);
-		const stubReview = stepWith(fallback, "Print `REVIEWED_HEAD`");
 		for (const sentence of [
 			"in mode `ci_proof`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs.",
 			"`astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;",
 		])
 			expect(review).toContain(sentence);
-		for (const sentence of [
-			"In mode `ci_proof`, also tell each one that the gates mirror the CI of the base. So only the review examines the CI files before CI runs.",
-			"Also tell each one that `astack check ci-pins` does not read a tool that a `run` step or a script installs. A change to such an install is a blocking finding.",
-		])
-			expect(stubReview).toContain(sentence);
 	});
 
 	test("the gate run takes the mode of its own CI check, and the ledger and the PR comment hold it", () => {
@@ -2654,11 +1677,11 @@ describe("a PR that changes CI", () => {
 		).toContain(
 			"The ledger also holds `mode`, the mode of the last CI check of the run, `standard` or `ci_proof`.",
 		);
-		expect(stepWith(fallback, "If `proof.pr_comment` is set")).toContain(
-			"It also holds the mode, and each advisory gate of mode `ci_proof` with its proof.",
+		expect(gate).toContain(
+			"- the mode, and each advisory gate of mode `ci_proof` with its proof;",
 		);
-		expect(stepWith(fallback, "Print `BASE_SHA`")).toContain(
-			"The mode follows the result of the last check of the run.",
+		expect(sentencesFrom(gate, "## Run it", "## Green")).toContain(
+			"Do the CI check of the preflight again. Its result sets the mode of the run.",
 		);
 	});
 
@@ -2674,10 +1697,7 @@ describe("a PR that changes CI", () => {
 		"CI on `PR_HEAD` still gates the merge.",
 	];
 
-	test.each([
-		["the green gate of references/gate.md", gate],
-		["the red gates of the stub fallback", fallback],
-	])(
+	test.each([["the green gate of references/gate.md", gate]])(
 		"%s makes a red gate of mode ci_proof advisory only with its proof",
 		(_, text) => {
 			for (const sentence of advisory) expect(text).toContain(sentence);
@@ -2698,10 +1718,6 @@ describe("a PR that changes CI", () => {
 		[
 			"the CI read-back of references/gate.md",
 			sentencesFrom(gate, "## CI read-back", "## Unclean stop"),
-		],
-		[
-			"the steps after the stop of the stub fallback",
-			paragraphStarting(fallback, "After the stop,"),
 		],
 	])(
 		"%s merges a PR of mode ci_proof only when each required check of PR_HEAD passes on a pull_request run",
@@ -2744,73 +1760,39 @@ describe("a PR that changes CI", () => {
 		expect(paragraphStarting(gate, "1. How the run stopped:")).toContain(
 			"Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof, and the result of the CI read-back.",
 		);
-		expect(paragraphStarting(fallback, "After the stop,")).toContain(
-			"Also report the mode of the run, and in mode `ci_proof` each advisory gate with its proof.",
-		);
 	});
 
-	test("the engine merges in mode ci_proof only after the CI read-back, and the stub does the same", () => {
+	test("the engine merges in mode ci_proof only after the CI read-back", () => {
 		expect(
 			sentencesFrom(engineSkill, "## After the stop", "## References"),
 		).toContain(
 			"In mode `ci_proof`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
 		);
-		expect(paragraphStarting(fallback, "After the stop,")).toContain(
-			"In mode `ci_proof`, merge only when the CI read-back passes.",
-		);
 	});
 
 	test("a finding whose fix needs a CI edit is out-of-scope in mode ci_proof, because a fix never edits CI", () => {
-		expect(
-			sentencesFrom(
-				read(`${engine}/references/fix.md`),
-				"## Fix fence",
-				"## Files that astack writes",
-			),
-		).toContain(
+		const fence = sentencesFrom(
+			read(`${engine}/references/fix.md`),
+			"## Fix fence",
+			"## Files that astack writes",
+		);
+		expect(fence).toContain(
 			"In mode `ci_proof`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in that mode, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`.",
 		);
-		expect(fallback).toContain(
-			"No dependency, lockfile, migration or CI edits, and nothing under `forbidden.paths`.",
+		expect(fence).toContain(
+			"A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action.",
 		);
-		for (const text of [
-			sentencesFrom(
-				read(`${engine}/references/fix.md`),
-				"## Fix fence",
-				"## Files that astack writes",
-			),
-			fallback,
-		])
-			expect(text).toContain(
-				"A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action.",
-			);
 	});
 
-	test("the stub fallback stops on each change to a version file only when no astack command is on the PATH", () => {
-		const step = stepWith(fallback, "Print `BASE_SHA`");
-		expect(step).toContain(
-			"When `command -v astack` succeeds, run `astack check ci-pins --base <BASE_SHA>`",
-		);
-		expect(step).toContain(noCli);
-		expect(engineSkill).not.toContain("command -v astack");
-	});
-
-	test("each gate run of the engine does the CI check again, and the stub repeats the step that holds it", () => {
+	test("each gate run of the engine does the CI check again", () => {
 		expect(sentencesFrom(gate, "## Run it", "## Green")).toContain(
 			"Do the CI check of the preflight again. Its result sets the mode of the run.",
-		);
-		for (const sentence of ciCheck)
-			expect(stepWith(fallback, "Print `BASE_SHA`")).toContain(sentence);
-		expect(stepWith(fallback, "Print `BASE_SHA`")).toStartWith("7. ");
-		expect(paragraphStarting(stub, "Gate run:")).toContain(
-			"do preflight steps 6 and 7 again",
 		);
 	});
 });
 
 describe("a clean iteration commits no fix", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const unseen =
 		"An iteration that commits a fix in step 4 is not clean, because no reviewer saw that commit.";
 
@@ -2818,10 +1800,6 @@ describe("a clean iteration commits no fix", () => {
 		[
 			"the decision of SKILL.md",
 			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
-		],
-		[
-			"the decision of the stub fallback",
-			sentencesFrom(fallback, "Decide:", "After the stop"),
 		],
 	])("%s never stops clean on a fix that no reviewer saw", (_, text) => {
 		expect(text).toContain(unseen);
@@ -2834,10 +1812,6 @@ describe("a clean iteration commits no fix", () => {
 		[
 			"the review step of SKILL.md",
 			stepWith(engineSkill, "Launch the reviewers"),
-		],
-		[
-			"the review step of the stub fallback",
-			stepWith(fallback, "Launch the `pr-review-toolkit` review agents"),
 		],
 	])("%s prints the head that the reviewers get", (_, step) => {
 		expect(step).toContain(reviewedHead);
@@ -2852,10 +1826,6 @@ describe("a clean iteration commits no fix", () => {
 			"the decision of SKILL.md",
 			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
 		],
-		[
-			"the decision of the stub fallback",
-			sentencesFrom(fallback, "Decide:", "After the stop"),
-		],
 	])(
 		"%s stops clean only on the head that the reviewers saw, whatever commit came after them",
 		(_, text) => {
@@ -2864,10 +1834,7 @@ describe("a clean iteration commits no fix", () => {
 	);
 });
 
-test.each([
-	["the engine", read(`${engine}/references/gate.md`)],
-	["the fallback", stub],
-])(
+test.each([["the engine", read(`${engine}/references/gate.md`)]])(
 	"[control:proof-fallback-marker] %s requires exit 0 and the proof success line together",
 	(_name, text) => {
 		expect(text).toMatch(
@@ -2879,7 +1846,6 @@ test.each([
 describe("the proof of a clean stop", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const decide = sentencesFrom(engineSkill, "## Decide", "## After the stop");
 	const conditions = [
 		...sentencesOf(paragraphStarting(decide, "The iteration is clean when")),
@@ -3000,17 +1966,9 @@ describe("the proof of a clean stop", () => {
 			"`ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back.",
 	};
 
-	test("the stop_clean bullet of the engine and of the stub fallback holds only the conditions that the proof rows name", () => {
+	test("the stop_clean bullet of the engine holds only the conditions that the proof rows name", () => {
 		expect(paragraphStarting(decide, "- `stop_clean`:")).toBe(
 			"- `stop_clean`: the iteration is clean and `n >= iterations.min`.",
-		);
-		expect(
-			paragraphStarting(
-				sentencesFrom(fallback, "Decide:", "After the stop"),
-				"- `stop_clean`:",
-			),
-		).toBe(
-			"- `stop_clean`: the iteration found no blocking finding, the comment gate removed nothing and every gate exited 0 or is an advisory gate of mode `ci_proof`. Also, the metrics held, and at least `iterations.min` iterations have run. An iteration that commits a fix in step 4 is not clean, because no reviewer saw that commit. A clean stop also needs `REVIEWED_HEAD` to equal the output of `git rev-parse HEAD` after the last gate run. No reviewer saw a commit that comes after the review, such as the merge of a moved base in a gate run. A clean stop also needs a diff from the base that is not empty. In a run with a PR, a clean stop also needs `PR_HEAD` to equal `HEAD` after the push of step 7. CI tests only the head of the PR, so a review or a gate run of an unpushed commit proves nothing for the PR. In mode `ci_proof`, a clean stop also needs the mode in the gate summary, so the report names the mode. It also needs a CI read-back that passes on `PR_HEAD`, as the steps after the stop say, whatever `merge.after_clean_stop` says. A run of mode `ci_proof` without a PR stops with principled incompletion.",
 		);
 	});
 
@@ -3083,7 +2041,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 		...markdownUnder("marketplace/plugins/astack").map(
 			(path) => [path, read(path)] as const,
 		),
-		["the stub fallback", stub],
 	];
 	const blobForm = /\bgit rev-parse ["']?HEAD:(?:<[^>\s]+>|\$\{?\w+\}?)/g;
 	const blobForms = (text: string): string[] => [
@@ -3140,12 +2097,12 @@ describe("the ledger keeps the evidence of the whole run", () => {
 		).toEqual([]);
 	});
 
-	test("the scan reads the review reference and the stub fallback, which take the blob of each ledger entry", () => {
+	test("the scan reads the review reference, which takes the blob of each ledger entry", () => {
 		expect(
 			blobTexts
 				.filter(([, text]) => blobForms(text).length > 0)
 				.map(([name]) => name),
-		).toEqual([`${engine}/references/review.md`, "the stub fallback"]);
+		).toEqual([`${engine}/references/review.md`]);
 	});
 
 	test("each astack text that takes the blob with git rev-parse HEAD:<file>, HEAD:<path> or HEAD:$ gives the blob of a file that HEAD does not hold", () => {
@@ -3159,7 +2116,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const gate = read(`${engine}/references/gate.md`);
 	const review = read(`${engine}/references/review.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
 	const reset =
 		"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty.";
 	const keptThroughIterations =
@@ -3204,11 +2160,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 
 	test.each([
 		[
-			"the stub fallback",
-			sentencesFrom(fallback, "Preflight:", "Gate run:"),
-			sentencesFrom(fallback, "Gate run:", "Decide:"),
-		],
-		[
 			"SKILL.md",
 			sentencesFrom(engineSkill, "## Preflight", "## Baseline"),
 			sentencesFrom(engineSkill, "## Baseline", "## Decide"),
@@ -3230,10 +2181,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 			expect(ledgerResets(text)).toEqual([]);
 		},
 	);
-
-	test("the stub fallback renames an earlier ledger in its preflight, before the first iteration", () => {
-		expect(sentencesFrom(fallback, "Preflight:", "Gate run:")).toContain(reset);
-	});
 
 	test("review.md says that the preflight loads the ledger once per run", () => {
 		expect(
@@ -3261,12 +2208,8 @@ describe("the ledger keeps the evidence of the whole run", () => {
 		"## The ledger",
 		"## Review-bot threads",
 	);
-	const stubLoad = stepWith(fallback, "Load the ledger once per run");
 
-	test.each([
-		["references/review.md", ledgerRule],
-		["the preflight of the stub fallback", stubLoad],
-	])(
+	test.each([["references/review.md", ledgerRule]])(
 		"%s defines the stopped field of the ledger, which tells a ledger of a run that was cut off",
 		(_, text) => {
 			for (const sentence of stoppedField) expect(text).toContain(sentence);
@@ -3280,7 +2223,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 	test.each([
 		["references/review.md", ledgerRule],
 		["the preflight of SKILL.md", stepWith(engineSkill, "Load the ledger")],
-		["the preflight of the stub fallback", stubLoad],
 	])(
 		"%s resumes the ledger of a run that was cut off, so the rename of ledger.carry_over: false never archives it",
 		(_, text) => {
@@ -3299,7 +2241,6 @@ describe("the ledger keeps the evidence of the whole run", () => {
 			"SKILL.md",
 			sentencesFrom(engineSkill, "## After the stop", "## References"),
 		],
-		["the stub fallback", paragraphStarting(fallback, "After the stop,")],
 	])(
 		"the steps after the stop in %s record the decision in the ledger, so the next run does not resume a run that stopped",
 		(_, text) => {
@@ -3325,1857 +2266,6 @@ describe("hardening compaction keeps the active iteration", () => {
 			"Continue with the iteration after the highest",
 		);
 	});
-});
-
-describe("each sentence of the run has a counterpart in the stub fallback", () => {
-	const engineSkill = read(`${engine}/SKILL.md`);
-	const gate = read(`${engine}/references/gate.md`);
-	const review = read(`${engine}/references/review.md`);
-	const ciPinsText = read(`${engine}/references/ci-pins.md`);
-	const fallback = stub.slice(stub.indexOf("## Fallback"));
-	type Counterpart =
-		| {
-				readonly engine: string;
-				readonly stub: readonly string[];
-				readonly leaves?: string;
-		  }
-		| { readonly engine: string; readonly unread: string }
-		| { readonly engine: string; readonly reason: string };
-
-	const stubbed = (key: string, ...texts: string[]): Counterpart => ({
-		engine: key,
-		stub: texts,
-	});
-	const unread = (key: string, profileKey: string): Counterpart => ({
-		engine: key,
-		unread: profileKey,
-	});
-	const reasoned = (key: string, reason: string): Counterpart => ({
-		engine: key,
-		reason,
-	});
-	const explains =
-		"It gives the reason for a step. It holds no step or stop of its own.";
-	const orderOfReads =
-		"It orders the reads of two sections of the engine. The stub holds the decision and the merge sentence in its own steps.";
-	const compaction =
-		"A compaction is an event of the host that loads the plugin skill. The fallback is read on demand, and its ledger step resumes a run that was cut off.";
-	const pointer =
-		"It names the reference that holds the detail. The stub states the short form in its own steps.";
-	const noChecklist =
-		"references/checklist.md ships only in the astack plugin, and the fallback runs when the plugin is absent. So the fallback has no checklist pass, no class field in its ledger and no lesson candidates.";
-
-	const argumentsRows: readonly Counterpart[] = [
-		stubbed("Arguments: `$ARGUMENTS`.", "Read the arguments, `$ARGUMENTS`."),
-		stubbed(
-			"A bare word is the base branch.",
-			"A bare word is the base branch.",
-		),
-		stubbed(
-			"`--pr <number>` names the pull request.",
-			"`--pr <number>` names the pull request.",
-		),
-		stubbed(
-			"Without `--pr`, the PR is the one that the head check finds",
-			"Without `--pr`, the PR is the one that the head check finds for the current branch, if any.",
-		),
-	];
-
-	const reviewPrRows: readonly Counterpart[] = [
-		stubbed(
-			"reviews the head of that PR and nothing else",
-			"With `--pr <n>` in `$ARGUMENTS`, select the head of that PR first",
-		),
-		stubbed(
-			"Do these steps before you load the profile",
-			"because the profile of the PR head applies",
-		),
-		stubbed(
-			"and print the three ref values",
-			"1. Read `gh pr view <n> --json headRefName,headRefOid,baseRefName,state,isCrossRepository`, and print the three ref values.",
-		),
-		stubbed(
-			"Stop with principled incompletion when `state` is not `OPEN`.",
-			"Stop with principled incompletion when `state` is not `OPEN`.",
-		),
-		stubbed(
-			"The local branch of the PR is `headRefName`",
-			"The local branch of the PR is `headRefName`, or `pr-<n>` when `isCrossRepository` is true.",
-		),
-		stubbed(
-			"A branch of a fork can have the name of a local branch",
-			"A branch of a fork can have the name of a local branch, such as `main`.",
-		),
-		stubbed(
-			"So the run never takes a checkout by the head branch name",
-			"So the run never takes a checkout by the head branch name of a PR from a fork.",
-		),
-		stubbed(
-			"When `git branch --show-current` prints the local branch of the PR",
-			"When `git branch --show-current` prints the local branch of the PR, stay in this checkout.",
-		),
-		stubbed(
-			"Otherwise, look for the local branch of the PR in `git worktree list --porcelain`",
-			"Otherwise continue in the worktree that holds the local branch of the PR in `git worktree list --porcelain`.",
-		),
-		stubbed(
-			"When no worktree holds it",
-			"When no worktree holds it, run `git worktree add --detach <dir>` with a new directory outside this checkout.",
-		),
-		stubbed(
-			"Then run `gh pr checkout <n> --branch <local branch>` in it.",
-			"Then run `gh pr checkout <n> --branch <local branch>` in it.",
-		),
-		stubbed(
-			"Continue the run in that worktree.",
-			"Continue the run in that worktree.",
-		),
-		stubbed(
-			"Never switch the branch of this checkout.",
-			"Never switch the branch of this checkout.",
-		),
-		stubbed(
-			"With `--pr`, the base branch is the bare word",
-			"With `--pr`, the base branch is the bare word, else the PR's `baseRefName`, whatever `base.from_pr` says.",
-		),
-		stubbed(
-			"Never create a review branch in a run with `--pr`.",
-			"Never create a review branch in a run with `--pr`.",
-		),
-		stubbed(
-			"The fix commits go on the local branch of the PR.",
-			"In a run with `--pr`, the fix commits go on the local branch of the PR.",
-		),
-		reasoned("A new worktree has no file that git ignores", explains),
-		stubbed(
-			"A gate prerequisite that checks such a file stops the run there",
-			"If a variable or a prerequisite is still missing, stop with principled incompletion before running anything. Name the gate and the missing item.",
-		),
-	];
-
-	const headCheckRows: readonly Counterpart[] = [
-		stubbed("CI tests the head of the PR.", "CI tests the head of the PR."),
-		reasoned("gives a stale tree to the reviewers and the gates", explains),
-		stubbed(
-			"So every run with a PR does the head check",
-			"So every run with a PR does the head check, with `--pr` or without it, before it reads the profile.",
-		),
-		stubbed(
-			"Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`.",
-			"Run `astack check pr-head`, and add `--pr <n>` in a run with `--pr`.",
-		),
-		stubbed(
-			"Print its output and its exit code.",
-			"Print its output and its exit code.",
-		),
-		stubbed(
-			"Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`.",
-			"Each call reads the PR again, fetches its head, and prints `HEAD`, `PR_HEAD` and `UNPUSHED`.",
-		),
-		stubbed(
-			"A run with `--pr` read the PR in its selection step, so the call reads it a second time.",
-			"A run with `--pr` read the PR in its selection step, so the call reads it a second time.",
-		),
-		stubbed(
-			"When it exits 0 and its last line starts with `ok:`, the check passes.",
-			"When it exits 0 and its last line starts with `ok:`, the check passes.",
-		),
-		stubbed(
-			"The `PR=` line gives the number of the PR.",
-			"The `PR=` line gives the number of the PR.",
-		),
-		stubbed(
-			"When it exits 3 and its last line starts with `no_pr:`, the run has no PR.",
-			"When it exits 3 and its last line starts with `no_pr:`, the run has no PR.",
-		),
-		stubbed("Then it skips this check.", "Then it skips this check."),
-		stubbed(
-			"Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.",
-			"Only a run without `--pr` can get this result, and only when gh exits 1 with the no-PR message.",
-		),
-		stubbed(
-			"Accept no other pair of exit code and last line.",
-			"Accept no other pair of exit code and last line.",
-		),
-		stubbed(
-			"Stop with principled incompletion before the baseline.",
-			"Stop with principled incompletion before the baseline.",
-		),
-		reasoned("so the owner pulls first", explains),
-		stubbed(
-			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
-			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
-		),
-		stubbed(
-			"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
-			"The `UNPUSHED` list names the commits that CI did not test, so the final report names each one.",
-		),
-		stubbed(
-			"Each other failure of a `gh pr view` of the run stops the run",
-			"Each other failure of a `gh pr view` of the run stops the run with principled incompletion, and the run prints the error of gh.",
-		),
-		stubbed(
-			"Each gate run does the head check again",
-			"read its `headRefOid` again and do the head check again",
-		),
-	];
-
-	const authorityRows: readonly Counterpart[] = [
-		reasoned("are the truth", explains),
-		stubbed("decide pass or fail", "Gates decide."),
-		stubbed(
-			"The comment gate decides which comments survive.",
-			"5. Comment gate.",
-		),
-		stubbed("Its findings block.", "the comment gate removed nothing"),
-		stubbed(
-			"Reviewers produce candidate findings.",
-			"Reviewers only propose findings.",
-		),
-		stubbed("They decide nothing.", "Reviewers only propose findings."),
-		stubbed("Prose is never proof", "Prose is not proof."),
-		stubbed(
-			"Every stop decision rests on output printed in the transcript.",
-			"Print a gate summary and a decision.",
-		),
-		stubbed(
-			"When a reviewer claim and a green gate disagree",
-			"3. Reproduce each candidate.",
-		),
-		stubbed(
-			"If it does not reproduce, it is advisory.",
-			"It blocks only when the reproduction shows a concrete failure that the PR introduces.",
-		),
-		stubbed(
-			"A clean stop needs each condition of the Decide section.",
-			"- `stop_clean`: the iteration found no blocking finding",
-		),
-		stubbed(
-			"A merge needs each condition of the After the stop section.",
-			"Merge only when `merge.after_clean_stop` is `merge` and every line of `merge.conditions` holds.",
-		),
-		reasoned("Read both before the first iteration.", orderOfReads),
-	];
-
-	const compactionRows: readonly Counterpart[] = [
-		reasoned("A host can keep only part of this file", compaction),
-		reasoned("After a compaction, read this file again", compaction),
-		reasoned("Print `git rev-parse HEAD` and `git status --short`", compaction),
-		reasoned(
-			"Continue the current iteration and its unfinished step.",
-			compaction,
-		),
-		reasoned(
-			"Complete every required step of that iteration before deciding.",
-			compaction,
-		),
-		reasoned(
-			"Do not advance the iteration merely because the context was compacted.",
-			compaction,
-		),
-		reasoned(
-			"Use the interrupted-run resume rule only when a new run starts after an interruption.",
-			compaction,
-		),
-	];
-
-	const loadRows: readonly Counterpart[] = [
-		stubbed(
-			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
-			"The profile requires an unrestricted, nonoptional `change-proof` gate that runs `astack check proof`.",
-		),
-		stubbed(
-			"A missing gate or unverified summary stops the run with principled incompletion.",
-			"A missing gate or unverified summary stops the run with principled incompletion.",
-		),
-		stubbed(
-			"read `.claude/pr-review-hardening.profile.md` there",
-			"Read the YAML block in the profile.",
-		),
-		stubbed(
-			"Take the first fenced code block tagged `yaml` or `json`.",
-			"Read the YAML block in the profile.",
-		),
-		stubbed(
-			"defines every key and its default",
-			"The fallback has no defaults, so the profile defines every key that it reads.",
-		),
-		reasoned(
-			"Run `astack check hardening-profile`.",
-			"The fallback runs without the plugin, so it has no astack CLI. Its own steps below stop on each profile problem that it can see.",
-		),
-		stubbed(
-			"When it does not exit 0, stop with principled incompletion and print each problem with its repair.",
-			"If the file is missing or the block does not parse, stop with principled incompletion.",
-			"If a key that this section names is missing, stop with principled incompletion.",
-			"Name the missing key.",
-		),
-		stubbed(
-			"Never run gate commands you guessed.",
-			"Never run a gate command that you guessed.",
-		),
-		stubbed(
-			"Print `RUN_CONFIG`.",
-			"Print the base branch, each `gates[].command` and the `test.command`, the reviewers and the iteration bounds.",
-		),
-		stubbed(
-			"It holds the profile path and its `git hash-object`",
-			"Print the base branch, each `gates[].command`",
-		),
-		stubbed(
-			"It holds each gate with its command",
-			"Print the base branch, each `gates[].command`",
-		),
-		stubbed(
-			"It also holds the reviewer set",
-			"the reviewers and the iteration bounds",
-		),
-		stubbed(
-			"When `metrics` is not `null`, it holds the metrics command",
-			"When `metrics` is not `null`, also print `metrics.command`.",
-		),
-		stubbed(
-			"Last are the repo keep patterns",
-			"one of its lines matches `comments.keep_patterns`, with or without its comment marker",
-		),
-		stubbed(
-			"It holds no value from the session or from a file.",
-			"Never print a value from the session or from a file.",
-		),
-		stubbed(
-			"The config is frozen for the run.",
-			"They stay fixed for the run.",
-		),
-		stubbed(
-			"Never edit the profile, package scripts",
-			"No suppressions, no config weakening",
-		),
-		stubbed(
-			"The profile's gates mirror the blocking jobs of the repo's CI.",
-			"The profile's gates mirror the blocking jobs of the repo's CI.",
-		),
-		stubbed(
-			"A gate that applies but cannot start is an unclean stop.",
-			"A gate that applies but cannot start is an unclean stop.",
-		),
-		stubbed("The run never skips it.", "The run never skips it."),
-		stubbed(
-			"says when a gate applies and when it cannot start",
-			"An empty `when_changed` means that the gate applies to every diff.",
-		),
-		stubbed(
-			"Each gate runs with `CI=true`",
-			"Each gate runs in the CI environment of its jobs.",
-		),
-	];
-
-	const rulesRows: readonly Counterpart[] = [
-		stubbed(
-			"Print these at the start of every iteration",
-			"Print these rules at the start of every iteration, followed by the profile's `guardrails`:",
-		),
-		stubbed("Gates decide.", "Gates decide."),
-		stubbed("Reviewers advise.", "Reviewers only propose findings."),
-		stubbed("Prose is not proof.", "Prose is not proof."),
-		stubbed("Gates are read-only.", "- Gates are read-only."),
-		stubbed(
-			"A gate that changes a tracked file outside its `rewrites` is red.",
-			"A gate that changes a tracked file outside its `rewrites` is red.",
-		),
-		stubbed(
-			"No suppressions, no config weakening",
-			"No suppressions, no config weakening, no deleted or narrowed tests, no type laundering.",
-		),
-		stubbed("The fix fence holds.", "Edit only the files a finding names."),
-		stubbed(
-			"Edit only the files a finding names.",
-			"Edit only the files a finding names.",
-		),
-		stubbed(
-			"A file that astack writes is fixed in the astack repo",
-			"its fix goes to the astack repo",
-		),
-		stubbed(
-			"A fix can add a test or script that fails for the finding's reason.",
-			"A fix can add a test or script that fails for the finding's reason.",
-		),
-		stubbed(
-			"Run the failing check before the fix.",
-			"Run the failing check before the fix.",
-		),
-		stubbed("Record its output.", "Record its output."),
-		stubbed(
-			"Then commit the test or script together with the fix",
-			"Then commit the test or script together with the fix, so every commit is green.",
-		),
-		stubbed(
-			"The PR's Verification shows the failing run first",
-			"The PR's Verification shows the failing run first, then the passing run.",
-		),
-		stubbed("Each finding owns its commits.", "Each finding owns its commits."),
-		stubbed("No commit holds two findings.", "No commit holds two findings."),
-		stubbed(
-			"No comment survives outside the keep list",
-			"Otherwise delete every comment on an added or changed line unless it is on the keep list.",
-		),
-		stubbed(
-			"Print a value only when the profile holds it",
-			"Print a value only when the profile holds it, such as a `ci_env` value.",
-		),
-		stubbed(
-			"Never print a value from the session or from a file.",
-			"Never print a value from the session or from a file.",
-		),
-		stubbed(
-			"Such a value can be a secret",
-			"Such a value can be a secret, such as a token, a key or a database URL.",
-		),
-		stubbed(
-			"Stop at the iteration limit, on recurrence, or on principled incompletion.",
-			"- `stop_recurring`: a finding came back after one fix attempt.",
-			"the run reached `iterations.max`",
-		),
-		stubbed(
-			"A clean stop needs at least `iterations.min` iterations.",
-			"at least `iterations.min` iterations have run",
-		),
-		reasoned(
-			"This loop runs now.",
-			"The fallback runs the loop in the session that reads it, so it has no step that hands the loop to another command.",
-		),
-		reasoned(
-			"Do not hand it to `/loop`",
-			"The fallback runs the loop in the session that reads it, so it has no step that hands the loop to another command.",
-		),
-	];
-
-	const preflightRows: readonly Counterpart[] = [
-		stubbed(
-			"The required current proof gate stays blocking.",
-			"The required current proof gate stays blocking.",
-		),
-		stubbed(
-			"No attribution makes a failed proof advisory.",
-			"No attribution makes a failed proof advisory.",
-		),
-		stubbed(
-			"Print `git branch --show-current` and `git status --short`.",
-			"Print `WORKTREE` as the output of `git rev-parse --show-toplevel`.",
-		),
-		stubbed(
-			"Print `WORKTREE` as the output of `git rev-parse --show-toplevel`.",
-			"Print `WORKTREE` as the output of `git rev-parse --show-toplevel`.",
-		),
-		stubbed(
-			"Start every command of the run with `cd <WORKTREE> &&`",
-			"Start every command of the run with `cd <WORKTREE> &&`, because a tool call can start in another directory.",
-		),
-		stubbed(
-			"Resolve the base branch.",
-			"Without `--pr`, the base branch is the bare word, else the PR's base when `base.from_pr` is true and a PR exists, else `base.default`.",
-		),
-		stubbed("Use the argument if given.", "A bare word is the base branch."),
-		stubbed(
-			"Otherwise, with `--pr`, use the PR's `baseRefName`.",
-			"With `--pr`, the base branch is the bare word, else the PR's `baseRefName`",
-		),
-		stubbed(
-			"Otherwise, when `base.from_pr` is true and a PR exists",
-			"else the PR's base when `base.from_pr` is true and a PR exists",
-			"Read the PR's base with `gh pr view <n> --json baseRefName`.",
-		),
-		stubbed("Otherwise use `base.default`.", "else `base.default`."),
-		stubbed(
-			"The working tree must be clean",
-			"2. The working tree must be clean.",
-		),
-		stubbed(
-			"If it is not, stop and ask what to do with the changes.",
-			"If it is not, stop and ask what to do with the changes.",
-		),
-		stubbed(
-			"Run `git fetch origin <base>`.",
-			"3. Run `git fetch origin <base>`.",
-		),
-		stubbed(
-			"When it fails, or when `git rev-parse --verify origin/<base>` fails",
-			"When it fails, or when `git rev-parse --verify origin/<base>` fails, stop with principled incompletion.",
-		),
-		stubbed(
-			"The local base branch can be behind",
-			"The local base branch can be behind, so the run never diffs against it.",
-		),
-		stubbed(
-			"When `git diff --quiet origin/<base>...HEAD` exits 0",
-			"4. When `git diff --quiet origin/<base>...HEAD` exits 0, the branch has no change to review.",
-		),
-		stubbed(
-			"Stop with principled incompletion, and create no branch.",
-			"Stop with principled incompletion, and create no branch.",
-		),
-		stubbed(
-			"If the current branch is the base branch",
-			"If you are on it, create a branch named by `conventions.branch.create`.",
-		),
-		stubbed(
-			"When `conventions.branch.pattern` is set",
-			"When `conventions.branch.pattern` is not null, the name must match it.",
-		),
-		stubbed(
-			"In a run with `--pr`, the run is on the local branch of the PR and creates no branch.",
-			"Never create a review branch in a run with `--pr`.",
-		),
-		stubbed(
-			"Without `--pr`, the fix commits go on the current branch",
-			"Without `--pr`, the fix commits go on the current branch, or on the branch that this step creates.",
-		),
-		stubbed(
-			"Never commit to the base branch.",
-			"Never commit on the base branch.",
-		),
-		stubbed("Never force-push.", "Never force-push"),
-		stubbed(
-			"In a run with a PR, read `gh pr view <n> --json headRefName",
-			"In a run with a PR, read `gh pr view <n> --json headRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`.",
-		),
-		stubbed(
-			"When `isCrossRepository` is true, the PR is from a fork",
-			"When `isCrossRepository` is true, the run pushes with `git push <head repository URL> HEAD:<headRefName>`, and never pushes a branch to `origin`.",
-		),
-		stubbed(
-			"When `isCrossRepository` is true and `maintainerCanModify` is false",
-			"When `isCrossRepository` is true and `maintainerCanModify` is false, the run makes no fix commit, and it stops with principled incompletion.",
-		),
-		stubbed(
-			"The report says that the fork does not allow edits from maintainers",
-			"The report says that the fork does not allow edits from maintainers, so the run cannot push a fix.",
-		),
-		stubbed(
-			"CI tests the merge of the branch into the base",
-			"CI tests the merge of the branch into the base, so the gates need every commit of the base.",
-		),
-		stubbed(
-			"When `git merge-base --is-ancestor origin/<base> HEAD` fails",
-			"When `git merge-base --is-ancestor origin/<base> HEAD` fails, the branch lacks base commits.",
-		),
-		stubbed(
-			"With `base.sync` set to `merge`",
-			"With `base.sync` set to `merge`, run `git merge origin/<base>`.",
-		),
-		stubbed(
-			"With `none`, print `git log --oneline HEAD..origin/<base>`",
-			"With `none`, print `git log --oneline HEAD..origin/<base>` and stop with principled incompletion.",
-		),
-		stubbed(
-			"Print `BASE_SHA` as the output of `git rev-parse origin/<base>`.",
-			"7. Print `BASE_SHA` as the output of `git rev-parse origin/<base>`.",
-		),
-		stubbed(
-			"Every diff of the run is `git diff <BASE_SHA>...HEAD`.",
-			"Every diff of the run is `git diff <BASE_SHA>...HEAD`.",
-		),
-		stubbed(
-			"Run `astack check ci-pins --base <BASE_SHA>`",
-			"run `astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code.",
-		),
-		reasoned(
-			"When the exit code is not 0, or when the diff changes a CI file, read",
-			pointer,
-		),
-		stubbed(
-			"When it exits 0 and its last line starts with `ok:`",
-			"When it exits 0 and its last line starts with `ok:`, the run goes on.",
-		),
-		stubbed(
-			"When it exits 3 and its last line starts with `ci_proof:`",
-			"When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`.",
-		),
-		stubbed(
-			"Otherwise stop with principled incompletion.",
-			"Otherwise stop with principled incompletion.",
-		),
-		stubbed(
-			"With no node and no bun, the launcher prints a note",
-			"With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
-		),
-		stubbed(
-			"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
-			"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
-		),
-		stubbed(
-			"It records the mode in the ledger",
-			"It records the mode in the ledger, in each gate summary and in each PR comment.",
-		),
-		stubbed(
-			"A red gate is advisory in that mode only with the proof",
-			"A red gate is advisory in that mode only with the proof below.",
-		),
-		stubbed(
-			"The merge also needs the CI read-back",
-			"The merge also needs the CI read-back of the steps after the stop.",
-		),
-		stubbed(
-			"get the versions in the `tools` of the gate",
-			"get each version in the `tools` of each gate that applies",
-		),
-		stubbed(
-			"A version that bunx cannot get is a note, not a stop.",
-			"When bunx cannot get a pinned version, the gate runs the local version.",
-		),
-		stubbed(
-			"CI runs the pinned versions, and CI gates the merge.",
-			"CI runs the pinned versions, and CI gates the merge.",
-		),
-		stubbed(
-			"So a local run with a version note is advisory for that tool.",
-			"So a local run with a version note is advisory for that tool.",
-		),
-		stubbed(
-			"Install the dependencies in `WORKTREE` with a frozen lockfile",
-			"8. Install the dependencies in `WORKTREE` with a frozen lockfile, as the install step of CI does, such as `bun install --frozen-lockfile`.",
-		),
-		stubbed(
-			"First delete the `node_modules` folder",
-			"First delete the `node_modules` folder next to each `package.json` that git tracks",
-		),
-		stubbed(
-			"A frozen install keeps a package that the lockfile no longer lists",
-			"A frozen install keeps a package that the lockfile no longer lists, and CI installs into a new checkout.",
-		),
-		stubbed(
-			"Put the `bun` of step 9 first on `PATH`",
-			"Put the `bun` of the tools first on `PATH`.",
-		),
-		stubbed("Do this in every run.", "Do this in every run."),
-		stubbed(
-			"A dev server or another session can use the `node_modules` folders",
-			"A dev server or another session can use the `node_modules` folders of a checkout that the run did not create, such as the current checkout.",
-		),
-		stubbed(
-			"print `WORKTREE` and ask the owner",
-			"So before the first delete in such a checkout, print `WORKTREE` and ask the owner.",
-		),
-		stubbed(
-			"Without a yes, stop with principled incompletion.",
-			"Without a yes, stop with principled incompletion.",
-		),
-		stubbed(
-			"The yes holds for each later install of the run.",
-			"The yes holds for each later install of the run.",
-		),
-		stubbed(
-			"When the install fails, stop with principled incompletion.",
-			"When the install fails, stop with principled incompletion.",
-		),
-		stubbed(
-			"print each `env` name as `set` or `missing`",
-			"For each gate that applies, every `env` variable must be set.",
-		),
-		stubbed(
-			"Put the tools of the gate first on `PATH`.",
-			"Put the tools of the gate first on `PATH`.",
-		),
-		stubbed(
-			"Run the `check` of each prerequisite in `requires`",
-			"Then run the `check` of each prerequisite in `requires` in the CI environment of the gate.",
-		),
-		stubbed("Print its exit code.", "Print its exit code."),
-		stubbed(
-			"When a check fails and its `on_missing` is `start`",
-			"When a check fails and its `on_missing` is `start`, run its `start` command and check again.",
-		),
-		stubbed(
-			"Run each `check` and each `start` with bash",
-			"Run each `check` and each `start` with bash, in its own subshell from the root, as `( cd <WORKTREE> && <entry> )`.",
-		),
-		reasoned("Then a `cd` in one entry never moves the next entry.", explains),
-		stubbed(
-			"A missing variable or a prerequisite that still fails stops the run",
-			"If a variable or a prerequisite is still missing, stop with principled incompletion before running anything.",
-		),
-		reasoned("reports a false green", explains),
-		stubbed(
-			"Load the ledger",
-			"Keep one ledger per branch at `$(git rev-parse --git-common-dir)/pr-review-hardening/<branch>.json`",
-		),
-		stubbed(
-			"A ledger whose `stopped` is `null` comes from a run that was cut off",
-			"A ledger whose `stopped` is `null` comes from a run that was cut off, so this run resumes it, whatever `ledger.carry_over` says.",
-		),
-		stubbed(
-			"A resumed run keeps each entry",
-			"A resumed run keeps each entry, and its first iteration is the one after the highest `iteration` of the entries.",
-		),
-		stubbed(
-			"earlier runs' findings carry into this one",
-			"Otherwise, with `ledger.carry_over` set to `true`, start from the previous run's records.",
-		),
-		stubbed(
-			"Each run sets `stopped` to `null` at this load",
-			"Each run sets `stopped` to `null` at this load, and to its decision when it stops.",
-		),
-		stubbed(
-			"Each run also sets `mode`",
-			"Each run also sets `mode` to the mode of step 7 at this load, and to the mode of each later CI check.",
-		),
-		stubbed(
-			"No iteration renames or empties the ledger",
-			"No iteration renames or empties the ledger, because `stop_recurring` reads the entries of earlier iterations.",
-		),
-		stubbed(
-			"Run each entry of `prepasses`",
-			"Run each entry of `prepasses` whose `prepasses[].when` fits this PR, once, before the baseline.",
-		),
-	];
-
-	const baselineRows: readonly Counterpart[] = [
-		stubbed(
-			"Run the deterministic gate once on the starting head",
-			"Baseline: do the gate run once.",
-		),
-		stubbed(
-			"Its metric values are the first budget.",
-			"Its metric values are the first budget.",
-		),
-		stubbed(
-			"If a gate is red at baseline",
-			"A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed.",
-		),
-		stubbed(
-			"Reproduce a failure on the base branch before you call it pre-existing.",
-			"It is also a finding when the same command is green on the base branch.",
-		),
-		stubbed(
-			"A red the PR did not introduce cannot be fixed inside the fix fence.",
-			"Otherwise it is a pre-existing red. List it, and never fix it.",
-		),
-		stubbed(
-			"The run may still fix in-scope findings",
-			"The run cannot stop clean while it stays red.",
-		),
-	];
-
-	const iterateRows: readonly Counterpart[] = [
-		stubbed(
-			"For each iteration `n` up to `iterations.max`, from 1 or from the first iteration of a resumed run:",
-			"Each iteration:",
-			"the run reached `iterations.max`",
-			"its first iteration is the one after the highest `iteration` of the entries.",
-		),
-		stubbed(
-			"Print `ITERATION <n>` and the rules.",
-			"Print these rules at the start of every iteration",
-		),
-		stubbed(
-			"Review.",
-			"Launch the `pr-review-toolkit` review agents in parallel with the Agent tool.",
-		),
-		stubbed(
-			"Print `REVIEWED_HEAD` as the output of `git rev-parse HEAD`.",
-			"Print `REVIEWED_HEAD` as the output of `git rev-parse HEAD`.",
-		),
-		stubbed(
-			"It is the `<HEAD>` of the diff that the reviewers get.",
-			"It is the `<HEAD>` of the diff that the reviewers get.",
-		),
-		stubbed(
-			"Record the fixed first-review SHAs and print `REVIEW_GROWTH` as `references/review.md` says.",
-			"Before its first reviewer launch, keep `<branch>.review.json` beside the findings ledger.",
-			"Print its output as `REVIEW_GROWTH`.",
-		),
-		stubbed(
-			"Launch the reviewers over",
-			"Tell each one to review `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out.",
-			"Paste each output unmodified.",
-		),
-		{
-			engine: "Then run the checklist pass",
-			stub: [
-				"Then examine the diff against each file in `reviewers.checklists`.",
-			],
-			leaves: noChecklist,
-		},
-		reasoned("`references/review.md` says how.", pointer),
-		stubbed("Triage.", "2. Triage each finding by its label."),
-		{
-			engine: "Give each candidate an id",
-			stub: ["Record each finding with an id, file, reproduction, status"],
-			leaves: noChecklist,
-		},
-		stubbed(
-			"Reproduce it, then classify it",
-			"3. Reproduce each candidate.",
-			"Mark a candidate advisory only for one of four reasons.",
-		),
-		stubbed("Fix.", "4. Fix each blocking finding for real"),
-		stubbed(
-			"Fix every open blocking finding in the ledger",
-			"The gate findings of the last gate run are blocking findings too.",
-		),
-		stubbed(
-			"Commit each finding as the rules above say",
-			"with its commits as the rules say",
-			"Push as `push` says.",
-		),
-		reasoned(
-			"Before each fix, read the item of `references/checklist.md`",
-			noChecklist,
-		),
-		stubbed(
-			"`references/fix.md` holds the rules",
-			"With `typescript.rules` set to true, a fix proves or narrows a type.",
-		),
-		stubbed("Comment gate.", "5. Comment gate."),
-		stubbed(
-			"Run it over `git diff <BASE_SHA>...HEAD`",
-			"Invoke `astack:no-comments` over the diff if the Skill tool lists it.",
-		),
-		stubbed(
-			"Each accepted deletion set and each in-fence `MUST KILL` fix",
-			"Commit the deletions file by file.",
-		),
-		stubbed("Deterministic gate.", "6. Do the gate run."),
-		stubbed(
-			"Run every gate, and the metrics when `metrics` is not `null`",
-			"6. Do the gate run. When `metrics` is not `null`, no key in `metrics.never_increase` may rise.",
-		),
-		stubbed(
-			"A failure the PR introduced becomes a finding `G<n>.<k>`",
-			"The gate findings of the last gate run are blocking findings too.",
-		),
-		stubbed("Decide.", "Print a gate summary and a decision."),
-		stubbed(
-			"push the branch as `push` says when `HEAD` is not `PR_HEAD`",
-			"In a run with a PR, push the branch as `push` says when `HEAD` is not `PR_HEAD`.",
-		),
-		stubbed(
-			"Then do the head check again.",
-			"Then read the `headRefOid` of the PR again and do the head check again.",
-		),
-		stubbed(
-			"Print `GATE_SUMMARY` with the decision",
-			"If `proof.pr_comment` is set, post a comment on the PR.",
-		),
-	];
-
-	const decideRows: readonly Counterpart[] = [
-		stubbed(
-			"The iteration is clean when",
-			"the comment gate removed nothing and every gate exited 0",
-		),
-		stubbed(
-			"That is zero blocking reviewer or checklist findings",
-			"the iteration found no blocking finding",
-		),
-		stubbed(
-			"An iteration that commits a fix in step 4 is not clean",
-			"An iteration that commits a fix in step 4 is not clean, because no reviewer saw that commit.",
-		),
-		stubbed(
-			"A clean stop also needs `REVIEWED_HEAD`",
-			"A clean stop also needs `REVIEWED_HEAD` to equal the output of `git rev-parse HEAD` after the last gate run.",
-		),
-		stubbed(
-			"No reviewer saw a commit that comes after the review",
-			"No reviewer saw a commit that comes after the review, such as the merge of a moved base in a gate run.",
-		),
-		stubbed(
-			"A clean stop also needs a diff from the base that is not empty.",
-			"A clean stop also needs a diff from the base that is not empty.",
-		),
-		stubbed(
-			"In a run with a PR, a clean stop also needs `PR_HEAD`",
-			"In a run with a PR, a clean stop also needs `PR_HEAD` to equal `HEAD` after the push of step 7.",
-		),
-		stubbed(
-			"so a review or a gate run of an unpushed commit proves nothing",
-			"CI tests only the head of the PR, so a review or a gate run of an unpushed commit proves nothing for the PR.",
-		),
-		stubbed(
-			"In mode `ci_proof`, a clean stop also needs `mode: ci_proof`",
-			"In mode `ci_proof`, a clean stop also needs the mode in the gate summary, so the report names the mode.",
-		),
-		stubbed(
-			"a clean stop also needs `ciReadBack: pass`",
-			"It also needs a CI read-back that passes on `PR_HEAD`, as the steps after the stop say, whatever `merge.after_clean_stop` says.",
-		),
-		stubbed(
-			"so a run of mode `ci_proof` without a PR cannot stop clean",
-			"A run of mode `ci_proof` without a PR stops with principled incompletion.",
-		),
-		stubbed("`stop_clean`:", "at least `iterations.min` iterations have run"),
-		stubbed("`continue`:", "- Otherwise continue."),
-		stubbed(
-			"A clean iteration below the minimum continues",
-			"at least `iterations.min` iterations have run",
-		),
-		stubbed(
-			"`stop_recurring`:",
-			"- `stop_recurring`: a finding came back after one fix attempt.",
-		),
-		stubbed(
-			"Print the ledger and the suspected root cause.",
-			"Print the ledger and the suspected root cause.",
-		),
-		stubbed("Do not try again.", "Do not try again."),
-		stubbed(
-			"`stop_principled_incompletion`:",
-			"- `stop_principled_incompletion`:",
-		),
-		stubbed(
-			"A configured reviewer cannot be launched.",
-			"a reviewer or gate cannot run",
-		),
-		stubbed(
-			"A gate command cannot be identified",
-			"a gate wrote a tracked file outside its `rewrites`",
-			"Gates are read-only.",
-		),
-		stubbed(
-			"A gate that applies cannot start.",
-			"A gate that applies but cannot start is an unclean stop.",
-			"print `NOT_STARTED` for the gate with the reason, and stop with principled incompletion",
-		),
-		stubbed(
-			"The report names the gate and the missing item.",
-			"Name the gate and the missing item.",
-		),
-		stubbed(
-			"The diff from the base is empty",
-			"the branch has no change to review. Stop with principled incompletion",
-			"With `none`, print `git log --oneline HEAD..origin/<base>` and stop with principled incompletion.",
-		),
-		stubbed(
-			"The local branch does not hold the head of the PR",
-			"Run `git fetch origin <headRefOid>`. When it fails, stop with principled incompletion.",
-			"fails, stop with principled incompletion before the baseline.",
-		),
-		stubbed(
-			"The install of the dependencies with a frozen lockfile fails.",
-			"When the install fails, stop with principled incompletion.",
-		),
-		stubbed(
-			"The owner does not allow the delete",
-			"Without a yes, stop with principled incompletion.",
-		),
-		stubbed(
-			"`astack check ci-pins` gives no `ok:` last line with exit 0",
-			"Otherwise stop with principled incompletion.",
-		),
-		stubbed(
-			"A gate run finds an untracked or uncommitted file.",
-			"stop with principled incompletion before the first gate, and name each path",
-		),
-		stubbed(
-			"In mode `ci_proof`, the run has no PR, or the CI read-back fails.",
-			"A run of mode `ci_proof` without a PR stops with principled incompletion.",
-			"It also applies in mode `ci_proof` when the CI read-back fails.",
-		),
-		stubbed(
-			"In mode `ci_proof`, the PR removes a CI step that runs a gate command.",
-			"When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change. Then stop with principled incompletion, and name the step.",
-		),
-		stubbed(
-			"A correct fix needs a file outside the fix fence",
-			"when a fix needs a file outside the fence",
-			"No dependency, lockfile, migration or CI edits",
-		),
-		stubbed("The git identity is missing.", "the git identity is missing"),
-		stubbed(
-			"`PR_HEAD` is still not `HEAD` after step 7",
-			"It also applies in a run with a PR when `PR_HEAD` is still not `HEAD` after step 7, because the run cannot push.",
-		),
-		stubbed(
-			"The report names each commit of `UNPUSHED`.",
-			"Then the report names each commit of `UNPUSHED`.",
-		),
-		stubbed(
-			"The PR is from a fork that does not allow edits from maintainers.",
-			"It also applies when the PR is from a fork that does not allow edits from maintainers.",
-		),
-		stubbed("The iteration limit is spent", "the run reached `iterations.max`"),
-		stubbed(
-			"A gate is still red for a reason the PR did not introduce.",
-			"Otherwise it is a pre-existing red. List it, and never fix it. The run cannot stop clean while it stays red.",
-		),
-	];
-
-	const afterStopRows: readonly Counterpart[] = [
-		stubbed(
-			"Run the final review-growth comparison from `references/review.md` before that report.",
-			"Before each reviewer launch and after the final gate, run `astack check review-growth --base <baseSha> --first-reviewed <firstReviewedHead> --head <HEAD>`.",
-			"The final report includes `REVIEW_GROWTH`, its fixed baseline, and any unavailable comparison with its reason.",
-		),
-		stubbed(
-			"When this run loaded the ledger, set its `stopped` to the decision.",
-			"After the stop, when this run loaded the ledger, set its `stopped` to the decision.",
-		),
-		{
-			engine: "Then print the final report",
-			stub: [
-				"Then report the findings fixed, the commits and the metrics before and after.",
-			],
-			leaves: noChecklist,
-		},
-		stubbed(
-			"If the stop is not clean and `proof.on_unclean` is set",
-			"On an unclean stop, do what `proof.on_unclean` says when it is not `null`.",
-		),
-		stubbed(
-			"If `threads.answer` is true",
-			"If `threads.answer` is true, answer each review-bot thread on the PR before the merge.",
-		),
-		stubbed(
-			"If the stop is clean and `merge.after_clean_stop` is `merge`",
-			"Merge only when `merge.after_clean_stop` is `merge` and every line of `merge.conditions` holds.",
-		),
-		stubbed(
-			"In mode `ci_proof`, also do the CI read-back",
-			"In mode `ci_proof`, merge only when the CI read-back passes.",
-		),
-		stubbed(
-			"Print the evidence, then run `merge.command`.",
-			"Then use the merge command of the profile.",
-		),
-		stubbed("Otherwise never merge.", "Otherwise never merge."),
-	];
-
-	const appliesRows: readonly Counterpart[] = [
-		stubbed(
-			"A gate with an empty `when_changed` applies to every diff.",
-			"An empty `when_changed` means that the gate applies to every diff.",
-		),
-		stubbed(
-			"Otherwise it applies when a path in",
-			"Otherwise the gate applies when a path in `git diff --name-only --no-renames <BASE_SHA>...HEAD` matches one of its globs and no glob that starts with `!`.",
-		),
-		stubbed(
-			"A fix can make a gate apply in a later iteration",
-			"A fix can make a gate apply in a later iteration, so decide again before each gate run.",
-		),
-		stubbed(
-			"A glob matches the whole repo-relative path.",
-			"A glob matches the whole repo-relative path.",
-		),
-		stubbed(
-			"`*` matches inside one folder",
-			"`*` matches inside one folder, and `**` matches across folders.",
-		),
-		stubbed(
-			"So `*.md` matches only the Markdown files at the root",
-			"So `*.md` matches only the Markdown files at the root, and `**/*.md` matches them in every folder.",
-		),
-		stubbed(
-			"Git's glob pathspec matches the same way.",
-			"Git's glob pathspec matches the same way.",
-		),
-		stubbed(
-			"prints the paths that make the gate apply.",
-			"prints the paths that make the gate apply.",
-		),
-		stubbed(
-			"CI splits a rename into a delete and an add",
-			"CI splits a rename into a delete and an add, so `--no-renames` lists both paths.",
-		),
-	];
-
-	const afterRows: readonly Counterpart[] = [
-		stubbed(
-			"A gate that names gates in `after` runs only when",
-			"A gate that names gates in `after` runs only when each of them exited 0 earlier in the same gate run.",
-		),
-		stubbed(
-			"Otherwise print `<NAME>_EXIT=BLOCKED` and the gate that did not pass.",
-			"Otherwise print `<NAME>_EXIT=BLOCKED` and the gate that did not pass.",
-		),
-		stubbed("A `BLOCKED` gate is red.", "A `BLOCKED` gate is red."),
-		stubbed(
-			"It is never a pass, and never a finding of its own.",
-			"It is never a pass, and never a finding of its own.",
-		),
-		reasoned(
-			"Use `after` for an output that an earlier gate writes",
-			"It tells the author of a profile when to use `after`. The run follows `after` through the rule above.",
-		),
-		reasoned(
-			"A prerequisite cannot check that output",
-			"It tells the author of a profile when to use `after`. The run follows `after` through the rule above.",
-		),
-		stubbed(
-			"When the build of the PR is red, the build gate gives the finding",
-			"The gate findings of the last gate run are blocking findings too.",
-		),
-	];
-
-	const cannotStartRows: readonly Counterpart[] = [
-		stubbed(
-			"A gate that applies cannot start when one of these holds:",
-			"If one fails, print `NOT_STARTED` for the gate with the reason, and stop with principled incompletion.",
-		),
-		stubbed(
-			"An `env` variable is missing.",
-			"For each gate that applies, every `env` variable must be set.",
-		),
-		stubbed(
-			"A prerequisite `check` fails, and `on_missing` is `stop`.",
-			"If a variable or a prerequisite is still missing, stop with principled incompletion before running anything.",
-		),
-		stubbed(
-			"A prerequisite `check` still fails after its `start` command ran.",
-			"run its `start` command and check again",
-		),
-		stubbed(
-			"A `setup` command exits with a code that is not 0.",
-			"run its `setup` commands in order",
-		),
-		stubbed(
-			"The command's script or binary does not exist on this branch, and the gate is not `optional`.",
-			"Also make sure that the script or binary of the gate command exists on this branch.",
-		),
-		stubbed(
-			"Then print `<NAME>_EXIT=NOT_STARTED` and the reason.",
-			"print `NOT_STARTED` for the gate with the reason",
-		),
-		stubbed(
-			"Name the variable, the prerequisite with its check output",
-			"Name the gate and the missing item.",
-		),
-		stubbed(
-			"The run stops in principled incompletion.",
-			"and stop with principled incompletion",
-		),
-		stubbed(
-			"A `NOT_STARTED` gate is never a pass and never a finding of the PR.",
-			"A gate that applies but cannot start is an unclean stop.",
-		),
-	];
-
-	const readOnlyRows: readonly Counterpart[] = [
-		stubbed(
-			"A gate command must not write tracked files",
-			"A gate that changes a tracked file outside its `rewrites` is red.",
-		),
-		stubbed(
-			"These flags fix the tree:",
-			"No gate command, `setup` command or prerequisite runs `--write`",
-		),
-		stubbed(
-			"Before the first gate runs, reject each gate command",
-			"No gate command, `setup` command or prerequisite runs",
-		),
-		reasoned("Such a command can hide a red.", explains),
-		stubbed(
-			"A rejected command stops the run in principled incompletion.",
-			"Such a command stops the run with principled incompletion.",
-		),
-		stubbed(
-			"Formatting and import sorting are code changes.",
-			"Edit only the files a finding names.",
-		),
-		stubbed(
-			"If a real fix needs formatting",
-			"Edit only the files a finding names.",
-		),
-		stubbed(
-			"A tool that a gate runs can write a tracked file that the tool makes",
-			"A path in `rewrites` is a tracked file that a tool of the gate writes, such as the `next-env.d.ts` of a Next.js app.",
-		),
-		stubbed(
-			"The gate names that file in `rewrites`, with the reason.",
-			"A path in `rewrites` is a tracked file that a tool of the gate writes",
-		),
-		stubbed(
-			"The run restores the file from the root after the gate",
-			"It uses `git -C <WORKTREE> checkout -- <path>`.",
-		),
-		stubbed(
-			"A write to another tracked file makes the gate red.",
-			"A gate that changes a tracked file outside its `rewrites` is red.",
-		),
-		reasoned(
-			"A gate may have effects outside the tree only when its `side_effects` names them.",
-			"side_effects is in FALLBACK_EXEMPT: it tells the reader of the profile what a gate changes outside the tree, and validateProfile requires it with a setup or a start.",
-		),
-		reasoned(
-			"Its `setup` commands and the `start` commands of its prerequisites follow the same rule.",
-			"side_effects is in FALLBACK_EXEMPT: it tells the reader of the profile what a gate changes outside the tree, and validateProfile requires it with a setup or a start.",
-		),
-	];
-
-	const gateRunRows: readonly Counterpart[] = [
-		stubbed(
-			"Run the subshell of each gate with bash",
-			"Run each gate in its own bash subshell, such as `bash -c '<gate script>'`",
-		),
-		stubbed(
-			"GitHub Actions runs a `run` step with bash.",
-			"as GitHub Actions runs a `run` step",
-		),
-		stubbed(
-			"zsh does not split an unquoted",
-			"zsh does not split an unquoted `$" +
-				"{name:+...}` into words, and it has no `PIPESTATUS`.",
-		),
-		stubbed(
-			"Start the gate script with `set +e`",
-			"Start the gate script with `set +e`.",
-		),
-		stubbed(
-			"Never judge a gate by the tail of its output.",
-			"Print each command as the profile writes it, with no variable expanded, and its exit code and output.",
-		),
-		stubbed(
-			"If you pipe a gate's output",
-			"zsh does not split an unquoted `$" +
-				"{name:+...}` into words, and it has no `PIPESTATUS`.",
-		),
-		stubbed(
-			"In the subshell of the gate, run each entry",
-			"in its own subshell from the root, as `( cd <WORKTREE> && <entry> )`",
-		),
-		stubbed(
-			"An entry is a prerequisite `check`, a `start`, a `setup` command or the gate command.",
-			"Run each `check`, `start`, `setup` command and the gate command in its own subshell from the root",
-		),
-		reasoned("Then a `cd` in one entry never moves the next entry.", explains),
-		stubbed(
-			"Each entry gets the CI environment and the `PATH`",
-			"Put its tools first on `PATH` and export its CI environment there.",
-		),
-		stubbed(
-			"Run `git fetch origin <base>`.",
-			"Gate run: run `git fetch origin <base>`, and do preflight steps 6 and 7 again.",
-		),
-		stubbed(
-			"so do the base check of the preflight again",
-			"do preflight steps 6 and 7 again",
-		),
-		stubbed(
-			"When the base moved, the branch takes it as `base.sync` says",
-			"do preflight steps 6 and 7 again",
-		),
-		stubbed("Print `BASE_SHA` again.", "do preflight steps 6 and 7 again"),
-		stubbed(
-			"Do the CI check of the preflight again.",
-			"do preflight steps 6 and 7 again",
-		),
-		stubbed(
-			"Its result sets the mode of the run.",
-			"The mode follows the result of the last check of the run.",
-		),
-		stubbed(
-			"When the run has a PR, do the head check again.",
-			"When the run has a PR, read its `headRefOid` again and do the head check again.",
-		),
-		stubbed(
-			"A push to the PR can move its head.",
-			"A push to the PR can move its head.",
-		),
-		stubbed(
-			"Run the install of the preflight again.",
-			"Run the install of the preflight again.",
-		),
-		stubbed(
-			"Then print `git status --short` as `GIT_STATUS_BEFORE_GATE`.",
-			"Print `git status --short` as `GIT_STATUS_BEFORE_GATE`.",
-		),
-		stubbed(
-			"When `git -C <WORKTREE> status --porcelain --untracked-files=all` prints a line",
-			"When `git -C <WORKTREE> status --porcelain --untracked-files=all` prints a line, stop with principled incompletion before the first gate, and name each path.",
-		),
-		stubbed(
-			"CI tests the commit, so a gate never runs on a file",
-			"CI tests the commit, so a gate never runs on a file that the commit does not hold.",
-		),
-		stubbed(
-			"For each entry of `gates`, then `test`:",
-			"Run every gate that applies, then the test gate",
-		),
-		stubbed(
-			"If the gate does not apply to the diff",
-			"Print a gate that does not apply as `SKIPPED`, with its globs.",
-		),
-		unread("and `optional` is true", "gates[].optional"),
-		stubbed(
-			"If a gate in its `after` did not exit 0",
-			"print `<NAME>_EXIT=BLOCKED` and the gate that did not pass",
-		),
-		stubbed(
-			"Open the bash subshell for the gate.",
-			"Run each gate in its own bash subshell",
-		),
-		stubbed(
-			'Put its tools first on `PATH`, as "Tool versions" says',
-			"Put its tools first on `PATH` and export its CI environment there.",
-			"Print `<NAME>_TOOLS` and `<NAME>_ENV`.",
-		),
-		stubbed(
-			"Export its CI environment, and print `<NAME>_ENV`.",
-			"Print `<NAME>_TOOLS` and `<NAME>_ENV`.",
-		),
-		stubbed(
-			"`<NAME>_ENV` lists the names that the run exports",
-			"`<NAME>_ENV` lists the names that the run exports as `<name>=<value>`, which are `CI` and each `ci_env` entry that has a `value`.",
-		),
-		stubbed(
-			"It lists each other name of the `ci_env` and `env` of the gate",
-			"It lists each other name of the `ci_env` and `env` of the gate as `<name>=set` or `<name>=unset`.",
-		),
-		stubbed(
-			"Check its `env` and its prerequisites as the preflight does.",
-			"Before each gate, check its `env` and prerequisites again",
-		),
-		stubbed(
-			"Then run each `setup` command in order",
-			"run its `setup` commands in order",
-		),
-		stubbed(
-			"If the gate cannot start, print `<NAME>_EXIT=NOT_STARTED`",
-			"print `NOT_STARTED` for the gate with the reason",
-		),
-		stubbed(
-			"Otherwise print `<NAME>_CMD=<command>`",
-			"Print each command as the profile writes it, with no variable expanded",
-		),
-		stubbed(
-			"Run it in its own subshell from the root, and print `<NAME>_EXIT=<code>`",
-			"and its exit code and output.",
-		),
-		stubbed(
-			"For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.",
-			"For `change-proof`, require exit 0 and a final stdout line that starts with `ok: proof `.",
-		),
-		stubbed(
-			"A missing success line makes that gate red and stops the run with principled incompletion.",
-			"A missing success line makes that gate red and stops the run with principled incompletion.",
-		),
-		reasoned(
-			"For long output, save the full output to a file outside the tree",
-			"It sets how the transcript shows a long output. The stub prints the output of each command.",
-		),
-		stubbed(
-			"Before the subshell of a gate opens, record `git -C <WORKTREE> diff --name-only`.",
-			"Before the subshell of a gate opens, record `git -C <WORKTREE> diff --name-only`.",
-		),
-		stubbed(
-			"Right after it exits, whatever its exit code",
-			"Right after it exits, whatever its exit code, the run restores the `rewrites` paths that were not in that list.",
-		),
-		stubbed(
-			"It uses `git -C <WORKTREE> checkout -- <path>`.",
-			"It uses `git -C <WORKTREE> checkout -- <path>`.",
-		),
-		stubbed(
-			"It prints `<NAME>_RESTORED=<path>`",
-			"It prints `<NAME>_RESTORED=<path>` for each restored path that `git -C <WORKTREE> diff --name-only` showed before the restore.",
-		),
-		stubbed(
-			"A `rewrites` path that changed before the gate stays as it is",
-			"A `rewrites` path that changed before the gate stays as it is, so the status check after the gates shows it.",
-		),
-		stubbed(
-			"If `metrics` is set, run `metrics.command`",
-			"When `metrics` is not `null`, run `metrics.command`.",
-		),
-		stubbed(
-			"Print `METRICS_CMD`, `METRICS_EXIT` and the raw JSON.",
-			"and its exit code and output.",
-		),
-		stubbed(
-			"Without `metrics`, print `METRICS=UNAVAILABLE`.",
-			"A `metrics` value of `null` means no metrics.",
-		),
-		stubbed(
-			"Never re-create a metrics script from memory.",
-			"Never re-create a metrics script from memory.",
-		),
-		reasoned("A re-created script measures something else", explains),
-		unread("If `type_coverage` is set", "type_coverage"),
-		stubbed(
-			"Print `git status --short` as `GIT_STATUS_AFTER_GATE`.",
-			"Then print `git status --short` as `GIT_STATUS_AFTER_GATE`.",
-		),
-		stubbed(
-			"If a tracked file changed after the restore, print `git diff` for it.",
-			"If a tracked file changed after the restore, print its `git diff`.",
-		),
-		stubbed(
-			"The gate is red and the run stops in principled incompletion.",
-			"The gate is red, and the run stops with principled incompletion.",
-		),
-		stubbed(
-			"Never keep or discard the change silently.",
-			"The gate is red, and the run stops with principled incompletion.",
-		),
-		stubbed(
-			"`<NAME>` is the gate's `name`",
-			"`<NAME>` is the `gates[].name` or the `test.name` of the gate in upper case, with `-` replaced by `_`.",
-		),
-	];
-
-	const greenRows: readonly Counterpart[] = [
-		stubbed(
-			"The required current proof gate stays blocking.",
-			"The required current proof gate stays blocking.",
-		),
-		stubbed(
-			"No attribution makes a failed proof advisory.",
-			"No attribution makes a failed proof advisory.",
-		),
-		stubbed("The gate is green when all of these hold:", "every gate exited 0"),
-		stubbed(
-			"every gate that ran exited 0, or is an advisory gate of mode `ci_proof`.",
-			"every gate exited 0 or is an advisory gate of mode `ci_proof`",
-		),
-		stubbed(
-			"`SKIPPED` and `UNAVAILABLE` gates are listed, never counted as passes;",
-			"Print a gate that does not apply as `SKIPPED`, with its globs.",
-		),
-		stubbed(
-			"no gate is `NOT_STARTED` or `BLOCKED`;",
-			"A `BLOCKED` gate is red.",
-			"A gate that applies but cannot start is an unclean stop.",
-		),
-		stubbed(
-			"if metrics ran, `METRICS_EXIT` is 0",
-			"When `metrics` is not `null`, no key in `metrics.never_increase` may rise.",
-			"the metrics held",
-		),
-		unread("if type coverage ran", "type_coverage"),
-		stubbed(
-			"no gate changed a tracked file that its `rewrites` does not name.",
-			"A gate that changes a tracked file outside its `rewrites` is red.",
-		),
-		stubbed(
-			"A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed.",
-			"A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed.",
-		),
-		stubbed(
-			"It is also a finding when the same command is green on the base branch.",
-			"It is also a finding when the same command is green on the base branch.",
-		),
-		stubbed(
-			"Name the files in the failure output.",
-			"Name the files in the failure output.",
-		),
-		stubbed(
-			"Otherwise it is a pre-existing red.",
-			"Otherwise it is a pre-existing red.",
-		),
-		stubbed("List it, and never fix it.", "List it, and never fix it."),
-		stubbed(
-			"The run cannot stop clean while it stays red.",
-			"The run cannot stop clean while it stays red.",
-		),
-		...[
-			"In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red.",
-			"The proof names the changed line of the CI diff that the gate does not mirror.",
-			"It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0.",
-			"The run gives the command what the changed line gives, such as an `env` value.",
-			"When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change.",
-			"Then stop with principled incompletion, and name the step.",
-			"Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof.",
-			"Each other red gate blocks, as in the mode `standard`.",
-			"CI on `PR_HEAD` still gates the merge.",
-		].map((sentence) => stubbed(sentence, sentence)),
-	];
-
-	const blockingRows: readonly Counterpart[] = [
-		stubbed(
-			"A finding is a blocking candidate when its reviewer label is",
-			"A finding is a blocking candidate when its reviewer label is Critical, Blocker, High or Important.",
-		),
-		stubbed(
-			"A `normal` label is the same",
-			"A `normal` label is the same when the reviewer's machine output uses it to mean Important.",
-		),
-		stubbed(
-			"A finding with an unclear label is a candidate until you triage it.",
-			"A finding with an unclear label is a candidate until you triage it.",
-		),
-		stubbed(
-			"Nit, Style, Suggestion, Pre-existing, Advisory and Informational do not block",
-			"Nit, Style, Suggestion, Pre-existing, Advisory and Informational do not block, unless the finding shows a gate failure.",
-		),
-		stubbed(
-			"A checklist violation and a confirmed review-bot thread are candidates too",
-			"A checklist violation is a candidate too, whatever its label.",
-		),
-		stubbed(
-			"A candidate blocks only when its reproduction shows a concrete failure",
-			"It blocks only when the reproduction shows a concrete failure that the PR introduces.",
-		),
-		stubbed(
-			"a deterministic gate that fails or would fail;",
-			"That is a failing gate",
-		),
-		stubbed(
-			"a contract, ADR or documented repo rule that the code breaks;",
-			"a broken contract or documented rule",
-		),
-		stubbed(
-			"behaviour the PR adds with no test",
-			"or added behaviour with no test",
-		),
-		stubbed(
-			"a security or correctness defect, with an input that triggers it;",
-			"A defect with an input that triggers it",
-		),
-		stubbed(
-			"a doc or comment sentence that states something false about the code.",
-			"and a false sentence, also block",
-		),
-		stubbed(
-			"A bug fix with no cheap, correct test seam can still pass without a test",
-			"A bug fix with no cheap, correct test seam needs no test when its PR's Verification shows the failing run, then the passing run.",
-		),
-		stubbed(
-			"It does not block when the PR's Verification links its failing script or saved transcript.",
-			"needs no test when its PR's Verification shows the failing run",
-		),
-		stubbed(
-			"It also does not block when the Verification states the outcome of that run.",
-			"needs no test when its PR's Verification shows the failing run",
-		),
-		stubbed(
-			"It shows the failing run first, then the passing run.",
-			"shows the failing run, then the passing run",
-		),
-		stubbed(
-			"It blocks again when the reproduction shows such a seam",
-			"It blocks again when the reproduction shows such a seam.",
-		),
-		stubbed(
-			"These never block: wording preferences",
-			"Wording preferences, completeness wishes, true docs that can say more, refactors, style, nits and problems that the PR did not introduce never block.",
-		),
-		stubbed(
-			"A reviewer's severity is a claim.",
-			"A finding with an unclear label is a candidate until you triage it.",
-		),
-		stubbed(
-			"A fixer never promotes a suggestion to blocking.",
-			"Nit, Style, Suggestion, Pre-existing, Advisory and Informational do not block",
-		),
-		stubbed(
-			"With `test_adequacy: control-per-clause`",
-			"With `test_adequacy` set to `control-per-clause`, a planted control covers a contract clause when the control fails without the code of the clause.",
-		),
-		stubbed(
-			"The PR's coverage matrix must also name that control.",
-			"The coverage matrix of the PR names that control.",
-		),
-		stubbed(
-			"Another input for a covered clause",
-			"Another input for a covered clause, such as another file extension, casing or character, is a suggestion.",
-		),
-		stubbed(
-			"It becomes a correctness finding only when the code special-cases that input",
-			"It is a correctness finding only when the code special-cases that input, and then it needs the input that triggers it.",
-		),
-		stubbed(
-			"A missing test blocks only when a clause has no covering control.",
-			"A missing test then blocks only when no control covers a clause.",
-		),
-		stubbed(
-			"Mark a candidate advisory only when one of these holds",
-			"Mark a candidate advisory only for one of four reasons.",
-		),
-		stubbed(
-			"The exact reproduction fails on re-run.",
-			"Its reproduction fails on a second run",
-		),
-		stubbed(
-			"It names code that is no longer there.",
-			"it names code that is gone",
-		),
-		stubbed(
-			"It contradicts a green gate and no concrete failing path can be shown.",
-			"It contradicts a green gate with no failing path",
-		),
-		stubbed(
-			"It is pre-existing and this PR did not introduce it.",
-			"or it is pre-existing",
-		),
-		stubbed(
-			"Never mark a finding advisory because it is hard to fix.",
-			"Never mark a finding advisory because it is hard to fix.",
-		),
-		stubbed(
-			"A finding whose fix needs a file outside the fix fence is `out-of-scope`",
-			"when a fix needs a file outside the fence",
-		),
-	];
-
-	const ciPinsRows: readonly Counterpart[] = [
-		stubbed(
-			"Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest.",
-			"Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest.",
-		),
-		stubbed(
-			"The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base.",
-			"The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base.",
-		),
-		stubbed(
-			"Each record must be non-executable UTF-8 Markdown with all required sections and references.",
-			"Each record must be non-executable UTF-8 Markdown with all required sections and references.",
-		),
-		stubbed(
-			"Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs.",
-			"Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs.",
-		),
-		stubbed(
-			"Changed models, controls, authority, and all other non-CI files still stop the run.",
-			"Changed models, controls, authority, and all other non-CI files still stop the run.",
-		),
-		stubbed(
-			"These records grant no proof result.",
-			"These records grant no proof result.",
-		),
-		stubbed(
-			"The current proof gate stays blocking in every mode.",
-			"The current proof gate stays blocking in every mode.",
-		),
-		stubbed(
-			"It exits 3 when the diff changes only paths under",
-			"It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses.",
-		),
-		stubbed(
-			"For exit 3, each tool version that CI sets up stays the same",
-			"For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`.",
-		),
-		stubbed(
-			"The check reads the tools of the setup steps",
-			"The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow.",
-		),
-		stubbed(
-			"It does not read a tool that a `run` step or a script installs",
-			"It does not read a tool that a `run` step or a script installs, so the review examines such a change.",
-		),
-		stubbed(
-			"A file outside CI and this checked proof metadata stops the run",
-			"A file outside CI and this checked proof metadata stops the run, because a red gate can come from that file.",
-		),
-		stubbed(
-			"A version file is a file that a workflow or an action names",
-			"A version file is a file that a workflow or an action names in a `-version-file` input.",
-		),
-		stubbed(
-			"The check exits 1 when the diff changes a version file",
-			"The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes.",
-		),
-		stubbed(
-			"It also exits 1 when it cannot read an exact version",
-			"It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`.",
-		),
-		stubbed(
-			"It also exits 1 when the diff changes CI and a tool version",
-			"It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
-		),
-		stubbed(
-			"Another change to a version file",
-			"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
-		),
-		stubbed(
-			"so only CI can prove a CI change",
-			"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
-		),
-	];
-
-	const skillSection = (heading: string): string[] =>
-		sectionLines(engineSkill, heading);
-
-	const sections: readonly (readonly [
-		string,
-		readonly string[],
-		readonly Counterpart[],
-	])[] = [
-		[
-			"the arguments of SKILL.md",
-			[paragraphStarting(engineSkill, "Arguments:")],
-			argumentsRows,
-		],
-		[
-			"the PR that --pr names in SKILL.md",
-			skillSection("Review the PR that --pr names"),
-			reviewPrRows,
-		],
-		[
-			"the head check of SKILL.md",
-			skillSection("The head check"),
-			headCheckRows,
-		],
-		["the authority of SKILL.md", skillSection("Authority"), authorityRows],
-		[
-			"the compaction recovery of SKILL.md",
-			skillSection("Recover after a compaction"),
-			compactionRows,
-		],
-		[
-			"the profile load of SKILL.md",
-			skillSection("Load the profile"),
-			loadRows,
-		],
-		[
-			"the rules of SKILL.md",
-			skillSection("Rules for the whole run"),
-			rulesRows,
-		],
-		["the preflight of SKILL.md", skillSection("Preflight"), preflightRows],
-		[
-			"the exit codes in references/ci-pins.md",
-			sectionLines(ciPinsText, "What each exit code means"),
-			ciPinsRows,
-		],
-		["the baseline of SKILL.md", skillSection("Baseline"), baselineRows],
-		["the iterations of SKILL.md", skillSection("Iterate"), iterateRows],
-		["the decision of SKILL.md", skillSection("Decide"), decideRows],
-		[
-			"the steps after the stop in SKILL.md",
-			skillSection("After the stop"),
-			afterStopRows,
-		],
-		[
-			"the gates that apply in references/gate.md",
-			sectionLines(gate, "When a gate applies"),
-			appliesRows,
-		],
-		[
-			"the gates that need an earlier gate in references/gate.md",
-			sectionLines(gate, "A gate that needs an earlier gate"),
-			afterRows,
-		],
-		[
-			"the gates that cannot start in references/gate.md",
-			sectionLines(gate, "When a gate cannot start"),
-			cannotStartRows,
-		],
-		[
-			"the read-only commands of references/gate.md",
-			sectionLines(gate, "Read-only commands"),
-			readOnlyRows,
-		],
-		[
-			"the gate run of references/gate.md",
-			sectionLines(gate, "Run it"),
-			gateRunRows,
-		],
-		[
-			"the green gate of references/gate.md",
-			sectionLines(gate, "Green"),
-			greenRows,
-		],
-		[
-			"the blocking rules of references/review.md",
-			sectionLines(review, "Which findings block"),
-			blockingRows,
-		],
-	];
-
-	const stopsTheRun = /\bstop(?:s|ped)?\b|\bincompletion\b/i;
-
-	test("the table reads each section of SKILL.md from the arguments to the steps after the stop", () => {
-		const headings = [...engineSkill.matchAll(/^## (.+)$/gm)].map(
-			(match) => match[1] ?? "",
-		);
-		expect(headings.filter((heading) => heading !== "References")).toEqual([
-			"Review the PR that --pr names",
-			"The head check",
-			"Authority",
-			"Recover after a compaction",
-			"Load the profile",
-			"Rules for the whole run",
-			"Preflight",
-			"Baseline",
-			"Iterate",
-			"Decide",
-			"After the stop",
-		]);
-	});
-
-	test("the sentence split finds a stop that a new sentence adds to a line of the decision", () => {
-		const line =
-			"  - `astack check ci-pins` gives no `ok:` last line with exit 0 and no `ci_proof:` last line with exit 3. A draft PR also stops the run.";
-		expect(sentencesOf(line)).toEqual([
-			"`astack check ci-pins` gives no `ok:` last line with exit 0 and no `ci_proof:` last line with exit 3.",
-			"A draft PR also stops the run.",
-		]);
-		expect(
-			sentencesOf(line).filter(
-				(sentence) =>
-					decideRows.filter((row) => sentence.includes(row.engine)).length !==
-					1,
-			),
-		).toEqual(["A draft PR also stops the run."]);
-	});
-
-	test.each(sections)(
-		"each sentence of %s has one counterpart row, and each row names one sentence",
-		(_, lines, rows) => {
-			const sentences = lines.flatMap(sentencesOf);
-			const matches = (sentence: string, row: Counterpart) =>
-				sentence.includes(row.engine);
-			expect(
-				sentences.filter(
-					(sentence) =>
-						rows.filter((row) => matches(sentence, row)).length !== 1,
-				),
-			).toEqual([]);
-			expect(
-				rows
-					.filter(
-						(row) =>
-							sentences.filter((sentence) => matches(sentence, row)).length !==
-							1,
-					)
-					.map((row) => row.engine),
-			).toEqual([]);
-		},
-	);
-
-	test.each(sections)(
-		"the stub fallback holds the counterpart of each sentence of %s",
-		(_, _lines, rows) => {
-			expect(
-				rows.flatMap((row) =>
-					"stub" in row
-						? row.stub.filter((text) => !fallback.includes(text))
-						: [],
-				),
-			).toEqual([]);
-		},
-	);
-
-	test.each(sections)(
-		"each sentence of %s that the stub leaves out follows a key that apply reports when a profile sets it",
-		(_, _lines, rows) => {
-			expect(
-				rows.flatMap((row) =>
-					"unread" in row &&
-					!FALLBACK_UNREAD.some(({ key }) => key === row.unread)
-						? [row.unread]
-						: [],
-				),
-			).toEqual([]);
-		},
-	);
-
-	test.each(sections)(
-		"no sentence of %s that stops the run is left out with only a recorded reason",
-		(_, lines, rows) => {
-			const sentences = lines.flatMap(sentencesOf);
-			expect(
-				rows
-					.filter((row) => "reason" in row)
-					.flatMap((row) =>
-						sentences.filter(
-							(sentence) =>
-								sentence.includes(row.engine) && stopsTheRun.test(sentence),
-						),
-					),
-			).toEqual([]);
-		},
-	);
 });
 
 describe("an accepted skill edit lands in the source checkout of the skill", () => {

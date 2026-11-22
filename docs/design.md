@@ -31,7 +31,7 @@ The public history starts from a scanned tree with no private parent commit.
 | `marketplace/plugins/astack/` | Plugin source, skills, agents, hooks, and launcher |
 | `src/astack/` | CLI and hook implementation |
 | `scripts/` | Build, apply, scan, and dist code |
-| `templates/` | The review stub and its fallback, which apply writes into each repo |
+| `templates/` | The review stub, which apply writes into each repo |
 | `rules/` | Shared rules and the generated rule card |
 | `upstream/` | Frozen test data and licence evidence |
 | `examples/companion/` | Synthetic companion fixtures |
@@ -72,13 +72,12 @@ The neutrality scan of a public candidate must use the real companion.
 A secret scan also examines the complete candidate tree.
 
 The review stub that apply writes is a thin forwarding entry.
-Apply writes its fallback once at `.astack/pr-review-hardening/FALLBACK.md`.
-The agent reads the fallback only when the plugin is absent, so an available plugin never loads it.
-Each primary or mirrored stub links to the shared fallback through a relative path.
-The `managed` list names every stub and the fallback, and the removal and stray-copy checks know these paths.
-The shared fallback stays in the managed metadata scope, so file-scoped name rules need no new exception.
-Apply reports a stub that has no link to `FALLBACK.md` and a missing fallback source.
-The sentence guards of `tests/hardening-consistency.test.ts` read the fallback file and compare it with the file that the rendered stub links to.
+It invokes the engine `astack:pr-review-hardening` when the Skill tool lists it, and it holds no copy of the loop.
+When the plugin is absent, the stub runs no step and gives one install line.
+Apply renders that line from `MARKETPLACE_REPO` and `PLUGIN_IDS`, as `astack init` prints them.
+Apply reports a template with no install mark.
+The `managed` list names each primary and mirrored stub.
+`.astack/pr-review-hardening/FALLBACK.md` is a retired path, so apply deletes an old copy once, and the stray-copy check does not report it.
 
 Skills name their conditional reads.
 `astack:plan` lists the skills that each stage reads, and a mode other than new reads only what its reference names.

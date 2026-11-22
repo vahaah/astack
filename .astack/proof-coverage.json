@@ -14,7 +14,8 @@
 		"docs/reference/pr-head-check.md",
 		"docs/reference/law-controls.md",
 		"docs/reference/source-scan.md",
-		"docs/reference/pr-recipes.md"
+		"docs/reference/pr-recipes.md",
+		"docs/reference/review-stub.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -78,7 +79,8 @@
 		"tests/astack/lexer.test.ts",
 		"tests/keep-list.test.ts",
 		"tests/doc-facts.test.ts",
-		"tests/apply/flow-config.test.ts"
+		"tests/apply/flow-config.test.ts",
+		"tests/apply/review-stub.test.ts"
 	],
 	"links": [
 		{
@@ -787,6 +789,30 @@
 		{
 			"criterion": "FORK-LINK",
 			"controls": ["fork-link"]
+		},
+		{
+			"criterion": "RS-INSTALL",
+			"controls": ["rs-install"]
+		},
+		{
+			"criterion": "RS-RETIRE",
+			"controls": ["rs-retire"]
+		},
+		{
+			"criterion": "RS-RULES",
+			"controls": ["rs-rules"]
+		},
+		{
+			"criterion": "RS-KEEP",
+			"controls": ["rs-keep-apply", "rs-keep-command", "rs-keep-doctor"]
+		},
+		{
+			"criterion": "RS-WINDOW",
+			"controls": ["rs-window", "rs-window-command"]
+		},
+		{
+			"criterion": "RS-ONE-LIST",
+			"controls": ["rs-one-list"]
 		}
 	]
 }

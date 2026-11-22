@@ -1,10 +1,7 @@
-export const REVIEW_FALLBACK_FILE = "FALLBACK.md";
-
 export const MANAGED_PATHS = {
 	profile: ".astack/profile.json",
 	notice: ".astack/NOTICE",
 	reviewStub: ".claude/skills/pr-review-hardening/SKILL.md",
-	reviewFallback: `.astack/pr-review-hardening/${REVIEW_FALLBACK_FILE}`,
 	reviewProfile: ".claude/pr-review-hardening.profile.md",
 	settings: ".claude/settings.json",
 } as const;
@@ -24,6 +21,11 @@ export const RETIRED_PATHS: readonly RetiredPath[] = [
 	{
 		path: ".claude/GOAL-pr-review-hardening.txt",
 		reason: "The hardening skill makes its /goal text from the profile.",
+	},
+	{
+		path: ".astack/pr-review-hardening/FALLBACK.md",
+		reason:
+			"The review stub needs the astack plugin, which holds the one copy of the loop.",
 	},
 ];
 
