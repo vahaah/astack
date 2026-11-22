@@ -10,10 +10,11 @@ The [model](../../formal/PlanBoundary.tla) examines the boundary and the graduat
 - [criterion:CWD-FREE] `plan trail`, `plan draft`, `plan delegate` and the session commands find the state folder from the plan path. This also works from a folder outside the repo and through a symlink. A plan path that gives an invalid slug writes no state. `session start` prints the branch, the record path and that it makes no worktree.
 - [criterion:GRAD-ONCE] An owner row in the form `Graduated to ADR NNNN Dm` passes `check-plan --base` only when that heading resolves. A graduated row that is live again fails.
 - [criterion:BOUNDARY-ONCE] A resume that finds the next session branch continues it and runs no second boundary. No plan text opens a PR that holds only plan edits.
+- [criterion:SPAN-RUN] A code span starts only at a full backtick run and ends at a run of the same length. A double-backtick span hides its words from check-plan, the PR link reader and the comment classifier. A longer run with no match masks nothing.
 
 ## Claim boundary
 
 The model covers three sessions, two decision rows and four heading forms.
 It takes the push of a branch and the result of `git fetch` as true observations.
 The skill text tells an agent what to do, so review and the boundary control examine that text.
-The model does not cover the trail batch or the state folder. The tests examine them.
+The model does not cover the trail batch, the state folder or the code span function. The tests examine them.

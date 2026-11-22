@@ -79,6 +79,41 @@
 			"modelRefs": ["Boundary"]
 		},
 		{
+			"path": "src/astack/ste/mask.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/plan/prose.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/comments/classify.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/pr/links.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/classify.test.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/pr-links.test.ts",
+			"obligation": "SPAN-RUN",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "marketplace/plugins/astack/skills/plan/**",
 			"obligation": "BOUNDARY-ONCE",
 			"modelRefs": [
@@ -228,6 +263,7 @@
 				"CWD-FREE",
 				"GRAD-ONCE",
 				"BOUNDARY-ONCE",
+				"SPAN-RUN",
 				"WB-ratchet",
 				"SG-preserve",
 				"SG-generated"
@@ -413,12 +449,13 @@
 		"typedWitness": "docs/adr/0020-plan-tools-share-one-adr-reader.md"
 	},
 	"abstraction": {
-		"hides": "The fence mask of an ADR, the real path of a plan file, the git calls that find the common dir of a plan folder, the tab split of a batch and the one append call of the trail file.",
+		"hides": "The fence mask of an ADR, the real path of a plan file, the git calls that find the common dir of a plan folder, the tab split of a batch, the one append call of the trail file and the backtick runs of a code span.",
 		"callersKnow": [
 			"A titled ADR heading with a full stop or a long dash resolves in check-plan and in change proof, and a fenced or untitled heading does not.",
 			"A plan path finds the plan state folder from any folder, and a slug needs a folder of the repo.",
 			"A plan path through a symlink gives its path from the git root, and a plan path that gives an invalid slug writes no state.",
 			"A batch writes all rows or none, and a problem names its line and the nearest phase.",
+			"A code span starts only at a full backtick run, and the STE mask, check-plan, the comment classifier and the PR link reader share that rule.",
 			"A boundary runs once and commits first on the next session branch, and a resume that finds that branch continues it.",
 			"A graduated row needs a resolving heading, and its handle never becomes live again."
 		],
@@ -483,7 +520,7 @@
 		],
 		"omitted": [
 			"The model takes the push of a branch and the result of git fetch as true observations.",
-			"The trail batch, the nearest phase and the plan state folder have no model state. The tests examine them.",
+			"The trail batch, the nearest phase, the plan state folder and the code span function have no model state. The tests examine them.",
 			"The skill text tells an agent what to do. Review and the boundary control examine that text, and the model does not show that an agent follows it."
 		]
 	},
@@ -520,7 +557,6 @@
 	"limits": [
 		"The finite model covers three sessions and two rows, and it takes git observations as true.",
 		"The model does not show that the TypeScript code or an agent refines it. The linked controls and review examine that relation.",
-		"The span function of B13 step 4 is not part of this change, because it waits for B09/S1.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

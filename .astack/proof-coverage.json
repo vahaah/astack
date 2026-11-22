@@ -37,6 +37,8 @@
 		"tests/astack/plan-session.test.ts",
 		"tests/astack/plan-check.test.ts",
 		"tests/tracker-schema.test.ts",
+		"tests/astack/pr-links.test.ts",
+		"tests/astack/classify.test.ts",
 		"tests/astack/codex-hooks.test.ts",
 		"tests/astack/version.test.ts",
 		"tests/astack/hardening-profile.test.ts",
@@ -326,6 +328,15 @@
 		{
 			"criterion": "BOUNDARY-ONCE",
 			"controls": ["boundary-once"]
+		},
+		{
+			"criterion": "SPAN-RUN",
+			"controls": [
+				"span-run",
+				"span-run-links",
+				"span-run-mask",
+				"span-run-classify"
+			]
 		},
 		{
 			"criterion": "DT-TRUST",
