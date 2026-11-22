@@ -410,7 +410,7 @@ describe("astack plan attended, trail, draft and delegate", () => {
 		}
 	});
 
-	test("a programme value that is not a slug writes no state outside the state folder", () => {
+	test("[control:cwd-free-slug] a programme value that is not a slug writes no state outside the state folder", () => {
 		const brief = join(repo, BRIEF);
 		const original = readFileSync(brief, "utf8");
 		writeFileSync(

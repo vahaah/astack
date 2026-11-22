@@ -251,7 +251,7 @@
 		},
 		{
 			"criterion": "CWD-FREE",
-			"controls": ["cwd-free", "cwd-free-plan"]
+			"controls": ["cwd-free", "cwd-free-plan", "cwd-free-slug"]
 		},
 		{
 			"criterion": "GRAD-ONCE",

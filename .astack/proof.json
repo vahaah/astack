@@ -136,6 +136,11 @@
 			]
 		},
 		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "docs/adr/README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
@@ -223,6 +228,7 @@
 				"CWD-FREE",
 				"GRAD-ONCE",
 				"BOUNDARY-ONCE",
+				"WB-ratchet",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -270,6 +276,13 @@
 				}
 			},
 			{
+				"name": "PlanFileState",
+				"link": {
+					"path": "src/astack/plan/files.ts",
+					"symbol": "PlanFileState"
+				}
+			},
+			{
 				"name": "StdinRows",
 				"link": {
 					"path": "src/astack/cli/io.ts",
@@ -311,6 +324,16 @@
 					"symbol": "decisionHeading"
 				},
 				"effects": []
+			},
+			{
+				"name": "planFileState",
+				"from": "PlanTarget",
+				"to": "PlanFileState",
+				"link": {
+					"path": "src/astack/plan/files.ts",
+					"symbol": "planFileState"
+				},
+				"effects": ["fs-read", "spawn"]
 			},
 			{
 				"name": "planStateFor",
@@ -390,10 +413,11 @@
 		"typedWitness": "docs/adr/0021-plan-tools-share-one-adr-reader.md"
 	},
 	"abstraction": {
-		"hides": "The fence mask of an ADR, the git calls that find the common dir of a plan folder, the tab split of a batch and the one append call of the trail file.",
+		"hides": "The fence mask of an ADR, the real path of a plan file, the git calls that find the common dir of a plan folder, the tab split of a batch and the one append call of the trail file.",
 		"callersKnow": [
 			"A titled ADR heading with a full stop or a long dash resolves in check-plan and in change proof, and a fenced or untitled heading does not.",
 			"A plan path finds the plan state folder from any folder, and a slug needs a folder of the repo.",
+			"A plan path through a symlink gives its path from the git root, and a plan path that gives an invalid slug writes no state.",
 			"A batch writes all rows or none, and a problem names its line and the nearest phase.",
 			"A boundary runs once and commits first on the next session branch, and a resume that finds that branch continues it.",
 			"A graduated row needs a resolving heading, and its handle never becomes live again."
