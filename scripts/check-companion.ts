@@ -138,42 +138,52 @@ async function profileScanProblems(companion: Companion): Promise<string[]> {
 		: [`profile scan: bun test exited ${run.status ?? "on a signal"}`];
 }
 
-async function main(args: readonly string[]): Promise<number> {
+export type ScanRunner = (companion: Companion) => Promise<string[]>;
+
+export type Report = {
+	readonly code: number;
+	readonly out: readonly string[];
+	readonly err: readonly string[];
+};
+
+export async function checkCompanion(
+	args: readonly string[],
+	scan: ScanRunner,
+): Promise<Report> {
 	const [flag, value, ...rest] = args;
 	if (
 		rest.length > 0 ||
 		(flag !== undefined && (flag !== "--companion" || value === undefined))
-	) {
-		console.error(usage);
-		return 2;
-	}
+	)
+		return { code: 2, out: [], err: [usage] };
 	const opened = openCompanion(value, process.env);
-	if (!opened.ok) {
-		console.error(opened.error);
-		return 2;
-	}
+	if (!opened.ok) return { code: 2, out: [], err: [opened.error] };
 	const companion = opened.value;
-	const projects = await loadAllProjects(companionPaths(companion).projects);
-	const checks = projects.map((project) => checkProject(companion, project));
-	const profiles = checks.flatMap((check) => check.profiles);
-	const problems = [
-		...checks.flatMap((check) => check.problems),
-		...steProblems(companion, profiles),
-		...(await profileScanProblems(companion)),
-	];
-	for (const problem of problems) console.error(problem);
-	console.log(
-		`check:companion: ${projects.length} config(s) and ${profiles.length} profile(s) in ${companion.root}, ${problems.length} problem(s)`,
-	);
-	return problems.length === 0 ? 0 : 1;
+	try {
+		const projects = await loadAllProjects(companionPaths(companion).projects);
+		const checks = projects.map((project) => checkProject(companion, project));
+		const profiles = checks.flatMap((check) => check.profiles);
+		const problems = [
+			...checks.flatMap((check) => check.problems),
+			...steProblems(companion, profiles),
+			...(await scan(companion)),
+		];
+		return {
+			code: problems.length === 0 ? 0 : 1,
+			out: [
+				`check:companion: ${projects.length} config(s) and ${profiles.length} profile(s) in ${companion.root}, ${problems.length} problem(s)`,
+			],
+			err: problems,
+		};
+	} catch (error) {
+		if (!(error instanceof ProjectConfigError)) throw error;
+		return { code: 1, out: [], err: [error.message] };
+	}
 }
 
 if (import.meta.main) {
-	try {
-		process.exitCode = await main(Bun.argv.slice(2));
-	} catch (error) {
-		if (!(error instanceof ProjectConfigError)) throw error;
-		console.error(error.message);
-		process.exitCode = 1;
-	}
+	const report = await checkCompanion(Bun.argv.slice(2), profileScanProblems);
+	for (const line of report.err) console.error(line);
+	for (const line of report.out) console.log(line);
+	process.exitCode = report.code;
 }
