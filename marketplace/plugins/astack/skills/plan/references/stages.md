@@ -9,7 +9,7 @@ Read the path it prints.
 | Work | Thread and depth | Agent and model |
 |---|---|---|
 | Intake, rounds, glossary and plan writes, the checker | main, depth 0 | The session model. Grilling quality follows model strength |
-| Facts | explorers at depth 1, the how explainer and the recall investigators at depth 2 | `astack:explorer` on `sonnet` for explorers, `astack:delegate` on `opus` for how and why, `haiku` for recall |
+| Facts | explorers at depth 1, the how subagent and the recall investigators at depth 2 | `astack:explorer` on `sonnet` for explorers, `astack:delegate` on `opus` for how and why, `haiku` for recall |
 | Design space | lead at depth 1, arena runners and judge at depth 2 | `astack:delegate` on `opus` with `isolation: "worktree"`, one `codex exec` runner, and `codex exec --sandbox read-only` as judge |
 | Prototype | depth 1 | `astack:delegate` on `sonnet` in a scratch worktree |
 | Stress test | lead at depth 1, reviewers at depth 2 | `opus` reviewers, plus `codex exec --sandbox read-only` |
