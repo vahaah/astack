@@ -38,7 +38,8 @@ The store path stays for decision trails, the agent records of Autopilot-full an
 ### D2. A status ask goes to a Catch up part that only reads and lists each waiting item
 
 "status", "where are we" and "what waits on me" go to the Catch up part of mode `resume.md`.
-The card folds the words into its resume row, because the card holds 40 of 40 lines.
+The card resume row holds "status" and "what waits on me", because the card holds 40 of 40 lines.
+"where are we" routes only through `routes.md`, because the Codex fragment of the card had 16 free bytes.
 The Catch up part reads the state of `resume.md`, and `astack board <index>` for a programme.
 It changes nothing and starts no work.
 
