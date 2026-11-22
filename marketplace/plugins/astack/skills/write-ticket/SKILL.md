@@ -54,9 +54,9 @@ A repo template adds headings to these required sections rather than replacing t
 - A decision settles one programme question before implementation. Use `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling` or `wayfinder:task`.
 
 A spec uses the umbrella template.
-`astack:to-tickets` creates feature sub-issues for its slices.
+Each slice is a feature sub-issue.
 Score each spec and slice against this rubric before filing.
-`astack:wayfinder` uses these headings for maps and decisions.
+`/astack:plan` uses these headings for maps and decisions.
 `references/templates.md` maps the skills' sections to the shared headings.
 
 In the programme tier, `/astack:plan` renders an umbrella and `now` and `next` session children with `astack plan-ticket`.

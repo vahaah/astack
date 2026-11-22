@@ -52,7 +52,7 @@ Skip the Section C question when no monorepo evidence exists.
 #### Section A: Issue tracker
 
 The tracker is where this repo records work.
-`astack-to-tickets` and `astack-write-ticket` read and write this tracker.
+`/astack-plan` and `astack-write-ticket` read and write this tracker.
 They need its commands or workflow.
 For example, they can call `gh issue create` or write files under `.scratch/`.
 Ask the user to choose where they actually track this repo's work.
@@ -138,7 +138,7 @@ Use this block:
 When Section B ran on GitHub or GitLab, create each missing configured label.
 Use `gh label create` or `glab label create`.
 For Linear, use `save_issue_label`.
-On every real tracker, also create the five `/astack-wayfinder` labels:
+On every real tracker, also create the five map labels:
 `wayfinder:map`, `wayfinder:research`, `wayfinder:prototype`, `wayfinder:grilling` and `wayfinder:task`.
 
 Use these seed documents:

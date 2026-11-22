@@ -216,7 +216,7 @@ Who or what confirms the answer: the user in a live session, primary-source cita
 
 The engineering skills add their own sections under the shared headings.
 
-| Heading | Umbrella spec | Slice from `astack:to-tickets` |
+| Heading | Umbrella spec | Slice from `/astack:plan` |
 |---|---|---|
 | Problem | The user's problem | Why the slice matters, with `Part of <spec>` on the first line |
 | Outcome | The solution as the user experiences it | The result to build |

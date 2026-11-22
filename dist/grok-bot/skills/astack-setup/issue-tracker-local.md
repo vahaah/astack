@@ -22,7 +22,7 @@ The user normally supplies its path or issue number.
 
 ## Wayfinding operations
 
-`/astack-wayfinder` uses one map file and one child file per ticket.
+`/astack-plan` uses one map file and one child file per ticket.
 
 - Store the map at `.scratch/<effort>/map.md`. Its body contains Notes, Decisions so far and Not yet specified.
 - Store children at `.scratch/<effort>/issues/NN-<slug>.md`, starting at `01`. Put the question in the body. Record `research`, `prototype`, `grilling` or `task` on a `Type:` line. Record `claimed` or `resolved` on a `Status:` line.
