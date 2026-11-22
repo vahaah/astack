@@ -238,7 +238,7 @@ describe("the tsc witness", () => {
 	);
 
 	test(
-		"[control:witness-wrong-type] a wrong decide, a misfit flow pair, an unresolved name and a generic link fail at their lines",
+		"[control:witness-wrong-forms] a wrong decide, a misfit flow pair, an unresolved name and a generic link fail at their lines",
 		async () => {
 			const root = witnessRepo({
 				"src/grant.ts": GRANT.replace(

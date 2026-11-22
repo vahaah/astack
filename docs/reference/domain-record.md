@@ -6,7 +6,7 @@ The [ladder model](../../formal/ProofLadder.tla) examines the law rung.
 
 ## Acceptance criteria
 
-- [criterion:DR-plan-rules] With a card, check-plan refuses a code plan with no block, and with no card it gives no block error. A law with no check, an unlinked step, an error named `Error` and a low rung give an error at their line.
+- [criterion:DR-plan-rules] With a card, check-plan refuses a code plan with no block, and with no card it gives no block error. A law with no check, an unlinked step, an error named `Error` and a low rung give an error at their line. The profile key `domain.codeRoots` sets the code roots, and the plan skill names the H2 and `--template=domain`.
 - [criterion:DR-card] The card of `CONTEXT.md` holds 7 contexts, and each tracked file under `src/` falls under one glob of one context.
 - [criterion:DR-witness] A linked `mergeGrantIn` that returns `MergeGrant[]` fails the witness at its block line in the result reading and in the effect reading. The corrected fixture passes.
 - [criterion:DR-law-rung] A prop law on a read-only cap gives R2, a prop law on an invariant gives R3 and a tla law gives R4. A tla law selects its model.

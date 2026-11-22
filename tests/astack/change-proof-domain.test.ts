@@ -115,7 +115,7 @@ describe("a manifest that cites a plan record", () => {
 			'stop: proof domain: domain.context "Gate" is not the context Desk of the plan block',
 		],
 	])(
-		"[control:proof-plan-record] %s stops",
+		"[control:proof-plan-record-stops] %s stops",
 		(_name, files, stop) => {
 			const repo = planProofRepo(scratch, () => {}, {
 				...PLAN_FILES,
@@ -130,7 +130,7 @@ describe("a manifest that cites a plan record", () => {
 		heavyTestTimeout,
 	);
 
-	test("[control:proof-plan-record] a manifest needs domain.plan or category, and not both", () => {
+	test("[control:proof-plan-record-schema] a manifest needs domain.plan or category, and not both", () => {
 		const both = {
 			...planRecordProof(validProof("a".repeat(40))),
 			category: validProof("a".repeat(40)).category,

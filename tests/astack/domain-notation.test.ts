@@ -140,7 +140,7 @@ describe("parseDomainBlock", () => {
 			],
 		],
 	])(
-		"[control:domain-keywords] %s gives one error at its line",
+		"[control:domain-keyword-errors] %s gives one error at its line",
 		(_name, text, problems) => {
 			expect(parseDomainBlock(lines(text))).toEqual({
 				ok: false,

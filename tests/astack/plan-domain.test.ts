@@ -28,7 +28,7 @@ const SECTION = VALID.slice(
 );
 
 describe("the domain rules of check-plan", () => {
-	test("[control:plan-domain-rules] the fixed fixture passes, and a repo with no card gives no block error", () => {
+	test("[control:plan-domain-no-card] the fixed fixture passes, and a repo with no card gives no block error", () => {
 		expect(domainFindings(VALID)).toEqual([]);
 		expect(domainFindings(VALID.replace(SECTION, ""), REPO)).toEqual([]);
 	});

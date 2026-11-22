@@ -531,7 +531,7 @@ describe("renderAstackProfile", () => {
 		}).toEqual({ proof: { minRung: "R4" }, problems: [], plain: false });
 	});
 
-	test("[control:domain-profile] a companion domain carrier reaches the profile with both keys, and profile.ts accepts it", () => {
+	test("[control:domain-profile-render] a companion domain carrier reaches the profile with both keys, and profile.ts accepts it", () => {
 		const content = JSON.parse(
 			renderAstackProfile({
 				...linear,

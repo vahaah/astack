@@ -506,7 +506,7 @@ describe("tracker and domain", () => {
 		).toContain("domain.contextMap is not a relative path inside the repo");
 	});
 
-	test("[control:domain-profile] accepts a domain carrier and code roots, and rejects other values", () => {
+	test("[control:domain-profile-apply] accepts a domain carrier and code roots, and rejects other values", () => {
 		const domain = { glossary: "CONTEXT.md", adrDir: "docs/adr" };
 		expect(
 			errorsOf({
