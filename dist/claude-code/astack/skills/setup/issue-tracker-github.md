@@ -2,8 +2,9 @@
 
 This repo keeps issues and specs in GitHub Issues.
 Use `gh` for tracker operations.
-Infer the repo from `git remote -v`.
-Inside a clone, `gh` identifies it automatically.
+Run `gh repo set-default --view` before the first `gh` command.
+When it prints nothing or a repo other than `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command.
+In each `gh api` path, use that name for `{owner}/{repo}`.
 
 ## Conventions
 
@@ -37,7 +38,7 @@ For a lookup of the current branch's PR, apply this rule:
 
 There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
 
-- Read a PR with `gh pr view <number> --comments`.
+- Read a PR with `gh pr view <number> --json number,title,body,comments,reviews,headRefOid`.
 - Read its diff with `gh pr diff <number>`.
 - Discover external PRs with `gh api --paginate 'repos/{owner}/{repo}/pulls?state=open' --jq '.[] | select(.author_association | IN("OWNER","MEMBER","COLLABORATOR") | not) | {number, title, author: .user.login, author_association, labels: [.labels[].name]}'`.
 - Comment with `gh pr comment`.
@@ -46,13 +47,8 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 
 GitHub shares issue and PR numbers.
 Resolve a bare `#42` with `gh api 'repos/{owner}/{repo}/issues/42' --jq 'has("pull_request")'`.
-A `true` result identifies a PR.
-Read it with `gh pr view 42`.
-A `false` result identifies an issue.
-Read it with `gh issue view 42`.
+A `true` result is a PR, and a `false` result is an issue.
 On an API failure, print the error and stop.
-Do not infer a resource type from a failed command.
-The [GitHub issue endpoint](https://docs.github.com/en/rest/issues/issues#get-an-issue) identifies a PR with its `pull_request` key.
 
 ## When a skill says "publish to the issue tracker"
 
