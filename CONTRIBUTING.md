@@ -54,4 +54,4 @@ Releases follow [`docs/runbooks/publish.md`](docs/runbooks/publish.md). A signed
 
 ## Credits
 
-astack adapts MIT-licensed text from pstack, Matt Pocock's skills and the Cursor team kit. If your change brings in material from another project, add it to [`NOTICE`](NOTICE) with its source, commit and licence.
+astack adapts MIT-licensed text from pstack, Matt Pocock's skills, the Cursor team kit and tstack. If your change brings in material from another project, add it to [`NOTICE`](NOTICE) with its source, commit and licence.

@@ -38,7 +38,7 @@ An existing extra reviewer remains an explicit request until its profile changes
 
 Add the required proof execution to CI for every pull request.
 Make Java 17 or later available.
-Fetch enough history to resolve the manifest's fixed base.
+Fetch enough history to resolve the manifest's fixed base and the merge base of the PR.
 Match setup, environment, tools, and scope through CI parity.
 The proof gate cannot use a path filter or `optional: true`.
 The responsible owner must verify required-check settings before the rollout counts as enforced.

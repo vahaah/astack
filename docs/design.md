@@ -131,7 +131,7 @@ CLI and CI quality checks remain independent.
 - `combine` is a monoid. `allow` is the identity. `deny` absorbs `note` and joins the reasons. A property test proves the laws.
 - The base encoder denies with exit 2 and the reason on stderr. Claude Code, Codex, Cursor and Grok Build all accept that form.
 - Per-tool JSON adapters cover the rest. Claude Code notes use `hookSpecificOutput.additionalContext`. A Stop rewrite prints `{"decision":"block","reason":...}` with exit 0, because Codex runs the same `hooks.json` command as Claude Code, and both read that form. Cursor stop prints `followup_message`. Cursor permission events always print valid JSON, so fail open prints `{"permission":"allow"}`. The launcher prints the same when it finds no runtime, or when the CLI prints nothing.
-- The command registry is `src/astack/cli/commands/*.ts`. Each module exports `{ name, summary, usage, run }`, and `commands/index.ts` lists them. The commands are `hook`, `check <comments|types|ste|ticket|pr|plan|migrations|stack-config|ci-pins|pr-head|review-growth|spec-drift|proof>`, `plan`, `plan-ticket`, `session`, `board`, `skill-path`, `doctor` and `print`.
+- The command registry is `src/astack/cli/commands/*.ts`. Each module exports `{ name, summary, usage, run }`, and `commands/index.ts` lists them. The commands are `hook`, `check <comments|types|ste|ticket|pr|plan|migrations|stack-config|ci-pins|pr-head|review-growth|spec-drift|proof>`, `plan`, `plan-ticket`, `session`, `stack`, `board`, `skill-path`, `managed`, `doctor`, `print`, `init` and `watch-pr`.
 - Deferred. The `release`, `gates` and `ste` commands are not built yet. Section 5.5 describes `release`, and section 9.1 describes `ste review`.
 - The CLI stays pure toward trackers. It never holds a Linear or GitHub credential. Reads come as tracker JSON on stdin. Writes come out as a typed write plan that the skill runs through the Linear MCP or `gh`.
 - One exception covers reads of PR state. `watch-pr`, the merge guard and `check pr-head` run `gh` as a child process. `gh` holds the credential, and the CLI never reads or stores it. `check pr-head` also runs `git fetch origin <headRefOid>`, which writes Git objects and `FETCH_HEAD`. It reads the PR again at every call.
@@ -158,6 +158,8 @@ The hardening iteration cap remains binding.
 It checks links and exemptions without claiming test execution or semantic coverage.
 [The review checks runbook](runbooks/review-checks.md) defines their use and limits.
 [ChangeProof](adr/0005-every-change-carries-domain-and-formal-proof.md) requires current TLA+ evidence for every change workflow.
+[ADR 0012](adr/0012-change-proof-accepts-an-older-base.md) lets a PR proof keep an older manifest base.
+With `--base <ref>`, the diff starts at the merge base, and the manifest base must be an ancestor of it.
 It links DDD contracts, internal category notation, effective ADRs, formal models, and implementation controls.
 The proof gate stays independent of hook quality profiles.
 ADRs connect function signatures, laws, formal claims, abstraction relations, and executable controls.

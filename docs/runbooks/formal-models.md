@@ -36,6 +36,12 @@ It requires complete tool output and matching restored state counts.
 Syntax errors, wrong violations, warnings, incomplete states, stale inputs, and cleanup failures block admission.
 A success needs exit 0 and a final line that starts with `ok: proof `.
 
+In CI, pass the base branch, such as `astack check proof --base origin/main`.
+The diff then starts at the merge base of that ref and HEAD.
+The manifest base must be an ancestor of that merge base, so a merge to main keeps the proof valid.
+Do not move the manifest base after a merge of main.
+The [proof contract](../../marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md#base) gives the full base rule, and [ADR 0012](../adr/0012-change-proof-accepts-an-older-base.md) records it.
+
 Use an existing verified jar outside the checkout with `ASTACK_TLC_JAR` when needed.
 `ASTACK_PROOF_TIMEOUT_MS` can lower the 60000 ms cap.
 The proof command never admits a stored pass receipt.
