@@ -1,7 +1,7 @@
 ------------------------ MODULE ProofAdmission ------------------------
 EXTENDS Naturals, FiniteSets, Sequences
 
-Stages == <<"schema", "domain", "category", "controls">>
+Stages == <<"schema", "base", "domain", "category", "controls">>
 Required == {Stages[i] : i \in 1..Len(Stages)}
 States == {"validating", "modeled", "checked", "restored", "admitted", "rejected"}
 PositiveResults == {"pending", "passed", "failed", "incomplete"}
@@ -41,8 +41,19 @@ AuthorityEligible(a) == /\ a.regular
                                /\ a.processAccepted /\ a.processWholeEqual))
 AuthorityAllowed(a) == AuthorityEligible(a) /\ LandingAllowed(a)
 
-VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority
-vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority>>
+BaseRecords == [relation : {"equal", "ancestor", "descendant", "unrelated"},
+                ref : BOOLEAN,
+                diffFrom : {"merge", "manifest"},
+                historyAt : {"merge", "manifest"},
+                moved : BOOLEAN]
+BaseCases == {b \in BaseRecords : ~b.ref => ~b.moved}
+BaseRelationAllowed(b) == b.relation \in {"equal", "ancestor"}
+BaseViewsAllowed(b) == /\ b.diffFrom = IF b.ref THEN "merge" ELSE "manifest"
+                       /\ b.historyAt = "manifest"
+MoveAllowed(a, b) == ~(a.optIn /\ b.moved)
+
+VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority, base
+vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority, base>>
 
 Init == /\ stage = 1
         /\ verified = {}
@@ -53,49 +64,53 @@ Init == /\ stage = 1
         /\ status = "validating"
         /\ firstFailure = "none"
         /\ authority \in AuthorityCases
+        /\ base \in BaseCases
 
 ValidationPass == /\ status = "validating"
                   /\ stage <= Len(Stages)
+                  /\ (Stages[stage] # "base" \/ BaseRelationAllowed(base))
+                  /\ (Stages[stage] # "base" \/ BaseViewsAllowed(base))
                   /\ (Stages[stage] # "domain" \/ AuthorityEligible(authority))
                   /\ (Stages[stage] # "domain" \/ LandingAllowed(authority))
+                  /\ (Stages[stage] # "domain" \/ MoveAllowed(authority, base))
                   /\ verified' = verified \cup {Stages[stage]}
                   /\ stage' = stage + 1
-                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority>>
+                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority, base>>
 
 ValidationFail == /\ status = "validating"
                   /\ stage <= Len(Stages)
                   /\ firstFailure' = Stages[stage]
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
 
 RunPositive == /\ status = "validating"
                /\ stage > Len(Stages)
                /\ positive' \in PositiveResults \ {"pending"}
                /\ status' = "modeled"
-               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure, authority>>
+               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure, authority, base>>
 
 RejectPositive == /\ status = "modeled"
                   /\ positive # "passed"
                   /\ firstFailure' = "model"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
 
 RunNegative == /\ status = "modeled"
                /\ positive = "passed"
                /\ negative' \in NegativeResults \ {"pending"}
                /\ status' = "checked"
-               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure, authority>>
+               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure, authority, base>>
 
 InputChange == /\ status \in {"modeled", "checked", "restored"}
                /\ current
                /\ current' = FALSE
-               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure, authority>>
+               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure, authority, base>>
 
 RunRestored == /\ status = "checked"
                /\ negative = "expected"
                /\ restored' \in PositiveResults \ {"pending"}
                /\ status' = "restored"
-               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure, authority>>
+               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure, authority, base>>
 
 Admit == /\ status = "restored"
          /\ verified = Required
@@ -104,7 +119,7 @@ Admit == /\ status = "restored"
          /\ restored = "passed"
          /\ current
          /\ status' = "admitted"
-         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure, authority>>
+         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure, authority, base>>
 
 RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ IF status = "checked"
@@ -113,7 +128,7 @@ RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ firstFailure' = IF status = "checked" THEN "countermodel"
                                       ELSE IF restored # "passed" THEN "restore" ELSE "stale"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority>>
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
 
 Finished == /\ status \in {"admitted", "rejected"}
             /\ UNCHANGED vars
@@ -124,6 +139,7 @@ Spec == Init /\ [][Next]_vars /\ WF_vars(Next)
 
 TypeOK == /\ stage \in 1..(Len(Stages) + 1)
           /\ authority \in AuthorityCases
+          /\ base \in BaseCases
           /\ verified \subseteq Required
           /\ positive \in PositiveResults
           /\ negative \in NegativeResults
@@ -145,6 +161,10 @@ StrictDefault == status = "admitted" /\ authority.optIn /\ ~authority.landingOpt
 LandingAuthoritySafe == status = "admitted" /\ authority.landingOptIn => authority.headerValid /\ authority.outsideEqual
 ProcessAuthoritySafe == status = "admitted" /\ authority.optIn => authority.processWholeEqual
 HistoryBound == status = "admitted" /\ authority.optIn => authority.history /\ authority.ancestor
+BaseAncestry == status = "admitted" => base.relation \in {"equal", "ancestor"}
+ScopeFromMergeBase == status = "admitted" /\ base.ref => base.diffFrom = "merge"
+HistoryAtManifest == status = "admitted" => base.historyAt = "manifest"
+MovedAuthorityStops == status = "admitted" /\ authority.optIn => ~base.moved
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
 
 Values == {0, 1}

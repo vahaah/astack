@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-03
 Ticket: none
 Supersedes: none
-Amended by: 0007 D2 for checked integrated proposals
+Amended by: 0008 D3 for checked integrated proposals, and 0012 for an older proof base
 
 ## Context
 
