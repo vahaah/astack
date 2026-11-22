@@ -18,6 +18,7 @@ export interface SimpleCommand {
 	stdin: string | undefined;
 	stdinDynamic?: boolean;
 	stdinFrom?: "heredoc" | "quoted heredoc" | "here-string";
+	stdinSources?: number;
 	redirects: Redirect[];
 	substitutions?: string[];
 	piped?: boolean;
@@ -107,6 +108,10 @@ export function parseShell(src: string): SimpleCommand[] {
 			words.push(word);
 		}
 		word = undefined;
+	};
+	const readsStdin = (command: SimpleCommand): void => {
+		command.stdinSources = (command.stdinSources ?? 0) + 1;
+		if (command.stdinSources > 1) command.stdinDynamic = true;
 	};
 	const endCommand = (): void => {
 		endWord();
@@ -269,6 +274,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		if (c === "<" && src.startsWith("<<<", i)) {
 			endWord();
 			hereStringNext = current;
+			readsStdin(current);
 			i += 3;
 			continue;
 		}
@@ -276,6 +282,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			endWord();
 			const match = /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i));
 			if (match) {
+				readsStdin(current);
 				pendingHeredocs.push({
 					tag: match[3] ?? "",
 					strip: match[1] === "-",
@@ -297,6 +304,8 @@ export function parseShell(src: string): SimpleCommand[] {
 			const opStart = i;
 			while (src[i] === "<" || src[i] === ">" || src[i] === "&") i++;
 			if (src[i] === "|" && src[i - 1] === ">") i++;
+			if (src[opStart] === "<" && (fd === undefined || fd === "0"))
+				readsStdin(current);
 			if (/\d/.test(src[i] ?? "") && src[i - 1] === "&") {
 				while (/\d/.test(src[i] ?? "")) i++;
 				continue;

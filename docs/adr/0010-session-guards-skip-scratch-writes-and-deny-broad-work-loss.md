@@ -51,6 +51,7 @@ The other two are a whole pipe stage before the shell: `echo` with no flag or ba
 `printf '%s\n'` counts as that `printf` form.
 Each other script on stdin gets a deny with no search of its text.
 An unquoted heredoc with `$`, a backtick or a backslash is dynamic for each reader of stdin.
+So is the stdin of a command with more than one stdin source, because the shell uses the last one.
 A guarded verb that a variable hides is unreadable.
 An unreadable work-loss command gets a deny on a changed tree when astack can read its folder.
 Each other unreadable guarded verb gets a deny at once.

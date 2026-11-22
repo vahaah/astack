@@ -297,6 +297,7 @@ describe("the plain form of a git step", () => {
 		"bash <<EOF\ngit status\nEOF",
 		"echo() { :; }; echo 'git status' | sh",
 		"alias echo=printf; echo 'git status' | sh",
+		"bash <<'EOF' <<< 'git reset --hard'\ngit status\nEOF",
 	])(
 		"%s is denied with no search of its text, because astack reads a stdin script only from a literal echo, printf, quoted heredoc or static here-string",
 		(command) => {

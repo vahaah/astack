@@ -791,6 +791,10 @@ describe("the merge guard", () => {
 		],
 		["gh api graphql --input merge.json", API_DENY],
 		[
+			`gh api graphql --input - <<'EOF' < merge.json\n${JSON.stringify({ query: READ })}\nEOF`,
+			API_DENY,
+		],
+		[
 			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: MUTATION })}\nEOF`,
 			API_DENY,
 		],
