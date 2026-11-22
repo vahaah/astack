@@ -53,6 +53,9 @@ The map lists each context, its location and its relationships:
 - **Ordering ↔ Billing**: Shared types for `CustomerId` and `Money`
 ```
 
+The contexts card is the one `domain` fence under `## Contexts` of the map, else of `CONTEXT.md`.
+A card context groups code owners, so one glossary can hold several.
+
 Use the existing files to select the structure:
 
 - If `CONTEXT-MAP.md` exists, read it to locate the contexts.
