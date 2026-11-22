@@ -25,12 +25,15 @@ import {
 	CODEX_HOOK_HASHES,
 } from "../../src/astack/codex-trust.ts";
 import {
+	type BaseReport,
 	type ClaudeProfile,
 	codexTrustKey,
 	diagnose,
 	type Finding,
 	failed,
+	type GhRead,
 	type Install,
+	readBases,
 	type Snapshot,
 } from "../../src/astack/doctor.ts";
 import { withFragment } from "../../src/astack/print.ts";
@@ -84,6 +87,7 @@ function snapshot(extra: Partial<Snapshot> = {}): Snapshot {
 			path: ".claude/pr-review-hardening.profile.md",
 			problems: [],
 		},
+		bases: undefined,
 		...extra,
 	};
 }
@@ -801,6 +805,117 @@ describe("astack doctor", () => {
 		expect(
 			fails(diagnose(snapshot({ profile: { kind: "invalid", repo: "/r" } }))),
 		).toEqual([".astack/profile.json is not a JSON object"]);
+	});
+});
+
+describe("base protection", () => {
+	const branch = (
+		isProtected: boolean,
+		enforcement: string,
+	): Readonly<Record<string, unknown>> => ({
+		name: "main",
+		protected: isProtected,
+		protection: {
+			enabled: isProtected,
+			required_status_checks: {
+				enforcement_level: enforcement,
+				contexts: [],
+				checks: [],
+			},
+		},
+	});
+	const area = "base protection owner/repo";
+	const linesFor = (report: BaseReport) =>
+		diagnose(snapshot({ bases: report }))
+			.filter((item) => item.area === area)
+			.map((item) => `${item.level} ${item.text}`);
+	const reader = (
+		replies: Readonly<Record<string, unknown>>,
+	): { read: GhRead; calls: string[] } => {
+		const calls: string[] = [];
+		return {
+			calls,
+			read: (args) => {
+				const path = args.at(-1) ?? "";
+				calls.push(path);
+				return replies[path];
+			},
+		};
+	};
+
+	test.each([
+		[
+			"[control:dt-base-open] protected false and no ruleset rule",
+			branch(false, "off"),
+			[],
+			"note main has no branch protection and no ruleset rule that blocks a push, so a pushed edit of .claude/pr-review-hardening.profile.md needs no review. Add a ruleset with a pull_request rule on main.",
+		],
+		[
+			"[control:dt-base-classic] classic protection with check enforcement off",
+			branch(true, "off"),
+			[{ type: "deletion" }],
+			"note main has classic protection with required checks off. Only an admin can see a required review, so doctor cannot tell whether a pushed edit of .claude/pr-review-hardening.profile.md needs review.",
+		],
+		[
+			"classic protection with required checks on",
+			branch(true, "non_admins"),
+			[],
+			"ok main has protection that blocks an unreviewed push",
+		],
+		[
+			"a pull_request ruleset rule",
+			branch(false, "off"),
+			[{ type: "pull_request" }],
+			"ok main has protection that blocks an unreviewed push",
+		],
+	])(
+		"%s gives one line and no FAIL",
+		(_name, branchReply, rulesReply, line) => {
+			const { read } = reader({
+				"repos/owner/repo": { default_branch: "main" },
+				"repos/owner/repo/branches/main": branchReply,
+				"repos/owner/repo/rules/branches/main": rulesReply,
+			});
+			expect(linesFor(readBases(read, "owner/repo", []))).toEqual([line]);
+		},
+	);
+
+	test("[control:dt-base-cap] reads the default branch and at most 3 bases, and notes each base past the cap", () => {
+		const replies: Record<string, unknown> = {
+			"repos/owner/repo": { default_branch: "main" },
+		};
+		for (const base of ["main", "v2", "v3"]) {
+			replies[`repos/owner/repo/branches/${base}`] = branch(true, "everyone");
+			replies[`repos/owner/repo/rules/branches/${base}`] = [];
+		}
+		const { read, calls } = reader(replies);
+		const report = readBases(read, "owner/repo", ["v2", "main", "v3", "v4"]);
+		expect(calls).toEqual([
+			"repos/owner/repo",
+			"repos/owner/repo/branches/main",
+			"repos/owner/repo/rules/branches/main",
+			"repos/owner/repo/branches/v2",
+			"repos/owner/repo/rules/branches/v2",
+			"repos/owner/repo/branches/v3",
+			"repos/owner/repo/rules/branches/v3",
+		]);
+		expect(linesFor(report).slice(-1)).toEqual([
+			"note doctor reads at most 3 bases, so it did not read v4",
+		]);
+	});
+
+	test("[control:dt-base-gh-fail] the first gh failure gives one note and ends the reads", () => {
+		const { read, calls } = reader({
+			"repos/owner/repo": { default_branch: "main" },
+		});
+		const report = readBases(read, "owner/repo", ["v2"]);
+		expect(calls).toEqual([
+			"repos/owner/repo",
+			"repos/owner/repo/branches/main",
+		]);
+		expect(linesFor(report)).toEqual([
+			"note gh could not read the branch main, so doctor reads no more bases",
+		]);
 	});
 });
 

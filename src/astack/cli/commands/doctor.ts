@@ -23,12 +23,15 @@ import {
 	failed,
 	type Install,
 	type ProfileState,
+	readBases,
 	render,
 	type SkillFolder,
 	type Snapshot,
 } from "../../doctor.ts";
-import { repoRoot } from "../../git.ts";
+import { originSlug, repoRoot } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
+import { ghJson } from "../../pr/github.ts";
+import { loadPrProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
 import { PROFILE_PATH } from "../../profile.ts";
 import type { Command } from "../command.ts";
@@ -365,6 +368,17 @@ function claudeSkillFolders(
 	});
 }
 
+function bases(cwd: string): Snapshot["bases"] {
+	const root = repoRoot(cwd);
+	const repo = root === undefined ? undefined : originSlug(root);
+	if (root === undefined || repo === undefined) return undefined;
+	return readBases(
+		(args) => ghJson(root, args),
+		repo,
+		loadPrProfile(root).standingBases,
+	);
+}
+
 export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
 	const listed = claudeDirs(io.env, home);
@@ -384,6 +398,7 @@ export async function gather(io: Io): Promise<Snapshot> {
 		agentsSkills: list(join(home, ".agents", "skills")),
 		claudeSkills: claudeSkillFolders(claude, home),
 		profile: profileState(io.cwd),
+		bases: bases(io.cwd),
 		reviewProfile: reviewProfileState(
 			MANAGED_PATHS.reviewProfile,
 			readText(join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile)),
@@ -464,7 +479,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile and the review profile with the rules of astack check hardening-profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile, the review profile with the rules of astack check hardening-profile and the protection of the default branch and the standing bases. It reads at most 3 bases with gh. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
 	usage: "doctor [--json]\ndoctor --save-runtime\ndoctor --skip-profile <dir>",
 	run,
 };

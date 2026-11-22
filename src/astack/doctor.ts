@@ -87,6 +87,7 @@ export type Snapshot = {
 		readonly dirs: readonly string[];
 	};
 	readonly reviewProfile: ReviewProfileState;
+	readonly bases: BaseReport | undefined;
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -661,6 +662,134 @@ function reviewProfileFindings(
 	}
 }
 
+export type GhRead = (args: readonly string[]) => unknown;
+
+export const BASE_READ_CAP = 3;
+
+type BaseVerdict = "blocks" | "classic" | "open";
+
+export type BaseReport = {
+	readonly repo: string;
+	readonly checked: readonly {
+		readonly base: string;
+		readonly verdict: BaseVerdict;
+	}[];
+	readonly pastCap: readonly string[];
+	readonly failure: string | undefined;
+};
+
+const BLOCKING_RULES = ["pull_request", "update", "required_status_checks"];
+
+function fieldOf(value: unknown, ...path: readonly string[]): unknown {
+	let current = value;
+	for (const key of path)
+		current =
+			typeof current === "object" && current !== null
+				? Reflect.get(current, key)
+				: undefined;
+	return current;
+}
+
+function baseVerdict(branch: unknown, rules: unknown): BaseVerdict {
+	const blockingRule =
+		Array.isArray(rules) &&
+		rules.some((rule) =>
+			BLOCKING_RULES.includes(String(fieldOf(rule, "type"))),
+		);
+	if (blockingRule) return "blocks";
+	if (fieldOf(branch, "protected") !== true) return "open";
+	const enforcement = fieldOf(
+		branch,
+		"protection",
+		"required_status_checks",
+		"enforcement_level",
+	);
+	return typeof enforcement === "string" && enforcement !== "off"
+		? "blocks"
+		: "classic";
+}
+
+export function readBases(
+	read: GhRead,
+	repo: string,
+	standingBases: readonly string[],
+): BaseReport {
+	const defaultBranch = fieldOf(
+		read(["api", `repos/${repo}`]),
+		"default_branch",
+	);
+	if (typeof defaultBranch !== "string")
+		return {
+			repo,
+			checked: [],
+			pastCap: [],
+			failure: "the default branch",
+		};
+	const bases = [...new Set([defaultBranch, ...standingBases])];
+	const pastCap = bases.slice(BASE_READ_CAP);
+	const checked: { base: string; verdict: BaseVerdict }[] = [];
+	for (const base of bases.slice(0, BASE_READ_CAP)) {
+		const path = encodeURIComponent(base);
+		const branch = read(["api", `repos/${repo}/branches/${path}`]);
+		if (branch === undefined)
+			return { repo, checked, pastCap, failure: `the branch ${base}` };
+		const rules = read(["api", `repos/${repo}/rules/branches/${path}`]);
+		if (rules === undefined)
+			return { repo, checked, pastCap, failure: `the rules of ${base}` };
+		checked.push({ base, verdict: baseVerdict(branch, rules) });
+	}
+	return { repo, checked, pastCap, failure: undefined };
+}
+
+function baseFindings(report: BaseReport): Finding[] {
+	const area = `base protection ${report.repo}`;
+	const profile = MANAGED_PATHS.reviewProfile;
+	return [
+		...report.checked.map(({ base, verdict }) => {
+			switch (verdict) {
+				case "blocks":
+					return finding(
+						area,
+						"ok",
+						`${base} has protection that blocks an unreviewed push`,
+					);
+				case "classic":
+					return finding(
+						area,
+						"note",
+						`${base} has classic protection with required checks off. Only an admin can see a required review, so doctor cannot tell whether a pushed edit of ${profile} needs review.`,
+					);
+				case "open":
+					return finding(
+						area,
+						"note",
+						`${base} has no branch protection and no ruleset rule that blocks a push, so a pushed edit of ${profile} needs no review. Add a ruleset with a pull_request rule on ${base}.`,
+					);
+				default: {
+					const exhaustive: never = verdict;
+					return exhaustive;
+				}
+			}
+		}),
+		...(report.failure === undefined
+			? []
+			: [
+					finding(
+						area,
+						"note",
+						`gh could not read ${report.failure}, so doctor reads no more bases`,
+					),
+				]),
+		...report.pastCap.map((base) =>
+			finding(
+				area,
+				"note",
+				`doctor reads at most ${BASE_READ_CAP} bases, so it did not read ${base}`,
+			),
+		),
+	];
+}
+
 function sessionFinding(unattendedReason: string | undefined): Finding {
 	return unattendedReason === undefined
 		? finding(
@@ -696,6 +825,7 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 		...duplicateFindings(snapshot),
 		...profileFindings(snapshot.profile),
 		...reviewProfileFindings(snapshot.profile.repo, snapshot.reviewProfile),
+		...(snapshot.bases === undefined ? [] : baseFindings(snapshot.bases)),
 		sessionFinding(snapshot.unattendedReason),
 	];
 }
