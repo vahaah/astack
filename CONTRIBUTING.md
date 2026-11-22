@@ -10,7 +10,7 @@ Thank you for helping. This page covers what to read, how to check a change and 
 
 ## Set up and check
 
-Use the Bun version pinned in the CI workflow.
+Use the Bun version pinned in the CI workflow. Java 17 or later must be on `PATH`, because `bun run check` runs the change proof of this repo.
 
 ```sh
 bun install --frozen-lockfile
@@ -19,7 +19,7 @@ bun run check
 ```
 
 - `bun run check:drift` compiles the CLI in memory and compares every generated file with the committed one. It changes nothing on disk.
-- `bun run check` rebuilds every target and runs validation, scans, STE checks, tests, formatting, lint and type checks.
+- `bun run check` rebuilds every target. It runs validation, scans, STE checks, the skill word budget, tests, formatting, lint, type checks and the change proof.
 
 Run `bun run check` before each commit. Do not weaken a check to make a change pass.
 
@@ -29,6 +29,8 @@ Run `bun run check` before each commit. Do not weaken a check to make a change p
 - **Leave `upstream/` alone.** Those frozen snapshots are licence evidence and test data.
 - **Bugs start with a failing test.** Reproduce the failure first, write `Root cause: X because Y`, and keep the regression test with the fix.
 - **Use synthetic data.** Fixtures must not contain captured data.
+- Write `.astack/proof.json` for each pull request. Its `scope` must cover each changed path, and `bun run check:proof` must pass. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
+- Keep each skill inside its word budget. `bun run budget` fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) says when a cap can rise.
 
 ## Privacy
 
