@@ -23,3 +23,4 @@ SOFTWARE.
 This skill includes material adapted from these projects, each under the MIT License above:
 
 - pstack, Copyright (c) 2026 Lauren Tan
+- mattpocock/skills, Copyright (c) 2026 Matt Pocock
