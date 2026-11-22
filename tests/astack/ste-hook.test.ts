@@ -946,6 +946,7 @@ describe("the strict Stop hook", () => {
 		const run = hook("Stop", stop("e9", failing), {
 			ASTACK_STATE_DIR: "",
 			HOME: "",
+			BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0",
 		});
 		expect(run.status).toBe(0);
 	});
