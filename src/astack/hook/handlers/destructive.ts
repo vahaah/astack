@@ -1,5 +1,5 @@
-import { statSync } from "node:fs";
-import { basename, isAbsolute, join, resolve } from "node:path";
+import { realpathSync, statSync } from "node:fs";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { loadGateRecord } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
 import {
@@ -8,7 +8,12 @@ import {
 	HOOKS_PATH_KEY,
 	readGit,
 } from "../../git-command.ts";
-import { canonicalRelative, readOptional } from "../../paths.ts";
+import {
+	canonical,
+	canonicalRelative,
+	readOptional,
+	toPosix,
+} from "../../paths.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
@@ -673,13 +678,29 @@ function headHooks(root: string, path: string): ReadonlySet<string> {
 	);
 }
 
+function realFolder(path: string): string | undefined {
+	try {
+		return realpathSync(path);
+	} catch {
+		return undefined;
+	}
+}
+
+function hooksFolder(root: string, folder: string): string | undefined {
+	if (folder === "" || folder.split(/[\\/]/).includes("..")) return undefined;
+	const top = canonical(root);
+	const real = realFolder(resolve(root, folder));
+	if (real === undefined || real !== resolve(top, folder)) return undefined;
+	const path = relative(top, real);
+	return path.startsWith("..") || isAbsolute(path) ? undefined : toPosix(path);
+}
+
 function tracksHooks(dir: string, folder: string): boolean {
 	const root = repoRoot(dir);
-	if (root === undefined || folder === "") return false;
-	const path = canonicalRelative(root, resolve(root, folder));
-	if (isAbsolute(path)) return false;
-	const active = activeHooks(root);
-	if (active === undefined) return false;
+	const path = root === undefined ? undefined : hooksFolder(root, folder);
+	const active = root === undefined ? undefined : activeHooks(root);
+	if (root === undefined || path === undefined || active === undefined)
+		return false;
 	const tracked = headHooks(root, path);
 	return tracked.size > 0 && active.every((name) => tracked.has(name));
 }

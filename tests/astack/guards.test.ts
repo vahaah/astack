@@ -7,6 +7,7 @@ import {
 	mkdtempSync,
 	readFileSync,
 	rmSync,
+	symlinkSync,
 	utimesSync,
 	writeFileSync,
 } from "node:fs";
@@ -580,7 +581,14 @@ describe("a core.hooksPath that names a folder", () => {
 
 	beforeAll(() => {
 		active = join(root, "active-hooks");
-		for (const folder of [".githooks", "docs", "plain", "partial", "staged"])
+		for (const folder of [
+			".githooks",
+			"docs",
+			"plain",
+			"partial",
+			"staged",
+			"swapped",
+		])
 			mkdirSync(join(active, folder), { recursive: true });
 		initRepo(active);
 		const hook = "#!/bin/sh\nexit 0\n";
@@ -591,15 +599,21 @@ describe("a core.hooksPath that names a folder", () => {
 			"plain/pre-push": hook,
 			"plain/pre-commit": hook,
 			"partial/pre-push": hook,
+			"swapped/pre-push": hook,
+			"swapped/pre-commit": hook,
 		});
 		for (const path of [
 			".githooks/pre-push",
 			".githooks/pre-commit",
 			"partial/pre-push",
+			"swapped/pre-push",
+			"swapped/pre-commit",
 		])
 			chmodSync(join(active, path), 0o755);
 		git(active, "add", ".");
 		git(active, "commit", "-q", "-m", "base");
+		rmSync(join(active, "swapped"), { recursive: true });
+		symlinkSync("docs", join(active, "swapped"));
 		write(active, { "staged/pre-push": hook, "staged/pre-commit": hook });
 		chmodSync(join(active, "staged/pre-push"), 0o755);
 		chmodSync(join(active, "staged/pre-commit"), 0o755);
@@ -630,6 +644,22 @@ describe("a core.hooksPath that names a folder", () => {
 			expect(said).toContain("owner gate");
 		},
 	);
+
+	test.each([
+		[
+			"git -c core.hooksPath=missing/../.githooks push",
+			"a folder that is not there",
+		],
+		["git -c core.hooksPath=docs/../.githooks push", "a .. segment"],
+		[
+			"git config core.hooksPath swapped",
+			"a symlink to a folder with no hooks",
+		],
+	])("%s skips the hooks, because its path holds %s", (command) => {
+		const said = reason(run(command));
+		expect(said).toContain(`${command} skips the git hooks of the repo.`);
+		expect(said).toContain("owner gate");
+	});
 
 	test.each([
 		"git -c core.hooksPath=.githooks push",
