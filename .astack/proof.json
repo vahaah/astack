@@ -1,588 +1,393 @@
 {
 	"version": 1,
-	"change": "review-roadmap-b04-plain-form",
-	"base": "ef9a3f625423e0f683c0ff26dc74db1a26a3a63f",
+	"change": "review-roadmap-b26-result-laws",
+	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
 	"scope": [
 		{
-			"path": "src/astack/shell.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
+			"path": "src/astack/result.ts",
+			"obligation": "RL-MONAD",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		},
 		{
-			"path": "src/astack/git-command.ts",
-			"obligation": "SG-dynamic-word",
-			"modelRefs": ["RunGit", "BroadLossDenied", "DenialNeedsLoss"]
-		},
-		{
-			"path": "src/astack/hook/handlers/destructive.ts",
-			"obligation": "SG-hook-skip",
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "ADMIT-ORDER",
 			"modelRefs": [
-				"Push",
-				"RunGit",
-				"HookSkipNeedsGates",
-				"BroadLossDenied",
-				"DenialNeedsLoss"
+				"ValidationPass",
+				"ValidationFail",
+				"FailureIsTerminal",
+				"StopNamesSection"
 			]
 		},
 		{
-			"path": "src/astack/hook/handlers/merge-guard.ts",
-			"obligation": "SG-api-merge",
-			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
 		},
 		{
-			"path": "src/astack/pr/merge.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
+			"path": "tests/property/result-laws.test.ts",
+			"obligation": "RL-ALL",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		},
 		{
-			"path": "src/astack/hook/handlers/turn.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "src/astack/gates.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "src/astack/cli/commands/gates.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "src/astack/cli/commands/index.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "src/astack/pr-review-profile.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/shell.test.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push"]
-		},
-		{
-			"path": "tests/fixtures/guard-bypass.json",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "Push"]
-		},
-		{
-			"path": "tests/property/**",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "Push"]
-		},
-		{
-			"path": "tests/astack/guards.test.ts",
-			"obligation": "SG-work-loss",
-			"modelRefs": [
-				"RunGit",
-				"Push",
-				"BroadLossDenied",
-				"DenialNeedsLoss",
-				"HookSkipNeedsGates"
-			]
-		},
-		{
-			"path": "tests/astack/merge-guard.test.ts",
-			"obligation": "SG-api-merge",
-			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
-		},
-		{
-			"path": "tests/astack/gates.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/registry.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/apply/ci-parity.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/pr-review-profile.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/dispatch.test.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/headings.test.ts",
-			"obligation": "SG-preserve",
+			"path": "tests/property/verdict-monoid.test.ts",
+			"obligation": "VM-MONOID",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/guard-composition.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
+			"path": "tests/astack/verdict.test.ts",
+			"obligation": "VM-MONOID",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "formal/SessionGuards.*",
-			"obligation": "SG-hook-skip",
+			"path": "tests/astack/change-proof.test.ts",
+			"obligation": "LAW-MONOID",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
+		},
+		{
+			"path": "tests/astack/proof-composition.ts",
+			"obligation": "ADMIT-ORDER",
+			"modelRefs": ["ValidationPass", "Admit"]
+		},
+		{
+			"path": "tests/astack/proof-contract-doc.test.ts",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "formal/ProofAdmission.*",
+			"obligation": "RL-MONAD",
 			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"RunGit",
-				"GatesRun",
-				"Push",
 				"TypeOK",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"BroadLossDenied",
-				"DenialNeedsLoss",
-				"HookSkipNeedsGates"
+				"AdmitSafe",
+				"FailureIsTerminal",
+				"StopNamesSection",
+				"EventuallyTerminal"
 			]
 		},
 		{
-			"path": "docs/adr/0010-*.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": [
-				"RunGit",
-				"GatesRun",
-				"Push",
-				"BroadLossDenied",
-				"HookSkipNeedsGates",
-				"GrantFromPerson"
-			]
-		},
-		{
-			"path": "docs/reference/session-guards.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
+			"path": "docs/**",
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["ValidationFail", "AdmitSafe"]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "README.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
+			"obligation": "RL-MONAD",
+			"modelRefs": ["ValidationPass", "Admit"]
 		},
 		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "LAW-MONOID",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
 		},
 		{
 			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
+			"modelRefs": ["ValidationPass", "Admit"]
 		},
 		{
 			"path": "dist/**",
 			"obligation": "SG-generated",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "package.json",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "bun.lock",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/plans/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"modelRefs": ["ValidationPass", "Admit"]
 		},
 		{
 			"path": ".astack/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"obligation": "ADMIT-ORDER",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/hook/events.ts",
-			"symbol": "Handler"
+			"path": "src/astack/change-proof/contract.ts",
+			"symbol": "ChangeProof"
 		},
 		"terms": [
-			"Session guard",
-			"Work-loss command",
-			"Unattended session",
-			"Plain form",
-			"Hook skip",
-			"Gate record"
+			"ChangeProof",
+			"Proof admission",
+			"Composition record",
+			"Implementation control",
+			"Law control"
 		],
 		"invariants": [
 			{
-				"name": "A hook skip goes ahead only on a head whose gates pass",
-				"modelRef": "HookSkipNeedsGates"
+				"name": "Admission requires current complete evidence",
+				"modelRef": "AdmitSafe"
 			},
 			{
-				"name": "No command on the tree or a folder discards a change and passes",
-				"modelRef": "BroadLossDenied"
+				"name": "A failure stops admission at its first failed stage",
+				"modelRef": "FailureIsTerminal"
 			},
 			{
-				"name": "Each work-loss denial names a change that git discards",
-				"modelRef": "DenialNeedsLoss"
-			},
-			{
-				"name": "A merge needs a grant of the base branch profile or a covering prompt of a person",
-				"modelRef": "MergeNeedsAuthority"
-			},
-			{
-				"name": "Only a person's prompt sets a grant",
-				"modelRef": "GrantFromPerson"
+				"name": "Each stop names the proof contract section of its stage",
+				"modelRef": "StopNamesSection"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"decision": "D2"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"SG-plain-form",
-				"SG-dynamic-word",
-				"SG-api-merge",
-				"SG-hook-skip",
-				"SG-gates-run",
-				"SG-work-loss",
-				"SG-unattended",
-				"SG-generated",
-				"SG-preserve"
+				"RL-MONAD",
+				"RL-FUNCTOR",
+				"RL-ALL",
+				"VM-MONOID",
+				"LAW-CLAIMED",
+				"LAW-MONOID",
+				"ADMIT-ORDER",
+				"CP-07",
+				"CP-21",
+				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "artifact",
-			"contract": "Each guard maps one decoded hook call to one Verdict. shellSteps gives each guard the plain form of each shell step, and readGit reads a git step of it. A gate run maps the gates of the hardening profile to runs, and recordOf keeps a record only when each gate that applies passes. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+			"kind": "result",
+			"error": "Rejection"
 		},
 		"objects": [
 			{
-				"name": "HookCall",
+				"name": "ProofText",
 				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "HookEvent"
+					"path": "tests/astack/proof-composition.ts",
+					"symbol": "ProofText"
 				}
 			},
 			{
-				"name": "Verdict",
+				"name": "ChangeProof",
 				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "Verdict"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "ChangeProof"
 				}
 			},
 			{
-				"name": "ShellStep",
+				"name": "Admitted",
 				"link": {
-					"path": "src/astack/shell.ts",
-					"symbol": "ShellStep"
-				}
-			},
-			{
-				"name": "GitRead",
-				"link": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "GitRead"
-				}
-			},
-			{
-				"name": "ProfileGate",
-				"link": {
-					"path": "src/astack/pr-review-profile.ts",
-					"symbol": "ProfileGate"
-				}
-			},
-			{
-				"name": "GateRun",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "GateRun"
-				}
-			},
-			{
-				"name": "GateRecord",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "GateRecord"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "Admitted"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "shellSteps",
-				"from": "HookCall",
-				"to": "ShellStep",
+				"name": "parse",
+				"from": "ProofText",
+				"to": "ChangeProof",
 				"link": {
-					"path": "src/astack/shell.ts",
-					"symbol": "shellSteps"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
 				},
 				"effects": []
 			},
 			{
-				"name": "readGit",
-				"from": "ShellStep",
-				"to": "GitRead",
+				"name": "admit",
+				"from": "ChangeProof",
+				"to": "Admitted",
 				"link": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "readGit"
-				},
-				"effects": []
-			},
-			{
-				"name": "destructive",
-				"from": "HookCall",
-				"to": "Verdict",
-				"link": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
-				},
-				"effects": ["fs-read", "spawn", "env"]
-			},
-			{
-				"name": "mergeGuard",
-				"from": "HookCall",
-				"to": "Verdict",
-				"link": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
-				},
-				"effects": ["fs-read", "fs-write", "spawn", "network"]
-			},
-			{
-				"name": "runGates",
-				"from": "ProfileGate",
-				"to": "GateRun",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "runGates"
-				},
-				"effects": ["spawn", "fs-read", "fs-write", "env"]
-			},
-			{
-				"name": "recordOf",
-				"from": "GateRun",
-				"to": "GateRecord",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "recordOf"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
 				},
 				"effects": []
 			}
 		],
-		"composites": [],
-		"equality": "Two verdicts are equal when their kind and their text are equal. Two plain steps are equal when their env words, their env unset mark, their words, their folder and their unreadable mark are equal. Two gate records are equal when their head, base, base commit and gate names are equal.",
+		"composites": [
+			{
+				"arrows": ["parse", "admit"],
+				"op": ">=>"
+			}
+		],
+		"equality": "Two results are equal when both are ok with equal values, or both are errors with an equal stage and an equal message.",
 		"laws": [
 			{
 				"law": "id-left",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "id-right",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "assoc",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "functor-id",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-functor-laws"
 			},
 			{
 				"law": "functor-comp",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-functor-laws"
 			},
 			{
 				"law": "monad-left",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-right",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-assoc",
-				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			}
 		],
-		"typedWitness": "tests/astack/guard-composition.ts"
+		"typedWitness": "tests/astack/proof-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The shell grammar of reserved words, wrappers and bodies, the flag grammar of each guarded git verb, the GraphQL body reader of gh api, the hook-skip forms and the gate run of the hardening profile.",
+		"hides": "The short circuit of a Result chain, the order of the admission stages and the reads of the model files.",
 		"callersKnow": [
-			"Both guards judge the plain form of each shell step, so a known wrapper gives the verdict of the command that it runs.",
-			"A guarded verb that a variable hides gets a deny, and a work-loss verb gets it only on a changed tree in a folder that astack can read.",
-			"A hook skip on a push passes only for a source that astack gates run recorded as green. A hook skip on a commit or a config write is an owner gate.",
-			"A GraphQL merge body that astack cannot read gets a deny."
+			"A chain of andThen returns the first error and calls no later arrow after it.",
+			"all returns the values in input order, or the first error in input order.",
+			"Admission stops at the first failed stage in the order domain, category, controls, model.",
+			"A manifest lists each law that it claims or needs, and a functor or monoid claim needs both of its witnesses."
 		],
-		"deletionTest": "Deleting shellSteps puts a wrapper list back in each of 8 handlers, and the two guards drift apart again. Deleting readGit puts the dynamic-word rule in each git caller. Deleting recordOf lets a red gate run write a record.",
+		"deletionTest": "Deleting andThen, map and all puts 9 early returns back into admission.ts and the typed witness. Deleting the law controls leaves each law claim with no check on the code.",
 		"alternatives": [
 			{
-				"name": "Fix each wrapper in each guard",
-				"rejectedBecause": "The two guards had two wrapper rules, and review E2 found wrappers that passed both."
+				"name": "Keep the TLA+ Result model as the only law witness",
+				"rejectedBecause": "It never reads result.ts, so a code defect cannot make it fail."
 			},
 			{
-				"name": "Use a shell AST library",
-				"rejectedBecause": "It needs the same wrapper, body and folder rules, and it adds a runtime dependency to the bundle."
+				"name": "A Result class with methods",
+				"rejectedBecause": "Types bound 3 forbids a class with one implementation."
 			},
 			{
-				"name": "Deny each unreadable step",
-				"rejectedBecause": "It blocks cd \"$dir\" && git status, which reads nothing."
+				"name": "Curried helpers",
+				"rejectedBecause": "They need a pipe, and types bound 6 forbids it."
 			},
 			{
-				"name": "Pass a hook skip after a gate command in the same chain",
-				"rejectedBecause": "An agent can chain any command, and a red gate still lets the push run."
+				"name": "One monoid row",
+				"rejectedBecause": "It hides a missing identity witness."
 			},
 			{
-				"name": "Deny only --no-verify",
-				"rejectedBecause": "HUSKY=0 and LEFTHOOK=0 skip the same hooks with no flag."
+				"name": "Keep eight law rows",
+				"rejectedBecause": "154 of 202 manifest versions filled most rows with not applicable."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/shell.ts",
-					"symbol": "shellSteps"
+					"path": "src/astack/result.ts",
+					"symbol": "andThen"
 				},
-				"modelAction": "RunGit"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "readGit"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "checkReferences"
 				},
-				"modelAction": "RunGit"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "checkReferences"
 				},
-				"modelAction": "RunGit"
+				"modelAction": "ValidationFail"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
 				},
-				"modelAction": "Push"
+				"modelAction": "ValidationFail"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/gates.ts",
-					"symbol": "runGates"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
 				},
-				"modelAction": "GatesRun"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/gates.ts",
-					"symbol": "recordOf"
-				},
-				"modelAction": "GatesRun"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
-				},
-				"modelAction": "Merge"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/handlers/turn.ts",
-					"symbol": "handler"
-				},
-				"modelAction": "Prompt"
+				"modelAction": "Admit"
 			}
 		],
 		"omitted": [
-			"The model takes the plain form of each shell step as given. The wrapper law and the shell table tests examine the parser.",
-			"A gate run is abstracted to one fact that the gates pass at HEAD, and a record that the run writes only for that fact.",
-			"A push target is abstracted to a recorded head, refs that a record cannot cover, or a new commit.",
-			"The REST and GraphQL forms of the merge guard are abstracted to the gh channel.",
-			"One repo and one HEAD are modeled for the push group."
+			"The model abstracts each stage check to one pass or fail step, and it holds no Result value.",
+			"The law controls examine the Result helpers on generated cases. The model holds no law of them.",
+			"The monoid of the hook verdicts is outside the record, because the record declares no combine arrow."
 		]
 	},
 	"model": {
-		"module": "formal/SessionGuards.tla",
-		"config": "formal/SessionGuards.cfg",
+		"module": "formal/ProofAdmission.tla",
+		"config": "formal/ProofAdmission.cfg",
 		"dependencies": [],
+		"bounds": [
+			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
+			"Nine failure kinds map to five sections of the proof contract.",
+			"The authority and base cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model."
+		],
+		"fairness": ["WF_vars(Next)"],
 		"invariants": [
 			"TypeOK",
-			"GrantFromWords",
-			"GrantFromPerson",
-			"MergeNeedsAuthority",
-			"McpMergeDenied",
-			"GuardErrorDenies",
-			"FullStopNeverMerges",
-			"WriteChecksKept",
-			"ScratchSkipped",
-			"CommitSurfaceChecked",
-			"BroadLossDenied",
-			"DenialNeedsLoss",
-			"HookSkipNeedsGates"
+			"AdmitSafe",
+			"FailureIsTerminal",
+			"StrictDefault",
+			"LandingAuthoritySafe",
+			"ProcessAuthoritySafe",
+			"HistoryBound",
+			"RatifiedAuthority",
+			"BaseAncestry",
+			"ScopeFromMergeBase",
+			"HistoryAtManifest",
+			"MovedAuthorityStops",
+			"StaleStopNamesPaths",
+			"StopNamesSection"
 		],
-		"properties": [],
-		"bounds": [
-			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
-			"Each combination of four path facts for one write and an optional commit.",
-			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
-			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
-		],
-		"fairness": []
+		"properties": ["EventuallyTerminal"]
 	},
 	"negative": {
-		"file": "formal/SessionGuards.tla",
-		"action": "Push",
-		"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
-		"replacement": "/\\ ~skips \\/ target = \"head\"",
-		"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
+		"file": "formal/ProofAdmission.tla",
+		"action": "ValidationFail",
+		"original": "/\\ section' = Sections[firstFailure']",
+		"replacement": "/\\ section' = \"Required records\"",
+		"defect": "A stop at stage domain or category names the Required records section, so the agent reads the wrong rule.",
 		"expect": {
 			"kind": "invariant",
-			"name": "HookSkipNeedsGates"
+			"name": "StopNamesSection"
 		}
 	},
 	"limits": [
-		"The finite model takes the plain form of each step, the gate result at HEAD and the push target as true observations.",
-		"The model does not show that the TypeScript code refines it. The wrapper law, the probe fixture, the linked controls and review examine that relation.",
-		"An agent can write a gate record in the state folder, so the record guards against a mistake, not against a hostile agent.",
-		"A guarded verb behind a fully dynamic program, such as $CMD, stays out of reach of the hook.",
-		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+		"The finite model takes the TLC output and the Git reads as true. It does not model TLC, SANY or Git.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"Each law control examines 100 generated cases. A pass is evidence, and it is not a proof for each value.",
+		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }
