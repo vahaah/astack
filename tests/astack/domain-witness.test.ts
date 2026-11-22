@@ -323,6 +323,35 @@ describe("the tsc witness", () => {
 		heavyTestTimeout,
 	);
 
+	test.each([
+		{
+			name: "noUnusedLocals and noUnusedParameters keep a correct block with no flow passing",
+			options: { noUnusedLocals: true, noUnusedParameters: true },
+			text: "context Proof\nstep judge : MergeGrant -> Verdict",
+			expected: "pass",
+		},
+		{
+			name: "noCheck keeps a wrong type failing at its line",
+			options: { noCheck: true },
+			text: "context Proof\nstep judge : MergeGrant -> MergeGrant",
+			expected: [2],
+		},
+	])(
+		"[control:witness-checker-options] a repo tsconfig with $name",
+		async ({ options, text, expected }) => {
+			const root = witnessRepo({
+				"tsconfig.json": JSON.stringify({
+					...TSCONFIG,
+					compilerOptions: { ...TSCONFIG.compilerOptions, ...options },
+				}),
+			});
+			expect(
+				lines(await verdict(root, text, ["src/grant.ts#judge"], "result")),
+			).toEqual(expected);
+		},
+		heavyTestTimeout,
+	);
+
 	test("a module under another tsconfig and a missing tsc stop the witness", async () => {
 		const root = witnessRepo({
 			"src/other/tsconfig.json": JSON.stringify(TSCONFIG),

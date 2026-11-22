@@ -192,6 +192,9 @@ export async function typeCheck(
 					extends: relative(dir, config.value),
 					compilerOptions: {
 						noEmit: true,
+						noCheck: false,
+						noUnusedLocals: false,
+						noUnusedParameters: false,
 						allowImportingTsExtensions: true,
 						rootDir: relative(dir, source.root) || ".",
 					},

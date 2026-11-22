@@ -817,7 +817,8 @@
 			"controls": [
 				"witness-wrong-type",
 				"witness-leaves-no-file",
-				"witness-wrong-forms"
+				"witness-wrong-forms",
+				"witness-checker-options"
 			]
 		},
 		{
