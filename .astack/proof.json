@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "zero-use-cut-and-word-budget",
-	"base": "5110092aed46c17fbb5044bb13a27130cbb72236",
+	"base": "6c0136e8c90594227259319f9b2ba7d015f0a3b7",
 	"scope": [
 		{
 			"path": "scripts/budget.ts",
