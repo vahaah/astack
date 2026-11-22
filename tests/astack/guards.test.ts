@@ -538,7 +538,50 @@ describe("the whole-tree discard forms", () => {
 	});
 
 	test.each([
+		"git archive HEAD docs | tar -x --strip-components=1",
+		"git archive HEAD docs | tar -x --transform s/docs/src/",
+		"git archive HEAD docs | tar -xP",
+		'git archive HEAD docs | tar -x "$OPT"',
+		"git archive HEAD docs | tar --extr",
+	])(
+		"%s is read as the whole tree, because astack cannot read the tar step with certainty",
+		(command) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain(
+				"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+			);
+		},
+	);
+
+	test.each([
+		"git archive HEAD | tar -x --directory=../dirty",
+		"git archive HEAD | tar -C../dirty -x",
+		"git archive HEAD | tar -xC ../dirty",
+	])("%s extracts into the dirty folder that tar names", (command) => {
+		expect(reason(destructive.run(shell(command), context(repo)))).toContain(
+			"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+		);
+	});
+
+	test.each([
+		'git archive HEAD | tar -x -C "$D"',
+		"git archive HEAD | tar -xCv ../dirty",
+		"git archive HEAD | tar -x -C ../dirty -C ../repo",
+	])(
+		"%s is denied, because astack cannot find the tar folder with certainty",
+		(command) => {
+			expect(reason(destructive.run(shell(command), context(repo)))).toContain(
+				"astack cannot find the folder that tar extracts into with certainty.",
+			);
+		},
+	);
+
+	test.each([
 		"git archive --format=tar HEAD docs | tar -x",
+		"git archive HEAD docs | tar -xvf -",
+		"git archive HEAD docs | tar xf -",
+		"git archive HEAD docs | tar -x --directory=.",
 		"git archive -v HEAD docs | tar -x",
 	])("%s names its paths, so it passes on a dirty tree", (command) => {
 		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
