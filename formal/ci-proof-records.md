@@ -8,7 +8,7 @@ ADR 0005 D3 keeps fresh model execution mandatory.
 ### Formal claim
 
 [criterion:ci-proof-records] Classify only CI changes with unchanged tool setups and narrowly checked current proof records.
-The default manifest must parse completely and name the actual merge base.
+The default manifest must parse completely, and its base must be an ancestor of the actual merge base.
 Its committed proof records must be regular UTF-8 Markdown files under `formal/`.
 They must contain the four required proof sections and valid references.
 The records cannot also serve authority, implementation, witness, glossary, matrix, listed source, or model roles.
@@ -25,7 +25,7 @@ The safety model claims no fairness, progress, eventual CI success, or full impl
 
 ### Category composition
 
-`ciProofRecords` has one pure arrow over a parsed ChangeProof, fixed base, and committed file observations.
+`ciProofRecords` has one pure arrow over a parsed ChangeProof, the manifest path, and committed file observations.
 Its result is either permitted metadata paths or a refusal.
 Structural equality compares those paths or the refusal reason.
 The CLI edge reads Git objects and composes the result with its existing CI and tool checks.
@@ -35,7 +35,8 @@ Typed CLI controls call the actual parser and classifier under the normal TypeSc
 
 ### Implementation correspondence
 
-The committed manifest parser supplies the model's `schema` and `base` observations.
+The committed manifest parser supplies the model's `schema` observation.
+`proofBase` supplies `base`. It accepts a manifest base that is an ancestor of the merge base, and Git reads ignore replace objects and grafts.
 Strict Git blob reads supply `regular` and `utf8`.
 The shared proof-record validator supplies `sections`.
 The role inventory supplies `roles`, and the restricted path rule supplies `path`.

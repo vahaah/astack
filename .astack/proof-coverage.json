@@ -7,6 +7,7 @@
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
+		"tests/check-proof-script.test.ts",
 		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof-snapshot.test.ts",
 		"tests/astack/change-proof.test.ts",
@@ -96,6 +97,25 @@
 		{
 			"criterion": "CP-12",
 			"controls": ["proof-migration-stop"]
+		},
+		{
+			"criterion": "CP-13",
+			"controls": [
+				"proof-base-ancestor",
+				"proof-base-not-ancestor",
+				"proof-base-replace"
+			]
+		},
+		{
+			"criterion": "CP-14",
+			"controls": ["proof-push-base", "proof-push-payload"]
+		},
+		{
+			"criterion": "CP-15",
+			"controls": [
+				"proof-ratification-names-a-base-move",
+				"proof-landing-base-move"
+			]
 		},
 		{
 			"criterion": "proof-ratification",

@@ -22,6 +22,20 @@ _Avoid_: Code correctness certificate
 The current source, configuration, model closure, and contract that a proof run binds together.
 _Avoid_: Last successful commit
 
+### Manifest base
+
+The fixed commit that a ChangeProof names in its `base` field.
+Ratification history stays bound to it. It must be an ancestor of the diff base.
+_Avoid_: Current main tip
+_Code_: `ProofBase.manifest`
+
+### Diff base
+
+The commit that the scope check and the input snapshots read from.
+With a `--base` ref, it is the merge base of that ref and HEAD. Without a ref, it is the manifest base.
+_Avoid_: Pinned base
+_Code_: `ProofBase.diff`
+
 ### Model control
 
 A fresh positive model run or a named mutation that must produce its expected violation.

@@ -1,5 +1,7 @@
 import { err, ok, type Result } from "../result.ts";
 
+export const DEFAULT_PROOF_MANIFEST = ".astack/proof.json";
+
 export const STAGES = [
 	"schema",
 	"domain",

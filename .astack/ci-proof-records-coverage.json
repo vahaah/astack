@@ -9,6 +9,8 @@
 				"ci-proof-records",
 				"ci-proof-record-scope",
 				"ci-proof-record-manifest",
+				"ci-proof-record-ancestor-base",
+				"ci-proof-record-replace",
 				"ci-proof-record-sections",
 				"ci-proof-record-role",
 				"ci-proof-matrix-source",

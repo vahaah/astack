@@ -17,6 +17,7 @@ import type {
 	ChangedPath,
 	FileRead,
 	IntegrationHistory,
+	ProofBase,
 	Snapshot,
 } from "./admission.ts";
 import { isRepoPath } from "./contract.ts";
@@ -35,7 +36,7 @@ function gitLines(
 	root: string,
 	args: readonly string[],
 ): Result<readonly string[], string> {
-	const result = runGit(root, [...args]);
+	const result = historyGit(root, args);
 	if (!result.ok) return err(`git ${args.join(" ")} failed`);
 	if (!isUtf8(result.stdout))
 		return err(`git ${args.join(" ")} returned a path that is not UTF-8`);
@@ -68,13 +69,47 @@ export function resolveCommit(
 	);
 }
 
-export function isAncestor(
+export type MergeBase = {
+	readonly kind: "merge-base";
+	readonly ref: string;
+	readonly commit: string;
+};
+
+export type DiffTarget = { readonly kind: "manifest-base" } | MergeBase;
+
+export function mergeBase(
 	root: string,
-	base: string,
-	head: string,
-	reader: typeof runGit = runGit,
-): boolean {
-	return reader(root, ["merge-base", "--is-ancestor", base, head]).ok;
+	ref: string,
+): Result<MergeBase, string> {
+	const commit = gitText(
+		root,
+		["merge-base", "--end-of-options", ref, "HEAD"],
+		historyGit,
+	);
+	return commit === undefined || commit === ""
+		? err(`git finds no merge base of ${ref} and HEAD`)
+		: ok({ kind: "merge-base", ref, commit });
+}
+
+export function proofBase(
+	root: string,
+	manifestBase: string,
+	target: DiffTarget,
+): Result<ProofBase, string> {
+	if (resolveCommit(root, manifestBase, historyGit) !== manifestBase)
+		return err(`the base ${manifestBase} is not a commit in this repository`);
+	const diff = target.kind === "merge-base" ? target.commit : manifestBase;
+	const descendant = target.kind === "merge-base" ? target.commit : "HEAD";
+	if (
+		!historyGit(root, ["merge-base", "--is-ancestor", manifestBase, descendant])
+			.ok
+	)
+		return err(
+			target.kind === "merge-base"
+				? `the manifest base ${manifestBase} is not an ancestor of the merge base ${target.commit} of ${target.ref} and HEAD`
+				: `the base ${manifestBase} is not an ancestor of HEAD`,
+		);
+	return ok({ manifest: manifestBase, diff });
 }
 
 export function changedPaths(
@@ -176,10 +211,11 @@ export function historyGit(root: string, args: readonly string[]): GitResult {
 
 export function readIntegrationHistory(
 	root: string,
-	base: string,
+	bases: ProofBase,
 	integratedAt: string,
 	paths: readonly string[],
 ): Result<IntegrationHistory, string> {
+	const base = bases.manifest;
 	if (
 		resolveCommit(root, integratedAt, historyGit) !== integratedAt ||
 		historyGit(root, ["cat-file", "-t", integratedAt])
@@ -198,15 +234,26 @@ export function readIntegrationHistory(
 		return err(
 			`ratification ${integratedAt} is not an ancestor of the fixed proof base ${base}`,
 		);
+	const baseFiles = new Map(
+		paths.map((path) => [path, readCommittedFile(root, base, path)]),
+	);
 	return ok({
 		integratedAt,
 		base,
+		mergeBase: bases.diff,
 		files: new Map(
 			paths.map((path) => [path, readCommittedFile(root, integratedAt, path)]),
 		),
-		baseFiles: new Map(
-			paths.map((path) => [path, readCommittedFile(root, base, path)]),
-		),
+		baseFiles,
+		mergeBaseFiles:
+			bases.diff === base
+				? baseFiles
+				: new Map(
+						paths.map((path) => [
+							path,
+							readCommittedFile(root, bases.diff, path),
+						]),
+					),
 	});
 }
 
@@ -214,12 +261,11 @@ function entryLine(root: string, base: string, path: string): string {
 	const full = join(root, path);
 	const stat = lstatOrUndefined(full);
 	if (stat === undefined) {
-		const blob = gitText(root, [
-			"rev-parse",
-			"--verify",
-			"--quiet",
-			`${base}:${path}`,
-		]);
+		const blob = gitText(
+			root,
+			["rev-parse", "--verify", "--quiet", `${base}:${path}`],
+			historyGit,
+		);
 		return `absent ${blob ?? "none"}`;
 	}
 	if (stat.isSymbolicLink())

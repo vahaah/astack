@@ -5,11 +5,9 @@ import type { ChangeProof } from "./contract.ts";
 
 export function ciProofRecords(
 	proof: ChangeProof,
-	base: string,
+	manifestPath: string,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<readonly string[], string> {
-	if (proof.base !== base)
-		return err("the committed proof base does not match the merge base");
 	const records = [
 		...new Set(
 			proof.domain.adrs.flatMap((adr) =>
@@ -34,7 +32,7 @@ export function ciProofRecords(
 		...modelPaths(proof),
 		proof.negative.file,
 	]);
-	const paths = [".astack/proof.json", ...records];
+	const paths = [manifestPath, ...records];
 	for (const path of paths)
 		if (inputs.has(path))
 			return err(`${path} also supplies another proof input`);

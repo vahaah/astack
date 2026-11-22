@@ -79,11 +79,10 @@ Past work is not a reason to keep a PR open.
 4. Compare the commit series before and after with `git range-diff <BASE_SHA>..<HEAD_SHA> origin/<baseRefName>..HEAD`.
 5. Read the final diff with `git diff origin/<baseRefName>...HEAD`.
 6. Make sure that no intended behavior went away and no landed behavior came back.
-7. When the branch has a change-proof manifest, set its `base` to the full SHA that `git merge-base HEAD origin/<baseRefName>` prints. Commit that change on its own. The manifest base then excludes the changes that the rebase brought.
-8. Run the repo gates for the touched paths. With a change-proof manifest, also run `astack check proof <manifest> --base origin/<baseRefName>`. Record the counts.
-9. Keep a real failure apart from a failure that was there before and from a failure of the infrastructure.
-10. Push with `git push --force-with-lease=refs/heads/<headRefName>:<HEAD_SHA> <head repository URL> HEAD:<headRefName>`.
-11. When the lease fails, fetch again. Then choose the verdict again. Never overwrite new work.
+7. Run the repo gates for the touched paths. With a change-proof manifest, also run `astack check proof <manifest> --base origin/<baseRefName>`. Record the counts.
+8. Keep a real failure apart from a failure that was there before and from a failure of the infrastructure.
+9. Push with `git push --force-with-lease=refs/heads/<headRefName>:<HEAD_SHA> <head repository URL> HEAD:<headRefName>`.
+10. When the lease fails, fetch again. Then choose the verdict again. Never overwrite new work.
 
 The head repository URL of a PR from the same repository is the URL of `origin`.
 For a PR from a fork, make the URL as step 7 of `references/create-pr.md` of the mode says.
