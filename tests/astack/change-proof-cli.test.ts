@@ -19,6 +19,7 @@ import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	GATE_RUNS,
 	git,
+	LADDER_FILES,
 	ladderRepo,
 	PROOF_FILES,
 	type Proof,
@@ -869,6 +870,61 @@ describe("astack check proof", () => {
 				);
 				expect(run.code).toBe(0);
 				expect(starts(java)).toEqual({ "-version": 1, "Gate.tla": 3 });
+			},
+			heavyTestTimeout,
+		);
+
+		const lowered = (): string => {
+			const registry = JSON.parse(LADDER_FILES["formal/models.json"] ?? "");
+			for (const entry of registry.models) entry.covers = [];
+			registry.failClosed = [];
+			registry.contractOnly = ["**"];
+			return `${JSON.stringify(registry, null, 2)}\n`;
+		};
+		test.each<
+			[string, Parameters<typeof ladderRepo>[1], (root: string) => void]
+		>([
+			[
+				"a skip-worktree edit of the registry",
+				{ change: { "src/lock/lock.ts": "export const lock = 2;\n" } },
+				(root) => {
+					git(root, "update-index", "--skip-worktree", "formal/models.json");
+					writeFileSync(join(root, "formal/models.json"), lowered());
+				},
+			],
+			[
+				"an ignored registry that only the tree holds",
+				{
+					omit: ["formal/models.json"],
+					change: { "src/lock/lock.ts": "export const lock = 2;\n" },
+				},
+				(root) => {
+					writeFileSync(
+						join(root, ".git/info/exclude"),
+						"formal/models.json\n",
+					);
+					writeFileSync(join(root, "formal/models.json"), lowered());
+				},
+			],
+		])(
+			"[control:rl-hidden-registry] %s that git diff does not list runs each model at R4",
+			(_name, plan, hide) => {
+				const repo = ladderRepo(scratch, plan);
+				hide(repo.root);
+				expect(git(repo.root, "status", "--porcelain")).toBe("");
+				const java = loggingJava(`java-hidden-${plan.omit === undefined}`);
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run.out).toStartWith(
+					`rung: R4 by the changed path formal/models.json\nmodel: Gate formal/Gate.tla\n${GATE_RUNS}model: Lock formal/Lock.tla\npositive: 2 distinct states, 3 generated, 0 left on queue\n`,
+				);
+				expect(lastLine(run.out)).toBe(
+					`ok: proof gate-admission admitted at ${head(repo.root)}`,
+				);
+				expect(starts(java)).toEqual({
+					"-version": 1,
+					"Gate.tla": 3,
+					"Lock.tla": 3,
+				});
 			},
 			heavyTestTimeout,
 		);

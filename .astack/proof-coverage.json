@@ -541,7 +541,7 @@
 		},
 		{
 			"criterion": "RL-SELECT",
-			"controls": ["rl-select", "rl-registry-diff"]
+			"controls": ["rl-select", "rl-registry-diff", "rl-hidden-registry"]
 		},
 		{
 			"criterion": "RL-COVERS",

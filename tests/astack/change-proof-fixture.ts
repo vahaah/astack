@@ -315,6 +315,7 @@ export const LADDER_FILES: Files = {
 
 export type LadderChange = {
 	readonly base?: Files;
+	readonly omit?: readonly string[];
 	readonly change?: Files;
 	readonly remove?: readonly string[];
 	readonly edit?: (proof: Proof) => void;
@@ -323,12 +324,17 @@ export type LadderChange = {
 export function ladderRepo(parent: string, plan: LadderChange): ProofRepo {
 	const root = mkdtempSync(join(parent, "ladder-"));
 	git(root, "init", "-q", "-b", "main");
-	writeFiles(root, {
-		...BASE_FILES,
-		...PROOF_FILES,
-		...LADDER_FILES,
-		...plan.base,
-	});
+	writeFiles(
+		root,
+		Object.fromEntries(
+			Object.entries({
+				...BASE_FILES,
+				...PROOF_FILES,
+				...LADDER_FILES,
+				...plan.base,
+			}).filter(([path]) => !plan.omit?.includes(path)),
+		),
+	);
 	git(root, "add", "-A");
 	git(root, "commit", "-q", "-m", "base");
 	const base = git(root, "rev-parse", "HEAD");

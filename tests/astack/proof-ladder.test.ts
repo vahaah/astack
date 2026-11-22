@@ -238,7 +238,7 @@ describe("deriveLadder", () => {
 		);
 	});
 
-	test("[control:rl-deleted-path] a deleted path takes its rung from the base registry", () => {
+	test("[control:rl-deleted-path] a deleted path takes its rung from the base registry, so a file that leaves with its unmodelled entry does not stop", () => {
 		const tree: ModelRegistry = { ...REGISTRY, unmodelled: [] };
 		expect(
 			summary(
@@ -248,6 +248,10 @@ describe("deriveLadder", () => {
 					}),
 				),
 			),
-		).toEqual({ rung: "R1", by: "src/hook/telemetry.ts", runs: [] });
+		).toEqual({
+			rung: "R4",
+			by: REGISTRY_PATH,
+			runs: ["Admission Admit", "Guards Step"],
+		});
 	});
 });

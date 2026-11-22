@@ -22,18 +22,18 @@ vars == <<changed, base, tree, treeModels, baseModels, baseFloor, treeFloor,
 
 Lost == base /\ ~tree
 Legacy == ~base /\ ~tree
-PathRung == Max({0} \cup {Rank(kind) : kind \in changed \ {"failGap"}})
+Edited == "registry" \in changed \/ (tree /\ ~base) \/ baseModels # treeModels
+PathRung == Max({0} \cup {Rank(kind) : kind \in changed \ {"failGap"}}
+                \cup (IF Edited THEN {TlcRung} ELSE {}))
 Rung == IF Legacy THEN TlcRung ELSE Max({PathRung, baseFloor, treeFloor})
 Selected == IF Legacy THEN {Manifest}
             ELSE {Manifest}
                  \cup {m \in Models : Covers[m] \in changed}
-                 \cup (IF "registry" \in changed THEN treeModels \cup baseModels ELSE {})
+                 \cup (IF Edited THEN treeModels \cup baseModels ELSE {})
 
 Diffs == {set \in SUBSET PathKinds : set # {} /\ Cardinality(set) <= 2}
 Consistent == /\ ~tree => changed \subseteq {"contract", "other"}
               /\ "cover2" \in changed => "m2" \in treeModels
-              /\ (tree /\ ~base) => "registry" \in changed
-              /\ (tree /\ base /\ "registry" \notin changed) => baseModels = treeModels
 
 Init == /\ base \in BOOLEAN
         /\ tree \in BOOLEAN
@@ -112,7 +112,7 @@ FloorOnlyRaises == status \in {"derived", "admitted"} /\ ~Legacy =>
                      /\ rung >= treeFloor
                      /\ rung \in {PathRung, baseFloor, treeFloor}
 OneTriplePerModel == \A m \in Models : triples[m] <= 1
-RegistryRunsAll == status = "admitted" /\ "registry" \in changed =>
+RegistryRunsAll == status = "admitted" /\ Edited =>
                      \A m \in treeModels \cup baseModels : result[m] = "pass"
 DeletedRegistryStops == Lost => status \in {"start", "stopped"}
 =============================================================================

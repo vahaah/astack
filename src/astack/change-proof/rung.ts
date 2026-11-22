@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from "node:util";
 import { anyGlob, globMatches } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import type { ChangedPath } from "./admission.ts";
@@ -127,10 +128,16 @@ export function deriveLadder(input: LadderInput): Result<Ladder, string> {
 		return err(
 			`the manifest model ${input.manifest.model.module} is no model of ${REGISTRY_PATH}`,
 		);
+	const listed = input.changed.some((entry) => entry.path === REGISTRY_PATH);
+	const edited = listed || !isDeepStrictEqual(base, tree);
+	const changed: readonly ChangedPath[] =
+		edited && !listed
+			? [...input.changed, { path: REGISTRY_PATH, present: true }]
+			: input.changed;
 	let rung: Rung = "R0";
 	let cause: RungCause | undefined;
 	const selected = new Set<string>();
-	for (const { path, present } of input.changed) {
+	for (const { path, present } of changed) {
 		const found = pathRung(present ? tree : (base ?? tree), path);
 		if (found.kind === "stop")
 			return err(
@@ -142,8 +149,7 @@ export function deriveLadder(input: LadderInput): Result<Ladder, string> {
 			cause = { kind: "path", path };
 		}
 	}
-	if (input.changed.some((entry) => entry.path === REGISTRY_PATH))
-		for (const entry of base?.models ?? []) selected.add(entry.name);
+	if (edited) for (const entry of base?.models ?? []) selected.add(entry.name);
 	const floorSide: Side = rungAtLeast(input.floor.base, input.floor.tree)
 		? "base"
 		: "tree";

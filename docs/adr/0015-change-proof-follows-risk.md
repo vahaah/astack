@@ -109,6 +109,7 @@ The manifest negative stays the one model mutation of a change.
 ### D6. The gate reads the registry at the diff base and in the tree
 
 A registry diff runs each model of both sides.
+The gate compares the parsed registries of both sides, so an edit that git does not list is also a registry diff.
 A registry at the diff base with no registry in the tree stops at `rung`.
 A model leaves the registry in two changes, because a base model with no module in the tree stops.
 With no registry on either side, only the manifest model runs, and the output has no rung line.
