@@ -2,7 +2,12 @@
 
 ## Programme state
 
-Durable programme state lives in `~/.local/state/pstack/<repo slug>/`.
+The plan, `astack board <index>`, the tracker and git hold the programme state.
+Keep no copy of it in a file of your own.
+
+## Store
+
+The store at `~/.local/state/pstack/<repo slug>/` holds decision trails and resume notes.
 This legacy storage path stays unchanged.
 Give Edit and Write its absolute path, with `~` expanded to `$HOME`.
 The store stays outside the Claude Code config directory.
