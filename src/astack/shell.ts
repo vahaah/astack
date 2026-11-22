@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 export interface Word {
 	value: string;
@@ -15,6 +15,7 @@ export interface SimpleCommand {
 	words: Word[];
 	stdin: string | undefined;
 	redirects: Redirect[];
+	substitutions?: string[];
 	piped?: boolean;
 	background?: boolean;
 }
@@ -56,9 +57,15 @@ export function parseShell(src: string): SimpleCommand[] {
 		strip: boolean;
 		command: SimpleCommand;
 	}[] = [];
+	let substitutions: string[] = [];
 	let redirectNext: Omit<Redirect, "target"> | undefined;
 	let hereStringNext: SimpleCommand | undefined;
-	let current: SimpleCommand = { words, stdin: undefined, redirects: [] };
+	let current: SimpleCommand = {
+		words,
+		stdin: undefined,
+		redirects: [],
+		substitutions,
+	};
 	let i = 0;
 
 	const append = (text: string, dynamic = false): void => {
@@ -81,9 +88,22 @@ export function parseShell(src: string): SimpleCommand[] {
 	};
 	const endCommand = (): void => {
 		endWord();
-		if (words.length > 0) commands.push(current);
+		if (words.length > 0 || substitutions.length > 0) commands.push(current);
 		words = [];
-		current = { words, stdin: undefined, redirects: [] };
+		substitutions = [];
+		current = { words, stdin: undefined, redirects: [], substitutions };
+	};
+	const parenBody = (): void => {
+		const end = matchingParen(src, i + 2);
+		substitutions.push(src.slice(i + 2, src[end - 1] === ")" ? end - 1 : end));
+		i = end;
+		append("", true);
+	};
+	const backtickBody = (): void => {
+		const close = src.indexOf("`", i + 1);
+		substitutions.push(src.slice(i + 1, close < 0 ? src.length : close));
+		i = close < 0 ? src.length : close + 1;
+		append("", true);
 	};
 	const substitution = (): void => {
 		const heredoc = HEREDOC_SUBSTITUTION.exec(src.slice(i));
@@ -92,8 +112,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			i += heredoc[0].length;
 			return;
 		}
-		i = matchingParen(src, i + 2);
-		append("", true);
+		parenBody();
 	};
 
 	while (i < src.length) {
@@ -150,9 +169,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					append("", true);
 					i++;
 				} else if (d === "`") {
-					const close = src.indexOf("`", i + 1);
-					append("", true);
-					i = close < 0 ? src.length : close + 1;
+					backtickBody();
 				} else {
 					append(d);
 					i++;
@@ -182,9 +199,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "`") {
-			const close = src.indexOf("`", i + 1);
-			append("", true);
-			i = close < 0 ? src.length : close + 1;
+			backtickBody();
 			continue;
 		}
 		if (c === "|") {
@@ -207,6 +222,10 @@ export function parseShell(src: string): SimpleCommand[] {
 		if (c === ";" || c === "(" || c === ")") {
 			endCommand();
 			i++;
+			continue;
+		}
+		if ((c === "<" || c === ">") && src[i + 1] === "(") {
+			parenBody();
 			continue;
 		}
 		if (c === "<" && src.startsWith("<<<", i)) {
@@ -254,36 +273,354 @@ export function parseShell(src: string): SimpleCommand[] {
 
 export const ENV_ASSIGNMENT = /^[A-Za-z_]\w*=/;
 
-export function commandWords(command: SimpleCommand): Word[] {
-	let start = 0;
-	while (
-		start < command.words.length &&
-		ENV_ASSIGNMENT.test(command.words[start]?.value ?? "")
-	)
-		start++;
-	return command.words.slice(start);
-}
+export type Unreadable = "folder" | "depth" | "body" | "wrapper" | "program";
 
 export interface ShellStep {
 	simple: SimpleCommand;
+	env: Word[];
 	words: Word[];
 	values: string[];
 	dir: string;
+	unreadable: Unreadable | undefined;
+}
+
+type Wrapper = {
+	readonly flags?: readonly string[];
+	readonly values?: readonly string[];
+	readonly replace?: string;
+	readonly assigns?: boolean;
+	readonly operands?: number;
+	readonly feeds?: boolean;
+	readonly numeric?: boolean;
+};
+
+const WRAPPERS: ReadonlyMap<string, Wrapper> = new Map([
+	[
+		"env",
+		{
+			flags: ["-", "-0", "-i", "--ignore-environment", "--null"],
+			values: ["-u", "--unset"],
+			assigns: true,
+		},
+	],
+	["command", { flags: ["-p"] }],
+	["builtin", {}],
+	["exec", { flags: ["-c", "-l"], values: ["-a"] }],
+	["time", { flags: ["-p"] }],
+	["nohup", {}],
+	["nice", { values: ["-n", "--adjustment"], numeric: true }],
+	[
+		"timeout",
+		{
+			flags: ["-v", "--foreground", "--preserve-status", "--verbose"],
+			values: ["-k", "-s", "--kill-after", "--signal"],
+			operands: 1,
+		},
+	],
+	[
+		"sudo",
+		{
+			flags: [
+				"-b",
+				"-E",
+				"-H",
+				"-k",
+				"-n",
+				"-P",
+				"-S",
+				"--background",
+				"--non-interactive",
+				"--preserve-env",
+				"--preserve-groups",
+				"--reset-timestamp",
+				"--set-home",
+				"--stdin",
+			],
+			values: ["-g", "-u", "--group", "--user"],
+			assigns: true,
+		},
+	],
+	["doas", { flags: ["-n"], values: ["-u"] }],
+	["stdbuf", { values: ["-e", "-i", "-o", "--error", "--input", "--output"] }],
+	[
+		"xargs",
+		{
+			flags: [
+				"-0",
+				"-r",
+				"-t",
+				"-x",
+				"--exit",
+				"--no-run-if-empty",
+				"--null",
+				"--verbose",
+			],
+			values: [
+				"-a",
+				"-d",
+				"-E",
+				"-L",
+				"-n",
+				"-P",
+				"-s",
+				"--arg-file",
+				"--delimiter",
+				"--eof",
+				"--max-args",
+				"--max-chars",
+				"--max-lines",
+				"--max-procs",
+			],
+			replace: "-I",
+			feeds: true,
+		},
+	],
+]);
+
+const RESERVED = new Set([
+	"!",
+	"{",
+	"}",
+	"do",
+	"done",
+	"elif",
+	"else",
+	"esac",
+	"fi",
+	"if",
+	"then",
+	"until",
+	"while",
+]);
+const HEADERS = new Set(["case", "for", "select"]);
+const SHELLS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
+const FOLDER_MOVES = new Set(["cd", "popd", "pushd"]);
+const MAX_DEPTH = 4;
+const FED: Word = { value: "", dynamic: true };
+
+type Option = {
+	readonly name: string;
+	readonly width: number;
+	readonly value: Word | undefined;
+};
+
+function attached(name: string, value: string): Option {
+	return { name, width: 1, value: { value, dynamic: false } };
+}
+
+function readOption(
+	wrapper: Wrapper,
+	word: Word,
+	next: Word | undefined,
+): Option | undefined {
+	if (word.dynamic) return undefined;
+	const text = word.value;
+	const flags = wrapper.flags ?? [];
+	const valued = [
+		...(wrapper.values ?? []),
+		...(wrapper.replace ? [wrapper.replace] : []),
+	];
+	if (flags.includes(text)) return { name: text, width: 1, value: undefined };
+	if (text.startsWith("--")) {
+		const eq = text.indexOf("=");
+		const name = eq < 0 ? text : text.slice(0, eq);
+		if (eq >= 0)
+			return flags.includes(name) || valued.includes(name)
+				? attached(name, text.slice(eq + 1))
+				: undefined;
+		return valued.includes(name) && next
+			? { name, width: 2, value: next }
+			: undefined;
+	}
+	const name = text.slice(0, 2);
+	if (valued.includes(name))
+		return text.length > 2
+			? attached(name, text.slice(2))
+			: next && { name, width: 2, value: next };
+	if (wrapper.numeric && /^-\d+$/.test(text))
+		return { name: text, width: 1, value: undefined };
+	return /^-[A-Za-z0-9]+$/.test(text) &&
+		[...text.slice(1)].every((letter) => flags.includes(`-${letter}`))
+		? { name: text, width: 1, value: undefined }
+		: undefined;
+}
+
+type Plain = {
+	readonly env: Word[];
+	readonly words: Word[];
+	readonly unreadable: Unreadable | undefined;
+};
+
+function fedWords(words: Word[], replace: string | undefined): Word[] {
+	if (words.length === 0) return words;
+	if (replace === undefined) return [...words, FED];
+	return words.map((word) =>
+		word.value.includes(replace) ? { ...word, dynamic: true } : word,
+	);
+}
+
+function plainForm(raw: readonly Word[]): Plain {
+	const env: Word[] = [];
+	let at = 0;
+	let assigns = true;
+	let feeds = false;
+	let replace: string | undefined;
+	for (;;) {
+		const word = raw[at];
+		if (word === undefined) break;
+		const name = word.dynamic ? "" : word.value;
+		if (HEADERS.has(name)) return { env, words: [], unreadable: undefined };
+		if (RESERVED.has(name) || name === "function") {
+			at += name === "function" ? 2 : 1;
+			continue;
+		}
+		if (assigns && ENV_ASSIGNMENT.test(word.value)) {
+			env.push(word);
+			at++;
+			continue;
+		}
+		const wrapper = WRAPPERS.get(basename(name));
+		if (wrapper === undefined) break;
+		const start = at;
+		at++;
+		for (
+			let option = raw[at];
+			option?.value.startsWith("-");
+			option = raw[at]
+		) {
+			if (option.value === "--" && !option.dynamic) {
+				at++;
+				break;
+			}
+			const read = readOption(wrapper, option, raw[at + 1]);
+			if (
+				read === undefined ||
+				(read.name === wrapper.replace && read.value?.dynamic)
+			)
+				return { env, words: raw.slice(start), unreadable: "wrapper" };
+			if (read.name === wrapper.replace) replace = read.value?.value;
+			at += read.width;
+		}
+		at += wrapper.operands ?? 0;
+		assigns = wrapper.assigns === true;
+		feeds ||= wrapper.feeds === true;
+	}
+	const rest = raw.slice(at);
+	const words = feeds ? fedWords(rest, replace) : rest;
+	return { env, words, unreadable: words[0]?.dynamic ? "program" : undefined };
+}
+
+function scriptBody(words: readonly Word[]): Word | undefined {
+	const [program, ...args] = words;
+	if (program === undefined || program.dynamic) return undefined;
+	const name = basename(program.value);
+	if (name === "eval")
+		return args.length === 0
+			? undefined
+			: {
+					value: args.map((arg) => arg.value).join(" "),
+					dynamic: args.some((arg) => arg.dynamic),
+				};
+	if (!SHELLS.has(name)) return undefined;
+	let command = false;
+	for (let at = 0; at < args.length; at++) {
+		const arg = args[at];
+		const text = arg === undefined || arg.dynamic ? "" : arg.value;
+		if (/^(?:[-+][oO]|--init-file|--rcfile)$/.test(text)) at++;
+		else if (/^-[A-Za-z]+$/.test(text)) command ||= text.includes("c");
+		else if (!/^(?:\+[A-Za-z]+|--.*)$/.test(text))
+			return command ? arg : undefined;
+	}
+	return undefined;
+}
+
+type Folder = { readonly dir: string; readonly known: boolean };
+
+type Move =
+	| { readonly kind: "none" }
+	| { readonly kind: "to"; readonly dir: string }
+	| { readonly kind: "unknown" };
+
+function folderMove(dir: string, words: readonly Word[]): Move {
+	const [name, ...args] = words;
+	if (name === undefined || name.dynamic || !FOLDER_MOVES.has(name.value))
+		return { kind: "none" };
+	const operands = args.filter(
+		(arg) => arg.dynamic || !/^(?:--|-[LPe@]+)$/.test(arg.value),
+	);
+	const [target] = operands;
+	return name.value !== "popd" &&
+		operands.length === 1 &&
+		target !== undefined &&
+		!target.dynamic &&
+		!/^[-+~]/.test(target.value)
+		? { kind: "to", dir: resolve(dir, target.value) }
+		: { kind: "unknown" };
+}
+
+function bodyMark(
+	plain: Plain,
+	body: Word | undefined,
+	deep: boolean,
+): Unreadable | undefined {
+	if (deep) return "depth";
+	if (body === undefined) return plain.unreadable;
+	return body.dynamic ? "body" : "depth";
+}
+
+function scriptSteps(
+	src: string,
+	start: Folder,
+	depth: number,
+	inherited: readonly Word[],
+): ShellStep[] {
+	let folder = start;
+	let pipeline = 0;
+	const steps: ShellStep[] = [];
+	const nested = depth < MAX_DEPTH;
+	for (const simple of parseShell(src)) {
+		if (simple.piped !== true) pipeline = steps.length;
+		const bodies = simple.substitutions ?? [];
+		if (nested)
+			steps.splice(
+				pipeline,
+				0,
+				...bodies.flatMap((body) =>
+					scriptSteps(body, folder, depth + 1, inherited),
+				),
+			);
+		const plain = plainForm(simple.words);
+		const env = [...inherited, ...plain.env];
+		const move: Move = plain.unreadable
+			? { kind: "none" }
+			: folderMove(folder.dir, plain.words);
+		if (move.kind === "to") {
+			folder = { dir: move.dir, known: folder.known };
+			continue;
+		}
+		const body = plain.unreadable ? undefined : scriptBody(plain.words);
+		if (body !== undefined && !body.dynamic && nested) {
+			steps.push(...scriptSteps(body.value, folder, depth + 1, env));
+			continue;
+		}
+		if (plain.env.length > 0 || plain.words.length > 0)
+			steps.push({
+				simple: { ...simple, words: [...env, ...plain.words] },
+				env,
+				words: plain.words,
+				values: plain.words.map((word) => word.value),
+				dir: folder.dir,
+				unreadable: folder.known
+					? bodyMark(plain, body, !nested && bodies.length > 0)
+					: "folder",
+			});
+		if (move.kind === "unknown") folder = { dir: folder.dir, known: false };
+	}
+	return steps;
 }
 
 export function shellSteps(command: string, cwd: string): ShellStep[] {
-	let dir = cwd;
-	const steps: ShellStep[] = [];
-	for (const simple of parseShell(command)) {
-		const words = commandWords(simple);
-		const values = words.map((word) => word.value);
-		if (values[0] === "cd" && words[1] && !words[1].dynamic) {
-			dir = resolve(dir, values[1] ?? "");
-			continue;
-		}
-		steps.push({ simple, words, values, dir });
-	}
-	return steps;
+	return scriptSteps(command, { dir: cwd, known: true }, 0, []);
 }
 
 export interface ShellWrite {

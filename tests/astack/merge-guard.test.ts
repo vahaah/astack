@@ -35,7 +35,7 @@ import {
 	DEFAULT_MERGE_PROFILE,
 	type MergeProfile,
 } from "../../src/astack/pr/profile.ts";
-import { commandWords, parseShell } from "../../src/astack/shell.ts";
+import { shellSteps } from "../../src/astack/shell.ts";
 
 let root = "";
 let project = "";
@@ -327,11 +327,12 @@ describe("machine prompts never change the grant", () => {
 
 describe("the gh pr merge call", () => {
 	test("reads the selector, the repo and the commit text", () => {
-		const [simple] = parseShell(
+		const [step] = shellSteps(
 			"gh pr merge 12 -sd --repo o/r --subject 'feat: x (#12)' --body-file - <<'EOF'\nPart of ABC-1\nEOF",
+			project,
 		);
-		if (!simple) throw new Error("no command");
-		const call = parseMergeCall(simple, commandWords(simple).slice(3), project);
+		if (!step) throw new Error("no command");
+		const call = parseMergeCall(step.simple, step.words.slice(3), project);
 		expect(call).toEqual({
 			selector: "12",
 			repo: "o/r",
@@ -344,10 +345,10 @@ describe("the gh pr merge call", () => {
 	});
 
 	test("a selector from a variable is dynamic", () => {
-		const [simple] = parseShell('gh pr merge "$PR" --squash');
-		if (!simple) throw new Error("no command");
+		const [step] = shellSteps('gh pr merge "$PR" --squash', project);
+		if (!step) throw new Error("no command");
 		expect(
-			parseMergeCall(simple, commandWords(simple).slice(3), project).dynamic,
+			parseMergeCall(step.simple, step.words.slice(3), project).dynamic,
 		).toBe(true);
 	});
 });
