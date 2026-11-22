@@ -82,6 +82,7 @@ function input(
 		registry: { base: REGISTRY, tree: REGISTRY },
 		floor: { base: "R0", tree: "R0" },
 		manifest: MANIFEST,
+		laws: [],
 		inTree: (path) => TREE.has(path),
 		...edit,
 	};
@@ -99,7 +100,12 @@ function summary(ladder: ReturnType<typeof deriveLadder>): Row | string {
 	const { rung, cause, runs } = ladder.value;
 	return {
 		rung,
-		by: cause.kind === "path" ? cause.path : `floor ${cause.side}`,
+		by:
+			cause.kind === "path"
+				? cause.path
+				: cause.kind === "law"
+					? `law ${cause.id}`
+					: `floor ${cause.side}`,
 		runs: runs.map((run) => `${run.name} ${run.negative.action}`),
 	};
 }
@@ -210,6 +216,50 @@ describe("deriveLadder", () => {
 			"the manifest model formal/Other.tla is no model of formal/models.json",
 		],
 	])("[control:rl-rung] %s", (_name, given, expected) => {
+		expect(summary(deriveLadder(given))).toEqual(expected);
+	});
+
+	test.each<[string, LadderInput, Row | string]>([
+		[
+			"a prop law on a read-only cap gives R2",
+			input(["docs/design.md"], {
+				laws: [{ id: "L1", check: "prop", readOnly: true }],
+			}),
+			{ rung: "R2", by: "law L1", runs: [] },
+		],
+		[
+			"a prop law on an invariant gives R3 over a path at R1",
+			input(["scripts/build.ts"], {
+				laws: [
+					{ id: "L1", check: "tsc" },
+					{ id: "L2", check: "prop", readOnly: false },
+				],
+			}),
+			{ rung: "R3", by: "law L2", runs: [] },
+		],
+		[
+			"a tla law gives R4 and selects its model after the manifest model",
+			input(["docs/design.md"], {
+				laws: [{ id: "L3", check: "tla", model: "Guards" }],
+			}),
+			{ rung: "R4", by: "law L3", runs: ["Admission Admit", "Guards Step"] },
+		],
+		[
+			"a tla law whose model the registry does not hold stops",
+			input(["docs/design.md"], {
+				laws: [{ id: "L3", check: "tla", model: "Lost" }],
+			}),
+			"the tla law L3 names the model Lost, which formal/models.json does not hold",
+		],
+		[
+			"a floor above the law rung still raises it",
+			input(["docs/design.md"], {
+				laws: [{ id: "L1", check: "prop", readOnly: true }],
+				floor: { base: "R0", tree: "R3" },
+			}),
+			{ rung: "R3", by: "floor tree", runs: [] },
+		],
+	])("[control:rung-law] %s", (_name, given, expected) => {
 		expect(summary(deriveLadder(given))).toEqual(expected);
 	});
 

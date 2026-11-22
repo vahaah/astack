@@ -198,6 +198,7 @@ describe("the model registry of astack", () => {
 				registry: { base: REGISTRY, tree: REGISTRY },
 				floor: { base: "R0", tree: "R0" },
 				manifest,
+				laws: [],
 				inTree: (file) => TRACKED_SET.has(file),
 			});
 			expect(
@@ -216,6 +217,7 @@ describe("the model registry of astack", () => {
 			registry: { base: REGISTRY, tree: REGISTRY },
 			floor: { base: "R0", tree: "R0" },
 			manifest,
+			laws: [],
 			inTree: (file) => TRACKED_SET.has(file),
 		});
 		expect(ladder).toEqual({
@@ -236,6 +238,7 @@ describe("the model registry of astack", () => {
 						registry: { base: REGISTRY, tree: REGISTRY },
 						floor: { base: "R0", tree: "R0" },
 						manifest,
+						laws: [],
 						inTree: (file) => TRACKED_SET.has(file),
 					});
 					return ladder.ok ? [] : [ladder.error];

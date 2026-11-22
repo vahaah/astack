@@ -52,6 +52,7 @@ import {
 	modelFiles,
 	REGISTRY_PATH,
 	type Rung,
+	type RungCause,
 } from "../../../change-proof/rung.ts";
 import {
 	type Checker,
@@ -353,17 +354,29 @@ function readLadder(
 		registry: { base: base.value, tree: tree.value },
 		floor: { base: baseFloor.value, tree: treeFloor.value },
 		manifest: proof,
+		laws: [],
 		inTree: (path) => readRepoFile(root, path).kind === "text",
 	});
 }
 
 function rungLine(ladder: Extract<Ladder, { kind: "ladder" }>): string {
 	const { rung, cause } = ladder;
-	const by =
-		cause.kind === "path"
-			? `the changed path ${oneLine(cause.path)}`
-			: `proof.minRung ${rung} of ${PROFILE_PATH} ${cause.side === "base" ? AT_BASE : IN_TREE}`;
-	return `rung: ${rung} by ${by}\n`;
+	return `rung: ${rung} by ${rungCause(rung, cause)}\n`;
+}
+
+function rungCause(rung: Rung, cause: RungCause): string {
+	switch (cause.kind) {
+		case "path":
+			return `the changed path ${oneLine(cause.path)}`;
+		case "law":
+			return `the law ${oneLine(cause.id)} of the plan block`;
+		case "floor":
+			return `proof.minRung ${rung} of ${PROFILE_PATH} ${cause.side === "base" ? AT_BASE : IN_TREE}`;
+		default: {
+			const unreachable: never = cause;
+			return unreachable;
+		}
+	}
 }
 
 function planRun(root: string, run: LadderRun): Result<ModelPlan, string> {
