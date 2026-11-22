@@ -1154,6 +1154,22 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"an issue body with Markdown check boxes",
+			"mcp__plugin_linear_linear__save_issue",
+			false,
+			{
+				title: "Ship the export",
+				description:
+					"## Steps\n\n- [x] run gh pr view 12\n[x] ship the docs later",
+			},
+		],
+		[
+			"a shell command with a glob in a gh word",
+			"mcp__forge__run_command",
+			true,
+			{ command: "gh p* m*rge 12" },
+		],
+		[
 			"a GraphQL merge after a tab",
 			"mcp__forge__graphql",
 			true,

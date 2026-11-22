@@ -49,6 +49,7 @@ const WRITE_METHOD_VALUE =
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const GH = /(?:^|\/)gh$/;
 const MERGE_TEXT = /merg/i;
+const NAMES_GH = /\bgh\b|\bpr\s+merge\b/i;
 const MAY_MERGE = /\bgh\b|\bpr\s+merge\b|[*?[{]/i;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
@@ -506,9 +507,11 @@ function decodedEscapes(text: string): string {
 
 function runsGhMerge(value: string): boolean {
 	return (
-		MAY_MERGE.test(value) &&
+		NAMES_GH.test(value) &&
 		shellSteps(value, "").some((step) =>
-			examinesMerge(step, value, READS_NO_FILE),
+			step.words[0]?.expands === true
+				? mayMerge(step, value)
+				: examinesMerge(step, value, READS_NO_FILE),
 		)
 	);
 }
