@@ -69,19 +69,18 @@ export function resolveCommit(
 	);
 }
 
-export type DiffTarget =
-	| { readonly kind: "manifest-base" }
-	| {
-			readonly kind: "merge-base";
-			readonly ref: string;
-			readonly commit: string;
-	  };
+export type MergeBase = {
+	readonly kind: "merge-base";
+	readonly ref: string;
+	readonly commit: string;
+};
 
-export function diffTarget(
+export type DiffTarget = { readonly kind: "manifest-base" } | MergeBase;
+
+export function mergeBase(
 	root: string,
-	ref: string | undefined,
-): Result<DiffTarget, string> {
-	if (ref === undefined) return ok({ kind: "manifest-base" });
+	ref: string,
+): Result<MergeBase, string> {
 	const commit = gitText(
 		root,
 		["merge-base", "--end-of-options", ref, "HEAD"],

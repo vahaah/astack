@@ -16,7 +16,7 @@ import {
 import {
 	changedPaths,
 	type DiffTarget,
-	diffTarget,
+	mergeBase,
 	proofBase,
 	readIntegrationHistory,
 	readRepoFile,
@@ -370,7 +370,9 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 		io.out(`${summaryLines(proof.value).join("\n")}\n`);
 		return 0;
 	}
-	const target = diffTarget(root, parsed.value.base);
+	const ref = parsed.value.base;
+	const target: Result<DiffTarget, string> =
+		ref === undefined ? ok({ kind: "manifest-base" }) : mergeBase(root, ref);
 	if (!target.ok) return stopAt(io, "stale", target.error);
 	return prove(io, root, proof.value, target.value, text.value);
 }
