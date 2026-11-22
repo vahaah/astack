@@ -1,4 +1,9 @@
-import { CODEX_HOOK_EVENTS, CODEX_HOOK_HASHES } from "./codex-trust.ts";
+import type { CodexHookList, CodexHooksRead } from "./codex-hooks.ts";
+import {
+	CODEX_HOOK_EVENTS,
+	CODEX_HOOK_HASHES,
+	type CodexHookEvent,
+} from "./codex-trust.ts";
 import { MARKETPLACE_NAME, PLUGIN_IDS } from "./marketplace.ts";
 import { ASTACK_RULES, ruleLinkName } from "./rules.ts";
 
@@ -40,6 +45,7 @@ export type CodexState = {
 	readonly enabled: readonly string[];
 	readonly trusted: Readonly<Record<string, string>>;
 	readonly fragment: string | undefined;
+	readonly hooks: CodexHooksRead | undefined;
 };
 
 export type CursorState = {
@@ -282,45 +288,177 @@ export function codexTrustKey(id: string, event: string): string {
 	return `${id}:hooks/hooks.json:${event}:0:0`;
 }
 
+type HookVerdict =
+	| "missing"
+	| "disabled"
+	| "untrusted"
+	| "modified"
+	| "managed"
+	| "trusted";
+
+function hookVerdict(
+	list: CodexHookList,
+	id: string,
+	event: CodexHookEvent,
+): HookVerdict {
+	const key = codexTrustKey(id, event);
+	const hook = list.data
+		.flatMap((entry) => entry.hooks)
+		.find((each) => each.key === key);
+	if (hook === undefined) return "missing";
+	return hook.enabled ? hook.trustStatus : "disabled";
+}
+
+const HOOK_VERDICT_TEXT: Readonly<
+	Record<
+		Exclude<HookVerdict, "trusted">,
+		{
+			readonly level: Level;
+			readonly text: (id: string, events: string) => string;
+		}
+	>
+> = {
+	missing: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex lists no hook for ${events}. Add the plugin again with codex plugin add ${id}.`,
+	},
+	disabled: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but its hooks for ${events} are off in Codex. Turn them on in /hooks in Codex.`,
+	},
+	untrusted: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex does not trust its hooks for ${events}. Open /hooks in Codex and trust them.`,
+	},
+	modified: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex marks its hooks for ${events} modified and skips them. Open /hooks in Codex and trust them again.`,
+	},
+	managed: {
+		level: "note",
+		text: (id, events) =>
+			`${id}: a managed Codex config sets the trust of its hooks for ${events}`,
+	},
+};
+
+function listedFindings(
+	area: string,
+	id: string,
+	list: CodexHookList,
+): Finding[] {
+	const verdicts = CODEX_HOOK_EVENTS.map((event) => ({
+		event,
+		verdict: hookVerdict(list, id, event),
+	}));
+	const grouped = (["missing", "disabled", "untrusted", "modified"] as const)
+		.map((verdict) => ({
+			verdict,
+			events: verdicts.filter((each) => each.verdict === verdict),
+		}))
+		.filter(({ events }) => events.length > 0);
+	const managed = verdicts.filter((each) => each.verdict === "managed");
+	const said = (verdict: Exclude<HookVerdict, "trusted">, events: string) =>
+		finding(
+			area,
+			HOOK_VERDICT_TEXT[verdict].level,
+			HOOK_VERDICT_TEXT[verdict].text(id, events),
+		);
+	return [
+		...grouped.map(({ verdict, events }) =>
+			said(verdict, events.map((each) => each.event).join(", ")),
+		),
+		...(grouped.length === 0
+			? [
+					finding(
+						area,
+						"ok",
+						`${id} is on, and Codex trusts its ${CODEX_HOOK_EVENTS.length} hooks`,
+					),
+				]
+			: []),
+		...(managed.length === 0
+			? []
+			: [said("managed", managed.map((each) => each.event).join(", "))]),
+	];
+}
+
+function pinnedFindings(
+	area: string,
+	id: string,
+	codex: CodexState,
+): Finding[] {
+	const untrusted = CODEX_HOOK_EVENTS.filter(
+		(event) => codex.trusted[codexTrustKey(id, event)] === undefined,
+	);
+	const modified = CODEX_HOOK_EVENTS.filter((event) => {
+		const hash = codex.trusted[codexTrustKey(id, event)];
+		return hash !== undefined && hash !== CODEX_HOOK_HASHES[event];
+	});
+	const cause =
+		codex.hooks?.kind === "failed"
+			? codex.hooks.cause
+			: "doctor did not ask codex app-server";
+	return [
+		finding(
+			area,
+			"warn",
+			`astack cannot read the Codex trust of the ${id} hooks, because ${cause}. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.`,
+		),
+		...(untrusted.length === 0
+			? []
+			: [
+					finding(
+						area,
+						"fail",
+						`${id} is on, but Codex does not trust its hooks for ${untrusted.join(", ")}. Open /hooks in Codex and trust them.`,
+					),
+				]),
+		...(modified.length === 0
+			? []
+			: [
+					finding(
+						area,
+						"fail",
+						`${id} is on, but the trusted hash of ${modified.join(", ")} is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.`,
+					),
+				]),
+	];
+}
+
 function codexFindings(codex: CodexState): Finding[] {
 	const area = `codex ${codex.home}`;
 	const findings = migrationWarnings(area, codex.enabled);
 	const astack = codex.enabled.filter((id) => pluginName(id) === "astack");
-	for (const id of astack) {
-		const untrusted = CODEX_HOOK_EVENTS.filter(
-			(event) => codex.trusted[codexTrustKey(id, event)] === undefined,
+	const list = codex.hooks?.kind === "listed" ? codex.hooks.list : undefined;
+	for (const id of astack)
+		findings.push(
+			...(list === undefined
+				? pinnedFindings(area, id, codex)
+				: listedFindings(area, id, list)),
 		);
-		const modified = CODEX_HOOK_EVENTS.filter((event) => {
-			const hash = codex.trusted[codexTrustKey(id, event)];
-			return hash !== undefined && hash !== CODEX_HOOK_HASHES[event];
-		});
-		if (untrusted.length > 0)
-			findings.push(
-				finding(
-					area,
-					"fail",
-					`${id} is on, but Codex does not trust its hooks for ${untrusted.join(", ")}. Open /hooks in Codex and trust them.`,
-				),
-			);
-		if (modified.length > 0)
-			findings.push(
-				finding(
-					area,
-					"fail",
-					`${id} is on, but the trusted hash of ${modified.join(", ")} is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.`,
-				),
-			);
-		if (untrusted.length === 0 && modified.length === 0)
-			findings.push(
-				finding(
-					area,
-					"ok",
-					`${id} is on, and its 4 hooks are trusted with the hashes of this release`,
-				),
-			);
-	}
+	if (astack.length > 0 && list !== undefined)
+		for (const entry of list.data) {
+			for (const error of entry.errors)
+				findings.push(
+					finding(
+						area,
+						"warn",
+						`Codex hooks/list reports an error in ${error.path}: ${error.message}`,
+					),
+				);
+			for (const warning of entry.warnings)
+				findings.push(
+					finding(area, "note", `Codex hooks/list warns: ${warning}`),
+				);
+		}
 	const rung =
-		astack.length > 0 && findings.every((item) => item.level !== "fail")
+		astack.length > 0 &&
+		list !== undefined &&
+		findings.every((item) => item.level !== "fail")
 			? 1
 			: 5;
 	if (astack.length === 0)

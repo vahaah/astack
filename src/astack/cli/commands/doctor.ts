@@ -13,6 +13,7 @@ import {
 import { homedir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { unattendedReason } from "../../attended.ts";
+import { readCodexHooks } from "../../codex-hooks.ts";
 import {
 	type ClaudeProfile,
 	type CodexState,
@@ -264,15 +265,31 @@ export function codexState(
 			agents === undefined
 				? undefined
 				: /<!-- astack (\S+) -->/.exec(agents)?.[1],
+		hooks: undefined,
 	};
 }
 
-function codex(env: Io["env"], home: string): CodexState | undefined {
-	const codexHome = env.CODEX_HOME || join(home, ".codex");
+export const CODEX_HOOKS_TIMEOUT_MS = 10_000;
+
+async function codex(io: Io, home: string): Promise<CodexState | undefined> {
+	const codexHome = io.env.CODEX_HOME || join(home, ".codex");
 	const config = readText(join(codexHome, "config.toml"));
-	return config === undefined
-		? undefined
-		: codexState(codexHome, config, readText(join(codexHome, "AGENTS.md")));
+	if (config === undefined) return undefined;
+	const state = codexState(
+		codexHome,
+		config,
+		readText(join(codexHome, "AGENTS.md")),
+	);
+	return state.enabled.some((id) => id.startsWith("astack@"))
+		? {
+				...state,
+				hooks: await readCodexHooks({
+					cwd: io.cwd,
+					env: io.env,
+					timeoutMs: CODEX_HOOKS_TIMEOUT_MS,
+				}),
+			}
+		: state;
 }
 
 function cursor(home: string): CursorState | undefined {
@@ -335,13 +352,13 @@ function claudeSkillFolders(
 	});
 }
 
-export function gather(io: Io): Snapshot {
+export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
 	const claude = claudeProfiles(io.env, home);
 	return {
 		runtime: { current: currentRuntime(), ...guiRuntime(io.env, home) },
 		claude,
-		codex: codex(io.env, home),
+		codex: await codex(io, home),
 		cursor: cursor(home),
 		agentsSkills: list(join(home, ".agents", "skills")),
 		claudeSkills: claudeSkillFolders(claude, home),
@@ -366,7 +383,7 @@ function saveRuntime(io: Io): number {
 	return 0;
 }
 
-function run(args: readonly string[], io: Io): number {
+async function run(args: readonly string[], io: Io): Promise<number> {
 	const unknown = args.filter(
 		(arg) => arg !== "--save-runtime" && arg !== "--json",
 	);
@@ -376,7 +393,7 @@ function run(args: readonly string[], io: Io): number {
 			`astack doctor: unknown argument ${unknown.join(" ")}`,
 		);
 	if (args.includes("--save-runtime")) return saveRuntime(io);
-	const findings = diagnose(gather(io));
+	const findings = diagnose(await gather(io));
 	io.out(
 		args.includes("--json")
 			? `${JSON.stringify(findings, null, 2)}\n`
@@ -385,10 +402,10 @@ function run(args: readonly string[], io: Io): number {
 	return failed(findings) ? 1 : 0;
 }
 
-export const command: Command = {
+export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, untrusted Codex hooks, output-style plugins and the repo profile. Reads only, and exits 1 on a failure. --save-runtime writes the runtime path for the launcher.",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins and the repo profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher.",
 	usage: "doctor [--json]\ndoctor --save-runtime",
 	run,
 };

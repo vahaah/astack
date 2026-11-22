@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import {
 	mkdirSync,
 	mkdtempSync,
@@ -16,6 +16,10 @@ import {
 	tomlTables,
 } from "../../src/astack/cli/commands/doctor.ts";
 import {
+	type CodexHooksRead,
+	parseHookList,
+} from "../../src/astack/codex-hooks.ts";
+import {
 	CODEX_HOOK_EVENTS,
 	CODEX_HOOK_HASHES,
 } from "../../src/astack/codex-trust.ts";
@@ -30,6 +34,12 @@ import {
 } from "../../src/astack/doctor.ts";
 import { withFragment } from "../../src/astack/print.ts";
 import { ASTACK_RULES, ruleLinkName } from "../../src/astack/rules.ts";
+import {
+	fakeCodex,
+	type RecordedReply,
+	recordedReply,
+	withHook,
+} from "./codex-fake.ts";
 
 function install(
 	plugin: string,
@@ -170,6 +180,7 @@ describe("astack doctor", () => {
 					enabled: ["flow@astack"],
 					trusted: {},
 					fragment: "0.1.0",
+					hooks: undefined,
 				},
 				cursor: { local: "0.1.0", imported: ["pstack@native"] },
 			}),
@@ -262,7 +273,89 @@ describe("astack doctor", () => {
 		},
 	);
 
-	test("reads missing and broken pack links from an isolated profile", () => {
+	describe("the Codex trust read of the command", () => {
+		const homes: string[] = [];
+		afterAll(() => {
+			for (const home of homes) rmSync(home, { recursive: true, force: true });
+		});
+		const pinnedHome = () => {
+			const home = mkdtempSync(join(tmpdir(), "astack-doctor-codex-"));
+			homes.push(home);
+			mkdirSync(join(home, ".codex"));
+			mkdirSync(join(home, "bin"));
+			writeFileSync(
+				join(home, ".codex", "config.toml"),
+				[
+					'[plugins."astack@astack"]',
+					"enabled = true",
+					...CODEX_HOOK_EVENTS.flatMap((event) => [
+						`[hooks.state."${codexTrustKey("astack@astack", event)}"]`,
+						`trusted_hash = "${CODEX_HOOK_HASHES[event]}"`,
+					]),
+				].join("\n"),
+			);
+			return home;
+		};
+		const doctor = async (home: string) => {
+			let output = "";
+			const status = await command.run([], {
+				out: (text) => {
+					output += text;
+				},
+				err: (text) => {
+					throw new Error(text);
+				},
+				cwd: home,
+				env: {
+					HOME: home,
+					ASTACK_RUNTIME: process.execPath,
+					PATH: join(home, "bin"),
+				},
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			});
+			return {
+				status,
+				codex: output
+					.split("\n")
+					.filter((line) => line.includes(` codex ${home}/.codex: `))
+					.map((line) => line.replace(` codex ${home}/.codex:`, "")),
+			};
+		};
+
+		test("[control:dt-trust-command] a hooks/list reply with one modified astack hook makes doctor fail with its name", async () => {
+			const home = pinnedHome();
+			fakeCodex(join(home, "bin"), {
+				kind: "reply",
+				reply: withHook(codexTrustKey("astack@astack", "stop"), {
+					trustStatus: "modified",
+				}),
+			});
+			expect(await doctor(home)).toEqual({
+				status: 1,
+				codex: [
+					"FAIL astack@astack is on, but Codex marks its hooks for stop modified and skips them. Open /hooks in Codex and trust them again.",
+					"NOTE lowest enforcement rung: 5, text only",
+					"NOTE ~/.codex/AGENTS.md holds no astack fragment",
+				],
+			});
+		});
+
+		test("[control:dt-fallback-command] with no codex on PATH, pinned hashes give a WARN and no ok line for the hooks", async () => {
+			const home = pinnedHome();
+			expect(await doctor(home)).toEqual({
+				status: 0,
+				codex: [
+					"WARN astack cannot read the Codex trust of the astack@astack hooks, because no codex on PATH. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.",
+					"NOTE lowest enforcement rung: 5, text only",
+					"NOTE ~/.codex/AGENTS.md holds no astack fragment",
+				],
+			});
+		});
+	});
+
+	test("reads missing and broken pack links from an isolated profile", async () => {
 		const home = mkdtempSync(join(tmpdir(), "astack-doctor-packs-"));
 		try {
 			const dir = join(home, ".claude");
@@ -286,11 +379,11 @@ describe("astack doctor", () => {
 				now: new Date("2026-01-01T00:00:00Z"),
 				scriptPath: undefined,
 			};
-			expect(fails(diagnose(gather(io)))).toEqual([]);
+			expect(fails(diagnose(await gather(io)))).toEqual([]);
 			unlinkSync(join(rules, "astack-typescript.md"));
 			unlinkSync(join(rules, "astack-postgres.md"));
 			symlinkSync(join(home, "absent.md"), join(rules, "astack-postgres.md"));
-			expect(fails(diagnose(gather(io)))).toEqual([
+			expect(fails(diagnose(await gather(io)))).toEqual([
 				"rules/astack-typescript.md is missing or unreadable. Add the rule link from the install steps.",
 				"rules/astack-postgres.md is missing or unreadable. Add the rule link from the install steps.",
 			]);
@@ -308,6 +401,7 @@ describe("astack doctor", () => {
 					enabled: ["explanatory-output-style@official"],
 					trusted: {},
 					fragment: undefined,
+					hooks: undefined,
 				},
 				cursor: {
 					local: undefined,
@@ -318,48 +412,139 @@ describe("astack doctor", () => {
 		expect(fails(findings)).toHaveLength(3);
 	});
 
-	test("fails on untrusted or modified Codex hooks and passes when all four match", () => {
-		const codex = (trusted: Record<string, string>) =>
+	const pinned = Object.fromEntries(
+		CODEX_HOOK_EVENTS.map((event) => [
+			codexTrustKey("astack@astack", event),
+			CODEX_HOOK_HASHES[event],
+		]),
+	);
+	const stopKey = codexTrustKey("astack@astack", "stop");
+	const listed = (reply: RecordedReply): CodexHooksRead => {
+		const list = parseHookList(reply.result);
+		if (list === undefined) throw new Error("the reply does not parse");
+		return { kind: "listed", list };
+	};
+	const withCodex = (
+		hooks: CodexHooksRead,
+		trusted: Record<string, string> = pinned,
+	) =>
+		diagnose(
 			snapshot({
 				codex: {
 					home: "/c",
 					enabled: ["astack@astack"],
 					trusted,
 					fragment: "1.0.0",
+					hooks,
 				},
-			});
-		const pinned = Object.fromEntries(
-			CODEX_HOOK_EVENTS.map((event) => [
-				codexTrustKey("astack@astack", event),
-				CODEX_HOOK_HASHES[event],
-			]),
+			}),
 		);
-		expect(
-			fails(
-				diagnose(
-					codex({
-						[codexTrustKey("astack@astack", "stop")]: CODEX_HOOK_HASHES.stop,
-					}),
-				),
-			),
-		).toEqual([
-			"astack@astack is on, but Codex does not trust its hooks for session_start, user_prompt_submit, pre_tool_use. Open /hooks in Codex and trust them.",
+	const codexLines = (findings: readonly Finding[]) =>
+		findings
+			.filter((item) => item.area === "codex /c")
+			.map((item) => `${item.level} ${item.text}`);
+	const missingStop = () => {
+		const reply = recordedReply();
+		for (const entry of reply.result.data)
+			entry.hooks = entry.hooks.filter((hook) => hook.key !== stopKey);
+		return reply;
+	};
+
+	test.each([
+		[
+			"[control:dt-trust-modified] modified",
+			withHook(stopKey, { trustStatus: "modified" }),
+			"astack@astack is on, but Codex marks its hooks for stop modified and skips them. Open /hooks in Codex and trust them again.",
+		],
+		[
+			"[control:dt-trust-untrusted] untrusted",
+			withHook(stopKey, { trustStatus: "untrusted" }),
+			"astack@astack is on, but Codex does not trust its hooks for stop. Open /hooks in Codex and trust them.",
+		],
+		[
+			"[control:dt-trust-disabled] disabled",
+			withHook(stopKey, { enabled: false }),
+			"astack@astack is on, but its hooks for stop are off in Codex. Turn them on in /hooks in Codex.",
+		],
+		[
+			"[control:dt-trust-missing] missing",
+			missingStop(),
+			"astack@astack is on, but Codex lists no hook for stop. Add the plugin again with codex plugin add astack@astack.",
+		],
+	])(
+		"a %s astack hook in the hooks/list reply fails with its name",
+		(_name, reply, text) => {
+			const findings = withCodex(listed(reply));
+			expect(fails(findings)).toEqual([text]);
+			expect(codexLines(findings)).toContain(
+				"note lowest enforcement rung: 5, text only",
+			);
+		},
+	);
+
+	test("[control:dt-trust-ok] 4 trusted hooks pass, and a managed hook passes with a note", () => {
+		expect(codexLines(withCodex(listed(recordedReply())))).toEqual([
+			"ok astack@astack is on, and Codex trusts its 4 hooks",
+			"note lowest enforcement rung: 1",
+			"ok ~/.codex/AGENTS.md holds the astack 1.0.0 fragment",
 		]);
 		expect(
-			fails(
-				diagnose(
-					codex({
-						...pinned,
-						[codexTrustKey("astack@astack", "stop")]:
-							`sha256:${"0".repeat(64)}`,
-					}),
-				),
-			),
+			codexLines(
+				withCodex(listed(withHook(stopKey, { trustStatus: "managed" }))),
+			).slice(0, 2),
 		).toEqual([
-			"astack@astack is on, but the trusted hash of stop is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.",
+			"ok astack@astack is on, and Codex trusts its 4 hooks",
+			"note astack@astack: a managed Codex config sets the trust of its hooks for stop",
 		]);
-		expect(fails(diagnose(codex(pinned)))).toEqual([]);
 	});
+
+	test("[control:dt-trust-entry-error] each error of a hooks/list entry gives a WARN", () => {
+		const reply = recordedReply();
+		for (const entry of reply.result.data)
+			Object.assign(entry, {
+				errors: [{ path: "/codex-home/hooks.json", message: "bad matcher" }],
+			});
+		expect(warnings(withCodex(listed(reply)))).toEqual([
+			{
+				area: "codex /c",
+				level: "warn",
+				text: "Codex hooks/list reports an error in /codex-home/hooks.json: bad matcher",
+			},
+		]);
+	});
+
+	test.each([
+		["[control:dt-fallback-pinned] pinned hashes", pinned, []],
+		[
+			"[control:dt-fallback-modified] a hash that is not the pin",
+			{ ...pinned, [stopKey]: `sha256:${"0".repeat(64)}` },
+			[
+				"astack@astack is on, but the trusted hash of stop is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.",
+			],
+		],
+	])(
+		"with no hooks/list reply, %s give a WARN with the cause and no ok line",
+		(_name, trusted, failures) => {
+			const findings = withCodex(
+				{ kind: "failed", cause: "no codex on PATH" },
+				trusted,
+			);
+			expect(fails(findings)).toEqual(failures);
+			expect(warnings(findings)).toEqual([
+				{
+					area: "codex /c",
+					level: "warn",
+					text: "astack cannot read the Codex trust of the astack@astack hooks, because no codex on PATH. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.",
+				},
+			]);
+			expect(
+				codexLines(findings).filter((line) => line.startsWith("ok astack")),
+			).toEqual([]);
+			expect(codexLines(findings)).toContain(
+				"note lowest enforcement rung: 5, text only",
+			);
+		},
+	);
 
 	test("fails with no rule card where astack is installed, and names the effect of other Stop hooks", () => {
 		const findings = diagnose(
@@ -506,6 +691,7 @@ describe("the Codex config reader", () => {
 			enabled: ["astack@astack"],
 			trusted: { "astack@astack:hooks/hooks.json:stop:0:0": "sha256:abc" },
 			fragment: "0.1.0",
+			hooks: undefined,
 		});
 	});
 });

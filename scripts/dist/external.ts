@@ -8,6 +8,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	type CodexHooksRead,
+	parseHookList,
+} from "../../src/astack/codex-hooks.ts";
+import {
 	CODEX_HOOK_EVENTS,
 	CODEX_HOOK_HASHES,
 } from "../../src/astack/codex-trust.ts";
@@ -136,26 +140,40 @@ export function codexFindings(
 	);
 }
 
-export function codexHashFindings(listing: string | undefined): string[] {
-	if (listing === undefined)
-		return ["codex app-server hooks/list gave no reply"];
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(listing);
-	} catch {
-		return ["codex app-server hooks/list gave no JSON"];
-	}
-	const hashes =
-		typeof parsed === "object" && parsed !== null ? parsed : undefined;
+export function codexHashFindings(read: CodexHooksRead): string[] {
+	if (read.kind === "failed")
+		return [`codex app-server hooks/list failed: ${read.cause}`];
+	const hooks = read.list.data.flatMap((entry) => entry.hooks);
 	return CODEX_HOOK_EVENTS.flatMap((event) => {
 		const key = codexTrustKey("astack@astack", event);
-		const actual = hashes === undefined ? undefined : Reflect.get(hashes, key);
+		const actual = hooks
+			.find((hook) => hook.key === key)
+			?.currentHash.split("/")[0];
 		return actual === CODEX_HOOK_HASHES[event]
 			? []
 			: [
 					`Codex shows ${String(actual)} for ${key}, but src/astack/codex-trust.ts pins ${CODEX_HOOK_HASHES[event]}. Update the pin when hooks.json changes on purpose.`,
 				];
 	});
+}
+
+function hooksRead(reader: Run): CodexHooksRead {
+	if (reader.exitCode !== 0)
+		return {
+			kind: "failed",
+			cause:
+				reader.stderr.trim() || `the reader exited with ${reader.exitCode}`,
+		};
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(reader.stdout);
+	} catch {
+		parsed = undefined;
+	}
+	const list = parseHookList(parsed);
+	return list === undefined
+		? { kind: "failed", cause: "the reader printed no hook list" }
+		: { kind: "listed", list };
 }
 
 export function codexProbe(
@@ -215,7 +233,7 @@ export function codexProbe(
 			id: "codex",
 			errors: [
 				...codexFindings(listed, expected),
-				...codexHashFindings(hooks.exitCode === 0 ? hooks.stdout : undefined),
+				...codexHashFindings(hooksRead(hooks)),
 			],
 			summary: `codex debug prompt-input in a temporary CODEX_HOME and HOME lists ${listed.size} plugin skills, and codex app-server hooks/list shows the pinned hook hashes`,
 		};
