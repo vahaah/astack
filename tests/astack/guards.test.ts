@@ -235,9 +235,19 @@ describe("the plain form of a git step", () => {
 	test.each([
 		"git reset $(echo --hard)",
 		'git commit -m "$(cat msg.txt)"',
+		'git commit -am "Bump to $V"',
 		'cd "$dir" && git status',
 	])("%s passes on a clean tree", (command) => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+	});
+
+	test("a variable after a short cluster that ends in -b is the branch name, so the checkout passes on a dirty tree", () => {
+		expect(
+			destructive.run(
+				shell('git checkout -qb "feat/$X"', dirty),
+				context(dirty),
+			).kind,
+		).toBe("allow");
 	});
 
 	test.each([

@@ -176,13 +176,22 @@ function attachedValue(text: string, flag: string): boolean {
 		: text.startsWith(flag) && text.length > flag.length;
 }
 
+function takesNextWord(text: string, valued: readonly string[]): boolean {
+	if (valued.includes(text)) return true;
+	if (!/^-[A-Za-z]{2,}$/.test(text)) return false;
+	const at = [...text.slice(1)].findIndex((letter) =>
+		valued.includes(`-${letter}`),
+	);
+	return at === text.length - 2;
+}
+
 function hasDynamicWord(sub: string, args: readonly Word[]): boolean {
 	const valued = VERB_VALUE_FLAGS.get(sub) ?? [];
 	for (let i = 0; i < args.length; i++) {
 		const word = args[i];
 		if (word === undefined) break;
 		if (!word.dynamic) {
-			if (valued.includes(word.value)) i++;
+			if (takesNextWord(word.value, valued)) i++;
 		} else if (!valued.some((flag) => attachedValue(word.value, flag)))
 			return true;
 	}
