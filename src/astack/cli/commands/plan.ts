@@ -11,7 +11,11 @@ import {
 	renderAt,
 } from "../../plan/edge.ts";
 import { exportPlan, writePlanText } from "../../plan/export.ts";
-import { planProfileFor } from "../../plan/files.ts";
+import {
+	type PlanState,
+	planProfileFor,
+	planStateFor,
+} from "../../plan/files.ts";
 import { parseKeys, setFrontmatter, writeKeys } from "../../plan/keys.ts";
 import { frontmatterValue } from "../../plan/parse.ts";
 import {
@@ -24,16 +28,17 @@ import {
 	appendDraft,
 	appendTrail,
 	draftEntry,
-	draftsPath,
+	parseTrailBatch,
+	phaseProblem,
 	readTrail,
 	SLUG,
 	sinceLastStart,
 	TRAIL_HEADER,
-	TRAIL_KINDS,
-	trailPath,
+	type TrailCells,
 } from "../../plan/trail.ts";
 import type { TrailRow } from "../../plan/types.ts";
 import { extractCopy } from "../../plan/units.ts";
+import { err, ok, type Result } from "../../result.ts";
 import { checkText, denied } from "../../ste/check.ts";
 import { denyMessage } from "../../ste/format.ts";
 import { loadSettings } from "../../ste/profile.ts";
@@ -43,8 +48,8 @@ import { type Io, usageError } from "../io.ts";
 
 const USAGE = [
 	"plan attended",
-	"plan trail <slug> [<phase> <decision> <why> <evidence> <result>]",
-	"plan draft <slug> [<title> <why>]",
+	"plan trail <plan or slug> [<phase> <decision> <why> <evidence> <result> | -]",
+	"plan draft <plan or slug> [<title> <why>]",
 	"plan delegate <plan> on|off",
 	"plan export <plan> --to linear|github [--team <name>] [--repo <owner/repo>] [--initiative <name>] [--tracker <file|->] [--overwrite] [--json]",
 	"plan drift <plan or slug> [--tracker <file|->] [--json]",
@@ -67,60 +72,64 @@ function attended(args: readonly string[], io: Io): number {
 	return 0;
 }
 
-function trail(args: readonly string[], io: Io): number {
-	const [slug, ...cells] = args;
-	if (!slug || !SLUG.test(slug))
-		return usageError(
-			io,
-			"astack plan trail: give the plan slug, such as member-export",
+function stateFor(
+	name: string,
+	target: string | undefined,
+	io: Io,
+): PlanState | undefined {
+	const state = planStateFor(target ?? "", io.cwd);
+	if (state.ok) return state.value;
+	usageError(io, `astack plan ${name}: ${state.error}`);
+	return undefined;
+}
+
+function trailRows(
+	cells: readonly string[],
+	io: Io,
+): Result<readonly TrailCells[], string> {
+	if (cells.length === 1 && cells[0] === "-")
+		return parseTrailBatch(io.input?.() ?? "");
+	if (cells.length !== 5)
+		return err(
+			"give <phase> <decision> <why> <evidence> <result>, quoted, or - to read rows from stdin",
 		);
-	const path = trailPath(io.cwd, slug);
-	if (!path)
-		return usageError(io, "astack plan trail: not inside a git repository");
+	const problem = phaseProblem(cells[0] ?? "");
+	return problem === undefined ? ok([cells]) : err(problem);
+}
+
+function trail(args: readonly string[], io: Io): number {
+	const [target, ...cells] = args;
+	const state = stateFor("trail", target, io);
+	if (!state) return 2;
 	if (cells.length === 0) {
-		const rows = readTrail(path);
-		io.out(`${path}\n`);
+		const rows = readTrail(state.trail);
+		io.out(`${state.trail}\n`);
 		for (const row of sinceLastStart(rows ?? []))
 			io.out(`${TRAIL_HEADER.map((key) => row[key]).join("\t")}\n`);
 		return 0;
 	}
-	if (cells.length !== 5)
-		return usageError(
-			io,
-			"astack plan trail: give <phase> <decision> <why> <evidence> <result>, quoted",
-		);
-	const kinds: readonly string[] = TRAIL_KINDS;
-	if (!kinds.includes(cells[0] ?? ""))
-		return usageError(
-			io,
-			`astack plan trail: phase is one of ${TRAIL_KINDS.join(", ")}`,
-		);
-	appendTrail(path, cells, io.now);
-	io.out(`${path}\n`);
+	const rows = trailRows(cells, io);
+	if (!rows.ok) return usageError(io, `astack plan trail: ${rows.error}`);
+	appendTrail(state.trail, rows.value, io.now);
+	io.out(`${state.trail}\n`);
 	return 0;
 }
 
 function draft(args: readonly string[], io: Io): number {
-	const [slug, title, why, ...rest] = args;
-	if (
-		!slug ||
-		!SLUG.test(slug) ||
-		rest.length > 0 ||
-		(title !== undefined && why === undefined)
-	)
+	const [target, title, why, ...rest] = args;
+	if (rest.length > 0 || (title !== undefined && why === undefined))
 		return usageError(
 			io,
-			"astack plan draft: give <slug>, or <slug> <title> <why>, quoted",
+			"astack plan draft: give <plan or slug>, or <plan or slug> <title> <why>, quoted",
 		);
-	const path = draftsPath(io.cwd, slug);
-	if (!path)
-		return usageError(io, "astack plan draft: not inside a git repository");
+	const state = stateFor("draft", target, io);
+	if (!state) return 2;
 	if (title !== undefined && why !== undefined) {
 		const blocked = denied(
 			checkText(`${title}\n\n${why}`, {
 				surface: "ticket",
 				enforcement: "deny",
-				glossary: loadSettings(rootOf(io)).glossary,
+				glossary: loadSettings(state.root).glossary,
 				titleLines: [1],
 			}),
 		);
@@ -128,10 +137,10 @@ function draft(args: readonly string[], io: Io): number {
 			io.err(`${denyMessage("this draft", blocked)}\n`);
 			return 1;
 		}
-		appendDraft(path, draftEntry(title, why, io.now));
+		appendDraft(state.drafts, draftEntry(title, why, io.now));
 	}
-	io.out(`${path}\n`);
-	if (title === undefined) io.out(readText(path) ?? "No drafts yet.\n");
+	io.out(`${state.drafts}\n`);
+	if (title === undefined) io.out(readText(state.drafts) ?? "No drafts yet.\n");
 	return 0;
 }
 
@@ -147,14 +156,12 @@ function delegate(args: readonly string[], io: Io): number {
 	const text = readText(path);
 	if (text === undefined)
 		return usageError(io, `astack plan delegate: cannot read ${file}`);
+	const state = stateFor("delegate", file, io);
+	if (!state) return 2;
 	const set = planSetFromText(file, text, () => undefined);
-	const trailFile = trailPath(
-		io.cwd,
-		(frontmatterValue(set.root, "programme") ?? set.slug).toLowerCase(),
-	);
 	const prior = frontmatterValue(set.root, "checkpoints") ?? "report";
 	const restored =
-		value === "off" ? checkpointsBefore(readTrail(trailFile)) : undefined;
+		value === "off" ? checkpointsBefore(readTrail(state.trail)) : undefined;
 	const checkpoints = value === "on" ? "report" : restored;
 	const next = setFrontmatter(
 		checkpoints === undefined
@@ -164,9 +171,9 @@ function delegate(args: readonly string[], io: Io): number {
 		value,
 	);
 	writeFileSync(path, next);
-	if (trailFile)
-		appendTrail(
-			trailFile,
+	appendTrail(
+		state.trail,
+		[
 			[
 				"delegated",
 				`delegate ${value}`,
@@ -178,8 +185,9 @@ function delegate(args: readonly string[], io: Io): number {
 					: "owner prompt",
 				value,
 			],
-			io.now,
-		);
+		],
+		io.now,
+	);
 	io.out(
 		`${file}: delegate ${value}${checkpoints === undefined ? "" : `, checkpoints ${checkpoints}`}\n`,
 	);

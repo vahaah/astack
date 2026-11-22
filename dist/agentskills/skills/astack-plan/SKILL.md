@@ -107,7 +107,7 @@ Parallel step workers build it in worktrees, in waves.
 | programme | session sub-issues, decision issues | Through `astack plan export`, after a dry run |
 
 In the standard tier, the PR fixes each in-scope defect and lists it in its body.
-Put each out-of-scope finding in the drafts file with `astack plan draft <slug> "<title>" "<why>"`.
+Put each out-of-scope finding in the drafts file with `astack plan draft <plan> "<title>" "<why>"`.
 The owner files those findings with "agree" through `astack-write-ticket`.
 Never edit the description of a product spec ticket.
 Put an addendum in a comment.

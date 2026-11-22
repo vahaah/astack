@@ -50,6 +50,21 @@ function tempDir(prefix: string): string {
 	return dir;
 }
 
+const BRIEF = "docs/plans/data-platform/B01.md";
+
+function programmeState(): string {
+	return join(
+		git(repo, "rev-parse", "--absolute-git-dir"),
+		"astack/plans/data-platform",
+	);
+}
+
+function trailLines(path: string): string[] {
+	return existsSync(path)
+		? readFileSync(path, "utf8").trim().split("\n").slice(1)
+		: [];
+}
+
 describe("check-plan in plan mode and on briefs", () => {
 	test("--as checks plan text from stdin under the path that it gets after approval", () => {
 		const text = readFileSync(join(repo, EXPORT), "utf8");
@@ -332,6 +347,67 @@ describe("astack plan attended, trail, draft and delegate", () => {
 		expect(run(plan.run, ["draft", "member-export"], repo).out).not.toContain(
 			"Footer row",
 		);
+	});
+
+	test("[control:trail-batch] trail takes a brief path from outside the repo and writes a stdin batch in one call", () => {
+		const outside = tempDir("astack-outside-");
+		const brief = join(repo, BRIEF);
+		const trailFile = join(programmeState(), "trail.tsv");
+		const gate = (n: number, phase = "gate") =>
+			[phase, `gate ${n}`, "the gate passed", `run ${n}`, "pass"].join("\t");
+		const rows = Array.from({ length: 9 }, (_, i) => gate(i + 1));
+		const before = trailLines(trailFile);
+		const typo = run(plan.run, ["trail", brief, "-"], outside, {
+			input: rows
+				.map((row, i) => (i === 4 ? gate(5, "delegate") : row))
+				.join("\n"),
+		});
+		expect(typo.code).toBe(2);
+		expect(typo.err).toContain(
+			'line 5: the phase "delegate" is unknown. The nearest phase is delegated.',
+		);
+		const short = run(plan.run, ["trail", brief, "-"], outside, {
+			input: `${rows[0]}\ngate\tgate 2\tthe gate passed\trun 2\n`,
+		});
+		expect(short.err).toBe(
+			"astack plan trail: line 2 has 4 cells, not 5. Split the 5 cells with tabs\n",
+		);
+		expect(trailLines(trailFile)).toEqual(before);
+		const batch = run(plan.run, ["trail", brief, "-"], outside, {
+			input: `${rows.join("\n")}\n`,
+		});
+		expect(batch).toEqual({ code: 0, out: `${trailFile}\n`, err: "" });
+		expect(
+			trailLines(trailFile)
+				.slice(before.length)
+				.map((line) => line.split("\t").slice(1).join("\t")),
+		).toEqual(rows);
+	});
+
+	test("[control:cwd-free] draft and delegate take a brief path from outside the repo and use the state folder of its programme", () => {
+		const outside = tempDir("astack-outside-");
+		const brief = join(repo, BRIEF);
+		const original = readFileSync(brief, "utf8");
+		try {
+			expect(
+				run(
+					plan.run,
+					["draft", brief, "Header row repeats", "Found in step 3."],
+					outside,
+				),
+			).toEqual({
+				code: 0,
+				out: `${join(programmeState(), "drafts.md")}\n`,
+				err: "",
+			});
+			expect(run(plan.run, ["delegate", brief, "off"], outside).code).toBe(0);
+			expect(readFileSync(brief, "utf8")).toContain("delegate: off\n");
+			expect(trailLines(join(programmeState(), "trail.tsv")).at(-1)).toContain(
+				"\tdelegated\tdelegate off\t",
+			);
+		} finally {
+			writeFileSync(brief, original);
+		}
 	});
 
 	test("delegate on writes the grant and report mode, and logs it", () => {

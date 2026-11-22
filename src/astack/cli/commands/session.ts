@@ -267,11 +267,13 @@ function checkpoint(args: readonly string[], io: Io): number {
 		appendTrail(
 			trail,
 			[
-				"checkpoint",
-				`${record.session} steps ${scope.steps.map((step) => step.id).join(",")}`,
-				"checkpoint package",
-				output.record.checkpoints.at(-1)?.head ?? "no head",
-				"report",
+				[
+					"checkpoint",
+					`${record.session} steps ${scope.steps.map((step) => step.id).join(",")}`,
+					"checkpoint package",
+					output.record.checkpoints.at(-1)?.head ?? "no head",
+					"report",
+				],
 			],
 			io.now,
 		);
@@ -293,11 +295,13 @@ function handoffCommand(args: readonly string[], io: Io): number {
 		appendTrail(
 			trail,
 			[
-				"handoff",
-				record.session,
-				"the session pauses",
-				record.branch,
-				"paused",
+				[
+					"handoff",
+					record.session,
+					"the session pauses",
+					record.branch,
+					"paused",
+				],
 			],
 			io.now,
 		);
