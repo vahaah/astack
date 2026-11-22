@@ -9,7 +9,7 @@ The [model](../../formal/DoctorTrust.tla) examines the trust verdict of doctor o
 - [criterion:DT-FALLBACK] Given no `hooks/list` reply and pinned trusted hashes, doctor prints a WARN with the cause and no ok line for the hooks.
 - [criterion:DT-READ-FAIL] A fake codex that hangs, exits 1 or returns a JSON-RPC error gives a failed read with its cause before the deadline. The reader sends `hooks/list` only after the initialize reply.
 - [criterion:DT-SKIP] Given a config folder saved with `--skip-profile`, doctor prints one NOTE for that folder and no FAIL from it. A folder that doctor does not examine and a failed write exit 1 with the path.
-- [criterion:CLI-VERSION] Given each of the 3 dist bundles, `astack --version` prints the release version and exits 0. A script with no versioned manifest above it exits 1.
+- [criterion:CLI-VERSION] Given each of the 3 dist bundles, `astack --version` prints the release version and exits 0, also through an npm bin link. A script with no versioned manifest above it exits 1.
 - [criterion:HP-RULES] Given a review profile with no `change-proof` gate, `astack check hardening-profile` exits 1 and prints the gate issue with its repair. A missing profile or fenced block exits 2 with the path and its repair. Doctor notes a repo with no review profile.
 - [criterion:DT-BASE] Given a base with `protected` false and no blocking ruleset rule, doctor prints a NOTE that names the base, and no FAIL. Doctor reads at most 3 bases, and the first gh failure ends the reads with one note.
 - [criterion:WP-DEADLINE] Given `--timeout 5`, a 60 s interval and a pending check, watch-pr sleeps 5 s and returns TIMEOUT. A retry backoff stops at the deadline too.

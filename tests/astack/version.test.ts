@@ -1,7 +1,17 @@
 import { afterAll, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { version as release } from "../../dist/package.json" with {
+	type: "json",
+};
 import type { Io } from "../../src/astack/cli/io.ts";
 import { main } from "../../src/astack/cli/main.ts";
 
@@ -81,4 +91,24 @@ test("[control:cli-version-none] a script with no versioned manifest above it ex
 	expect(result.err).toBe(
 		`astack --version: ${join(script, "..", "..")} holds no .claude-plugin/plugin.json, .cursor-plugin/plugin.json or package.json with a version\n`,
 	);
+});
+
+test("[control:cli-version-link] node prints the release version through an npm bin link to the package CLI", () => {
+	const scratch = mkdtempSync(join(tmpdir(), "astack-version-link-"));
+	dirs.push(scratch);
+	const bin = join(scratch, "node_modules", ".bin");
+	mkdirSync(bin, { recursive: true });
+	symlinkSync(
+		resolve(import.meta.dir, "../../dist/cli/astack.js"),
+		join(bin, "astack"),
+	);
+	const result = spawnSync("node", [join(bin, "astack"), "--version"], {
+		cwd: scratch,
+		encoding: "utf8",
+	});
+	expect({
+		code: result.status,
+		out: result.stdout,
+		err: result.stderr,
+	}).toEqual({ code: 0, out: `${release}\n`, err: "" });
 });

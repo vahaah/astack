@@ -284,7 +284,8 @@
 				"cli-version-claude",
 				"cli-version-cursor",
 				"cli-version-package",
-				"cli-version-none"
+				"cli-version-none",
+				"cli-version-link"
 			]
 		},
 		{
