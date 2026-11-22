@@ -25,6 +25,8 @@ export interface SimpleCommand {
 	background?: boolean;
 }
 
+const MANY_WORDS = /^(?:[@*]|\{[@*!]|\{[^}]*\[[@*]\])/;
+
 const EXPANDS_IN_HEREDOC = /[$`\\]/;
 const DEFINES_COMMAND =
 	/\bfunction\b|\balias\b|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
@@ -191,6 +193,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					substitution();
 				} else if (d === "$" && /[\w{@*#?$!-]/.test(src[i + 1] ?? "")) {
 					append("", true);
+					if (MANY_WORDS.test(src.slice(i + 1))) splits();
 					i++;
 				} else if (d === "`") {
 					backtickBody();
@@ -447,7 +450,7 @@ const HEADERS = new Set(["case", "for", "select"]);
 const SHELLS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
 const FOLDER_MOVES = new Set(["cd", "popd", "pushd"]);
 const MAX_DEPTH = 4;
-const FED: Word = { value: "", dynamic: true };
+const FED: Word = { value: "", dynamic: true, splits: true };
 
 type Option = {
 	readonly name: string;
@@ -515,7 +518,9 @@ function fedWords(words: Word[], replace: string | undefined): Word[] {
 	if (words.length === 0) return words;
 	if (replace === undefined) return [...words, FED];
 	return words.map((word) =>
-		word.value.includes(replace) ? { ...word, dynamic: true } : word,
+		word.value.includes(replace)
+			? { ...word, dynamic: true, splits: true }
+			: word,
 	);
 }
 

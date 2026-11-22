@@ -878,6 +878,23 @@ describe("the merge guard", () => {
 	});
 
 	test.each([
+		'gh api "$@"',
+		'gh api "$*"',
+		`gh api "\${a[@]}"`,
+		`gh api "\${@:2}"`,
+		`gh api "\${!name@}"`,
+		"echo x | xargs gh api",
+		"xargs -I{} gh api {}",
+	])(
+		"%s has a word after api that can become more than one argument, so it is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
 		"gh api repos/o/r/pulls/12/merge $M",
 		"gh api $ARGS",
 		"gh api repos/o/r/pulls/12/merge $(echo -XPUT)",
