@@ -10,7 +10,7 @@
 **/skills/astack-pr-review-hardening/references/*.md:subagent_type|Agent tool|`Agent`:the profile names subagent types as intent, and a tool without them runs the reviewer itself
 **/skills/astack-{code-review,grilling,wayfinder,codebase-design}/**:subagent_type|`Agent`|Agent tool:flow names subagent types as intent, and a tool without them runs the brief itself
 **/skills/astack-plan/**:~/\.claude/plans:the rule warns that a plan in the Claude Code plan folder is lost to other tools
-**/skills/astack-{arena,how,interrogate,mode,no-comments,reflect,setup-models,swarm,why}/**:subagent_type|`Agent`|Agent tool|Agent subagent:pstack names subagent types and the Agent tool as intent, and a tool without them runs the brief itself
+**/skills/astack-{how,mode,no-comments,setup-models,swarm}/**:subagent_type|`Agent`|Agent tool|Agent subagent:pstack names subagent types and the Agent tool as intent, and a tool without them runs the brief itself
 **/skills/astack-{mode,recall,reflect,show-me-your-work}/**:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|`Skill` tool|claude plugin|claude -p:the skill reads the session transcripts and the skill folders of Claude Code
 **/skills/astack-setup-models/SKILL.md:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|\bAskUserQuestion\b:the skill writes the model rule of Claude Code and lists the Claude models
 **/skills/astack-arena/**:\bClaude\b:arena compares Claude models with the models of other families
