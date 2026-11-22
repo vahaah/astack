@@ -11,7 +11,6 @@ import {
 import {
 	backlink,
 	type ExportUnit,
-	extractCopy,
 	type LabelRef,
 	planCopy,
 	setHome,
@@ -46,10 +45,8 @@ export type Write = {
 	readonly records: string | undefined;
 };
 
-export type WritePlanKind = "export" | "move" | "import";
-
 export type WritePlan = {
-	readonly kind: WritePlanKind;
+	readonly kind: "export";
 	readonly target: Target;
 	readonly plan: string;
 	readonly slug: string;
@@ -65,7 +62,6 @@ export type ExportOptions = {
 	readonly team: string | undefined;
 	readonly repo: string | undefined;
 	readonly initiative: string | undefined;
-	readonly move: boolean;
 	readonly edited?: ReadonlySet<string>;
 	readonly overwrite?: boolean;
 };
@@ -242,11 +238,10 @@ function linear(tool: string, args: Record<string, unknown>): Call {
 }
 
 function copyBody(builder: Builder, unit: ExportUnit): string {
-	const home = builder.options.move ? builder.options.target : "repo";
 	return planCopy(
-		setHome(unit.body, home),
+		setHome(unit.body, "repo"),
 		unit.path ?? "",
-		home,
+		"repo",
 		builder.options.target,
 	);
 }
@@ -676,11 +671,11 @@ export function exportPlan(
 	const home = frontmatterValue(set.root, "home") ?? "repo";
 	if (home !== "repo")
 		problems.push(
-			`home is ${home}; import the plan before you export it again`,
+			`home is ${home}; export reads only a plan whose home is repo`,
 		);
 	const programme = tierOf(set.root) === "programme";
 	const units = trackerUnits(set).filter(
-		(unit) => unit.kind !== "copy" || programme || options.move,
+		(unit) => unit.kind !== "copy" || programme,
 	);
 	const ordered = topoOrder(units);
 	if (!ordered.ok) problems.push(ordered.error);
@@ -737,19 +732,6 @@ export function exportPlan(
 				break;
 		}
 	}
-	if (options.move)
-		for (const path of [
-			set.path,
-			...[...set.briefs.values()].map((brief) => brief.path),
-		])
-			builder.writes.push({
-				id: `w${builder.writes.length + 1}`,
-				action: "file",
-				unit: set.slug,
-				summary: `delete ${path} in one commit, after every tracker write succeeds`,
-				call: { via: "repo", action: "delete", path, content: undefined },
-				records: undefined,
-			});
 	const overwrites = builder.writes.filter((write) =>
 		write.summary.endsWith(OVERWRITE_MARK),
 	);
@@ -759,7 +741,7 @@ export function exportPlan(
 			"run astack plan drift first, pull each edit into the plan, or run export again with --overwrite",
 		]);
 	return ok({
-		kind: options.move ? "move" : "export",
+		kind: "export",
 		target: options.target,
 		plan: set.path,
 		slug: set.slug,
@@ -767,92 +749,6 @@ export function exportPlan(
 		writes: builder.writes,
 		keys: builder.keys,
 		notes: builder.notes,
-	});
-}
-
-export function importPlan(
-	slug: string,
-	snapshot: Snapshot,
-	target: Target,
-	sha: string,
-): Result<WritePlan, readonly string[]> {
-	const copies = snapshot.objects.filter(
-		(object) =>
-			object.link === `${slug}/copy` ||
-			new RegExp(`^${slug}/B\\d{2,}[a-z]?/copy$`).test(object.link ?? ""),
-	);
-	const root = copies.find((object) => object.link === `${slug}/copy`);
-	if (!root)
-		return err([
-			`the snapshot holds no plan copy for ${slug}; export or move the plan first`,
-		]);
-	const writes: Write[] = [];
-	const problems: string[] = [];
-	for (const object of [root, ...copies.filter((copy) => copy !== root)]) {
-		const copy = extractCopy(object.body);
-		if (!copy) {
-			problems.push(
-				`${object.key} does not hold a plan copy that import can read`,
-			);
-			continue;
-		}
-		const text = setHome(copy.text, "repo");
-		writes.push({
-			id: `w${writes.length + 1}`,
-			action: "file",
-			unit: object.link ?? slug,
-			summary: `write ${copy.path} with home repo`,
-			call: { via: "repo", action: "write", path: copy.path, content: text },
-			records: undefined,
-		});
-		const body = `${planCopy(text, copy.path, "repo", target)}\n\n${backlink(object.link ?? slug, sha)}`;
-		const call: Call =
-			object.type === "document"
-				? {
-						via: "linear",
-						tool: "save_document",
-						args: { id: object.key, content: body },
-					}
-				: target === "linear"
-					? {
-							via: "linear",
-							tool: "save_comment",
-							args: { id: object.key, body },
-						}
-					: {
-							via: "gh",
-							argv: [
-								"gh",
-								"api",
-								"-X",
-								"PATCH",
-								`repos/{owner}/{repo}/issues/comments/${object.key}`,
-								"-F",
-								"body=@-",
-							],
-							stdin: body,
-						};
-		writes.push({
-			id: `w${writes.length + 1}`,
-			action: "update",
-			unit: object.link ?? slug,
-			summary: `mark ${object.key} as a mirror, home repo`,
-			call,
-			records: undefined,
-		});
-	}
-	if (problems.length > 0) return err(problems);
-	return ok({
-		kind: "import",
-		target,
-		plan: extractCopy(root.body)?.path ?? "",
-		slug,
-		sha,
-		writes,
-		keys: [],
-		notes: [
-			"Commit the written files in one commit, then run astack check-plan on them.",
-		],
 	});
 }
 

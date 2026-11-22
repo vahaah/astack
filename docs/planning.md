@@ -89,7 +89,7 @@ Verified in this rebuild by unit and CLI tests:
 
 - the checker on the fixture plans and the three shapes, and the hook denies;
 - export for both trackers, the idempotent second export and key write-back;
-- each drift class, and the move and import round trip;
+- each drift class;
 - the session record and the board.
 
 Not verified. No write plan ran against a live Linear workspace or a live GitHub repo. The Linear label group names `Lane/<x>` and `Kind/<x>`, and the markdown that Linear documents keep on import, are not tested. `gh issue create --type` needs issue types on the repo.

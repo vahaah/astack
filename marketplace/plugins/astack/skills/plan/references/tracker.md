@@ -1,7 +1,6 @@
-# Tracker export, move, import and drift
+# Tracker export and drift
 
-A plan moves to Linear or GitHub only when the owner asks.
-The structure stays the same in each home.
+Export a plan to Linear or GitHub only when the owner asks.
 The CLI never calls a tracker and holds no credential.
 It reads tracker JSON on stdin and prints a typed write plan.
 Run each write through the Linear MCP or `gh`.
@@ -9,8 +8,6 @@ Run each write through the Linear MCP or `gh`.
 ## One home at a time
 
 - `home: repo` is the default. The plan file is the plan, and the tracker holds a mirror.
-- `astack plan move` writes the tracker copy with `home: linear` or `home: github`. Then it deletes the repo files in one commit.
-- `astack plan import` does the reverse. It writes the files back with `home: repo`.
 - Never keep two copies that people can edit.
 
 The plan holds the structure, Exit, Proof, the edges and the settled decisions. The tracker holds status, claims, comments, hand-offs and open decision threads. Status never flows into the plan.
@@ -92,7 +89,7 @@ Give an object, or a bare array of objects. Map the output of the MCP or `gh` in
 | Block | An issue `B07 <outcome>`, with the first ticket of its brief as parent, and label `Lane/<x>` | title, description, parent, milestone, blocked by, labels |
 | Session | A sub-issue `B07/S2 <what becomes true>`, blocked by its Depends on | the same |
 | Open decision | An issue with label `Kind/decision` that blocks the units it binds | the same |
-| Standard plan | One addendum comment on the existing ticket. A move adds the plan copy. It makes no session sub-issue | the comment text. The ticket text is never edited |
+| Standard plan | One addendum comment on the existing ticket. It makes no session sub-issue | the comment text. The ticket text is never edited |
 
 The label groups `Lane` and `Kind` come first, on the first export.
 Turn off "auto-close parent when sub-issues are done" in the team settings, so In Review stays earned.
@@ -134,16 +131,6 @@ Give the plan file or the slug.
 A slug for a plan in the plan directory reads the repo file.
 For a plan whose home is the tracker, give the slug.
 Drift reads that plan from the snapshot's copy.
-
-## Move and import
-
-```sh
-astack plan move <plan> --to linear|github [the export flags]
-astack plan import <slug> --from linear|github [--tracker <file|->]
-```
-
-- Move is an export with the copy of each plan file. Run the tracker writes first. The repo deletes come last, in one commit, after each tracker write succeeds.
-- Import reads the copies from the snapshot. It prints a repo write for each file with `home: repo`, and an update that marks each copy as a mirror. Commit the files in one commit, then run `astack check-plan` on them.
 
 ## PR and ticket rules
 

@@ -282,7 +282,7 @@ The plan and session contracts are these.
 | Open decision | an issue `Kind/decision` that blocks the sessions it binds | an issue, label `kind:decision` |
 
 Round-trip rules.
-1. One home at a time. `astack plan move` writes the tracker copy, sets `home` and deletes the repo plan in one commit. `astack plan import` does the reverse.
+1. One home at a time. The repo plan is the plan, and the tracker holds a mirror.
 2. The plan holds structure, Exit, Proof, edges and settled decisions. The tracker holds status, claims, comments, hand-offs, defects and open decision threads.
 3. Export is idempotent. It shows a dry run first, files blockers first, writes only the fields astack owns and never deletes.
 4. `astack plan drift <slug>` reads tracker JSON on stdin. It reports a stale export, owned fields edited in the tracker, orphans, unmapped children and status contradictions. It never resolves human text on its own.

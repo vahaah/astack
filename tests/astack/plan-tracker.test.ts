@@ -7,7 +7,6 @@ import { driftReport } from "../../src/astack/plan/drift.ts";
 import {
 	type ExportOptions,
 	exportPlan,
-	importPlan,
 	type WritePlan,
 } from "../../src/astack/plan/export.ts";
 import { writeKeys } from "../../src/astack/plan/keys.ts";
@@ -44,7 +43,6 @@ function options(
 		team: "Core",
 		repo: undefined,
 		initiative: undefined,
-		move: false,
 		...extra,
 	};
 }
@@ -576,58 +574,15 @@ describe("astack plan drift", () => {
 	});
 });
 
-describe("astack plan move and import", () => {
-	test("move writes the plan copy with its new home and deletes the repo files", () => {
-		const moved = exported(INDEX, "linear", EMPTY_SNAPSHOT, { move: true });
-		expect(moved.kind).toBe("move");
-		const deletes = moved.writes
-			.filter((write) => write.call.via === "repo")
-			.map((write) => (write.call.via === "repo" ? write.call.path : ""));
-		expect(deletes).toEqual([INDEX, "docs/plans/data-platform/B01.md"]);
-		const copy = moved.writes.find(
-			(write) => write.unit === "data-platform/copy",
-		);
-		expect(JSON.stringify(copy?.call)).toContain("home: linear");
-	});
-
-	test.each(["linear", "github"] as const)(
-		"import gives back the moved plan with home repo (%s)",
-		(target) => {
-			const moved = exported(INDEX, target, EMPTY_SNAPSHOT, { move: true });
-			const snapshot = applyWrites(moved, EMPTY_SNAPSHOT);
-			const result = importPlan("data-platform", snapshot, target, "def5678");
-			if (!result.ok) throw new Error(result.error.join(";"));
-			const files = new Map(
-				result.value.writes.flatMap((write) =>
-					write.call.via === "repo" && write.call.content
-						? [[write.call.path, write.call.content] as const]
-						: [],
-				),
-			);
-			const keyed = (text: string) =>
-				target === "github" ? toGithub(text) : text;
-			expect(files.get(INDEX)).toBe(keyed(fixture(`repo/${INDEX}`)));
-			expect(files.get("docs/plans/data-platform/B01.md")).toBe(
-				keyed(fixture("repo/docs/plans/data-platform/B01.md")),
-			);
-			expect(
-				result.value.writes.filter((write) => write.action === "update"),
-			).toHaveLength(2);
+describe("astack plan export and drift on a tracker copy", () => {
+	test.each(["move", "import"])(
+		"astack plan %s is an unknown subcommand",
+		(sub) => {
+			const result = run(plan.run, [sub, "x", "--to", "linear"], REPO);
+			expect(result.code).toBe(2);
+			expect(result.err).toStartWith("astack plan: give one of\n");
 		},
 	);
-
-	test("a standard plan moves to one copy and comes back", () => {
-		const moved = exported(EXPORT, "github", EMPTY_SNAPSHOT, { move: true });
-		const snapshot = applyWrites(moved, EMPTY_SNAPSHOT);
-		const result = importPlan("member-export", snapshot, "github", "def5678");
-		if (!result.ok) throw new Error(result.error.join(";"));
-		const write = result.value.writes.find(
-			(candidate) => candidate.call.via === "repo",
-		);
-		expect(write?.call.via === "repo" ? write.call.content : "").toBe(
-			toGithub(fixture(`repo/${EXPORT}`)),
-		);
-	});
 
 	test("export refuses a plan whose home is the tracker", () => {
 		const set = setFromRepo(REPO, EXPORT);
@@ -639,37 +594,22 @@ describe("astack plan move and import", () => {
 		expect(exportPlan(away, EMPTY_SNAPSHOT, options("linear")).ok).toBe(false);
 	});
 
-	test("drift on a moved plan reads the plan from the tracker copy", () => {
+	test("drift on the slug of an exported programme with no repo file reads the tracker copy", () => {
 		const dirs: string[] = [];
 		const repo = freshRepo(dirs);
-		const moved = exported(EXPORT, "github", EMPTY_SNAPSHOT, { move: true });
-		const snapshot = applyWrites(moved, EMPTY_SNAPSHOT);
-		rmSync(join(repo, EXPORT));
-		commitAll(repo, "move the plan");
-		const result = run(plan.run, ["drift", "member-export"], repo, {
-			input: JSON.stringify(snapshot),
-		});
-		expect(result.out).toBe(
-			"member-export: no drift between the plan and the tracker\n",
-		);
-		expect(result.code).toBe(0);
-		for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
-	});
-
-	test("a moved programme shows no drift right after the move", () => {
-		const dirs: string[] = [];
-		const repo = freshRepo(dirs);
-		const moved = exported(INDEX, "linear", EMPTY_SNAPSHOT, { move: true });
-		const snapshot = applyWrites(moved, EMPTY_SNAPSHOT);
+		const snapshot = applyWrites(exported(INDEX, "linear"), EMPTY_SNAPSHOT);
 		rmSync(join(repo, "docs/plans/data-platform"), {
 			recursive: true,
 			force: true,
 		});
-		commitAll(repo, "move the plan");
+		commitAll(repo, "remove the plan files");
 		const result = run(plan.run, ["drift", "data-platform"], repo, {
 			input: JSON.stringify({ ...snapshot, target: "linear" }),
 		});
-		expect(result.out).not.toContain("edited-in-tracker");
+		expect(result).toMatchObject({
+			code: 0,
+			out: "data-platform: no drift between the plan and the tracker\n",
+		});
 		for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
 	});
 

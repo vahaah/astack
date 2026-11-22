@@ -109,7 +109,7 @@ The owner files those findings with "agree" through `astack:write-ticket`.
 Never edit the description of a product spec ticket.
 Put an addendum in a comment.
 
-A plan moves to Linear or GitHub only when the owner asks. `references/tracker.md` has `astack plan export`, `move`, `import`, `drift` and `keys`.
+Export a plan to Linear or GitHub only when the owner asks. `references/tracker.md` has `astack plan export`, `drift` and `keys`.
 
 ## Pick the mode
 
@@ -126,7 +126,7 @@ When the argument is a ticket key, read the tracker.
 | milestone exit | Each session of the `now` milestone merged | `references/upkeep.md`, Milestone exit |
 | diverge | A divergence trigger fired | `references/upkeep.md`, Diverge |
 | pause | The owner says "pause" | `references/upkeep.md`, Pause and close |
-| tracker | The owner asks to export, move, import or check drift | `references/tracker.md` |
+| tracker | The owner asks to export or check drift | `references/tracker.md` |
 
 ## Pick the tier
 
@@ -285,7 +285,7 @@ Use no headings, no bold labels and no colons in the middle of a sentence. Then 
 - `references/template.md`: the plan file, the caps, the checker, the trail and the life of a plan.
 - `references/sessions.md`: the session protocol, waves, the integrator lane, checkpoints and `astack session`.
 - `references/programme.md`: the index, milestones, blocks, briefs, decision issues and `astack board`.
-- `references/tracker.md`: `astack plan export`, `move`, `import`, `drift` and `keys`, with the Linear and GitHub maps.
+- `references/tracker.md`: `astack plan export`, `drift` and `keys`, with the Linear and GitHub maps.
 - `references/upkeep.md`: resume, the session boundary, the milestone exit, diverge, pause and close.
 - `references/phase-boundaries.md`: when to continue, clear, hand off, delegate or compact at a phase boundary.
 - `references/unattended.md`: runs with nobody to answer.

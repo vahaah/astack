@@ -307,7 +307,7 @@ function checkFrontmatter(ctx: Ctx, emit: Emit): void {
 			"warning",
 			"frontmatter",
 			home.line,
-			`home is ${home.value}, so the tracker copy is the plan; run astack plan import before you edit this file`,
+			`home is ${home.value}, so the tracker copy is the plan; edit the tracker copy, not this file`,
 		);
 	const gates = field("owner-gates");
 	if (gates) {

@@ -10,7 +10,7 @@ import {
 	readText,
 	renderAt,
 } from "../../plan/edge.ts";
-import { exportPlan, importPlan, writePlanText } from "../../plan/export.ts";
+import { exportPlan, writePlanText } from "../../plan/export.ts";
 import { planProfileFor } from "../../plan/files.ts";
 import { parseKeys, setFrontmatter, writeKeys } from "../../plan/keys.ts";
 import { frontmatterValue } from "../../plan/parse.ts";
@@ -47,15 +47,12 @@ const USAGE = [
 	"plan draft <slug> [<title> <why>]",
 	"plan delegate <plan> on|off",
 	"plan export <plan> --to linear|github [--team <name>] [--repo <owner/repo>] [--initiative <name>] [--tracker <file|->] [--overwrite] [--json]",
-	"plan move <plan> --to linear|github [the export flags]",
-	"plan import <slug> --from linear|github [--tracker <file|->] [--json]",
 	"plan drift <plan or slug> [--tracker <file|->] [--json]",
 	"plan keys <plan>",
 ];
 
 export const VALUE_FLAGS = [
 	"--to",
-	"--from",
 	"--team",
 	"--repo",
 	"--initiative",
@@ -198,14 +195,10 @@ export function checkpointsBefore(
 	return /checkpoints were (report|approve)\b/.exec(grant?.evidence ?? "")?.[1];
 }
 
-function targetFlag(
-	args: readonly string[],
-	flag: string,
-	io: Io,
-): Target | undefined {
-	const value = valueAfter(args, flag);
+function targetFlag(args: readonly string[], io: Io): Target | undefined {
+	const value = valueAfter(args, "--to");
 	const target = TARGETS.find((candidate) => candidate === value);
-	if (!target) usageError(io, `astack plan: ${flag} takes linear or github`);
+	if (!target) usageError(io, "astack plan: --to takes linear or github");
 	return target;
 }
 
@@ -264,14 +257,10 @@ export function printPlan(
 	);
 }
 
-function exportCommand(args: readonly string[], io: Io, move: boolean): number {
+function exportCommand(args: readonly string[], io: Io): number {
 	const [file] = positional(args, VALUE_FLAGS);
-	if (!file)
-		return usageError(
-			io,
-			`astack plan ${move ? "move" : "export"}: give the plan file`,
-		);
-	const target = targetFlag(args, "--to", io);
+	if (!file) return usageError(io, "astack plan export: give the plan file");
+	const target = targetFlag(args, io);
 	if (!target) return 2;
 	const loaded = setFor(file, io);
 	if (!loaded) return 2;
@@ -294,31 +283,12 @@ function exportCommand(args: readonly string[], io: Io, move: boolean): number {
 			valueAfter(args, "--team") ?? planSettings(loaded.root).team ?? undefined,
 		repo: valueAfter(args, "--repo") ?? undefined,
 		initiative: valueAfter(args, "--initiative") ?? undefined,
-		move,
 		edited,
 		overwrite: args.includes("--overwrite"),
 	});
 	if (!result.ok) {
 		io.err(
 			`${result.error.map((problem) => `astack plan export: ${problem}`).join("\n")}\n`,
-		);
-		return 1;
-	}
-	printPlan(io, args, result.value, writePlanText(result.value));
-	return 0;
-}
-
-function importCommand(args: readonly string[], io: Io): number {
-	const [slug] = positional(args, VALUE_FLAGS);
-	if (!slug) return usageError(io, "astack plan import: give the plan slug");
-	const target = targetFlag(args, "--from", io);
-	if (!target) return 2;
-	const snapshot = snapshotFrom(args, io, true);
-	if (!snapshot) return 2;
-	const result = importPlan(slug, snapshot, target, "import");
-	if (!result.ok) {
-		io.err(
-			`${result.error.map((problem) => `astack plan import: ${problem}`).join("\n")}\n`,
 		);
 		return 1;
 	}
@@ -434,11 +404,7 @@ function run(args: readonly string[], io: Io): number {
 		case "delegate":
 			return delegate(rest, io);
 		case "export":
-			return exportCommand(rest, io, false);
-		case "move":
-			return exportCommand(rest, io, true);
-		case "import":
-			return importCommand(rest, io);
+			return exportCommand(rest, io);
 		case "drift":
 			return drift(rest, io);
 		case "keys":
@@ -454,7 +420,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "plan",
 	summary:
-		"Keeps the plan trail and drafts, sets the delegation grant, and prints tracker write plans (export, move, import), drift and key write-back. It never calls a tracker.",
+		"Keeps the plan trail and drafts, sets the delegation grant, and prints the tracker write plan of export, drift and key write-back. It never calls a tracker.",
 	usage: USAGE.join("\n"),
 	run,
 };
