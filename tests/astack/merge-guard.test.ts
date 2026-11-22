@@ -782,6 +782,34 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"a GraphQL merge queue entry",
+			"mcp__forge__graphql",
+			true,
+			{
+				query:
+					'mutation { enqueuePullRequest(input: {pullRequestId: "x"}) { clientMutationId } }',
+			},
+		],
+		[
+			"a GraphQL branch merge",
+			"mcp__forge__graphql",
+			true,
+			{
+				query:
+					'mutation { mergeBranch(input: {repositoryId: "r", base: "main", head: "feat"}) { clientMutationId } }',
+			},
+		],
+		[
+			"a POST on the REST branch merge path",
+			"mcp__forge__call_api",
+			true,
+			{
+				method: "POST",
+				path: "/repos/o/r/merges",
+				body: { base: "main", head: "feat" },
+			},
+		],
+		[
 			"a GraphQL merge after a tab",
 			"mcp__forge__graphql",
 			true,

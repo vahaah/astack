@@ -29,8 +29,10 @@ import {
 
 const API_MERGE = /(?:^|\/)pulls\/\d+\/merge$/;
 const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
-const AUTO_MERGE_MUTATION = /\benablePullRequestAutoMerge\b/;
-const MERGE_PATH_IN_INPUT = /\bpulls\/[^/\s]+\/merge\b/;
+const MERGE_MUTATION_IN_INPUT =
+	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
+const MERGE_PATH_IN_INPUT =
+	/\bpulls\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
 const WRITE_METHOD_IN_INPUT = /(?:\b|-X)(?:PUT|POST|PATCH|DELETE)\b/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
@@ -299,8 +301,7 @@ function holdsMerge(input: unknown): boolean {
 	const text = values.join("\n");
 	return (
 		values.some(runsGhMerge) ||
-		PR_MERGE_MUTATION.test(text) ||
-		AUTO_MERGE_MUTATION.test(text) ||
+		MERGE_MUTATION_IN_INPUT.test(text) ||
 		(MERGE_PATH_IN_INPUT.test(text) && WRITE_METHOD_IN_INPUT.test(text))
 	);
 }
