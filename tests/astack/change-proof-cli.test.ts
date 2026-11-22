@@ -43,7 +43,7 @@ function proofEnv(
 		env.ASTACK_TLC_JAR = jar;
 	if (process.env.XDG_CACHE_HOME !== undefined)
 		env.XDG_CACHE_HOME = process.env.XDG_CACHE_HOME;
-	if (process.env.JAVA_HOME !== undefined)
+	if (process.env.JAVA_HOME !== undefined && extra.JAVA_HOME === undefined)
 		env.JAVA_HOME = process.env.JAVA_HOME;
 	return env;
 }
@@ -67,6 +67,27 @@ function proof(
 
 const lastLine = (text: string): string =>
 	text.trimEnd().split("\n").at(-1) ?? "";
+
+const TLC_RECORD = (code: number): string =>
+	`echo '@!@!@STARTMSG ${code}:1 @!@!@'; echo 'fake'; echo '@!@!@ENDMSG ${code} @!@!@'`;
+
+function fakeJava(dir: string, positive: string, negative: string): string {
+	const home = join(scratch, dir);
+	mkdirSync(join(home, "bin"), { recursive: true });
+	const java = join(home, "bin", "java");
+	writeFileSync(
+		java,
+		[
+			"#!/bin/sh",
+			`if [ "$1" = -version ]; then echo 'openjdk version "21.0.2"' >&2; exit 0; fi`,
+			`if grep -qF '/\\ fresh /\\ status' Gate.tla; then ${positive}; fi`,
+			negative,
+			"",
+		].join("\n"),
+	);
+	chmodSync(java, 0o755);
+	return home;
+}
 
 describe("astack check proof", () => {
 	test.each(["check proof", "check-proof"])(
@@ -511,6 +532,7 @@ describe("astack check proof", () => {
 	);
 
 	test("[control:proof-timeout-cleanup] a model run past the deadline is killed and its temp root is removed", () => {
+		const deadlineMs = 200;
 		const repo = proofRepo(scratch, () => {}, {
 			...PROOF_FILES,
 			"formal/Gate.tla": SLOW_GATE_TLA,
@@ -519,10 +541,52 @@ describe("astack check proof", () => {
 		mkdirSync(tmp);
 		const run = proof(repo.root, [], {
 			TMPDIR: tmp,
-			ASTACK_PROOF_TIMEOUT_MS: "3000",
+			ASTACK_PROOF_TIMEOUT_MS: String(deadlineMs),
 		});
 		expect(run.out).toBe(
-			"stop: proof model: the positive run passed the 3000 ms deadline and was stopped\n",
+			`stop: proof model: the positive run passed the ${deadlineMs} ms deadline and was stopped\n`,
+		);
+		expect(run.code).toBe(1);
+		expect(readdirSync(tmp)).toEqual([]);
+	});
+
+	test("[control:proof-run-order] a failing positive run that ends after a wrong negative run stops on the positive run", () => {
+		const repo = proofRepo(scratch);
+		const tmp = join(scratch, "tmp-order");
+		mkdirSync(tmp);
+		const ended = join(scratch, "order-negative-ended");
+		const run = proof(repo.root, [], {
+			TMPDIR: tmp,
+			ASTACK_PROOF_TIMEOUT_MS: "5000",
+			JAVA_HOME: fakeJava(
+				"java-order",
+				`while [ ! -f '${ended}' ]; do sleep 0.02; done; ${TLC_RECORD(1000)}; exit 150`,
+				`touch '${ended}'; exit 0`,
+			),
+		});
+		expect(run.out).toBe(
+			"stop: proof model: the positive run exited 150 with error 1000\n",
+		);
+		expect(run.code).toBe(1);
+		expect(readdirSync(tmp)).toEqual([]);
+	});
+
+	test("[control:proof-run-stop] a positive parse error stops the proof at once, kills the held negative run and removes every temp root", () => {
+		const repo = proofRepo(scratch);
+		const tmp = join(scratch, "tmp-stop");
+		mkdirSync(tmp);
+		const started = performance.now();
+		const run = proof(repo.root, [], {
+			TMPDIR: tmp,
+			JAVA_HOME: fakeJava(
+				"java-stop",
+				`${TLC_RECORD(3002)}; exit 150`,
+				"exec sleep 30",
+			),
+		});
+		expect(performance.now() - started).toBeLessThan(2000);
+		expect(run.out).toBe(
+			"stop: proof model: the positive run exited 150 with error 3002\n",
 		);
 		expect(run.code).toBe(1);
 		expect(readdirSync(tmp)).toEqual([]);
