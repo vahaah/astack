@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "thinking-skill-cut",
-	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
+	"base": "f3932fc921cf6febc84e7f7af492f434cc251c0a",
 	"scope": [
 		{
 			"path": "marketplace/plugins/astack/skills/why/**",

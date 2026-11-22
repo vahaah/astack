@@ -12,7 +12,8 @@
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
 		"docs/reference/pr-head-check.md",
-		"docs/reference/law-controls.md"
+		"docs/reference/law-controls.md",
+		"docs/reference/pr-recipes.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -68,9 +69,12 @@
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
 		"tests/old-names.test.ts",
+		"tests/astack/change-proof-manifest.test.ts",
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
-		"tests/property/verdict-monoid.test.ts"
+		"tests/property/verdict-monoid.test.ts",
+		"tests/doc-facts.test.ts",
+		"tests/apply/flow-config.test.ts"
 	],
 	"links": [
 		{
@@ -374,6 +378,14 @@
 			"controls": ["wb-slack-note", "wb-lower"]
 		},
 		{
+			"criterion": "WB-line",
+			"controls": ["wb-line-over", "wb-line-lower"]
+		},
+		{
+			"criterion": "WB-facts",
+			"controls": ["wb-facts-counts", "wb-facts-names", "wb-facts-playbooks"]
+		},
+		{
 			"criterion": "WB-cut",
 			"controls": ["wb-successor"]
 		},
@@ -662,6 +674,41 @@
 			"controls": ["an-names", "an-models-header"]
 		},
 		{
+			"criterion": "CP-manifest-merge",
+			"controls": ["cp-manifest-merge"]
+		},
+		{
+			"criterion": "CP-manifest-search",
+			"controls": [
+				"cp-manifest-search",
+				"cp-manifest-two",
+				"cp-manifest-fallback"
+			]
+		},
+		{
+			"criterion": "CP-manifest-base",
+			"controls": [
+				"cp-manifest-base",
+				"cp-manifest-base-none",
+				"cp-manifest-merged"
+			]
+		},
+		{
+			"criterion": "CP-manifest-held",
+			"controls": ["cp-manifest-held", "cp-manifest-unstaged"]
+		},
+		{
+			"criterion": "CP-adr-decision",
+			"controls": ["proof-adr-contract", "cp-adr-span"]
+		},
+		{
+			"criterion": "CP-record-decision",
+			"controls": [
+				"cp-record-decision",
+				"proof-ratification-requires-the-separate-proof-record-s-s"
+			]
+		},
+		{
 			"criterion": "PH-LINE",
 			"controls": ["ph-line"]
 		},
@@ -708,6 +755,14 @@
 		{
 			"criterion": "ADMIT-ORDER",
 			"controls": ["proof-stage-order"]
+		},
+		{
+			"criterion": "GH-READ",
+			"controls": ["gh-read"]
+		},
+		{
+			"criterion": "FORK-LINK",
+			"controls": ["fork-link"]
 		}
 	]
 }

@@ -2,7 +2,7 @@
 
 Take the first row that matches the owner's words. A user rule in the rules folder can add rows, and its rows come before the rows here. The owner may use other words for the same thing, such as "bucket" for a step or `W<n>` for a wave. Accept them, and never correct them.
 
-For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
+For the 23 playbooks that `references/playbooks.md` lists, read that file.
 
 ## Route table
 

@@ -1,5 +1,5 @@
 {
-	"total": 122316,
+	"total": 117440,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -7,8 +7,8 @@
 		"benchmark-checklist": 876,
 		"code-review": 1709,
 		"codebase-design": 1739,
-		"coding-guide": 1530,
-		"coding-rules": 4031,
+		"coding-guide": 1528,
+		"coding-rules": 4025,
 		"control-cli": 888,
 		"control-ui": 907,
 		"council": 841,
@@ -24,15 +24,15 @@
 		"in-your-own-words": 40,
 		"interrogate": 429,
 		"leaving-pr-comments": 524,
-		"mode": 27582,
+		"mode": 24220,
 		"modernize": 1013,
 		"no-comments": 492,
 		"plan": 14697,
-		"pr-review-hardening": 22791,
-		"principles": 5217,
+		"pr-review-hardening": 22790,
+		"principles": 3755,
 		"recall": 764,
 		"reflect": 587,
-		"setup": 3451,
+		"setup": 3443,
 		"setup-models": 1051,
 		"sharpen": 128,
 		"show-me-your-work": 985,
@@ -42,7 +42,10 @@
 		"tdd": 1007,
 		"types": 4992,
 		"why": 1162,
-		"write-docs": 5825,
+		"write-docs": 5790,
 		"write-ticket": 4054
+	},
+	"lines": {
+		"AGENTS.md": 879
 	}
 }

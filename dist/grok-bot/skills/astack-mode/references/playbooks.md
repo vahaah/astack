@@ -24,7 +24,7 @@ Orchestrate runs the board, while `figure-it-out` designs one run.
 ## Planning
 
 Start planning-shaped work with `/astack-plan` when astack is installed.
-This includes the Multi-phase plan playbook, `figure-it-out`, and the start of an Orchestrate programme.
+This includes `figure-it-out` and the start of an Orchestrate programme.
 It also includes a Feature whose goal, scope, or one-way doors remain open.
 
 When the user is present, `astack-plan` asks only the calls that the user alone can make.
@@ -68,6 +68,5 @@ Without astack, run the matched playbook as written.
 - Fork sync. Bring the commits of an upstream repo into a fork. Give each commit a disposition. Show each exclusion to the owner before you integrate. Typical requests are "sync upstream", "check new upstream commits", or "update to the newest upstream version".
 - Session pickup. Resume or take over earlier work from a transcript, remote session, or pushed branch.
 - Pause safely. Suspend work so it can resume after an explicit pause, offline period, Claude Code restart, or imminent compaction. This complements Session pickup.
-- Multi-phase or multi-PR plan. Plan work that spans phases or stacked PRs. File: `playbooks/multi-phase-plan.md`.
 - Worktree and simulator cleanup. Prune merged or abandoned worktrees and stale iOS simulators to reclaim disk space. Typical requests include "what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", or "delete old simulators". File: `playbooks/worktree-cleanup.md`.
-- Opening a PR. Run it at the end of every other playbook.
+- Create PR. Run its steps 1 to 8 at the end of every other playbook. File: `references/create-pr.md`.

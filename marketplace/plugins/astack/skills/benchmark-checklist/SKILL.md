@@ -113,7 +113,7 @@ Use it when a side ran untuned or you could not check questions 4 and 7.
 Name the missing proof.
 
 Keep a PR body to one primary number.
-Follow the Opening a PR playbook at `${CLAUDE_SKILL_DIR}/../mode/playbooks/opening-a-pr.md`.
+Follow step 4 of Create PR at `${CLAUDE_SKILL_DIR}/../mode/references/create-pr.md`.
 Put run details, ranges, and limiter evidence in a linked artifact or notes file.
 
 ## Check other performance work

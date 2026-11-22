@@ -26,7 +26,7 @@ Name it in the PR's Verification.
 6. Rebase into small, ordered commits. Stack follow-ups. Follow [Sequence Work into Verifiable Units](../../principles/references/sequence-verifiable-units.md). Build, verify, and commit each small unit before the next.
 7. Run code `interrogate` only when the user or repo profile requests it.
    It follows the slop pass and keeps only failures that a rerun confirms.
-8. Run Opening a PR.
+8. Run Create PR steps 1 to 8 (`references/create-pr.md`).
 
 Give code-coupled work, such as one feature or migration, to one owner with the checkpoint in its brief.
 That owner delegates internally after the blocking phase.

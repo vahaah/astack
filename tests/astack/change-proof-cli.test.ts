@@ -415,22 +415,40 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(1);
 	});
 
-	test("[control:proof-adr-contract] a governing ADR without its category explanation fails", () => {
-		const adr = PROOF_FILES["docs/adr/0001-gate.md"];
-		if (adr === undefined) throw new Error("the ADR fixture is missing");
-		const repo = proofRepo(scratch, () => {}, {
-			...PROOF_FILES,
-			"docs/adr/0001-gate.md": adr.replace(
-				"#### Category composition",
-				"#### Unlinked explanation",
-			),
-		});
-		const run = proof(repo.root);
-		expect(run.code).toBe(1);
-		expect(run.out).toBe(
-			"stop: proof domain: docs/adr/0001-gate.md has no nonempty Category composition proof section\n",
-		);
-	});
+	const GATE_ADR = PROOF_FILES["docs/adr/0001-gate.md"] ?? "";
+	const D2 = "### D2. Admit only parsed input\n\n";
+	test.each<[string, string, string]>([
+		[
+			"an ADR that explains the arrows only under the cited D2",
+			`${GATE_ADR.replace("parseGate >=> admitGate preserves rejection.", "An older composition.")}\n${D2}#### Category composition\n\nparseGate >=> admitGate preserves rejection.\n`,
+			"ok: proof gate-admission admitted at HEAD",
+		],
+		[
+			"an ADR with no proof section whose D2 holds only a subsection",
+			`# 0001. Gate\n\nStatus: Accepted\n\n## Decisions\n\n### D1. Admit fresh input\n\nThe gate admits fresh input.\n\n${D2}#### Notes\n\nThe parser runs first.\n`,
+			"ok: proof gate-admission admitted at HEAD",
+		],
+		[
+			"an ADR whose D2 has no text before the next level 2 heading",
+			`${GATE_ADR}\n${D2}## Consequences\n\nNone.\n`,
+			"stop: proof domain: docs/adr/0001-gate.md has no nonempty D2 decision text",
+		],
+	])(
+		"[control:proof-adr-contract] the cited D2 of %s gives the domain verdict",
+		(_name, adr, last) => {
+			const repo = ladderRepo(scratch, {
+				change: { "docs/adr/0001-gate.md": adr },
+				edit: (p) => {
+					p.domain.adrs = [{ file: "docs/adr/0001-gate.md", decision: "D2" }];
+				},
+			});
+			const run = proof(repo.root);
+			expect(lastLine(run.out)).toBe(
+				last.replace("HEAD", git(repo.root, "rev-parse", "HEAD")),
+			);
+			expect(run.code).toBe(last.startsWith("ok:") ? 0 : 1);
+		},
+	);
 
 	test.each<[string, (root: string) => void, string]>([
 		[

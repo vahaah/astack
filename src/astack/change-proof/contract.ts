@@ -1,6 +1,21 @@
 import { err, ok, type Result } from "../result.ts";
 
-export const DEFAULT_PROOF_MANIFEST = ".astack/proof.json";
+export const LEGACY_PROOF_MANIFEST = ".astack/proof.json";
+export const PROOF_MANIFEST_FOLDER = ".astack/proof/";
+
+export function isFolderManifest(path: string): boolean {
+	if (!path.startsWith(PROOF_MANIFEST_FOLDER)) return false;
+	const name = path.slice(PROOF_MANIFEST_FOLDER.length);
+	return (
+		name.length > ".json".length &&
+		name.endsWith(".json") &&
+		!name.includes("/")
+	);
+}
+
+export function isManifestPath(path: string): boolean {
+	return path === LEGACY_PROOF_MANIFEST || isFolderManifest(path);
+}
 
 export const STAGES = [
 	"schema",

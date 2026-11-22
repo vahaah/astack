@@ -9,7 +9,7 @@ Shipping starts after this playbook ends.
 
 Start babysitting when the user asks.
 That is normally after a phase or the whole stack is built.
-Opening a PR does not start a babysit.
+A new PR does not start a babysit.
 Finish the stack, make it green here, then use Shipping to land it.
 
 ## PR head checks
