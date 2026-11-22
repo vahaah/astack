@@ -7,7 +7,7 @@ import {
 	statSync,
 	writeFileSync,
 } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { runGit } from "./git.ts";
 import { canonicalFile, readOptional } from "./paths.ts";
 import { err, ok, type Result } from "./result.ts";
@@ -139,7 +139,8 @@ function parseRepo(value: unknown): SessionRepo | undefined {
 	if (typeof value !== "object" || value === null) return undefined;
 	const kind = field(value, "kind");
 	const path = field(value, "path");
-	if (typeof path !== "string") return undefined;
+	if (typeof path !== "string" || !isAbsolute(path) || path.includes("\0"))
+		return undefined;
 	if (kind === "pending") return { kind, path };
 	const identity = parseIdentity(field(value, "identity"));
 	return kind === "bound" && identity !== undefined

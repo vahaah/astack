@@ -161,6 +161,17 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 					]),
 				),
 		],
+		[
+			"a record with a relative path or a NUL byte",
+			(dir) =>
+				writeFileSync(
+					join(dir, "session-repos", `${session}.json`),
+					JSON.stringify([
+						{ kind: "pending", path: "w/a" },
+						{ kind: "pending", path: "/w/a\u0000b" },
+					]),
+				),
+		],
 	])("%s loads as no record", (name, make) => {
 		const dir = stateAt(name.replaceAll(" ", "-"));
 		make(dir);

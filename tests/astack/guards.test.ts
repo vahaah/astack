@@ -1160,6 +1160,17 @@ describe("a repo that this session made", () => {
 			},
 		],
 		[
+			"a pending path with a NUL byte",
+			(state) => {
+				mkdirSync(join(state, "session-repos"), { recursive: true });
+				writeFileSync(
+					join(state, "session-repos", "session-1.json"),
+					JSON.stringify([{ kind: "pending", path: "/tmp/a\u0000b" }]),
+				);
+				return state;
+			},
+		],
+		[
 			"a state path that is a file",
 			(state) => {
 				writeFileSync(state, "x");
