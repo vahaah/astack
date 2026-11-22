@@ -199,6 +199,8 @@ const READ_VERBS = new Set(["get", "list", "read", "search", "view", "find"]);
 function nameTokens(name: string): readonly string[] {
 	return name
 		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+		.replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+		.replace(/(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])/g, " ")
 		.split(/[\s._-]+/)
 		.filter((token) => token !== "")
 		.map((token) => token.toLowerCase());

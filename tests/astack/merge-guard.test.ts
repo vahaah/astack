@@ -719,6 +719,9 @@ describe("MCP merge tools", () => {
 		["mcp__plugin_github_github__list_pull_requests", false],
 		["mcp__forge__mergePullRequest", true],
 		["mcp__forge__enable-automerge", true],
+		["mcp__forge__createPRMerge", true],
+		["mcp__forge__merge2", true],
+		["mcp__forge__s3merge", true],
 		["mcp__forge__show_merged_prs", false],
 	])(
 		"[control:sg-mcp-merge] %s is denied, also after the owner's grant: %p",

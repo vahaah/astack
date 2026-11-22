@@ -104,7 +104,8 @@ A person's prompt that opens with a bracket label, such as a pasted `[Image #1]`
 
 ### D4. Each MCP tool with a merge word gets a deny
 
-The guard splits a tool name on `_`, `-`, `.` and each case change.
+The guard splits a tool name on `_`, `-`, `.`, each case change and each change between a letter and a digit.
+An acronym is one token, so `createPRMerge` holds the token `merge`.
 A token `merge`, `merges`, `merging` or `automerge` gives a deny on each server, also with a grant.
 A name that starts with `get`, `list`, `read`, `search`, `view` or `find` passes.
 The rule also denies a merge that is not a PR merge, such as a database branch merge. Such a merge is an owner gate.
