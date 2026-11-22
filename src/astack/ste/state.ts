@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+	appendFileSync,
 	closeSync,
 	mkdirSync,
 	openSync,
@@ -21,6 +22,7 @@ export type Rewrite = {
 };
 
 const REWRITE_FILE = "rewrite.json";
+export const EVENTS_FILE = "events.jsonl";
 const KEY_CHARS = 32;
 
 const LEDGER_LIMIT = 2;
@@ -226,6 +228,17 @@ export function saveCrons(dir: string, prompts: readonly string[]): void {
 	const next = `${JSON.stringify([...new Set(prompts)])}\n`;
 	if (saved === next || (saved === undefined && prompts.length === 0)) return;
 	if (ensureDir(dir)) writeAtomic(path, next);
+}
+
+export function appendEvents(dir: string, lines: readonly string[]): boolean {
+	if (lines.length === 0) return true;
+	if (!ensureDir(dir)) return false;
+	try {
+		for (const line of lines) appendFileSync(join(dir, EVENTS_FILE), line);
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 export function recordDenies(

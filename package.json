@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "bun scripts/build.ts",
 		"bundle": "bun scripts/bundle.ts",
-		"test": "bun run check:proof && bun test tests",
+		"test": "bun test tests --parallel --timeout=20000",
 		"apply": "bun scripts/apply.ts",
 		"validate": "bun scripts/validate.ts",
 		"dist": "bun scripts/dist.ts",
@@ -17,7 +17,8 @@
 		"budget": "bun scripts/budget.ts",
 		"charts": "bun scripts/check-readme-charts.ts",
 		"check:proof": "bun scripts/check-proof.ts",
-		"check": "bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run budget && bun run charts && bun run test && biome ci . && tsc -p . && bun run check:proof",
+		"check:fast": "bun scripts/check-fast.ts",
+		"check": "biome ci . && tsc -p . && bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run budget && bun run charts && bun run check:proof && bun run test",
 		"check:drift": "bun scripts/drift.ts"
 	},
 	"devDependencies": {

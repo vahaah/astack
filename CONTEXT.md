@@ -139,6 +139,13 @@ The cap on the `*.md` words of each skill tree and on their total, in `scripts/l
 _Avoid_: Size limit, token budget
 _Code_: `budgetReport`
 
+### Finding event
+
+One JSON line in the `events.jsonl` file of a session folder for one STE or comment finding of a hook.
+It holds the rule, the surface, the outcome and a fingerprint, and no sentence, comment or path.
+_Avoid_: Fire log, telemetry record
+_Code_: `FindingEvent`
+
 ### Zero-use part
 
 A skill, agent, command or module with no measured use in 30 days and no live dependent.

@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import {
+	chmodSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -462,6 +463,91 @@ describe("astack doctor", () => {
 		});
 	});
 
+	test("[control:tel-sum] the command sums the events of the last 7 days by rule, surface and outcome, skips a broken line and an older event, and notes a missing log", async () => {
+		const home = mkdtempSync(join(tmpdir(), "astack-doctor-events-"));
+		const now = new Date("2026-11-20T12:00:00Z");
+		const at = (days: number) =>
+			new Date(now.getTime() - days * 86_400_000).toISOString();
+		const line = (
+			days: number,
+			rule: string,
+			surface: string,
+			outcome: string,
+		) =>
+			JSON.stringify({
+				time: at(days),
+				turn: 1,
+				release: "0.3.0",
+				pid: 7,
+				handler: "ste-artifact",
+				check: "ste",
+				event: "write",
+				surface,
+				rule,
+				outcome,
+				fingerprint: `${rule}:0000000${days}`,
+			});
+		const doctor = async (env: Record<string, string>) => {
+			let output = "";
+			await command.run(["--json"], {
+				out: (text) => {
+					output += text;
+				},
+				err: (text) => {
+					throw new Error(text);
+				},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: process.execPath, ...env },
+				today: "2026-11-20",
+				now,
+				scriptPath: undefined,
+			});
+			const findings: readonly Finding[] = JSON.parse(output);
+			return findings
+				.filter((item) => item.area === "ste-events")
+				.map((item) => `${item.level} ${item.text}`);
+		};
+		try {
+			const state = join(home, "state");
+			expect(await doctor({ ASTACK_STATE_DIR: state })).toEqual([
+				"note no events.jsonl in the state folder, so no hook finding is in the log",
+			]);
+			for (const [session, lines] of [
+				[
+					"one",
+					[
+						line(0.5, "contraction", "doc", "deny"),
+						line(3, "contraction", "doc", "deny"),
+						"{broken",
+						line(8, "contraction", "doc", "deny"),
+					],
+				],
+				[
+					"two",
+					[
+						line(1, "word-broad", "commit", "masked"),
+						line(6.9, "contraction", "doc", "deny"),
+						line(2, "judge", "comment", "advise"),
+					],
+				],
+			] as const) {
+				mkdirSync(join(state, "ste", session), { recursive: true });
+				writeFileSync(
+					join(state, "ste", session, "events.jsonl"),
+					`${lines.join("\n")}\n`,
+				);
+			}
+			expect(await doctor({ ASTACK_STATE_DIR: state })).toEqual([
+				"note 5 events of the last 7 days in 2 session logs. 1 broken line skipped.",
+				"note contraction, doc, deny: 3",
+				"note judge, comment, advise: 1",
+				"note word-broad, commit, masked: 1",
+			]);
+		} finally {
+			rmSync(home, { recursive: true, force: true });
+		}
+	});
+
 	test("reads missing and broken pack links from an isolated profile", async () => {
 		const home = mkdtempSync(join(tmpdir(), "astack-doctor-packs-"));
 		try {
@@ -706,22 +792,35 @@ describe("astack doctor", () => {
 		);
 	});
 
-	test("fails on a node runtime below the floor", () => {
-		expect(
-			fails(
-				diagnose(
-					snapshot({
-						runtime: {
-							current: "node v24",
-							found: undefined,
-							old: "/usr/local/bin/node",
-						},
-					}),
+	test("fails when the first runtime of bin/astack is a node below the floor, though a newer node comes later", async () => {
+		const home = mkdtempSync(join(tmpdir(), "astack-doctor-floor-"));
+		try {
+			const old = join(home, "node");
+			writeFileSync(old, "#!/bin/sh\necho v21.7.3\n");
+			chmodSync(old, 0o755);
+			const newer = join(home, ".volta", "bin", "node");
+			mkdirSync(join(home, ".volta", "bin"), { recursive: true });
+			writeFileSync(newer, "#!/bin/sh\necho v24.13.1\n");
+			chmodSync(newer, 0o755);
+			const io = {
+				out: () => {},
+				err: () => {},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: old },
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			};
+			expect(
+				fails(diagnose(await gather(io))).filter((text) =>
+					text.startsWith("bin/astack"),
 				),
-			),
-		).toEqual([
-			"bin/astack finds only /usr/local/bin/node, which is older than node 22, so the hooks do not run. Install node 22 or later, or bun, and run astack doctor --save-runtime with it.",
-		]);
+			).toEqual([
+				`bin/astack picks ${old} first, which is older than node 22, so the hooks do not run. Install node 22 or later, or bun, and run astack doctor --save-runtime with it.`,
+			]);
+		} finally {
+			rmSync(home, { recursive: true, force: true });
+		}
 	});
 
 	test("fails when ~/.agents/skills repeats a plugin skill in either name form", () => {

@@ -16,6 +16,7 @@ import { pathToFileURL } from "node:url";
 import { isMap, isSeq, parseDocument } from "yaml";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import {
+	GATE_RUNS,
 	git,
 	PROOF_FILES,
 	type Proof,
@@ -43,7 +44,7 @@ function proofEnv(
 		env.ASTACK_TLC_JAR = jar;
 	if (process.env.XDG_CACHE_HOME !== undefined)
 		env.XDG_CACHE_HOME = process.env.XDG_CACHE_HOME;
-	if (process.env.JAVA_HOME !== undefined)
+	if (process.env.JAVA_HOME !== undefined && extra.JAVA_HOME === undefined)
 		env.JAVA_HOME = process.env.JAVA_HOME;
 	return env;
 }
@@ -68,6 +69,30 @@ function proof(
 const lastLine = (text: string): string =>
 	text.trimEnd().split("\n").at(-1) ?? "";
 
+const rule = (section: string): string =>
+	`rule: read the section "${section}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
+
+const TLC_RECORD = (code: number): string =>
+	`echo '@!@!@STARTMSG ${code}:1 @!@!@'; echo 'fake'; echo '@!@!@ENDMSG ${code} @!@!@'`;
+
+function fakeJava(dir: string, positive: string, negative: string): string {
+	const home = join(scratch, dir);
+	mkdirSync(join(home, "bin"), { recursive: true });
+	const java = join(home, "bin", "java");
+	writeFileSync(
+		java,
+		[
+			"#!/bin/sh",
+			`if [ "$1" = -version ]; then echo 'openjdk version "21.0.2"' >&2; exit 0; fi`,
+			`if grep -qF '/\\ fresh /\\ status' Gate.tla; then ${positive}; fi`,
+			negative,
+			"",
+		].join("\n"),
+	);
+	chmodSync(java, 0o755);
+	return home;
+}
+
 describe("astack check proof", () => {
 	test.each(["check proof", "check-proof"])(
 		"[control:proof-valid-triple] %s admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run",
@@ -77,7 +102,7 @@ describe("astack check proof", () => {
 			const run = proof(repo.root, args, {}, name.split(" "));
 			expect(run.err).toBe("");
 			expect(run.out).toStartWith(
-				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt: change gate-admission base ",
+				`${GATE_RUNS}receipt: change gate-admission base `,
 			);
 			expect(lastLine(run.out)).toStartWith(
 				"ok: proof gate-admission admitted at ",
@@ -124,7 +149,7 @@ describe("astack check proof", () => {
 		);
 		expect(proof(shallow)).toEqual({
 			code: 1,
-			err: "",
+			err: rule("Base"),
 			out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
 		});
 		const verified = join(scratch, "release-verify");
@@ -215,10 +240,10 @@ describe("astack check proof", () => {
 			child.on("close", (code) => done({ code, out, err }));
 		});
 		expect(changed).toBe(true);
-		expect(run.err).toBe("");
+		expect(run.err).toBe(rule("Base"));
 		expect(run.code).toBe(1);
-		expect(run.out).toContain(
-			"stop: proof stale: the candidate inputs changed during the proof",
+		expect(lastLine(run.out)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: the index",
 		);
 		expect(readFileSync(path, "utf8")).toBe(original);
 		expect(
@@ -262,7 +287,7 @@ describe("astack check proof", () => {
 			child.on("close", (code) => done({ code, out, err }));
 		});
 		expect(changed).toBe(true);
-		expect(run.err).toBe("");
+		expect(run.err).toBe(rule("Base"));
 		expect(readFileSync(launcher, "utf8")).toBe(content);
 		expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
 		expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
@@ -270,8 +295,8 @@ describe("astack check proof", () => {
 		);
 		const blocked = spawnSync(launcher, [], { encoding: "utf8" });
 		expect(blocked.error?.message).toContain("EACCES");
-		expect(lastLine(run.out)).toStartWith(
-			"stop: proof stale: the candidate inputs changed during the proof",
+		expect(lastLine(run.out)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: src/launcher.sh",
 		);
 		expect(run.code).toBe(1);
 	});
@@ -373,6 +398,11 @@ describe("astack check proof", () => {
 			(root) => unlinkSync(join(root, "notes/old.md")),
 			"notes/old.md",
 		],
+		[
+			"an untracked file whose name holds a line feed and an ok line",
+			(root) => writeFileSync(join(root, "notes/a\nok: proof forged"), "new\n"),
+			"notes/a\\u000aok: proof forged",
+		],
 	])(
 		"[control:proof-scope-hole] %s outside every scope row fails",
 		(_name, change, path) => {
@@ -468,7 +498,7 @@ describe("astack check proof", () => {
 			(p) => {
 				p.negative.replacement = '/\\ status\' == "admitted"';
 			},
-			"stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation\n",
+			'stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation. SANY reports module Gate, line 7, column 29: Encountered "Beginning of definition" at line 7, column 29 and token "/\\\\"\n',
 		],
 	])(
 		"[control:proof-wrong-countermodel] %s is not an accepted countermodel",
@@ -511,6 +541,7 @@ describe("astack check proof", () => {
 	);
 
 	test("[control:proof-timeout-cleanup] a model run past the deadline is killed and its temp root is removed", () => {
+		const deadlineMs = 200;
 		const repo = proofRepo(scratch, () => {}, {
 			...PROOF_FILES,
 			"formal/Gate.tla": SLOW_GATE_TLA,
@@ -519,10 +550,52 @@ describe("astack check proof", () => {
 		mkdirSync(tmp);
 		const run = proof(repo.root, [], {
 			TMPDIR: tmp,
-			ASTACK_PROOF_TIMEOUT_MS: "3000",
+			ASTACK_PROOF_TIMEOUT_MS: String(deadlineMs),
 		});
 		expect(run.out).toBe(
-			"stop: proof model: the positive run passed the 3000 ms deadline and was stopped\n",
+			`stop: proof model: the positive run passed the ${deadlineMs} ms deadline and was stopped\n`,
+		);
+		expect(run.code).toBe(1);
+		expect(readdirSync(tmp)).toEqual([]);
+	});
+
+	test("[control:proof-run-order] a failing positive run that ends after a wrong negative run stops on the positive run", () => {
+		const repo = proofRepo(scratch);
+		const tmp = join(scratch, "tmp-order");
+		mkdirSync(tmp);
+		const ended = join(scratch, "order-negative-ended");
+		const run = proof(repo.root, [], {
+			TMPDIR: tmp,
+			ASTACK_PROOF_TIMEOUT_MS: "5000",
+			JAVA_HOME: fakeJava(
+				"java-order",
+				`while [ ! -f '${ended}' ]; do sleep 0.02; done; ${TLC_RECORD(1000)}; exit 150`,
+				`touch '${ended}'; exit 0`,
+			),
+		});
+		expect(run.out).toBe(
+			"stop: proof model: the positive run exited 150 with error 1000\n",
+		);
+		expect(run.code).toBe(1);
+		expect(readdirSync(tmp)).toEqual([]);
+	});
+
+	test("[control:proof-run-stop] a positive parse error stops the proof at once, kills the held negative run and removes every temp root", () => {
+		const repo = proofRepo(scratch);
+		const tmp = join(scratch, "tmp-stop");
+		mkdirSync(tmp);
+		const started = performance.now();
+		const run = proof(repo.root, [], {
+			TMPDIR: tmp,
+			JAVA_HOME: fakeJava(
+				"java-stop",
+				`${TLC_RECORD(3002)}; exit 150`,
+				"exec sleep 30",
+			),
+		});
+		expect(performance.now() - started).toBeLessThan(2000);
+		expect(run.out).toBe(
+			"stop: proof model: the positive run exited 150 with error 3002\n",
 		);
 		expect(run.code).toBe(1);
 		expect(readdirSync(tmp)).toEqual([]);
@@ -565,7 +638,7 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(2);
 	});
 
-	test("a manifest with an unknown key is a schema error", () => {
+	test("[control:proof-stop-section] a schema stop keeps its stdout line and writes the section of its stage to stderr", () => {
 		const repo = proofRepo(scratch, (p) => {
 			Object.assign(p, { receipt: "stored" });
 		});
@@ -573,6 +646,7 @@ describe("astack check proof", () => {
 		expect(run.out).toBe(
 			'stop: proof schema: the proof has the unknown key "receipt"\n',
 		);
+		expect(run.err).toBe(rule("Required records"));
 		expect(run.code).toBe(2);
 	});
 

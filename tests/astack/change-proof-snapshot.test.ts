@@ -10,6 +10,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { staleInputs } from "../../src/astack/change-proof/admission.ts";
 import { snapshot } from "../../src/astack/change-proof/candidate.ts";
 import { git, scratchDir } from "./change-proof-fixture.ts";
 
@@ -31,7 +32,15 @@ function candidate(repo: Fixture) {
 	return result.value;
 }
 
-test.each<[string, (root: string) => void, (root: string) => void, number]>([
+test.each<
+	[
+		string,
+		(root: string) => void,
+		(root: string) => void,
+		number,
+		readonly string[],
+	]
+>([
 	[
 		"a newline in a link target moved into a file name",
 		(root) => {
@@ -44,6 +53,7 @@ test.each<[string, (root: string) => void, (root: string) => void, number]>([
 			renameSync(join(root, "ccc"), join(root, "bbb\nccc"));
 		},
 		2,
+		["aaa", "bbb\nccc", "ccc"],
 	],
 	[
 		"distinct link-target bytes with the same replacement text",
@@ -60,16 +70,18 @@ test.each<[string, (root: string) => void, (root: string) => void, number]>([
 			symlinkSync(Buffer.from([254]), path);
 		},
 		1,
+		["link"],
 	],
 	[
 		"a valid UTF-8 file name that starts with a byte order mark",
 		(root) => writeFileSync(join(root, "\uFEFFinput.txt"), "before\n"),
 		(root) => writeFileSync(join(root, "\uFEFFinput.txt"), "after\n"),
 		1,
+		["\uFEFFinput.txt"],
 	],
 ])(
-	"[control:proof-entry-encoding] %s changes the digest",
-	(_name, prepare, change, files) => {
+	"[control:proof-entry-encoding] %s changes the digest and names the entry",
+	(_name, prepare, change, files, names) => {
 		const repo = fixture();
 		prepare(repo.root);
 		const before = candidate(repo);
@@ -77,6 +89,7 @@ test.each<[string, (root: string) => void, (root: string) => void, number]>([
 		const after = candidate(repo);
 		expect(after.head).toBe(repo.base);
 		expect(after.digest).not.toBe(before.digest);
+		expect(staleInputs(before, after)).toEqual(names);
 		expect(after.files).toBe(files);
 	},
 );

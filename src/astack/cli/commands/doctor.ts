@@ -27,6 +27,7 @@ import {
 	render,
 	type SkillFolder,
 	type Snapshot,
+	sumSteEvents,
 } from "../../doctor.ts";
 import { originSlug, repoRoot } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
@@ -34,7 +35,10 @@ import { ghJson } from "../../pr/github.ts";
 import { loadPrProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
 import { PROFILE_PATH } from "../../profile.ts";
+import { stateDir } from "../../state.ts";
+import { EVENTS_FILE } from "../../ste/state.ts";
 import type { Command } from "../command.ts";
+import { NODE_FLOOR } from "../floor.ts";
 import { type Io, usageError } from "../io.ts";
 
 type Json = Readonly<Record<string, unknown>>;
@@ -93,8 +97,6 @@ function skippedProfiles(home: string): string[] {
 		.filter((line) => line !== "");
 }
 
-export const NODE_FLOOR = 22;
-
 function nodeMajor(path: string): number | undefined {
 	if (basename(path).startsWith("bun")) return undefined;
 	const result = spawnSync(path, ["--version"], {
@@ -103,14 +105,6 @@ function nodeMajor(path: string): number | undefined {
 	});
 	const major = /^v?(\d+)\./.exec(result.stdout ?? "")?.[1];
 	return major === undefined ? undefined : Number(major);
-}
-
-function usable(path: string | undefined): path is string {
-	if (!executable(path)) return false;
-	const major = nodeMajor(path);
-	return major === undefined
-		? basename(path).startsWith("bun")
-		: major >= NODE_FLOOR;
 }
 
 function nvmNodes(home: string): string[] {
@@ -126,28 +120,24 @@ function guiRuntime(
 	home: string,
 ): { readonly found: string | undefined; readonly old: string | undefined } {
 	const saved = readText(savedRuntimePath(home))?.split("\n")[0];
-	const candidates = [
+	const pick = [
 		env.ASTACK_RUNTIME,
 		saved,
+		"/usr/bin/bun",
+		"/bin/bun",
 		"/usr/bin/node",
 		"/bin/node",
-		"/opt/homebrew/bin/node",
 		"/opt/homebrew/bin/bun",
-		"/usr/local/bin/node",
+		"/opt/homebrew/bin/node",
 		"/usr/local/bin/bun",
+		"/usr/local/bin/node",
 		join(home, ".bun", "bin", "bun"),
 		join(home, ".volta", "bin", "node"),
 		...nvmNodes(home),
-	];
-	const found = candidates.find(usable);
-	const old =
-		found === undefined
-			? candidates.find(
-					(path): path is string =>
-						executable(path) && (nodeMajor(path) ?? NODE_FLOOR) < NODE_FLOOR,
-				)
-			: undefined;
-	return { found, old };
+	].find(executable);
+	return pick !== undefined && (nodeMajor(pick) ?? NODE_FLOOR) < NODE_FLOOR
+		? { found: undefined, old: pick }
+		: { found: pick, old: undefined };
 }
 
 function currentRuntime(): string {
@@ -379,6 +369,16 @@ function bases(cwd: string): Snapshot["bases"] {
 	);
 }
 
+function steEventLogs(env: Io["env"]): readonly string[] {
+	const root = stateDir(env);
+	if (root === undefined) return [];
+	const parent = join(root, "ste");
+	return list(parent).flatMap((name) => {
+		const text = readText(join(parent, name, EVENTS_FILE));
+		return text === undefined ? [] : [text];
+	});
+}
+
 export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
 	const listed = claudeDirs(io.env, home);
@@ -404,6 +404,7 @@ export async function gather(io: Io): Promise<Snapshot> {
 			readText(join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile)),
 		),
 		unattendedReason: unattendedReason(io.env),
+		steEvents: sumSteEvents(steEventLogs(io.env), io.now),
 	};
 }
 
@@ -479,7 +480,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile, the review profile with the rules of astack check hardening-profile and the protection of the default branch and the standing bases. It reads at most 3 bases with gh. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile, the review profile with the rules of astack check hardening-profile, the protection of the default branch and the standing bases, and 7 days of hook findings. It reads at most 3 bases with gh. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
 	usage: "doctor [--json]\ndoctor --save-runtime\ndoctor --skip-profile <dir>",
 	run,
 };

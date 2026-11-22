@@ -18,7 +18,7 @@ When `astack:write-docs` is unavailable, use this minimum format:
 ```md
 # {A claim that is true once the decision is in force}
 
-{1-3 sentences: what's the context, what did we decide, and why.}
+{1-3 sentences: the context, the decision and its reason.}
 ```
 
 One paragraph can be enough.

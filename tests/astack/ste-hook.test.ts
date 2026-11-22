@@ -942,10 +942,43 @@ describe("the strict Stop hook", () => {
 		expect(await parallel(chained(failing, "p2", after))).toBe(0);
 	});
 
+	test("[control:tel-reply] a claimed rewrite writes one rewrite line for each finding, and a rewrite that still fails writes one pending line for each finding, also from parallel copies and a repeat", async () => {
+		hook("UserPromptSubmit", prompt("tel-reply", "go"));
+		expect(await parallel(stop("tel-reply", failing))).toBe(1);
+		expect(await parallel(stop("tel-reply", rewrite, after))).toBe(0);
+		expect(hook("Stop", stop("tel-reply", rewrite, after)).blocked).toBe(false);
+		expect(
+			events("tel-reply").map((line) => [
+				line.handler,
+				line.check,
+				line.event,
+				line.surface,
+				line.rule,
+				line.outcome,
+			]),
+		).toEqual([
+			["ste-reply", "ste", "reply", "reply", "contraction", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "contraction", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "semicolon", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "contraction", "pending"],
+		]);
+	});
+
+	test("[control:tel-reply-safe] an event log that refuses a line keeps the rewrite of the reply hook", () => {
+		mkdirSync(join(state, "ste", "tel-reply-safe", "events.jsonl"), {
+			recursive: true,
+		});
+		hook("UserPromptSubmit", prompt("tel-reply-safe", "go"));
+		const run = hook("Stop", stop("tel-reply-safe", failing));
+		expect(run.blocked).toBe(true);
+		expect(run.reason).toContain("astack STE: the reply has 3 findings");
+	});
+
 	test("no state dir fails open", () => {
 		const run = hook("Stop", stop("e9", failing), {
 			ASTACK_STATE_DIR: "",
 			HOME: "",
+			BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0",
 		});
 		expect(run.status).toBe(0);
 	});
@@ -995,6 +1028,176 @@ describe("the deny ledger", () => {
 		expect(
 			hook("PreToolUse", { ...write, session_id: "ledger-2" }).status,
 		).toBe(2);
+	});
+});
+
+const EVENT_KEYS = [
+	"check",
+	"event",
+	"fingerprint",
+	"handler",
+	"outcome",
+	"pid",
+	"release",
+	"rule",
+	"surface",
+	"time",
+	"turn",
+];
+
+const RELEASE: unknown = Reflect.get(
+	JSON.parse(
+		readFileSync(
+			join(ROOT, "marketplace/plugins/astack/.claude-plugin/plugin.json"),
+			"utf8",
+		),
+	),
+	"version",
+);
+
+function eventLog(session: string): string {
+	const path = join(state, "ste", session, "events.jsonl");
+	return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function events(session: string): readonly Record<string, unknown>[] {
+	return eventLog(session)
+		.split("\n")
+		.filter((line) => line !== "")
+		.map((line): Record<string, unknown> => JSON.parse(line));
+}
+
+function outcomes(
+	session: string,
+	rule?: string,
+): readonly (readonly unknown[])[] {
+	return events(session)
+		.filter((line) => rule === undefined || line.rule === rule)
+		.map((line) => [line.handler, line.rule, line.outcome]);
+}
+
+function docWrite(session: string, name: string, content: string) {
+	return hook(
+		"PreToolUse",
+		tool(
+			"Write",
+			{ file_path: join(strict, `docs/${name}`), content },
+			strict,
+			session,
+		),
+	);
+}
+
+describe("the finding event log", () => {
+	test("[control:tel-notext] a write with a contraction writes one deny line with only the event keys, and no sentence or path", () => {
+		const run = docWrite(
+			"tel-notext",
+			"tel.md",
+			"# T\n\nThe tool doesn't run.\n",
+		);
+		expect(run.status).toBe(2);
+		const lines = events("tel-notext");
+		expect(lines.map((line) => Object.keys(line).sort())).toEqual([EVENT_KEYS]);
+		const { time, pid, fingerprint, ...rest } = lines[0] ?? {};
+		expect(rest).toEqual({
+			check: "ste",
+			event: "write",
+			handler: "ste-artifact",
+			outcome: "deny",
+			release: RELEASE,
+			rule: "contraction",
+			surface: "doc",
+			turn: 0,
+		});
+		expect([
+			Number.isNaN(Date.parse(String(time))),
+			typeof pid,
+			/^contraction:[0-9a-f]{8}$/.test(String(fingerprint)),
+		]).toEqual([false, "number", true]);
+		expect(eventLog("tel-notext")).not.toMatch(/doesn|tool|tel\.md|strict/);
+	});
+
+	test("[control:tel-append] 8 parallel Edits with a contraction in one session write 8 complete deny lines", async () => {
+		const paths = Array.from({ length: 8 }, (_, index) =>
+			join(strict, `docs/append-${index}.md`),
+		);
+		for (const path of paths) writeFileSync(path, "# A\n\nRead the file.\n");
+		const statuses = await Promise.all(
+			paths.map(async (file_path) => {
+				const child = Bun.spawn(
+					[LAUNCHER, "hook", "claude-code", "PreToolUse"],
+					{
+						stdin: new TextEncoder().encode(
+							JSON.stringify(
+								tool(
+									"Edit",
+									{
+										file_path,
+										old_string: "Read the file.",
+										new_string: "It doesn't read the file.",
+									},
+									strict,
+									"tel-append",
+								),
+							),
+						),
+						stdout: "pipe",
+						stderr: "pipe",
+						env: env(),
+					},
+				);
+				return child.exited;
+			}),
+		);
+		expect(statuses).toEqual(Array.from({ length: 8 }, () => 2));
+		expect(
+			events("tel-append").map((line) => [line.event, line.rule, line.outcome]),
+		).toEqual(Array.from({ length: 8 }, () => ["edit", "contraction", "deny"]));
+	});
+
+	test("[control:tel-outcome] a measured finding denied twice writes deny, deny and then demoted, and a quiet rule writes quiet", () => {
+		const long =
+			"The export job reads every row of the member table and then writes each row to the report file on the shared disk before the next batch starts again.";
+		for (const _ of [1, 2, 3]) docWrite("tel-demote", "demote.md", `${long}\n`);
+		expect(outcomes("tel-demote", "sentence-length")).toEqual([
+			["ste-artifact", "sentence-length", "deny"],
+			["ste-artifact", "sentence-length", "deny"],
+			["ste-artifact", "sentence-length", "demoted"],
+		]);
+		const quiet = docWrite(
+			"tel-quiet",
+			"quiet.md",
+			"The database connection pool size limit is ten.\n",
+		);
+		expect(quiet.status).toBe(0);
+		expect(outcomes("tel-quiet")).toEqual([
+			["ste-artifact", "noun-cluster", "quiet"],
+		]);
+	});
+
+	test("[control:tel-masked] advice under a deny of the same handler run writes masked, and advice alone writes advise", () => {
+		docWrite(
+			"tel-masked",
+			"masked.md",
+			"It's done. Check the logs before you merge.\n",
+		);
+		docWrite("tel-advise", "advise.md", "Check the logs before you merge.\n");
+		expect([...outcomes("tel-masked"), ...outcomes("tel-advise")]).toEqual([
+			["ste-artifact", "contraction", "deny"],
+			["ste-artifact", "word-broad", "masked"],
+			["ste-artifact", "word-broad", "advise"],
+		]);
+	});
+
+	test("[control:tel-safe] an event log that refuses a line keeps the deny of the artifact hook", () => {
+		mkdirSync(join(state, "ste", "tel-safe", "events.jsonl"), {
+			recursive: true,
+		});
+		const run = docWrite("tel-safe", "safe.md", "The tool doesn't run.\n");
+		expect(run.status).toBe(2);
+		expect(run.stderr).toContain(
+			"astack STE blocked this write to docs/safe.md",
+		);
 	});
 });
 

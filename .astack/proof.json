@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "doctor-trust-and-review-profile",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"base": "5b9e279f1f64249461ea85e11ff68e6d51ff144b",
 	"scope": [
 		{
 			"path": "src/astack/codex-hooks.ts",
