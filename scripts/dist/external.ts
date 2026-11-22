@@ -55,6 +55,7 @@ export function onPath(command: string): boolean {
 }
 
 export function claudeValidate(
+	marketplaces: readonly string[],
 	distRoot: string,
 	plugins: readonly Plugin[],
 ): CheckReport {
@@ -62,10 +63,11 @@ export function claudeValidate(
 		return {
 			id: "claude-validate",
 			errors: [],
-			summary: "skipped, no claude on PATH",
+			summary: "no claude on PATH, so the check cannot run",
+			skipped: true,
 		};
 	const dirs = [
-		distRoot,
+		...marketplaces,
 		...plugins.map((plugin) => join(distRoot, CLAUDE_ROOT, plugin)),
 	];
 	const errors = dirs.flatMap((dir) => {
@@ -82,7 +84,7 @@ export function claudeValidate(
 	return {
 		id: "claude-validate",
 		errors,
-		summary: `claude plugin validate --strict on the marketplace and ${dirs.length - 1} plugins`,
+		summary: `claude plugin validate --strict on ${marketplaces.length} marketplace(s) and ${plugins.length} plugin(s)`,
 	};
 }
 

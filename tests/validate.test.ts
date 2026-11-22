@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { builtFlowSkills } from "../scripts/apply.ts";
@@ -26,6 +32,7 @@ import {
 	validate,
 } from "../scripts/validate.ts";
 import { err, ok } from "../src/astack/result.ts";
+import { envWithoutCompanion } from "./child-env.ts";
 
 const P = "pstack";
 const F = "flow";
@@ -624,6 +631,34 @@ describe("load gate", () => {
 			if (saved.token !== undefined)
 				process.env.CLAUDE_CODE_OAUTH_TOKEN = saved.token;
 		}
+	});
+
+	test("bun run validate with a key and no claude on PATH prints a labelled SKIP and exits 0", () => {
+		const bin = mkdtempSync(join(tmpdir(), "validate-bin-"));
+		roots.push(bin);
+		symlinkSync(process.execPath, join(bin, "bun"));
+		const {
+			ANTHROPIC_API_KEY: _key,
+			CLAUDE_CODE_OAUTH_TOKEN: _token,
+			...env
+		} = envWithoutCompanion();
+		const run = Bun.spawnSync(["bun", "scripts/validate.ts"], {
+			cwd: join(import.meta.dir, ".."),
+			env: {
+				...env,
+				PATH: `${bin}:/usr/bin:/bin`,
+				ANTHROPIC_API_KEY: "unused",
+			},
+		});
+		const out = run.stdout.toString();
+		expect({
+			code: run.exitCode,
+			stderr: run.stderr.toString(),
+			skip: out.includes(
+				"SKIP load gate (claude -p --plugin-dir ... --debug-file)\n  no claude on PATH, so the gate cannot run\n",
+			),
+			claudeValidate: out.includes("claude plugin validate"),
+		}).toEqual({ code: 0, stderr: "", skip: true, claudeValidate: false });
 	});
 
 	test("fails on warnings and errors that name a checked plugin, and on skill counts", () => {
