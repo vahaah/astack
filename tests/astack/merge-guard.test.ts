@@ -738,6 +738,7 @@ describe("the merge guard", () => {
 		["cat read.json | gh api graphql --input /dev/stdin", API_DENY],
 		["gh api graphql -F query=@/dev/stdin", API_DENY],
 		["gh api graphql --input read.fifo", API_DENY],
+		["gh api graphql --input escaped.json", API_DENY],
 	] as const)(
 		"a GraphQL body that astack reads passes only with no merge mutation: %s",
 		(command, run) => {
@@ -749,6 +750,13 @@ describe("the merge guard", () => {
 			writeFileSync(
 				join(project, "merge.json"),
 				JSON.stringify({ query: MUTATION }),
+			);
+			writeFileSync(
+				join(project, "escaped.json"),
+				JSON.stringify({ query: MUTATION }).replace(
+					"mergePullRequest",
+					"merge\\u0050ullRequest",
+				),
 			);
 			rmSync(join(project, "read.fifo"), { force: true });
 			spawnSync("mkfifo", [join(project, "read.fifo")]);

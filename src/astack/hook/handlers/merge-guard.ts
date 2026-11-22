@@ -137,7 +137,8 @@ function inputText(
 				? value.slice(1)
 				: undefined;
 	if (path === undefined) return word.value;
-	return path === "-" ? step.simple.stdin : readFile(path);
+	const text = path === "-" ? step.simple.stdin : readFile(path);
+	return kind === "input" && text !== undefined ? decodedEscapes(text) : text;
 }
 
 function isApiMerge(
