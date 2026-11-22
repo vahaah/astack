@@ -27,7 +27,7 @@ Every new head needs its own green CI.
    Each owner is a background `astack:delegate` at depth 1 with `isolation: "worktree"`.
    Its helpers can use depths 2 and 3.
    The owner builds the change.
-   It opens its PR through `playbooks/opening-a-pr.md`.
+   It opens its PR through steps 1 to 8 of `references/create-pr.md`.
    It proves the change on the real artifact.
    It follows `playbooks/babysit.md` until the PR is green.
    It merges only after steps 4 and 5 clear it.

@@ -9,7 +9,7 @@ Use image diffs to prove equivalence rather than visual judgment.
 2. State and enforce the shortcut bans. Do not modify the harness, tamper with the baseline, or restructure a component to make a diff pass. If the baseline looks wrong, stop and ask instead of editing it.
 3. Migrate one component at a time. Parallelize through worktrees with one owner for each component. Follow [Separate Before Serializing Shared State](../../principles/references/separate-before-serializing-shared-state.md). Migrate shared primitives first as a blocking phase.
 4. Compare each component with its baseline through image diff on the matching surface with the control skill. Any nonzero diff fails. Investigate the pixel delta. Use `/loop` for each component until its diff is zero.
-5. Run Opening a PR for each component or safe batch.
+5. Run Create PR steps 1 to 8 (`references/create-pr.md`) for each component or safe batch.
 
 ## Reply
 

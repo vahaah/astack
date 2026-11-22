@@ -69,4 +69,4 @@ Without astack, run the matched playbook as written.
 - Session pickup. Resume or take over earlier work from a transcript, remote session, or pushed branch.
 - Pause safely. Suspend work so it can resume after an explicit pause, offline period, Claude Code restart, or imminent compaction. This complements Session pickup.
 - Worktree and simulator cleanup. Prune merged or abandoned worktrees and stale iOS simulators to reclaim disk space. Typical requests include "what's using my disk", "clean up worktrees", "prune safe-to-prune worktrees", "free up space", or "delete old simulators". File: `playbooks/worktree-cleanup.md`.
-- Opening a PR. Run it at the end of every other playbook.
+- Create PR. Run its steps 1 to 8 at the end of every other playbook. File: `references/create-pr.md`.

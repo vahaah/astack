@@ -158,7 +158,6 @@ describe("astack check-pr", () => {
 	test.each([
 		"write-docs/SKILL.md",
 		"write-docs/references/pr-and-commits.md",
-		"mode/playbooks/opening-a-pr.md",
 	])("the PR body line limit of %s is the limit of check-pr", (file) => {
 		const text = readFileSync(join(SKILLS, file), "utf8");
 		const limits = [
