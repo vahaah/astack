@@ -257,3 +257,12 @@ Examples are a green PR with no merge grant, an open question, a draft finding a
 A status ask lists each waiting item on its own line. A checkpoint reply names up to 3 and gives their count past 3.
 _Avoid_: Pending call, owner todo
 _Code_: `marketplace/plugins/astack/skills/mode/references/resume.md`
+
+### Head check
+
+The run of `astack check pr-head` before a text acts on a PR.
+A text goes on only after exit 0 with an `ok:` last line, or exit 3 with a `no_pr:` last line.
+After `stop: HEAD does not hold PR_HEAD`, the one next step is a pull of the PR branch and a second run.
+Each other result stops the text.
+_Avoid_: Manual head check, head compare
+_Code_: `src/astack/cli/commands/check/pr-head.ts`

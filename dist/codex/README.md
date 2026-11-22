@@ -30,7 +30,7 @@ Codex reads the Claude Code build in `claude-code/` through its marketplace supp
 
 - Codex trusts each hook by its own hash. `hooks.trust.json` holds the hash that Codex shows for each astack hook of this release. Codex also binds trust to a content hash that changes in each release. When Codex gives no `hooks/list` reply, `astack doctor` compares the `trusted_hash` values in `~/.codex/config.toml` with the pins and warns. `hooks.json.sha256` holds the hash of the file `claude-code/astack/hooks/hooks.json`. When a release changes either one, trust the hooks again.
 - Codex calls a skill with `$`, as in `$astack:plan`.
-- Codex reads at most 32 KiB of AGENTS.md text in a session. The fragment has 10226 bytes, and the limit for it is 10 KiB.
+- Codex reads at most 32 KiB of AGENTS.md text in a session. The fragment has 10231 bytes, and the limit for it is 10 KiB.
 - The Codex sandbox has no network access by default, so the tracker steps ask for approval.
 - Codex sends a file edit as `apply_patch`. The astack CLI reads the patch and runs the edit checks on each file that it adds or changes. Live Codex sessions run these checks and show their notes to the model.
 

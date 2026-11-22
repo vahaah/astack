@@ -1,403 +1,514 @@
 {
 	"version": 1,
-	"change": "review-roadmap-b26-result-laws",
-	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
+	"change": "pr-head-check",
+	"base": "b9a1546a7be8503c7fe3fd32628a9c9fa88ee454",
 	"scope": [
 		{
-			"path": "src/astack/result.ts",
-			"obligation": "RL-MONAD",
-			"modelRefs": ["ValidationPass", "ValidationFail"]
+			"path": "marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/change-proof/admission.ts",
-			"obligation": "ADMIT-ORDER",
+			"path": "marketplace/plugins/astack/skills/file-pr/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-send/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-stop/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/modernize/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/why/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/create-pr.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
+			"obligation": "PH-LATER",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "PH-LINE",
 			"modelRefs": [
-				"ValidationPass",
-				"ValidationFail",
-				"FailureIsTerminal",
-				"StopNamesSection"
+				"Check",
+				"Decide",
+				"Pull",
+				"ActOnlyOnHeldHead",
+				"OtherResultStops"
 			]
 		},
 		{
-			"path": "src/astack/change-proof/contract.ts",
-			"obligation": "LAW-CLAIMED",
-			"modelRefs": ["ValidationFail", "StopNamesSection"]
+			"path": "tests/astack/pr-head.test.ts",
+			"obligation": "PH-NOPR",
+			"modelRefs": ["Check", "NoPrOnlyOnMessage"]
 		},
 		{
-			"path": "tests/property/result-laws.test.ts",
-			"obligation": "RL-ALL",
-			"modelRefs": ["ValidationPass", "ValidationFail"]
+			"path": "docs/review-lessons.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "tests/property/verdict-monoid.test.ts",
-			"obligation": "VM-MONOID",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/verdict.test.ts",
-			"obligation": "VM-MONOID",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/change-proof.test.ts",
-			"obligation": "LAW-MONOID",
-			"modelRefs": ["ValidationFail", "StopNamesSection"]
-		},
-		{
-			"path": "tests/astack/proof-composition.ts",
-			"obligation": "ADMIT-ORDER",
-			"modelRefs": ["ValidationPass", "Admit"]
-		},
-		{
-			"path": "tests/astack/proof-contract-doc.test.ts",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "formal/ProofAdmission.*",
-			"obligation": "RL-MONAD",
+			"path": "formal/PrHeadCheck.*",
+			"obligation": "PH-LINE",
 			"modelRefs": [
+				"Check",
+				"Decide",
+				"Pull",
 				"TypeOK",
-				"AdmitSafe",
-				"FailureIsTerminal",
-				"StopNamesSection",
-				"EventuallyTerminal"
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
+			]
+		},
+		{
+			"path": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+			"obligation": "PH-LINE",
+			"modelRefs": [
+				"Check",
+				"Decide",
+				"Pull",
+				"TypeOK",
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
 			]
 		},
 		{
 			"path": "formal/models.json",
-			"obligation": "RL-MONAD",
-			"modelRefs": ["TypeOK", "AdmitSafe"]
+			"obligation": "PH-LINE",
+			"modelRefs": ["ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "tests/formal-registry.test.ts",
-			"obligation": "VM-MONOID",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/**",
-			"obligation": "LAW-CLAIMED",
-			"modelRefs": ["ValidationFail", "AdmitSafe"]
+			"path": "docs/reference/pr-head-check.md",
+			"obligation": "PH-LINE",
+			"modelRefs": [
+				"Check",
+				"Decide",
+				"Pull",
+				"TypeOK",
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
+			]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "LAW-CLAIMED",
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/arena/SKILL.md",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "README.md",
-			"obligation": "RL-MONAD",
-			"modelRefs": ["ValidationPass", "Admit"]
+			"path": "marketplace/plugins/astack/skills/arena/references/external-seats.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "LAW-MONOID",
-			"modelRefs": ["ValidationFail", "StopNamesSection"]
+			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
+			"path": "marketplace/plugins/astack/skills/mode/references/subagents.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/coding-rules/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "rules/coding.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/types/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/types/references/hook.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/external-seats.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "rules/astack.md",
 			"obligation": "SG-generated",
-			"modelRefs": ["ValidationPass", "Admit"]
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "dist/**",
 			"obligation": "SG-generated",
-			"modelRefs": ["ValidationPass", "Admit"]
-		},
-		{
-			"path": ".astack/**",
-			"obligation": "ADMIT-ORDER",
-			"modelRefs": ["ValidationPass", "ValidationFail"]
+			"modelRefs": ["TypeOK"]
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/change-proof/contract.ts",
-			"symbol": "ChangeProof"
+			"path": "src/astack/cli/commands/check/pr-head.ts",
+			"symbol": "PullRequest"
 		},
 		"terms": [
+			"Head check",
 			"ChangeProof",
-			"Proof admission",
-			"Composition record",
-			"Implementation control",
-			"Law control"
+			"Model control",
+			"Session guard",
+			"Skill word budget"
 		],
 		"invariants": [
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "A text acts on a PR only when gh read that PR and HEAD holds its head",
+				"modelRef": "ActOnlyOnHeldHead"
 			},
 			{
-				"name": "A failure stops admission at its first failed stage",
-				"modelRef": "FailureIsTerminal"
+				"name": "A text takes no PR only after the no-PR message of gh with no --pr",
+				"modelRef": "NoPrOnlyOnMessage"
 			},
 			{
-				"name": "Each stop names the proof contract section of its stage",
-				"modelRef": "StopNamesSection"
+				"name": "Each other result stops the text, except one pull after a head stop",
+				"modelRef": "OtherResultStops"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0017-law-claims-run-on-code.md",
+				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0017-law-claims-run-on-code.md",
-				"decision": "D2"
-			},
-			{
-				"file": "docs/adr/0017-law-claims-run-on-code.md",
-				"decision": "D3"
-			},
-			{
-				"file": "docs/adr/0017-law-claims-run-on-code.md",
-				"decision": "D4"
-			},
-			{
-				"file": "docs/adr/0017-law-claims-run-on-code.md",
-				"decision": "D5"
-			},
-			{
-				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
 				"decision": "D2"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"RL-MONAD",
-				"RL-FUNCTOR",
-				"RL-ALL",
-				"VM-MONOID",
-				"LAW-CLAIMED",
-				"LAW-MONOID",
-				"ADMIT-ORDER",
-				"CP-07",
-				"CP-21",
+				"PH-LINE",
+				"PH-LATER",
+				"PH-PAIR",
+				"PH-LIST",
+				"PH-NOPR",
+				"WB-ratchet",
+				"SG-preserve",
 				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "result",
-			"error": "Rejection"
+			"kind": "artifact",
+			"contract": "Each arrow maps the arguments of one head check to one exit code and one last line. A text goes on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line."
 		},
 		"objects": [
 			{
-				"name": "ProofText",
+				"name": "Args",
 				"link": {
-					"path": "tests/astack/proof-composition.ts",
-					"symbol": "ProofText"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "args"
 				}
 			},
 			{
-				"name": "ChangeProof",
+				"name": "Selector",
 				"link": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "ChangeProof"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "explicit"
 				}
 			},
 			{
-				"name": "Admitted",
+				"name": "ViewText",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "Admitted"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "view"
+				}
+			},
+			{
+				"name": "PullRequest",
+				"link": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "PullRequest"
+				}
+			},
+			{
+				"name": "ExitCode",
+				"link": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "stopped"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "parse",
-				"from": "ProofText",
-				"to": "ChangeProof",
+				"name": "selectorOf",
+				"from": "Args",
+				"to": "Selector",
 				"link": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "parseChangeProof"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "selectorOf"
 				},
 				"effects": []
 			},
 			{
-				"name": "admit",
-				"from": "ChangeProof",
-				"to": "Admitted",
+				"name": "parsePullRequest",
+				"from": "ViewText",
+				"to": "PullRequest",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "parsePullRequest"
 				},
 				"effects": []
-			}
-		],
-		"composites": [
+			},
 			{
-				"arrows": ["parse", "admit"],
-				"op": ">=>"
+				"name": "run",
+				"from": "Args",
+				"to": "ExitCode",
+				"link": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "run"
+				},
+				"effects": ["spawn", "fs-write"]
 			}
 		],
-		"equality": "Two results are equal when both are ok with equal values, or both are errors with an equal stage and an equal message.",
+		"composites": [],
+		"equality": "Two head checks are equal when their exit codes and their standard output are equal byte for byte.",
 		"laws": [
 			{
 				"law": "id-left",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
-				"status": "witnessed",
-				"witness": "control:result-functor-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
-				"status": "witnessed",
-				"witness": "control:result-functor-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
-				"status": "witnessed",
-				"witness": "control:result-monad-laws"
+				"status": "not_applicable",
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/astack/proof-composition.ts"
+		"typedWitness": "src/astack/cli/commands/check/pr-head.ts"
 	},
 	"abstraction": {
-		"hides": "The short circuit of a Result chain, the order of the admission stages and the reads of the model files.",
+		"hides": "The no-PR message of gh, the fetch of the PR head, the ancestry check and the unpushed list.",
 		"callersKnow": [
-			"A chain of andThen returns the first error and calls no later arrow after it.",
-			"all returns the values in input order, or the first error in input order.",
-			"Admission stops at the first failed stage in the order domain, category, controls, model.",
-			"A manifest lists each law that it claims or needs, and a functor or monoid claim needs both of its witnesses."
+			"Run astack check pr-head before you act on a PR, with --pr <n> for a named PR.",
+			"Go on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line.",
+			"After stop: HEAD does not hold PR_HEAD, pull the PR branch and run the command again.",
+			"A failure of gh pr view is an error, not a missing PR."
 		],
-		"deletionTest": "Deleting andThen, map and all puts 9 early returns back into admission.ts and the typed witness. Deleting the law controls leaves each law claim with no check on the code.",
+		"deletionTest": "Without the command, 15 texts hold the manual head check and the no-PR rule again.",
 		"alternatives": [
 			{
-				"name": "Keep the TLA+ Result model as the only law witness",
-				"rejectedBecause": "It never reads result.ts, so a code defect cannot make it fail."
+				"name": "A link to the engine section",
+				"rejectedBecause": "The agent then reads another file for each PR text."
 			},
 			{
-				"name": "A Result class with methods",
-				"rejectedBecause": "Types bound 3 forbids a class with one implementation."
+				"name": "A line that reads only the exit code",
+				"rejectedBecause": "It drops the last line, which the caller contract of the command needs."
 			},
 			{
-				"name": "Curried helpers",
-				"rejectedBecause": "They need a pipe, and types bound 6 forbids it."
-			},
-			{
-				"name": "One monoid row",
-				"rejectedBecause": "It hides a missing identity witness."
-			},
-			{
-				"name": "Keep eight law rows",
-				"rejectedBecause": "154 of 202 manifest versions filled most rows with not applicable."
+				"name": "Give the setup seed the head line",
+				"rejectedBecause": "A product repo can run the seed with no astack."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/result.ts",
-					"symbol": "andThen"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "run"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Check"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "checkReferences"
+					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+					"symbol": "no_pr"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Decide"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "checkReferences"
+					"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
+					"symbol": "no_pr"
 				},
-				"modelAction": "ValidationFail"
+				"modelAction": "Decide"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "parseChangeProof"
+					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+					"symbol": "PR_HEAD"
 				},
-				"modelAction": "ValidationFail"
+				"modelAction": "Pull"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+					"symbol": "PR_HEAD"
 				},
-				"modelAction": "Admit"
+				"modelAction": "Pull"
 			}
 		],
 		"omitted": [
-			"The model abstracts each stage check to one pass or fail step, and it holds no Result value.",
-			"The law controls examine the Result helpers on generated cases. The model holds no law of them.",
-			"The monoid of the hook verdicts is outside the record, because the record declares no combine arrow."
+			"Done stands for the end of a text run after its decision.",
+			"The six rule fixes of review D7, D8, H8, H5, C4 and J6 change no head check, so they have no model state. Their tests, rg checks and the budget gate examine them.",
+			"The model takes the result of the command as a true observation of gh and git."
 		]
 	},
 	"model": {
-		"module": "formal/ProofAdmission.tla",
-		"config": "formal/ProofAdmission.cfg",
+		"module": "formal/PrHeadCheck.tla",
+		"config": "formal/PrHeadCheck.cfg",
 		"dependencies": [],
 		"bounds": [
-			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
-			"Each failure kind maps to one section of the proof contract.",
-			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
+			"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+			"One check, one decision and at most one pull after a head stop."
 		],
-		"fairness": ["WF_vars(Next)"],
+		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"AdmitSafe",
-			"FailureIsTerminal",
-			"StrictDefault",
-			"LandingAuthoritySafe",
-			"ProcessAuthoritySafe",
-			"HistoryBound",
-			"RatifiedAuthority",
-			"BaseAncestry",
-			"ScopeFromMergeBase",
-			"HistoryAtManifest",
-			"MovedAuthorityStops",
-			"StaleStopNamesPaths",
-			"StopNamesSection"
+			"ActOnlyOnHeldHead",
+			"NoPrOnlyOnMessage",
+			"OtherResultStops"
 		],
-		"properties": ["EventuallyTerminal"]
+		"properties": []
 	},
 	"negative": {
-		"file": "formal/ProofAdmission.tla",
-		"action": "ValidationFail",
-		"original": "/\\ section' = Sections[firstFailure']",
-		"replacement": "/\\ section' = \"Required records\"",
-		"defect": "A stop at stage domain or category names the Required records section, so the agent reads the wrong rule.",
+		"file": "formal/PrHeadCheck.tla",
+		"action": "Decide",
+		"original": "acted' = (result = \"ok\")",
+		"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+		"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
 		"expect": {
 			"kind": "invariant",
-			"name": "StopNamesSection"
+			"name": "ActOnlyOnHeldHead"
 		}
 	},
 	"limits": [
-		"The finite model takes the TLC output and the Git reads as true. It does not model TLC, SANY or Git.",
-		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"Each law control examines 100 generated cases. A pass is evidence, and it is not a proof for each value.",
+		"The finite model takes the result of the command as a true observation of gh and git. The pr-head tests examine the command with a fake gh and a real git repository.",
+		"The model does not read the words of the texts. The ph-line, ph-later, ph-pair and ph-list controls examine them.",
+		"The model does not check the six rule fixes, the docs, the ADR and the plan. Their tests, review and the STE gates examine them.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

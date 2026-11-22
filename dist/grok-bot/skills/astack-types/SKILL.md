@@ -51,9 +51,9 @@ Find property test forms in `references/laws.md` and TypeScript examples in `ref
    - Do not: `"noImplicitAny": false`
    - Enforced by: tsc, and review of the base file.
 6. Give a brand to each ID or unit that must not mix. Make the brand only in the parser.
-   - Do: `const MemberId = z.uuid().brand<"MemberId">()`
+   - Do: `const MemberId = z.uuid().brand<"MemberId">()`, or a type guard `(raw: string): raw is MemberId`
    - Do not: `type MemberId = string` with `id as MemberId` in each caller
-   - Enforced by: review. The hook catches the cast. A brand file without a schema library goes in `types.allow`.
+   - Enforced by: review. The hook denies the cast, not the guard.
 7. Get each type from the schema that owns the shape. Do not write a second copy.
    - Do: `type Job = typeof jobs.$inferSelect` and `type Invite = z.infer<typeof Invite>`
    - Do not: a hand-written `interface Job { id: string; status: string }` next to the table

@@ -232,6 +232,58 @@
 			]
 		},
 		{
+			"name": "PrHeadCheck",
+			"model": {
+				"module": "formal/PrHeadCheck.tla",
+				"config": "formal/PrHeadCheck.cfg",
+				"dependencies": [],
+				"bounds": [
+					"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+					"One check, one decision and at most one pull after a head stop."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"ActOnlyOnHeldHead",
+					"NoPrOnlyOnMessage",
+					"OtherResultStops"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/PrHeadCheck.tla",
+				"action": "Decide",
+				"original": "acted' = (result = \"ok\")",
+				"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+				"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
+				"expect": {
+					"kind": "invariant",
+					"name": "ActOnlyOnHeldHead"
+				}
+			},
+			"records": [
+				"docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md"
+			],
+			"covers": ["src/astack/cli/commands/check/pr-head.ts"],
+			"text": [
+				"marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/file-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/full-send/SKILL.md",
+				"marketplace/plugins/astack/skills/full-stop/SKILL.md",
+				"marketplace/plugins/astack/skills/modernize/SKILL.md",
+				"marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+				"marketplace/plugins/astack/skills/why/SKILL.md",
+				"marketplace/plugins/astack/skills/plan/references/sessions.md",
+				"marketplace/plugins/astack/skills/mode/SKILL.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+				"marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+				"marketplace/plugins/astack/skills/mode/references/create-pr.md",
+				"marketplace/plugins/astack/skills/mode/references/resume.md"
+			]
+		},
+		{
 			"name": "ProofAdmission",
 			"model": {
 				"module": "formal/ProofAdmission.tla",

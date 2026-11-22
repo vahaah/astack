@@ -11,6 +11,7 @@
 		"docs/reference/test-fixtures.md",
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
+		"docs/reference/pr-head-check.md",
 		"docs/reference/law-controls.md"
 	],
 	"tests": [
@@ -67,6 +68,7 @@
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
 		"tests/old-names.test.ts",
+		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
 		"tests/property/verdict-monoid.test.ts"
 	],
@@ -657,6 +659,26 @@
 		{
 			"criterion": "AN-NAMES",
 			"controls": ["an-names", "an-models-header"]
+		},
+		{
+			"criterion": "PH-LINE",
+			"controls": ["ph-line"]
+		},
+		{
+			"criterion": "PH-LATER",
+			"controls": ["ph-later"]
+		},
+		{
+			"criterion": "PH-PAIR",
+			"controls": ["ph-pair"]
+		},
+		{
+			"criterion": "PH-LIST",
+			"controls": ["ph-list"]
+		},
+		{
+			"criterion": "PH-NOPR",
+			"controls": ["ph-nopr-named", "ph-nopr-error"]
 		},
 		{
 			"criterion": "RL-MONAD",
