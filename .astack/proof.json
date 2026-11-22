@@ -65,6 +65,16 @@
 			]
 		},
 		{
+			"path": "formal/models.json",
+			"obligation": "RL-MONAD",
+			"modelRefs": ["TypeOK", "AdmitSafe"]
+		},
+		{
+			"path": "tests/formal-registry.test.ts",
+			"obligation": "VM-MONOID",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "docs/**",
 			"obligation": "LAW-CLAIMED",
 			"modelRefs": ["ValidationFail", "AdmitSafe"]
