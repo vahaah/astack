@@ -29,35 +29,37 @@ const GROW_TRACE =
 const LOOP_TRACE =
 	"1: <Initial predicate> x = 0; 2: <Next line 5, col 9 to line 5, col 24 of module Loop> x = 1; 3: <Next line 5, col 9 to line 5, col 24 of module Loop> x = 2; back to state 1: <Next line 5, col 9 to line 5, col 24 of module Loop>";
 
+type Judge = (output: string) => unknown;
+
+const recordCount: Judge = (output) => {
+	const parsed = parseTlcRecords(output);
+	return parsed.ok && parsed.value.records.length;
+};
+
 describe("TLC output with CRLF line ends", () => {
-	test.each([
-		["counter", 17],
-		["grow", 17],
+	test.each<[string, string, Judge, unknown]>([
+		["the records of a positive run", "counter", recordCount, 17],
+		["the records of a violation", "grow", recordCount, 17],
+		[
+			"the counts of a positive run",
+			"counter",
+			(output) => judgePositive("positive", exited(0, output), ["Returns"]),
+			ok({ generated: 4, distinct: 3, queued: 0 }),
+		],
+		[
+			"an invariant violation",
+			"grow",
+			(output) =>
+				judgeNegative(exited(12, output), { kind: "invariant", name: "Small" }),
+			ok({ name: "Small", states: 3, trace: GROW_TRACE }),
+		],
 	])(
-		"[control:tlc-line-ends] the CRLF copy of %s gives the records of its LF output",
-		(name, count) => {
-			const records = parseTlcRecords(stdout(name));
-			expect(records.ok && records.value.records.length).toBe(count);
-			expect(parseTlcRecords(crlf(stdout(name)))).toEqual(records);
+		"[control:tlc-line-ends] the CRLF and LF copies give %s",
+		(_name, fixture, judge, expected) => {
+			expect(judge(stdout(fixture))).toEqual(expected);
+			expect(judge(crlf(stdout(fixture)))).toEqual(expected);
 		},
 	);
-
-	test("[control:tlc-line-ends] a CRLF positive run gives the counts of its LF run", () => {
-		expect(
-			judgePositive("positive", exited(0, crlf(stdout("counter"))), [
-				"Returns",
-			]),
-		).toEqual(ok({ generated: 4, distinct: 3, queued: 0 }));
-	});
-
-	test("[control:tlc-line-ends] a CRLF invariant violation names its invariant and states", () => {
-		expect(
-			judgeNegative(exited(12, crlf(stdout("grow"))), {
-				kind: "invariant",
-				name: "Small",
-			}),
-		).toEqual(ok({ name: "Small", states: 3, trace: GROW_TRACE }));
-	});
 });
 
 const SANY_ONLY_RECORDS = [
@@ -70,50 +72,51 @@ const SANY_ONLY_RECORDS = [
 	"",
 ].join("\n");
 
+const positive150: Judge = (output) =>
+	judgePositive("positive", exited(150, output), []);
+
 describe("SANY errors", () => {
-	test.each([
+	test.each<[string, string, Judge, string]>([
 		[
 			"a parse error",
 			stdout("parse-error"),
+			positive150,
 			'the positive run exited 150 with error 3002. SANY reports module M, line 5, column 1: Encountered "====" at line 5, column 1 and token "="',
 		],
 		[
 			"a parse error in a dependency module",
 			stdout("dependency-parse-error"),
+			positive150,
 			'the positive run exited 150 with error 3002. SANY reports module Dep, line 5, column 1: Encountered "====" at line 5, column 1 and token "="',
 		],
 		[
 			"a semantic error",
 			stdout("semantic-error"),
+			positive150,
 			"the positive run exited 150 with error 3002. SANY reports module M, line 4, column 11: Unknown operator: `q'.",
 		],
 		[
 			"a 3002 record with no SANY location",
 			SANY_ONLY_RECORDS,
+			positive150,
 			"the positive run exited 150 with error 3002",
+		],
+		[
+			"a parse error in the negative run",
+			stdout("parse-error"),
+			(output) =>
+				judgeNegative(exited(150, output), {
+					kind: "invariant",
+					name: "Small",
+				}),
+			'the negative run exited 150 with error 3002, not the expected invariant violation. SANY reports module M, line 5, column 1: Encountered "====" at line 5, column 1 and token "="',
 		],
 	])(
 		"[control:tlc-sany-location] %s names its module, line and column",
-		(_name, output, message) => {
-			expect(judgePositive("positive", exited(150, output), [])).toEqual({
-				ok: false,
-				error: message,
-			});
+		(_name, output, judge, message) => {
+			expect(judge(output)).toEqual({ ok: false, error: message });
 		},
 	);
-
-	test("[control:tlc-sany-location] a negative run with a parse error names the SANY location after the expected violation", () => {
-		expect(
-			judgeNegative(exited(150, stdout("parse-error")), {
-				kind: "invariant",
-				name: "Small",
-			}),
-		).toEqual({
-			ok: false,
-			error:
-				'the negative run exited 150 with error 3002, not the expected invariant violation. SANY reports module M, line 5, column 1: Encountered "====" at line 5, column 1 and token "="',
-		});
-	});
 });
 
 const record = (code: number, severity: number, body: string): string =>
@@ -131,48 +134,49 @@ const LONG_TRACE = [
 ].join("");
 
 describe("violation traces", () => {
-	test.each<[string, string, number, readonly string[], string]>([
+	test.each<[string, () => unknown, unknown]>([
 		[
-			"a broken invariant",
-			stdout("grow"),
-			12,
-			[],
-			`the positive run exited 12 with error 2110, 2121. It broke invariant Small with a trace of 3 states: ${GROW_TRACE}`,
+			"a positive run with a broken invariant",
+			() => judgePositive("positive", exited(12, stdout("grow")), []),
+			{
+				ok: false,
+				error: `the positive run exited 12 with error 2110, 2121. It broke invariant Small with a trace of 3 states: ${GROW_TRACE}`,
+			},
 		],
 		[
-			"a broken temporal property with a loop back",
-			stdout("loop"),
-			13,
-			["Ends"],
-			`the positive run exited 13 with error 2116, 2264. It broke the temporal property Ends with a trace of 3 states: ${LOOP_TRACE}`,
+			"a positive run with a broken temporal property and a loop back",
+			() => judgePositive("positive", exited(13, stdout("loop")), ["Ends"]),
+			{
+				ok: false,
+				error: `the positive run exited 13 with error 2116, 2264. It broke the temporal property Ends with a trace of 3 states: ${LOOP_TRACE}`,
+			},
 		],
 		[
-			"a trace of 25 states with long states",
-			LONG_TRACE,
-			12,
-			[],
-			`the positive run exited 12 with error 2110, 2121. It broke invariant Small with a trace of 25 states: ${Array.from(
-				{ length: 20 },
-				(_, at) => `${`${at + 1}: <Step> ${LONG_STATE}`.slice(0, 197)}...`,
-			).join("; ")}; and 5 more steps`,
+			"a positive run with a trace of 25 long states",
+			() => judgePositive("positive", exited(12, LONG_TRACE), []),
+			{
+				ok: false,
+				error: `the positive run exited 12 with error 2110, 2121. It broke invariant Small with a trace of 25 states: ${Array.from(
+					{ length: 20 },
+					(_, at) => `${`${at + 1}: <Step> ${LONG_STATE}`.slice(0, 197)}...`,
+				).join("; ")}; and 5 more steps`,
+			},
+		],
+		[
+			"a temporal countermodel, whose loop back is no state",
+			() =>
+				judgeNegative(exited(13, stdout("loop")), {
+					kind: "temporal",
+					name: "Ends",
+				}),
+			ok({ name: "Ends", states: 3, trace: LOOP_TRACE }),
 		],
 	])(
-		"[control:tlc-violation-trace] a positive run with %s names it and prints its steps",
-		(_name, output, code, properties, message) => {
-			expect(
-				judgePositive("positive", exited(code, output), properties),
-			).toEqual({ ok: false, error: message });
+		"[control:tlc-violation-trace] %s names its claim and prints its steps",
+		(_name, run, expected) => {
+			expect(run()).toEqual(expected);
 		},
 	);
-
-	test("[control:tlc-violation-trace] a temporal countermodel counts its states without the loop back", () => {
-		expect(
-			judgeNegative(exited(13, stdout("loop")), {
-				kind: "temporal",
-				name: "Ends",
-			}),
-		).toEqual(ok({ name: "Ends", states: 3, trace: LOOP_TRACE }));
-	});
 });
 
 const PROGRESS = (time: string, distinct: string): string =>
@@ -210,7 +214,7 @@ describe("a run past the deadline", () => {
 		},
 	);
 
-	test("[control:proof-timeout-progress] keeps the stdout that the checker printed before the kill", async () => {
+	test("[control:proof-timeout-stdout] keeps the stdout that the checker printed before the kill", async () => {
 		const java = join(scratch, "slow-java.sh");
 		const progress = PROGRESS("2026-11-22 11:57:50", "3");
 		writeFileSync(

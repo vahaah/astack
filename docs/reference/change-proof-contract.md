@@ -3,6 +3,7 @@
 [ADR 0005](../adr/0005-every-change-carries-domain-and-formal-proof.md) governs mandatory admission.
 [ADR 0006](../adr/0006-internal-composition-records-follow-domain-effects.md) governs typed composition and law evidence.
 [ADR 0008](../adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md) governs the explicit history-bound proposal route and its selected landing-value option.
+[ADR 0014](../adr/0014-each-proof-stop-names-its-cause.md) governs what each stop names.
 The [installed contract](../../marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) gives the format and runner limits.
 
 ## Acceptance criteria
@@ -22,6 +23,11 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-13] With `--base <ref>`, the scope and the snapshots read from the merge base of the ref and HEAD. The manifest base must be an ancestor of that merge base. Replace objects and grafts cannot change a base or hide a changed path.
 - [criterion:CP-14] Each CI run of `scripts/check-proof.ts` passes a base. A push to the default branch and a release use the first parent of HEAD. A branch push whose HEAD the default branch holds also uses the first parent of HEAD. A push to another branch uses the default branch.
 - [criterion:CP-15] The base branch can change the authority of a ratified ADR after the manifest base. Then the stop names the ADR, both commits and the repair. A change of only the selected Landed value does not stop.
+- [criterion:CP-16] The proof reads TLC output with CR LF line ends as it reads output with LF line ends.
+- [criterion:CP-17] A SANY error stop names the module, the first line and column and the message line of the error.
+- [criterion:CP-18] A failed run names its invariant or property. It prints at most 20 numbered steps of 200 characters, then a count of the rest.
+- [criterion:CP-19] A stale stop names each changed path, the index or the ratification history. A run past the deadline names its last progress record.
+- [criterion:CP-20] Each stop writes one stderr line with the proof contract section of its stage. The example manifest of the proof contract parses.
 
 ## Claim boundary
 

@@ -70,7 +70,7 @@ describe("the proof contract reference", () => {
 		expect(parsed.ok && parsed.value.change).toBe("gate-admission");
 	});
 
-	test("[control:proof-example-parses] each key of the example is in the row of its record or in the section that the row links", () => {
+	test("[control:proof-example-keys] each key of the example is in the row of its record or in the section that the row links", () => {
 		const example: Record<string, unknown> = JSON.parse(EXAMPLE_TEXT);
 		const missing = Object.entries(example).flatMap(([record, value]) => {
 			const known = documented(record);
@@ -81,7 +81,7 @@ describe("the proof contract reference", () => {
 		expect([...new Set(missing)]).toEqual([]);
 	});
 
-	test("[control:proof-stop-section] the section of each stop stage is a heading of the proof contract", () => {
+	test("[control:proof-stop-heading] the section of each stop stage is a heading of the proof contract", () => {
 		expect(
 			STAGES.filter((stage) => !SECTIONS.has(slug(STAGE_SECTIONS[stage]))),
 		).toEqual([]);

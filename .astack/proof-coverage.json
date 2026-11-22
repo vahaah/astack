@@ -12,6 +12,8 @@
 		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof-snapshot.test.ts",
 		"tests/astack/change-proof.test.ts",
+		"tests/astack/proof-contract-doc.test.ts",
+		"tests/astack/tlc-output.test.ts",
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts",
 		"tests/astack/change-proof-ratification.test.ts",
@@ -119,6 +121,35 @@
 			"controls": [
 				"proof-ratification-names-a-base-move",
 				"proof-landing-base-move"
+			]
+		},
+		{
+			"criterion": "CP-16",
+			"controls": ["tlc-line-ends"]
+		},
+		{
+			"criterion": "CP-17",
+			"controls": ["tlc-sany-location"]
+		},
+		{
+			"criterion": "CP-18",
+			"controls": ["tlc-violation-trace"]
+		},
+		{
+			"criterion": "CP-19",
+			"controls": [
+				"proof-stale-paths",
+				"proof-timeout-progress",
+				"proof-timeout-stdout"
+			]
+		},
+		{
+			"criterion": "CP-20",
+			"controls": [
+				"proof-stop-section",
+				"proof-stop-heading",
+				"proof-example-parses",
+				"proof-example-keys"
 			]
 		},
 		{
