@@ -1,32 +1,117 @@
-import { relative, resolve } from "node:path";
+import { basename, relative, resolve } from "node:path";
 import { type ChangeSources, type Pathspec, repoRoot } from "./git.ts";
 import { canonical, toPosix } from "./paths.ts";
+import type { ShellStep, Unreadable, Word } from "./shell.ts";
 
 export interface GitInvocation {
 	sub: string;
 	args: string[];
 	dir: string;
+	config: string[];
 }
+
+type GitWords = {
+	readonly sub: Word;
+	readonly args: readonly Word[];
+	readonly dir: string;
+	readonly config: readonly string[];
+	readonly dynamicPlace: boolean;
+};
+
+const CONFIG_ENV = "--config-env";
+const PLACE_FLAGS = [
+	"-c",
+	CONFIG_ENV,
+	"--git-dir",
+	"--work-tree",
+	"--namespace",
+];
+
+function configKey(spec: string): string {
+	const at = spec.indexOf("=");
+	return at < 0 ? spec : spec.slice(0, at);
+}
+
+function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
+	const [program, ...rest] = words;
+	if (program === undefined || basename(program.value) !== "git")
+		return undefined;
+	let cwd = dir;
+	let dynamicPlace = false;
+	const config: string[] = [];
+	for (let i = 0; i < rest.length; i++) {
+		const word = rest[i];
+		if (word === undefined) break;
+		const next = rest[i + 1];
+		if (word.value === "-C" || PLACE_FLAGS.includes(word.value)) {
+			dynamicPlace ||= word.dynamic || next?.dynamic === true;
+			if (word.value === "-C") cwd = resolve(cwd, next?.value ?? "");
+			if (word.value === "-c") config.push(next?.value ?? "");
+			if (word.value === CONFIG_ENV) config.push(configKey(next?.value ?? ""));
+			i++;
+		} else if (word.value.startsWith(`${CONFIG_ENV}=`)) {
+			dynamicPlace ||= word.dynamic;
+			config.push(configKey(word.value.slice(CONFIG_ENV.length + 1)));
+		} else if (word.value.startsWith("-")) {
+			dynamicPlace ||= word.dynamic;
+		} else {
+			return {
+				sub: word,
+				args: rest.slice(i + 1),
+				dir: cwd,
+				config,
+				dynamicPlace,
+			};
+		}
+	}
+	return undefined;
+}
+
+function invocationOf(git: GitWords): GitInvocation {
+	return {
+		sub: git.sub.value,
+		args: git.args.map((word) => word.value),
+		dir: git.dir,
+		config: [...git.config],
+	};
+}
+
+export const HOOKS_PATH_KEY = /^core\.hookspath$/i;
 
 export function gitInvocation(
 	values: string[],
 	dir: string,
 ): GitInvocation | undefined {
-	let cwd = dir;
-	for (let i = 1; i < values.length; i++) {
-		const value = values[i] ?? "";
-		if (value === "-C") {
-			cwd = resolve(cwd, values[i + 1] ?? "");
-			i++;
-		} else if (
-			["-c", "--git-dir", "--work-tree", "--namespace"].includes(value)
-		) {
-			i++;
-		} else if (!value.startsWith("-")) {
-			return { sub: value, args: values.slice(i + 1), dir: cwd };
-		}
-	}
-	return undefined;
+	const git = gitWords(
+		values.map((value) => ({ value, dynamic: false })),
+		dir,
+	);
+	return git === undefined ? undefined : invocationOf(git);
+}
+
+const GUARDED_VERBS = new Set([
+	"apply",
+	"checkout",
+	"checkout-index",
+	"clean",
+	"commit",
+	"push",
+	"read-tree",
+	"reset",
+	"restore",
+	"switch",
+]);
+
+const REVERSE = /^(?:--reverse|-[A-Za-z]*R[A-Za-z]*)$/;
+
+function guarded(verb: string, args: readonly Word[]): boolean {
+	if (verb === "apply")
+		return args.some((word) => !word.dynamic && REVERSE.test(word.value));
+	if (verb === "config")
+		return args.some(
+			(word) => !word.dynamic && HOOKS_PATH_KEY.test(word.value),
+		);
+	return GUARDED_VERBS.has(verb);
 }
 
 const COMMIT_VALUE_FLAGS = new Set([
@@ -47,6 +132,127 @@ const COMMIT_VALUE_FLAGS = new Set([
 	"--trailer",
 	"--cleanup",
 ]);
+
+const VERB_VALUE_FLAGS: ReadonlyMap<string, readonly string[]> = new Map([
+	["apply", ["-p", "-C", "--directory", "--exclude", "--include"]],
+	["checkout", ["-b", "-B", "--orphan"]],
+	["checkout-index", ["--prefix", "--stage"]],
+	[
+		"config",
+		["-f", "--blob", "--comment", "--default", "--file", "--type", "--value"],
+	],
+	["clean", ["-e", "--exclude"]],
+	["commit", [...COMMIT_VALUE_FLAGS]],
+	["push", ["-o", "--push-option"]],
+	["read-tree", ["--prefix", "--index-output"]],
+	["restore", ["-s", "--source"]],
+	["switch", ["-c", "-C", "--orphan", "--create", "--force-create"]],
+]);
+
+const CAUSES: Readonly<Record<Unreadable, string>> = {
+	folder: "an earlier cd goes to a folder that astack cannot read",
+	depth: "it runs more than 4 levels deep in shell bodies",
+	body: "a variable or a command substitution is in its shell body",
+	stdin:
+		"the shell reads its script from a pipe or a heredoc that astack cannot read",
+	wrapper: "a wrapper before it has a flag that astack does not know",
+	program: "a variable gives the program",
+};
+
+export type GitRead =
+	| { readonly kind: "none" }
+	| { readonly kind: "plain"; readonly git: GitInvocation }
+	| {
+			readonly kind: "unreadable";
+			readonly verb: string | undefined;
+			readonly cause: string;
+			readonly dir: string | undefined;
+	  };
+
+const NONE: GitRead = { kind: "none" };
+
+function hiddenVerb(step: ShellStep): string | undefined {
+	const tokens = [...step.values, ...(step.simple.substitutions ?? [])]
+		.flatMap((value) => value.split(/\s+/))
+		.filter(Boolean);
+	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
+	return tokens.find(
+		(token) => GUARDED_VERBS.has(token) || (token === "config" && hooksPath),
+	);
+}
+
+function attachedValue(text: string, flag: string): boolean {
+	return flag.startsWith("--")
+		? text.startsWith(`${flag}=`)
+		: text.startsWith(flag) && text.length > flag.length;
+}
+
+function takesNextWord(text: string, valued: readonly string[]): boolean {
+	if (valued.includes(text)) return true;
+	if (!/^-[A-Za-z]{2,}$/.test(text)) return false;
+	const at = [...text.slice(1)].findIndex((letter) =>
+		valued.includes(`-${letter}`),
+	);
+	return at === text.length - 2;
+}
+
+function hasDynamicWord(sub: string, args: readonly Word[]): boolean {
+	const valued = VERB_VALUE_FLAGS.get(sub) ?? [];
+	for (let i = 0; i < args.length; i++) {
+		const word = args[i];
+		if (word === undefined) break;
+		if (!word.dynamic) {
+			if (takesNextWord(word.value, valued)) i++;
+		} else if (!valued.some((flag) => attachedValue(word.value, flag)))
+			return true;
+	}
+	return false;
+}
+
+function unreadable(
+	verb: string | undefined,
+	cause: string,
+	dir: string | undefined,
+): GitRead {
+	return { kind: "unreadable", verb, cause, dir };
+}
+
+export function readGit(step: ShellStep): GitRead {
+	if (step.unreadable === "stdin")
+		return unreadable(undefined, CAUSES.stdin, undefined);
+	if (step.unreadable !== undefined && step.unreadable !== "folder") {
+		const verb = hiddenVerb(step);
+		return verb === undefined
+			? NONE
+			: unreadable(verb, CAUSES[step.unreadable], undefined);
+	}
+	const git = gitWords(step.words, step.dir);
+	if (git === undefined) return NONE;
+	if (git.sub.dynamic)
+		return unreadable(
+			undefined,
+			"a variable or a command substitution gives the git subcommand",
+			git.dir,
+		);
+	const verb = git.sub.value;
+	if (!guarded(verb, git.args))
+		return { kind: "plain", git: invocationOf(git) };
+	if (step.unreadable === "folder")
+		return unreadable(verb, CAUSES.folder, undefined);
+	if (git.dynamicPlace)
+		return unreadable(
+			verb,
+			"a variable or a command substitution gives the -C, -c, --config-env, --git-dir or --work-tree value",
+			undefined,
+		);
+	if (hasDynamicWord(verb, git.args))
+		return unreadable(
+			verb,
+			`a variable or a command substitution gives a flag or an operand of git ${verb}`,
+			git.dir,
+		);
+	return { kind: "plain", git: invocationOf(git) };
+}
 
 export interface CommitFlags {
 	all: boolean;

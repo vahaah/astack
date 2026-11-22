@@ -449,6 +449,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
 | `astack check stack-config` | Compare watched files with the record from `astack stack start`. It prints a restart command and never runs it |
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
+| `astack gates run --base <ref>` | Run the gates of `.claude/pr-review-hardening.profile.md` on a clean tree, as the hardening run does. When each gate that applies exits 0, record HEAD in the state folder. Then a push of that HEAD can skip the git hooks |
 | `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
 | `astack watch-pr [--pr <n>]` | Watch one pull request through `gh`, and print each verdict |
 | `astack managed <path>` | Print whether apply writes the path or the repo owns it. Exit 0 when the owner is known, and 2 when the profile cannot tell |
@@ -481,8 +482,8 @@ In Cursor, deny means a follow-up prompt, unless the change goes through `preToo
 
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|
-| `merge-guard` | prompt, shell, MCP | Denies a merge with no grant in the profile or the turn. It reads the pull request with `gh` | No |
-| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It also denies `git commit` or `git push` with `--no-verify`. It denies a git command that discards uncommitted work, such as `git reset --hard`, `git checkout -- .` or `git clean -f`. On a clean tree, it allows them | No |
+| `merge-guard` | prompt, shell, MCP | Denies a merge with no grant in the profile or the turn. It reads the pull request with `gh`. It reads the plain form of each step, so `time`, `sudo`, braces or `bash -c` before `gh pr merge` give the verdict of the plain command. It denies each `gh api` merge of a PR, and a GraphQL body that it cannot read | No |
+| `destructive` | shell | Denies `supabase db reset`, including a package script that runs it, and a force-push to a shared branch such as `main`, when there is no owner grant. It denies a git command that discards uncommitted work, such as `git reset --hard`, `git checkout -- .`, `git clean -f` or `git archive` piped to `tar -x`. On a clean tree, it allows them. It reads the plain form of each step, so a wrapper such as `env`, `sudo` or `xargs` gives the verdict of the plain command. A git step with a variable in a flag, an operand or its folder gets a deny. It denies a hook skip on `git commit` or `git push`, which is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder where HEAD does not hold each active hook as an executable file. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too. A push of a HEAD that `astack gates run` recorded as green can skip the hooks | No |
 | `duplicate-pr` | shell, MCP | Denies `gh pr create` for a branch that already has an open PR, or a body that shares a ticket key with an open PR | No |
 | `pr-body`, `ticket` | shell, MCP | Check PR headings and issue text, including `Part of` links | No |
 | `plan-file` | write and edit | Denies a plan write over the byte cap, or a new checkbox, `Status:` line or register table | No |

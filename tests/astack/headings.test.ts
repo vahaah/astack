@@ -15,7 +15,7 @@ import {
 	TICKET_HEADINGS,
 	templateNamed,
 } from "../../src/astack/headings.ts";
-import { commandWords, parseShell } from "../../src/astack/shell.ts";
+import { parseShell, shellSteps } from "../../src/astack/shell.ts";
 
 const FEATURE = `## Problem
 Operators cannot export a report.
@@ -216,10 +216,14 @@ describe("shell parsing", () => {
 			["FOO=1", "git", "commit", "-m", "msg"],
 		]);
 		expect(
-			commandWords(
-				commands[2] ?? { words: [], stdin: undefined, redirects: [] },
-			).map((word) => word.value),
-		).toEqual(["git", "commit", "-m", "msg"]);
+			shellSteps(
+				`cd repo && git add 'a b.ts' "c.ts" ; FOO=1 git commit -m "msg"`,
+				"/work",
+			).map((step) => [step.dir, ...step.values]),
+		).toEqual([
+			["/work/repo", "git", "add", "a b.ts", "c.ts"],
+			["/work/repo", "git", "commit", "-m", "msg"],
+		]);
 	});
 
 	test("reads a heredoc body passed through $(cat <<'EOF' ...)", () => {

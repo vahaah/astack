@@ -42,6 +42,29 @@ Each denial names the paths that the command discards.
 The same commands pass on a clean tree.
 A command that names one file, `git restore --staged` and each `git stash` form pass, because the agent names the work that it discards.
 
+Amended 2026-11-22. Both guards read the plain form of each shell step.
+`shellSteps` drops reserved words and braces, and it unwraps a fixed list of wrappers.
+It also parses static `sh -c`, `eval` and substitution bodies as steps, and a static script that a shell reads from a heredoc or a pipe.
+A shell reads a static script on stdin only from four sources, and only when the command defines no function or alias.
+Two sources are a quoted heredoc and a static here-string.
+The other two are a whole pipe stage before the shell: `echo` with no flag or backslash, or `printf '%s'` with one static argument.
+`printf '%s\n'` counts as that `printf` form.
+Each other script on stdin gets a deny with no search of its text.
+An unquoted heredoc with `$`, a backtick or a backslash is dynamic for each reader of stdin.
+So is the stdin of a command with more than one stdin source, because the shell uses the last one.
+A guarded verb that a variable hides is unreadable.
+An unreadable work-loss command gets a deny on a changed tree when astack can read its folder.
+Each other unreadable guarded verb gets a deny at once.
+`git apply -R` from stdin or a substitution, `git read-tree -u --reset` and `git checkout-index -a -f` are work-loss commands.
+So is `git archive` piped to `tar -x`. A named-file form still passes.
+`git archive` piped to `tar -x` always covers the whole tree of the folder of the `tar` step, also with named paths.
+A failed `git status` in that folder gets a deny.
+
+Amended 2026-11-22. A hook skip is an owner gate too.
+A hook skip is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder where HEAD does not hold each active hook as an executable file. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too.
+A push of a source that `astack gates run` recorded as green can skip the hooks.
+A commit and a config write with a hook skip stay owner gates, because a new commit has no gate record.
+
 ### D4. Attended detection stays fail-safe, and the merge denial names its cause
 
 `CLAUDE_CODE_SESSION_ATTENDED=0` or an `sdk` entrypoint makes a session unattended.
@@ -50,6 +73,10 @@ A prompt that the host marks with `source` `user` stays a person's prompt.
 astack adds no attended override, because each child process inherits an environment variable.
 The merge denial, the SessionStart note and `astack doctor` name the variable that makes the session unattended.
 The fix of the host flag is outside astack.
+
+Amended 2026-11-22. In an unattended session, a prompt that the host marks with `source` `user` gets a note that the turn is attended.
+The note reads only `event.human`, with no state folder and no `hooks.ste`.
+Plan S0 reads the note as attended, because `astack plan attended` reads only the environment.
 
 #### Formal claim
 
@@ -61,6 +88,8 @@ The prompt source is `user`, absent or a machine source.
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
 The git group covers 16 git commands.
 It covers each set of tracked, staged, mixed and untracked changes in a named file, a folder and the rest of the tree.
+The push group covers a HEAD whose gates pass or fail, a gate run and one push or commit.
+The push or commit skips the hooks or keeps them. It goes to a head, to refs that a record cannot cover, or into a new commit.
 
 ```text
 GrantFromWords       == \A n \in grant : OwnerCovers(said, n)
@@ -72,11 +101,18 @@ ScratchSkipped       == a write of a scratch file gets no write check
 CommitSurfaceChecked == each commit gets the commit checks
 BroadLossDenied      == no command on the tree or a folder discards a change and passes
 DenialNeedsLoss      == each denial names a change that git discards
+HookSkipNeedsGates   == a hook skip goes ahead only on a head whose gates pass
 ```
 
 The [model](../../formal/SessionGuards.tla) and its [configuration](../../formal/SessionGuards.cfg) check these invariants with no fairness.
 The model takes the observations of the hooks as true: the clause grammar, the prompt source, the path facts and the `git status` entries.
 The negative control lets a "full stop" clause give a grant of each PR. It must violate `GrantFromWords`.
+The model takes the plain form of each shell step as given.
+The control of the plain form is the wrapper law `verdict(w c) = verdict(c)`, which a property test checks.
+
+Amended 2026-11-22. `sudo` and `doas` reset the environment by default, and `exec -c` clears it.
+So the merge guard reads each of them before `gh pr merge` as an environment change, unless `sudo` has `-E` or `--preserve-env`.
+The merge part of the wrapper law leaves out `env -i`, `sudo` and `doas` with no such flag. The destructive part keeps them.
 
 #### Category composition
 
@@ -90,8 +126,18 @@ mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, net
 handler      : HookCall -> Verdict        comments: fs-read, fs-write, spawn, env
 handler      : HookCall -> Verdict        types: fs-read, spawn, env
 handler      : HookCall -> Verdict        ste-artifact: fs-read, fs-write, env
-handler      : HookCall -> Verdict        destructive: fs-read, spawn
+handler      : HookCall -> Verdict        destructive: fs-read, spawn, env
+shellSteps   : HookCall -> ShellStep      effects: none
+readGit      : ShellStep -> GitRead       effects: none
+runGates     : ProfileGate -> GateRun     effects: spawn, fs-read, fs-write, env
+recordOf     : GateRun -> GateRecord      effects: none
 ```
+
+Amended 2026-11-22. `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
+`runGates` runs the gates of the hardening profile, and `recordOf` keeps a record only when each gate that applies passes.
+The `turn` handler keeps its effects, and its attended note reads only `event.human`.
+The guards still run side by side under `combineAll`, so no composite arrow is new.
+The wrapper law is not one of the eight category laws, so the proof matrix lists it as a control.
 
 The guards run side by side on one hook call, and `combineAll` keeps the verdict of the highest rank.
 The record declares no composite arrow, so the identity and associativity laws of arrow composition do not apply.
@@ -110,6 +156,9 @@ This change adds no map, functor or monad, so those laws do not apply either.
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
 | `CodeLost` and `RunGit` | `workLossReasons` and its status reader in `src/astack/hook/handlers/destructive.ts` |
 | `GitLost` and `After` | The documented effect of each git command on the index, the work tree and untracked files |
+| `GatesRun` and `green` | `runGates`, `recordOf` and `saveGateRecord` in `src/astack/gates.ts`. A gate run records HEAD only when each gate that applies exits 0 |
+| `Push` and `Targets` | `gitReasons` in `src/astack/hook/handlers/destructive.ts`, which reads `loadGateRecord` for each pushed source |
+| The plain form, which the model takes as given | `shellSteps` in `src/astack/shell.ts` and `readGit` in `src/astack/git-command.ts` |
 
 These links describe the abstraction relation.
 They do not show that the TypeScript code refines the model.
@@ -119,6 +168,8 @@ They do not show that the TypeScript code refines the model.
 [The proof matrix](../../.astack/proof-coverage.json) links each criterion of the [session guard requirements](../reference/session-guards.md) to its controls.
 The merge guard, hook, STE hook, guard and doctor suites run each control through the normal test gate.
 The negative control must violate `GrantFromWords` with a counterexample, and the unchanged model must pass again with the same state counts.
+Amended 2026-11-22. The B04 manifest drops the record test from `Push`. That control must violate `HookSkipNeedsGates`.
+`tests/property/shell-wrapper-law.test.ts` checks the wrapper law on both guards, and `tests/fixtures/guard-bypass.json` holds the probe forms.
 Current results belong to CI and the proof receipt, so this ADR does not copy a pass result.
 
 ## Consequences

@@ -29,6 +29,7 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/property/shell-wrapper-law.test.ts",
 		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
@@ -258,7 +259,8 @@
 				"sg-relayed-prompt",
 				"sg-unattended-channel",
 				"sg-machine-prompt",
-				"sg-doctor-unattended"
+				"sg-doctor-unattended",
+				"sg-attended-note"
 			]
 		},
 		{
@@ -300,8 +302,29 @@
 			"controls": [
 				"sg-work-loss-denied",
 				"sg-explicit-discard-passes",
-				"sg-clean-tree-passes"
+				"sg-clean-tree-passes",
+				"sg-whole-tree"
 			]
+		},
+		{
+			"criterion": "SG-plain-form",
+			"controls": ["sg-plain-form", "sg-wrapper-law"]
+		},
+		{
+			"criterion": "SG-dynamic-word",
+			"controls": ["sg-dynamic-word"]
+		},
+		{
+			"criterion": "SG-api-merge",
+			"controls": ["sg-api-merge"]
+		},
+		{
+			"criterion": "SG-hook-skip",
+			"controls": ["sg-hook-skip"]
+		},
+		{
+			"criterion": "SG-gates-run",
+			"controls": ["sg-gates-run"]
 		},
 		{
 			"criterion": "SG-generated",

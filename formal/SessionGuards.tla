@@ -1,7 +1,7 @@
 ------------------------- MODULE SessionGuards -------------------------
 EXTENDS Naturals, FiniteSets
 
-Concerns == {"merge", "write", "git"}
+Concerns == {"merge", "write", "git", "push"}
 
 PRs == {1, 2}
 Clauses == {"merge", "mergeOne", "negatedMerge", "fullSend", "negatedFullSend",
@@ -52,6 +52,8 @@ Commands ==
    [name |-> "checkout main", lost |-> "none", scope |-> "tree", effect |-> "none"],
    [name |-> "stash", lost |-> "none", scope |-> "tree", effect |-> "stash"]}
 
+Targets == {"head", "refs", "commit"}
+
 Broad(cmd) == cmd.scope \in {"tree", "folder"} /\ cmd.effect \in {"tracked", "worktree", "untracked"}
 
 CodeKindLost(lost, kind) == CASE lost = "untracked" -> kind = "untracked"
@@ -81,12 +83,14 @@ After(cmd, t) == (t \ Touched(cmd, t))
 
 VARIABLES concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
           mode, merged, unauthorized, stopMerged, mcpMerged, faultMerged,
-          file, step, writeChecked, commitChecked, tree, broadLoss, falseDenial
+          file, step, writeChecked, commitChecked, tree, broadLoss, falseDenial,
+          green, recorded, acted, ungated
 mergeVars == <<attended, baseAuthority, workingAuthority, said, saidBy, grant, mode,
                merged, unauthorized, stopMerged, mcpMerged, faultMerged>>
 writeVars == <<file, step, writeChecked, commitChecked>>
 gitVars == <<tree, broadLoss, falseDenial>>
-vars == <<concern, mergeVars, writeVars, gitVars>>
+pushVars == <<green, recorded, acted, ungated>>
+vars == <<concern, mergeVars, writeVars, gitVars, pushVars>>
 
 MergeStart == /\ said = {}
               /\ saidBy = "nobody"
@@ -104,6 +108,8 @@ MergeIdle == /\ attended = TRUE
 WriteStart == step = "new" /\ writeChecked = FALSE /\ commitChecked = FALSE
 WriteIdle == file = IdleFile /\ WriteStart
 GitIdle == tree = {} /\ broadLoss = FALSE /\ falseDenial = FALSE
+PushStart == recorded = FALSE /\ acted = FALSE /\ ungated = FALSE
+PushIdle == green = FALSE /\ PushStart
 
 Init == \/ /\ concern = "merge"
            /\ attended \in BOOLEAN
@@ -112,17 +118,26 @@ Init == \/ /\ concern = "merge"
            /\ MergeStart
            /\ WriteIdle
            /\ GitIdle
+           /\ PushIdle
         \/ /\ concern = "write"
            /\ MergeIdle
            /\ file \in Files
            /\ WriteStart
            /\ GitIdle
+           /\ PushIdle
         \/ /\ concern = "git"
            /\ MergeIdle
            /\ WriteIdle
            /\ tree \in SUBSET Changes
            /\ broadLoss = FALSE
            /\ falseDenial = FALSE
+           /\ PushIdle
+        \/ /\ concern = "push"
+           /\ MergeIdle
+           /\ WriteIdle
+           /\ GitIdle
+           /\ green \in BOOLEAN
+           /\ PushStart
 
 Prompt == /\ concern = "merge"
           /\ \E p \in Prompts, source \in Sources :
@@ -133,12 +148,14 @@ Prompt == /\ concern = "merge"
                       /\ mode' = ModeOf(p)
                  ELSE UNCHANGED <<grant, said, saidBy, mode>>
           /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged,
-                         unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars>>
+                         unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars,
+                         pushVars>>
 
 EditProfile == /\ concern = "merge"
                /\ workingAuthority' \in Authorities
                /\ UNCHANGED <<concern, attended, baseAuthority, said, saidBy, grant, mode, merged,
-                              unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars>>
+                              unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars,
+                              pushVars>>
 
 Merge == /\ concern = "merge"
          /\ mode # "fullStop"
@@ -153,20 +170,20 @@ Merge == /\ concern = "merge"
                                    \/ (OwnerCovers(said, n) /\ PersonTyped(saidBy, attended))))
          /\ stopMerged' = (stopMerged \/ mode = "fullStop")
          /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
-                        mode, writeVars, gitVars>>
+                        mode, writeVars, gitVars, pushVars>>
 
 Write == /\ concern = "write"
          /\ step = "new"
          /\ step' = "written"
          /\ writeChecked' = ~Scratch(file)
-         /\ UNCHANGED <<concern, file, commitChecked, mergeVars, gitVars>>
+         /\ UNCHANGED <<concern, file, commitChecked, mergeVars, gitVars, pushVars>>
 
 Commit == /\ concern = "write"
           /\ step = "written"
           /\ file.git
           /\ step' = "committed"
           /\ commitChecked' = TRUE
-          /\ UNCHANGED <<concern, file, writeChecked, mergeVars, gitVars>>
+          /\ UNCHANGED <<concern, file, writeChecked, mergeVars, gitVars, pushVars>>
 
 Settled == /\ concern = "write"
            /\ step # "new"
@@ -180,9 +197,27 @@ RunGit == /\ concern = "git"
                        THEN UNCHANGED <<tree, broadLoss>>
                        ELSE /\ broadLoss' = (broadLoss \/ (Broad(cmd) /\ GitLost(cmd, tree) # {}))
                             /\ tree' = After(cmd, tree)
-          /\ UNCHANGED <<concern, mergeVars, writeVars>>
+          /\ UNCHANGED <<concern, mergeVars, writeVars, pushVars>>
+
+GatesRun == /\ concern = "push"
+            /\ ~acted
+            /\ recorded' = (recorded \/ green)
+            /\ UNCHANGED <<concern, green, acted, ungated, mergeVars, writeVars, gitVars>>
+
+Push == /\ concern = "push"
+        /\ ~acted
+        /\ \E skips \in BOOLEAN, target \in Targets :
+             /\ ~skips \/ (target = "head" /\ recorded)
+             /\ acted' = TRUE
+             /\ ungated' = (skips /\ ~(target = "head" /\ green))
+        /\ UNCHANGED <<concern, green, recorded, mergeVars, writeVars, gitVars>>
+
+Pushed == /\ concern = "push"
+          /\ acted
+          /\ UNCHANGED vars
 
 Next == Prompt \/ EditProfile \/ Merge \/ Write \/ Commit \/ Settled \/ RunGit
+        \/ GatesRun \/ Push \/ Pushed
 Spec == Init /\ [][Next]_vars
 
 TypeOK == /\ concern \in Concerns
@@ -205,6 +240,10 @@ TypeOK == /\ concern \in Concerns
           /\ tree \subseteq Changes
           /\ broadLoss \in BOOLEAN
           /\ falseDenial \in BOOLEAN
+          /\ green \in BOOLEAN
+          /\ recorded \in BOOLEAN
+          /\ acted \in BOOLEAN
+          /\ ungated \in BOOLEAN
 
 GrantFromWords == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson == grant # {} => PersonTyped(saidBy, attended)
@@ -219,4 +258,5 @@ ScratchSkipped == step # "new" /\ ~file.inProject /\ (file.inTemp \/ ~(file.git 
 CommitSurfaceChecked == step = "committed" => commitChecked
 BroadLossDenied == ~broadLoss
 DenialNeedsLoss == ~falseDenial
+HookSkipNeedsGates == ~ungated
 =============================================================================

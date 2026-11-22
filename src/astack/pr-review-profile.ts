@@ -810,12 +810,21 @@ export type CiEnvEntry =
 	  }
 	| { readonly kind: "leave"; readonly name: string; readonly why: string };
 
+export type Prerequisite = {
+	readonly name: string;
+	readonly check: string;
+	readonly start: string | undefined;
+};
+
 export type ProfileGate = {
 	readonly name: string;
 	readonly test: boolean;
 	readonly command: string;
 	readonly preparation: readonly string[];
 	readonly checks: readonly string[];
+	readonly requires: readonly Prerequisite[];
+	readonly setup: readonly string[];
+	readonly after: readonly string[];
 	readonly whenChanged: readonly string[];
 	readonly sessionEnv: readonly string[];
 	readonly ciEnv: readonly CiEnvEntry[];
@@ -849,6 +858,9 @@ export function profileGates(data: unknown): ProfileGate[] {
 				command: entry.command,
 				preparation: [...strings(entry.setup), ...prerequisites],
 				checks: strings(requires.map((item) => item.check)),
+				requires: requires.flatMap(prerequisiteOf),
+				setup: strings(entry.setup),
+				after: strings(entry.after),
 				whenChanged: strings(entry.when_changed),
 				sessionEnv: sessionEnvNames(entry),
 				ciEnv: records(entry.ci_env).flatMap(ciEnvEntry),
@@ -857,6 +869,21 @@ export function profileGates(data: unknown): ProfileGate[] {
 			},
 		];
 	});
+}
+
+function prerequisiteOf(
+	item: Readonly<Record<string, unknown>>,
+): Prerequisite[] {
+	const { name, check, on_missing, start } = item;
+	if (typeof name !== "string" || typeof check !== "string") return [];
+	return [
+		{
+			name,
+			check,
+			start:
+				on_missing === "start" && typeof start === "string" ? start : undefined,
+		},
+	];
 }
 
 function toolVersions(value: unknown): ToolVersion[] {
