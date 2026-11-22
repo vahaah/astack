@@ -1,6 +1,6 @@
 import { adrProse, decisionHeading } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
-import { err, ok, type Result } from "../result.ts";
+import { all, andThen, err, map, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
 import {
 	type AdrReference,
@@ -159,12 +159,16 @@ function linkCheck(
 		: fail(`${link.path} does not mention the symbol ${link.symbol}`);
 }
 
-function first(checks: readonly (() => Check)[]): Check {
-	for (const check of checks) {
-		const result = check();
-		if (!result.ok) return result;
-	}
-	return PASS;
+function first<E>(
+	checks: readonly (() => Result<unknown, E>)[],
+): Result<undefined, E> {
+	return map(
+		checks.reduce<Result<unknown, E>>(
+			(done, check) => andThen(done, check),
+			ok(undefined),
+		),
+		() => undefined,
+	);
 }
 
 function headings(text: string): readonly string[] {
@@ -515,42 +519,45 @@ function modelCheck(
 	files: ReadonlyMap<string, FileRead>,
 ): Result<ModelPlan, string> {
 	const { model } = proof;
-	const module = textOf(files, model.module);
-	if (!module.ok) return module;
-	const config = textOf(files, model.config);
-	if (!config.ok) return config;
-	const dependencies = new Map<string, string>();
-	for (const path of model.dependencies) {
-		const text = textOf(files, path);
-		if (!text.ok) return text;
-		dependencies.set(path, text.value);
-	}
-	const plan = planModel(model, proof.negative, {
-		module: module.value,
-		config: config.value,
-		dependencies,
-	});
-	if (!plan.ok) return plan;
-	const known = new Set([
-		...model.invariants,
-		...model.properties,
-		...plan.value.actions,
-	]);
-	const ref = proof.scope
-		.flatMap((row) => row.modelRefs)
-		.find((name) => !known.has(name));
-	if (ref !== undefined)
-		return err(
-			`a scope row cites ${ref}, which is no configured property and no model action`,
-		);
-	const action = proof.abstraction.relation.find(
-		(row) => !plan.value.actions.has(row.modelAction),
+	const plan = andThen(textOf(files, model.module), (module) =>
+		andThen(textOf(files, model.config), (config) =>
+			andThen(
+				all(
+					model.dependencies.map((path) =>
+						map(textOf(files, path), (text) => [path, text] as const),
+					),
+				),
+				(dependencies) =>
+					planModel(model, proof.negative, {
+						module,
+						config,
+						dependencies: new Map(dependencies),
+					}),
+			),
+		),
 	);
-	if (action !== undefined)
-		return err(
-			`abstraction relation cites ${action.modelAction}, which is no action of the model`,
+	return andThen(plan, (planned) => {
+		const known = new Set([
+			...model.invariants,
+			...model.properties,
+			...planned.actions,
+		]);
+		const ref = proof.scope
+			.flatMap((row) => row.modelRefs)
+			.find((name) => !known.has(name));
+		if (ref !== undefined)
+			return err(
+				`a scope row cites ${ref}, which is no configured property and no model action`,
+			);
+		const action = proof.abstraction.relation.find(
+			(row) => !planned.actions.has(row.modelAction),
 		);
-	return plan;
+		if (action !== undefined)
+			return err(
+				`abstraction relation cites ${action.modelAction}, which is no action of the model`,
+			);
+		return ok(planned);
+	});
 }
 
 function stageOf<T>(
@@ -564,19 +571,16 @@ export function checkReferences(
 	proof: ChangeProof,
 	view: RepoView,
 ): Result<ModelPlan, Rejection> {
-	const domain = stageOf("domain", domainCheck(proof, view));
-	if (!domain.ok) return domain;
 	const linked = linkedControls(proof, view.files);
-	const category = stageOf(
-		"category",
-		categoryCheck(proof, view.files, linked),
+	return andThen(
+		first([
+			() => stageOf("domain", domainCheck(proof, view)),
+			() => stageOf("category", categoryCheck(proof, view.files, linked)),
+			() => stageOf("controls", linked),
+			() => stageOf("controls", scopeCheck(proof, view)),
+		]),
+		() => stageOf("model", modelCheck(proof, view.modelFiles)),
 	);
-	if (!category.ok) return category;
-	const controls = stageOf("controls", linked);
-	if (!controls.ok) return controls;
-	const scope = stageOf("controls", scopeCheck(proof, view));
-	if (!scope.ok) return scope;
-	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
 
 const STALE_NAMES = 10;

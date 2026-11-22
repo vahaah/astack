@@ -10,6 +10,7 @@ import {
 import {
 	type ChangeProof,
 	parseChangeProof,
+	type Rejection,
 } from "../../src/astack/change-proof/contract.ts";
 import { proofGateIssues } from "../../src/astack/change-proof/profile.ts";
 import {
@@ -441,7 +442,55 @@ describe("admitChangeProof", () => {
 	});
 });
 
+const domainFault = (proof: Proof) => {
+	proof.domain.terms.push("Stale input");
+};
+const categoryFault = (proof: Proof) => {
+	proof.category.arrows = proof.category.arrows.map((arrow) =>
+		arrow.name === "parse"
+			? { ...arrow, link: { ...arrow.link, path: "spec/gate.md" } }
+			: arrow,
+	);
+};
+const controlsFault = (proof: Proof) => {
+	proof.scope.push({ path: "lib/**", obligation: "P1", modelRefs: ["Admit"] });
+};
+const modelFault = (proof: Proof) => {
+	proof.scope.push({ path: "src/*", obligation: "P1", modelRefs: ["Unknown"] });
+};
+
 describe("admission stops", () => {
+	test.each<[string, readonly ((proof: Proof) => void)[], Rejection]>([
+		[
+			"a domain fault and a category fault",
+			[domainFault, categoryFault],
+			{ stage: "domain", message: 'CONTEXT.md defines no term "Stale input"' },
+		],
+		[
+			"a category fault and a controls fault",
+			[categoryFault, controlsFault],
+			{
+				stage: "category",
+				message: "spec/gate.md does not mention the symbol parseGate",
+			},
+		],
+		[
+			"a controls fault and a model fault",
+			[controlsFault, modelFault],
+			{ stage: "controls", message: "scope row lib/** covers no changed path" },
+		],
+	])(
+		"[control:proof-stage-order] %s stop at the first of the two stages",
+		(_name, faults, rejection) => {
+			const proof = parsed((p) => {
+				for (const fault of faults) fault(p);
+			});
+			expect(
+				andThen(proof, (valid) => admitChangeProof(valid, facts(SNAPSHOT))),
+			).toEqual(err(rejection));
+		},
+	);
+
 	test("name every uncovered changed path and every idle scope row", () => {
 		const proof = parsed((p) => {
 			p.scope.push(
