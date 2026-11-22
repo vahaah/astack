@@ -343,8 +343,8 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 
 1. No FP library in a repo that has none. Effect only where the repo uses it. No higher-kinded encodings, Functor or Monad interfaces, or type-class dictionaries.
 2. No interface or class with one implementation. A test fake counts as the second one.
-3. No new generic before 3 real call sites. No Result helper set before 3 call sites chain results.
-4. No monad transformer stacks, and no custom `pipe`, `compose` or `curry` outside Effect. Plain code returns `Promise<Result<T, E>>` with early return.
+3. No new generic before 3 real call sites. No Result helper set before 3 call sites chain results. A Result helper set, such as `map`, `andThen` and `all`, counts as one generic.
+4. No monad transformer stacks, and no custom `pipe`, `compose` or `curry` outside Effect. Plain code returns `Promise<Result<T, E>>` with early return or with the Result helper set.
 5. A type-level program over about 10 lines needs a type test. Names follow the domain, not the algebra.
 
 One client repo sets `noImplicitAny: false` and says "interfaces over types". Its base moves to the strict flags, and every repo uses `type` for unions (Q12).

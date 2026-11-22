@@ -16,6 +16,7 @@
 | [0012](0012-change-proof-accepts-an-older-base.md) | Change proof accepts an older base | Accepted |
 | [0013](0013-astack-keeps-a-part-only-on-measured-use.md) | astack keeps a part only on measured use, and a word budget stops skill text from growing | Accepted |
 | [0014](0014-each-proof-stop-names-its-cause.md) | Each proof stop names its cause and the rule section of its stage | Accepted |
+| [0017](0017-law-claims-run-on-code.md) | Law claims run on code, and Result gets map, andThen and all | Accepted |
 | [0020](0020-plan-tools-share-one-adr-reader.md) | The plan tools share one ADR reader, and a session boundary rides in the next session PR | Accepted |
 | [0021](0021-doctor-reports-the-trust-that-codex-enforces.md) | Doctor reports the trust that Codex enforces, a drifted review profile and an unprotected base | Accepted |
 | [0022](0022-each-hook-finding-leaves-an-event-line-with-no-text.md) | Each hook finding leaves an event line with no text | Accepted |
