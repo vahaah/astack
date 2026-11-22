@@ -7,7 +7,7 @@
 				"config": "formal/CiProofRecords.cfg",
 				"dependencies": [],
 				"bounds": [
-					"Four diff classes and eight record cases: valid or one of seven failed guards.",
+					"Four diff classes and nine record cases: valid or one of eight failed guards.",
 					"Tool equality, moved base, and independent proof validity are Boolean.",
 					"One classification followed by one independent proof decision."
 				],
@@ -31,6 +31,7 @@
 				"src/astack/ci-pins.ts",
 				"src/astack/change-proof/candidate.ts",
 				"src/astack/change-proof/ci-records.ts",
+				"src/astack/change-proof/manifest.ts",
 				"src/astack/cli/commands/check/ci-pins.ts"
 			],
 			"text": []
@@ -292,6 +293,7 @@
 				"bounds": [
 					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 					"Each failure kind maps to one section of the proof contract.",
+					"Seven manifest observations: one, fallback, several, none, merged, held and beside. Only a run with --base can find none or merged.",
 					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 				],
 				"fairness": ["WF_vars(Next)"],
@@ -309,7 +311,8 @@
 					"HistoryAtManifest",
 					"MovedAuthorityStops",
 					"StaleStopNamesPaths",
-					"StopNamesSection"
+					"StopNamesSection",
+					"OneManifestPerChange"
 				],
 				"properties": ["EventuallyTerminal"]
 			},
@@ -325,7 +328,7 @@
 				}
 			},
 			"records": [
-				"docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+				"formal/ProofAdmission.md",
 				"docs/adr/0006-internal-composition-records-follow-domain-effects.md",
 				"docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
 				"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
@@ -429,8 +432,7 @@
 				}
 			},
 			"records": [
-				"docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
-				"docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"formal/SessionGuards.md",
 				"docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md"
 			],
 			"covers": [
@@ -499,6 +501,7 @@
 	"contractOnly": [
 		"**/*.md",
 		".astack/proof*.json",
+		".astack/proof/*.json",
 		"dist/**",
 		"marketplace/plugins/astack/bin/astack.js",
 		"rules/**",
@@ -565,6 +568,16 @@
 			"path": "formal/ci-proof-records.md",
 			"reason": "The proof record of CiProofRecords. A text change gives no other TLC verdict",
 			"control": "ci-proof-records"
+		},
+		{
+			"path": "formal/ProofAdmission.md",
+			"reason": "The proof record of ProofAdmission. A text change gives no other TLC verdict",
+			"control": "rl-records"
+		},
+		{
+			"path": "formal/SessionGuards.md",
+			"reason": "The proof record of SessionGuards. A text change gives no other TLC verdict",
+			"control": "rl-records"
 		}
 	]
 }

@@ -298,7 +298,7 @@ function ladderRegistry(): string {
 				},
 			],
 			failClosed: ["src/lock/**", "src/guard/**", "formal/**"],
-			contractOnly: ["**/*.md", ".astack/proof*.json"],
+			contractOnly: ["**/*.md", ".astack/proof*.json", ".astack/proof/*.json"],
 			unmodelled: [],
 		},
 		null,

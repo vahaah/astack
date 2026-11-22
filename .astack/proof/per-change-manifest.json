@@ -1,0 +1,512 @@
+{
+	"version": 1,
+	"change": "per-change-manifest",
+	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
+	"scope": [
+		{
+			"path": ".astack/proof/per-change-manifest.json",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": ".astack/proof.json",
+			"obligation": "CP-manifest-held"
+		},
+		{
+			"path": ".astack/proof-coverage.json",
+			"obligation": "CP-manifest-merge"
+		},
+		{
+			"path": ".astack/ci-proof-records-coverage.json",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "AGENTS.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "CONTRIBUTING.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "README.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "docs/adr/**",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "docs/install-repo.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "docs/plans/review-roadmap/B07.md",
+			"obligation": "CP-manifest-merge"
+		},
+		{
+			"path": "docs/reference/change-proof-contract.md",
+			"obligation": "CP-manifest-merge"
+		},
+		{
+			"path": "docs/runbooks/change-proof-migration.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "formal/ProofAdmission.tla",
+			"obligation": "CP-manifest-held"
+		},
+		{
+			"path": "formal/ProofAdmission.cfg",
+			"obligation": "CP-manifest-held"
+		},
+		{
+			"path": "formal/CiProofRecords.tla",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "formal/*.md",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/change-proof.md",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/ci-pins.md",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md",
+			"obligation": "CP-21"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/write-docs/references/adr.md",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "src/astack/adr.ts",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "src/astack/change-proof/candidate.ts",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "src/astack/change-proof/ci-records.ts",
+			"obligation": "CP-record-decision"
+		},
+		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "CP-manifest-held"
+		},
+		{
+			"path": "src/astack/change-proof/manifest.ts",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "src/astack/cli/commands/check/ci-pins.ts",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "src/astack/cli/commands/check/proof.ts",
+			"obligation": "CP-manifest-search"
+		},
+		{
+			"path": "templates/pr-review-hardening.stub.FALLBACK.md",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "tests/astack/adr.test.ts",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "tests/astack/change-proof-cli.test.ts",
+			"obligation": "CP-adr-decision"
+		},
+		{
+			"path": "tests/astack/change-proof-fixture.ts",
+			"obligation": "CP-manifest-merge"
+		},
+		{
+			"path": "tests/astack/change-proof-manifest.test.ts",
+			"obligation": "CP-manifest-merge"
+		},
+		{
+			"path": "tests/astack/change-proof-ratification.test.ts",
+			"obligation": "CP-record-decision"
+		},
+		{
+			"path": "tests/astack/ci-proof-records.test.ts",
+			"obligation": "CP-manifest-base"
+		},
+		{
+			"path": "tests/astack/proof-contract-doc.test.ts",
+			"obligation": "CP-21"
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "CP-manifest-base"
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/astack/change-proof/manifest.ts",
+			"symbol": "ManifestChoice"
+		},
+		"terms": [
+			"ChangeProof",
+			"Change manifest",
+			"Manifest base",
+			"Diff base",
+			"Effective decision",
+			"CI proof record"
+		],
+		"invariants": [
+			{
+				"name": "An admitted proof read one manifest of the change",
+				"modelRef": "OneManifestPerChange"
+			},
+			{
+				"name": "An admission needs each stage and fresh positive, negative and restored runs",
+				"modelRef": "AdmitSafe"
+			},
+			{
+				"name": "An admitted reference keeps the authority of its route, and only a ratified reference needs a proof record",
+				"modelRef": "RatifiedAuthority"
+			},
+			{
+				"name": "With a ref, the scope reads from the merge base",
+				"modelRef": "ScopeFromMergeBase"
+			},
+			{
+				"name": "Each stop names the rule section of its stage",
+				"modelRef": "StopNamesSection"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D9"
+			},
+			{
+				"file": "docs/adr/0016-each-change-carries-its-own-proof-manifest.md",
+				"decision": "D10"
+			},
+			{
+				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
+				"decision": "D1"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"CP-manifest-merge",
+				"CP-manifest-search",
+				"CP-manifest-base",
+				"CP-manifest-held",
+				"CP-adr-decision",
+				"CP-record-decision",
+				"CP-21",
+				"RL-REGISTRY",
+				"SG-generated",
+				"WB-ratchet"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "result",
+			"error": "string"
+		},
+		"objects": [
+			{
+				"name": "DiffTarget",
+				"link": {
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "DiffTarget"
+				}
+			},
+			{
+				"name": "ManifestView",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "ManifestView"
+				}
+			},
+			{
+				"name": "ManifestChoice",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "ManifestChoice"
+				}
+			},
+			{
+				"name": "ProofBase",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "ProofBase"
+				}
+			},
+			{
+				"name": "HeldManifests",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "HeldManifests"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "manifestCandidates",
+				"from": "DiffTarget",
+				"to": "ManifestView",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "manifestCandidates"
+				},
+				"effects": ["spawn", "fs-read"]
+			},
+			{
+				"name": "chooseManifest",
+				"from": "ManifestView",
+				"to": "ManifestChoice",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "chooseManifest"
+				},
+				"effects": []
+			},
+			{
+				"name": "manifestsHeldAt",
+				"from": "ProofBase",
+				"to": "HeldManifests",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "manifestsHeldAt"
+				},
+				"effects": ["spawn", "fs-read"]
+			},
+			{
+				"name": "staleManifests",
+				"from": "ManifestChoice",
+				"to": "ManifestChoice",
+				"link": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "staleManifests"
+				},
+				"effects": []
+			}
+		],
+		"composites": [],
+		"equality": "Two choices are equal when their route and path are equal. Two refusals are equal when their messages are equal.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "not_applicable",
+				"reason": "The record declares no composite arrow. check proof chains the four arrows with parseChangeProof and proofBase by early returns on Result, and this change adds no composition operator."
+			},
+			{
+				"law": "id-right",
+				"status": "not_applicable",
+				"reason": "The record declares no composite arrow. check proof chains the four arrows with parseChangeProof and proofBase by early returns on Result, and this change adds no composition operator."
+			},
+			{
+				"law": "assoc",
+				"status": "not_applicable",
+				"reason": "The record declares no composite arrow. check proof chains the four arrows with parseChangeProof and proofBase by early returns on Result, and this change adds no composition operator."
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "This change adds no map and no functor."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "This change adds no map and no functor."
+			},
+			{
+				"law": "monad-left",
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
+			},
+			{
+				"law": "monad-right",
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
+			},
+			{
+				"law": "monad-assoc",
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
+			}
+		],
+		"typedWitness": "src/astack/cli/commands/check/proof.ts"
+	},
+	"abstraction": {
+		"hides": "The search order of the folder manifests, the merge base filter, the deletion rule and the fallback to .astack/proof.json.",
+		"callersKnow": [
+			"check proof gets one manifest path or one stop, and a found manifest prints its path first.",
+			"ci-pins gets the same choice at the committed HEAD.",
+			"With --base, a manifest that the merge base holds stops at schema, so a change never edits a merged manifest.",
+			"A held base manifest and .astack/proof.json beside a folder manifest stop at stale."
+		],
+		"deletionTest": "Without manifest.ts, proof.ts and ci-pins.ts each repeat the choice rule, and the two copies can drift.",
+		"alternatives": [
+			{
+				"name": "A git merge driver for .astack/proof.json",
+				"rejectedBecause": "No driver can merge two full rewrites."
+			},
+			{
+				"name": "The newest manifest by date",
+				"rejectedBecause": "A checkout resets file dates."
+			},
+			{
+				"name": "A manifest path in the profile",
+				"rejectedBecause": "Each PR then edits the profile again."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "chooseManifest"
+				},
+				"modelAction": "ValidationPass"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/manifest.ts",
+					"symbol": "staleManifests"
+				},
+				"modelAction": "ValidationFail"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/adr.ts",
+					"symbol": "decisionSpan"
+				},
+				"modelAction": "ValidationPass"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"modelAction": "Admit"
+			}
+		],
+		"omitted": [
+			"The model takes the manifest observation as a true input. The cp-manifest controls examine the search, the deletion rule and the fallback.",
+			"The model does not hold the span of an ADR decision. The cp-adr-span, proof-adr-contract and cp-record-decision controls examine it."
+		]
+	},
+	"model": {
+		"module": "formal/ProofAdmission.tla",
+		"config": "formal/ProofAdmission.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
+			"Each failure kind maps to one section of the proof contract.",
+			"Seven manifest observations: one, fallback, several, none, merged, held and beside. Only a run with --base can find none or merged.",
+			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
+		],
+		"fairness": ["WF_vars(Next)"],
+		"invariants": [
+			"TypeOK",
+			"AdmitSafe",
+			"FailureIsTerminal",
+			"StrictDefault",
+			"LandingAuthoritySafe",
+			"ProcessAuthoritySafe",
+			"HistoryBound",
+			"RatifiedAuthority",
+			"BaseAncestry",
+			"ScopeFromMergeBase",
+			"HistoryAtManifest",
+			"MovedAuthorityStops",
+			"StaleStopNamesPaths",
+			"StopNamesSection",
+			"OneManifestPerChange"
+		],
+		"properties": ["EventuallyTerminal"]
+	},
+	"negative": {
+		"file": "formal/ProofAdmission.tla",
+		"action": "ValidationPass",
+		"original": "/\\ ManifestAllowed(Stages[stage], base)",
+		"replacement": "",
+		"defect": "A validation pass that drops the manifest guard admits a proof with two manifests, none, an edited manifest of the merge base, a held base manifest or .astack/proof.json beside a folder manifest.",
+		"expect": {
+			"kind": "invariant",
+			"name": "OneManifestPerChange"
+		}
+	},
+	"limits": [
+		"The finite model takes the manifest observation, the ADR span and the TLC verdict as true observations. The cp-manifest, cp-adr and CLI controls examine them.",
+		"The model does not check the words of the docs, the ADRs and the plan. Review and the STE gates examine them.",
+		"Exact-head CI, review and every ordinary gate stay required."
+	]
+}

@@ -85,7 +85,7 @@ The command reads the tracker from the branch names and the commit subjects. It 
 | File | Purpose |
 |---|---|
 | `.astack/profile.json` | The settings that the astack hooks and the CLI read. These are the tracker, the merge grant, STE, the plan folders and the comment keep patterns. The `managed` list names each file that apply writes. |
-| `.astack/proof.json` | The repo-owned domain, composition, model, and control contract. Prepare it in the repo rather than generating unrelated proof through apply. |
+| `.astack/proof/<change>.json` | The repo-owned domain, composition, model, and control contract of one change. Prepare it in the repo rather than generating unrelated proof through apply. With none there, the check reads the legacy `.astack/proof.json`. |
 | `.astack/NOTICE` | The MIT notices of pstack and mattpocock/skills. It names each file that holds their text, and each of those files names it. |
 | `.claude/skills/pr-review-hardening/SKILL.md` | A stub that starts `astack:pr-review-hardening` in this repo. `skillMirrors` in the project config writes the same stub into a mirror such as `.agents/skills`. |
 | `.astack/pr-review-hardening/FALLBACK.md` | The fallback loop that each stub reads only when the plugin is absent. Primary and mirrored stubs link to this shared file. |
