@@ -2,7 +2,7 @@
 name: "astack-research"
 description: "Research a question from primary sources and save cited findings. Use for background research, official docs, or API facts."
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Research

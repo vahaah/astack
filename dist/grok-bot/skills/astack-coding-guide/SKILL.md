@@ -2,7 +2,7 @@
 name: "astack-coding-guide"
 description: "Use when you own a ticket or a change, from planning it to the merged PR. The house daily workflow gives the commands from /astack-plan to the merged PR in order. It also says what to do when a step stops short, and which command starts each /astack-plan route. The rules for the code itself are in astack-coding-rules."
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Coding guide

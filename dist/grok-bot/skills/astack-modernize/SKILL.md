@@ -2,7 +2,7 @@
 name: "astack-modernize"
 description: "Bring an old PR up to date with its base, and decide whether it must stay open. Use when the owner asks to modernize or rebase a PR."
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Modernize

@@ -17,7 +17,7 @@ guardrails:
   - Run each script with bun.
 gates:
   - name: change-proof
-    command: astack check proof
+    command: astack check proof --base origin/v2
     env: []
     requires: []
     setup: []

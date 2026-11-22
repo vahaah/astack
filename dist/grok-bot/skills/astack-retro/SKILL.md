@@ -3,7 +3,7 @@ name: "astack-retro"
 description: "Review a coding session and propose evidence-based improvements to the agent environment."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Retrospective

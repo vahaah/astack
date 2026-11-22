@@ -3,7 +3,7 @@ name: "astack-control-ui"
 description: "Drive and inspect web, Electron, Chromium, and mobile UIs. Use for visual proof, accessibility, logs, profiles, or bug reproduction."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
 ---
 

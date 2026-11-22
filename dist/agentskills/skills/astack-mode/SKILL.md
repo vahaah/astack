@@ -3,7 +3,7 @@ name: "astack-mode"
 description: "Use for /astack-mode, \"what next\", \"go\" or \"resume\". The owner's way of work as a router over astack playbooks and skills. With no argument, it reads the plan, the tracker and git and does the next frontier step. It handles the delegation grant and keeps replies in STE."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

@@ -3,7 +3,7 @@ name: "astack-full-stop"
 description: "Use for /astack-full-stop or \"full stop\". The agent does the full-send work but never merges. It stops with the PR ready for the owner to merge."
 license: "MIT"
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

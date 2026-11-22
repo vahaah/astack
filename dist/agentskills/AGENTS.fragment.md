@@ -1,4 +1,4 @@
-<!-- astack 0.2.0 -->
+<!-- astack 0.3.0 -->
 # astack
 
 These rules apply in every session. A stricter repo rule wins, then astack. `/astack-mode` routes the work and does the next step.
@@ -105,4 +105,4 @@ Plan migrations around table locks and rollout order.
 Test tenant access with the affected roles.
 Use the PostgreSQL checklist in `astack-code-review` for reviews.
 
-<!-- /astack 0.2.0 -->
+<!-- /astack 0.3.0 -->

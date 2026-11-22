@@ -1,308 +1,75 @@
 {
 	"version": 1,
-	"change": "zero-use-cut-and-word-budget",
-	"base": "6c0136e8c90594227259319f9b2ba7d015f0a3b7",
+	"change": "release-0.3.0-docs",
+	"base": "5dfee73ed4dedf18b5d04afc4f0a600f37fd78cf",
 	"scope": [
 		{
-			"path": "scripts/budget.ts",
-			"obligation": "WB-cap",
-			"modelRefs": [
-				"Check",
-				"Lower",
-				"PassWithinCaps",
-				"FailNamesOverrun",
-				"CapsNeverRise"
-			]
-		},
-		{
-			"path": "tests/budget.test.ts",
-			"obligation": "WB-cap",
-			"modelRefs": [
-				"Check",
-				"Lower",
-				"PassWithinCaps",
-				"FailNamesOverrun",
-				"CapsNeverRise"
-			]
-		},
-		{
-			"path": "formal/WordBudget.*",
-			"obligation": "WB-cap",
-			"modelRefs": [
-				"Edit",
-				"Check",
-				"Lower",
-				"PassWithinCaps",
-				"FailNamesOverrun",
-				"CapsNeverRise"
-			]
-		},
-		{
-			"path": "docs/adr/0013-*.md",
-			"obligation": "WB-cap",
-			"modelRefs": [
-				"Edit",
-				"Check",
-				"Lower",
-				"PassWithinCaps",
-				"FailNamesOverrun",
-				"CapsNeverRise"
-			]
-		},
-		{
-			"path": "docs/reference/word-budget.md",
-			"obligation": "WB-cap",
-			"modelRefs": [
-				"Edit",
-				"Check",
-				"Lower",
-				"PassWithinCaps",
-				"FailNamesOverrun",
-				"CapsNeverRise"
-			]
-		},
-		{
-			"path": "package.json",
-			"obligation": "WB-cap",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
-			"modelRefs": ["Lower", "CapsNeverRise"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
-		},
-		{
-			"path": "marketplace/plugins/astack/agents/**",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
-		},
-		{
-			"path": "scripts/lib/duplicate-skills.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
-		},
-		{
-			"path": "tests/apply/duplicate-skills.test.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit", "Check"]
-		},
-		{
-			"path": "scripts/lib/upstreams.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
-		},
-		{
-			"path": "scripts/dist/claude-terms.allow",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
-		},
-		{
-			"path": "tests/notice.test.ts",
-			"obligation": "WB-cut",
-			"modelRefs": ["Edit"]
-		},
-		{
-			"path": "scripts/validate.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "scripts/dist.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "scripts/dist/checks.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "scripts/dist/external.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "tests/validate.test.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "tests/dist/external.test.ts",
-			"obligation": "WB-validate",
-			"modelRefs": ["Check"]
-		},
-		{
-			"path": "src/astack/hook/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/cli/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/orch/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/plan/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/comments/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/apply.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/build.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/drift.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/lib/exec.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/lib/migration.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/apply/global.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/apply/migration.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/build.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/adr/0004-*.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/adr/README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/charts/checked-path.mmd",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "README.md",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
 			"path": "docs/design.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
-			"path": "docs/install-repo.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "docs/runbooks/formal-models.md",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
-			"path": "docs/migration.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "docs/runbooks/change-proof-migration.md",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
-			"path": "docs/planning.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/profile.md",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
-			"path": "docs/review-lessons.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "examples/companion/projects/acme/**",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
-			"path": "docs/runbooks/hook-profiles.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/workflow.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "AGENTS.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "CONTEXT.md",
+			"path": "CONTRIBUTING.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": ".astack/**",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase", "AdmitSafe"]
+		},
+		{
+			"path": "CHANGELOG.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
-			"obligation": "SG-generated",
+			"path": "docs/runbooks/install-*.md",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/NOTICE",
+			"path": "docs/runbooks/publish.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/.claude-plugin/plugin.json",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "package.json",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "dist/**",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "NOTICE",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/drift.test.ts",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		}
@@ -311,256 +78,245 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "scripts/budget.ts",
-			"symbol": "Budget"
+			"path": "src/astack/change-proof/contract.ts",
+			"symbol": "ChangeProof"
 		},
-		"terms": [
-			"Skill word budget",
-			"Zero-use part",
-			"Session guard",
-			"ChangeProof"
-		],
+		"terms": ["ChangeProof", "Proof admission", "Manifest base", "Diff base"],
 		"invariants": [
 			{
-				"name": "A pass has each skill and the total at or under their caps",
-				"modelRef": "PassWithinCaps"
+				"name": "An admitted proof has a manifest base that is an ancestor of the diff target",
+				"modelRef": "BaseAncestry"
 			},
 			{
-				"name": "A fail names a skill or a total over its cap",
-				"modelRef": "FailNamesOverrun"
+				"name": "A proof with a base ref reads its diff from the merge base",
+				"modelRef": "ScopeFromMergeBase"
 			},
 			{
-				"name": "The lower step never raises a cap",
-				"modelRef": "CapsNeverRise"
+				"name": "Admission requires current complete evidence",
+				"modelRef": "AdmitSafe"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
-				"decision": "D2"
-			},
-			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
 				"decision": "D3"
-			},
-			{
-				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
-				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
-			"criteria": [
-				"WB-cap",
-				"WB-ratchet",
-				"WB-cut",
-				"WB-validate",
-				"SG-preserve",
-				"SG-generated"
-			]
+			"criteria": ["CP-13", "SG-preserve", "SG-generated"]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "The gate maps the word counts of the skill trees and one budget to one report. A count over its cap is a problem that names the skill, and a count under its cap is a note."
+			"contract": "Each arrow reads Git through historyGit and returns a Result. A refusal names the commits, and no arrow writes a file."
 		},
 		"objects": [
 			{
-				"name": "SkillTrees",
+				"name": "DiffTarget",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "SKILLS_DIR"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "DiffTarget"
 				}
 			},
 			{
-				"name": "WordCounts",
+				"name": "ProofBase",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "WordCounts"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "ProofBase"
 				}
 			},
 			{
-				"name": "Budget",
+				"name": "IntegrationHistory",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "Budget"
-				}
-			},
-			{
-				"name": "BudgetReport",
-				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "BudgetReport"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "IntegrationHistory"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "skillWords",
-				"from": "SkillTrees",
-				"to": "WordCounts",
+				"name": "proofBase",
+				"from": "DiffTarget",
+				"to": "ProofBase",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "skillWords"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "proofBase"
 				},
-				"effects": ["fs-read"]
+				"effects": ["spawn", "env"]
 			},
 			{
-				"name": "budgetReport",
-				"from": "WordCounts",
-				"to": "BudgetReport",
+				"name": "readIntegrationHistory",
+				"from": "ProofBase",
+				"to": "IntegrationHistory",
 				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "budgetReport"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "readIntegrationHistory"
 				},
-				"effects": []
-			},
-			{
-				"name": "lowerBudget",
-				"from": "WordCounts",
-				"to": "Budget",
-				"link": {
-					"path": "scripts/budget.ts",
-					"symbol": "lowerBudget"
-				},
-				"effects": []
+				"effects": ["spawn", "env"]
 			}
 		],
 		"composites": [],
-		"equality": "Two reports are equal when their problem lists and their note lists are equal in order. Two budgets are equal when their total caps and their skill caps are equal.",
+		"equality": "Two base pairs are equal when their manifest and diff commits are equal. Two refusals are equal when their text is equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/budget.test.ts"
+		"typedWitness": "src/astack/cli/commands/check/proof.ts"
 	},
 	"abstraction": {
-		"hides": "The walk of each skill tree, the word split of each Markdown file and the format of the cap file.",
+		"hides": "The Git reads of the merge base, the ancestry test that ignores replace objects and grafts, and the merge base view of each ratified record.",
 		"callersKnow": [
-			"A skill or the total over its cap fails the gate, and the failure names it.",
-			"A skill with no cap fails the gate.",
-			"A cap above its count passes with a note, and the lower step sets it to the count.",
-			"A cap rises only in a PR that moves text into that skill while the total falls by more, and review enforces that rule."
+			"The diff base is the merge base of the ref and HEAD, or the manifest base when no ref is given.",
+			"A manifest base that is not an ancestor of the diff target stops, and the stop names both commits.",
+			"Ratification history stays at the manifest base.",
+			"Each CI run of scripts/check-proof.ts passes a base."
 		],
-		"deletionTest": "Deleting budgetReport puts the cap comparison and the problem text in main and in each test. Deleting lowerBudget makes each cut PR edit the cap file by hand.",
+		"deletionTest": "Deleting the base paragraphs leaves the README and the runbooks with the old rule that the manifest base must equal the base ref. Deleting proofBase puts the ancestor rule into check proof and check ci-pins, so the two commands can drift apart.",
 		"alternatives": [
 			{
-				"name": "A lint warning for skill size",
-				"rejectedBecause": "A warning does not stop growth."
+				"name": "Keep the long opening of the README",
+				"rejectedBecause": "A newcomer cannot read six detailed bullets in 20 seconds, and each detail repeats a later section."
 			},
 			{
-				"name": "A total cap only",
-				"rejectedBecause": "One skill can then grow while another shrinks."
+				"name": "Copy the full base rule into each doc",
+				"rejectedBecause": "The proof contract is the one home of the rule, so each other doc states the rule in short and links to it."
 			},
 			{
-				"name": "Fail a cap above its count",
-				"rejectedBecause": "Each commit of a cut PR then needs a cap edit."
+				"name": "Keep the state counts of the repository proof in the README",
+				"rejectedBecause": "Each new manifest changes the model and its counts, so the README goes stale at the next PR."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "budgetReport"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "proofBase"
 				},
-				"modelAction": "Check"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "lowerBudget"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "readIntegrationHistory"
 				},
-				"modelAction": "Lower"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "scripts/budget.ts",
-					"symbol": "skillWords"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "authorityMoved"
 				},
-				"modelAction": "Edit"
+				"modelAction": "ValidationPass"
+			},
+			{
+				"concrete": {
+					"path": "scripts/check-proof.ts",
+					"symbol": "baseRef"
+				},
+				"modelAction": "ValidationPass"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"modelAction": "Admit"
 			}
 		],
 		"omitted": [
-			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
-			"The model takes the word count of each skill tree as a true observation.",
-			"The cut parts, the hook tool names and the validate SKIP are outside the model. The tests and validate examine them."
+			"Git itself, its object store and the merge base algorithm are abstracted to one base observation for each run.",
+			"The CI event payload and the remote refs of the checkout are taken as true.",
+			"The earlier authority, landing, evidence and Result law parts of the model stay as they were."
 		]
 	},
 	"model": {
-		"module": "formal/WordBudget.tla",
-		"config": "formal/WordBudget.cfg",
+		"module": "formal/ProofAdmission.tla",
+		"config": "formal/ProofAdmission.cfg",
 		"dependencies": [],
+		"bounds": [
+			"One base observation for each run from 48 cases: four relations, a ref or none, two diff bases, two history views and an authority move that needs a ref.",
+			"The authority cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model.",
+			"Finite Result laws use two values, two errors and all total functions between them."
+		],
+		"fairness": ["WF_vars(Next)"],
 		"invariants": [
 			"TypeOK",
-			"PassWithinCaps",
-			"FailNamesOverrun",
-			"CapsNeverRise"
+			"AdmitSafe",
+			"FailureIsTerminal",
+			"StrictDefault",
+			"LandingAuthoritySafe",
+			"ProcessAuthoritySafe",
+			"HistoryBound",
+			"RatifiedAuthority",
+			"BaseAncestry",
+			"ScopeFromMergeBase",
+			"HistoryAtManifest",
+			"MovedAuthorityStops",
+			"ResultLeftIdentity",
+			"ResultRightIdentity",
+			"ResultAssociativity"
 		],
-		"properties": [],
-		"bounds": [
-			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
-			"Each order of the edit, check and lower steps."
-		],
-		"fairness": []
+		"properties": ["EventuallyTerminal"]
 	},
 	"negative": {
-		"file": "formal/WordBudget.tla",
-		"action": "Check",
-		"original": "\\A s \\in Skills : counts[s] <= caps[s]",
-		"replacement": "TRUE",
-		"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
+		"file": "formal/ProofAdmission.tla",
+		"action": "ValidationPass",
+		"original": "/\\ (Stages[stage] # \"base\" \\/ BaseRelationAllowed(base))",
+		"replacement": "/\\ TRUE",
+		"defect": "Dropping the base relation guard admits a manifest base that is not an ancestor of the merge base, so the scope check can miss paths of the PR.",
 		"expect": {
 			"kind": "invariant",
-			"name": "PassWithinCaps"
+			"name": "BaseAncestry"
 		}
 	},
 	"limits": [
-		"The finite model takes the word counts as true observations and covers two skills only.",
-		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"The rule that a cap rises only while the total falls by more has no check, because the gate cannot see a PR.",
-		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+		"The finite model takes the Git ancestry, diff and history observations as true. It does not model Git.",
+		"The model does not check the words of the docs. Review and the STE, chart, budget and drift gates examine them.",
+		"The skill, agent, rules, handler and check counts in the README are observations of the tree at this commit.",
+		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

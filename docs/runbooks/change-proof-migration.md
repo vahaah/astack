@@ -31,14 +31,17 @@ The final adoption PR can include both the prepared contract and the managed-fil
 Update the companion profile and every branch overlay with separate CI.
 Add one unrestricted, nonoptional gate named `change-proof`.
 Its command directly invokes `astack check proof` or the pinned CLI equivalent.
+Give it the base branch of the profile, such as `astack check proof --base origin/main`.
+Without `--base`, the diff starts at the manifest base, so a merge of the base branch puts its paths in scope.
 Do not add a summary flag, suppression, pipe, redirect, or dynamic substitution.
 Keep other reviewers, gates, prerequisites, and iteration limits.
 Remove only an unwanted optional `interrogate` entry.
 An existing extra reviewer remains an explicit request until its profile changes.
 
 Add the required proof execution to CI for every pull request.
+Pass the base branch of the PR with `--base`, as the gate does.
 Make Java 17 or later available.
-Fetch enough history to resolve the manifest's fixed base.
+Fetch enough history to resolve the manifest's fixed base and the merge base of the PR.
 Match setup, environment, tools, and scope through CI parity.
 The proof gate cannot use a path filter or `optional: true`.
 The responsible owner must verify required-check settings before the rollout counts as enforced.

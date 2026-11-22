@@ -2,7 +2,7 @@
 name: "astack-control-cli"
 description: "Drive, inspect, and profile interactive CLIs or TUIs. Use for terminal bugs, prompt flows, startup, hangs, memory growth, or demos."
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Control CLI

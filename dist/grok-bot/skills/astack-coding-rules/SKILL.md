@@ -2,7 +2,7 @@
 name: "astack-coding-rules"
 description: "Use before writing, changing or reviewing code in any repo. It holds the house rules on change size and the scope fence, root-cause fixes, types, system edges and reader load. It also covers design vocabulary, tests, comments, gates and per-repo overlays. A delegate or reviewer loads only this skill. The session that owns the ticket also loads astack-coding-guide for the daily workflow."
 metadata:
-  astack-version: "0.2.0"
+  astack-version: "0.3.0"
 ---
 
 # Coding rules
@@ -22,7 +22,7 @@ For the full index, run `astack skill-path astack:principles`.
 Read the path it prints.
 For one principle, run `astack skill-path astack:principles references/fix-root-causes.md`, with the reference name you need.
 Read that reference in full.
-If `astack` is not on the Bash PATH, run `bunx github:vahaah/astack#v0.2.0`.
+If `astack` is not on the Bash PATH, run `bunx github:vahaah/astack#v0.3.0`.
 A nonzero exit means that the skill or reference is unavailable.
 Then the summary remains the rule.
 

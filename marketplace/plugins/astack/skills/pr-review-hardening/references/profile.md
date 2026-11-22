@@ -38,8 +38,8 @@ The review stub that astack apply writes into a repo has a fallback for a sessio
 
 The profile's gates mirror the blocking jobs of the repo's CI. A gate that applies but cannot start is an unclean stop. The run never skips it.
 
-Every profile requires one gate named `change-proof` that runs the pinned astack CLI's `check proof` command.
-It cannot be optional, filtered by paths, suppressed, redirected, or replaced by `--summary`.
+Every profile requires one `change-proof` gate that runs the pinned astack CLI's `check proof --base origin/<base>`.
+It cannot be optional, path-filtered, suppressed, redirected, or replaced by `--summary`.
 Apply refuses a profile that omits or weakens this gate.
 The CI job must require the same check for every candidate change.
 Java 17 or later is a prerequisite.
@@ -325,7 +325,7 @@ after_create_pr: none
 push: when-authorised
 gates:
   - name: change-proof
-    command: astack check proof
+    command: astack check proof --base origin/main
     env: []
     requires:
       - name: Java 17 or later
