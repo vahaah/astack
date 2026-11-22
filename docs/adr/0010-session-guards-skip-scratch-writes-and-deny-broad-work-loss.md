@@ -45,8 +45,12 @@ A command that names one file, `git restore --staged` and each `git stash` form 
 Amended 2026-11-22. Both guards read the plain form of each shell step.
 `shellSteps` drops reserved words and braces, and it unwraps a fixed list of wrappers.
 It also parses static `sh -c`, `eval` and substitution bodies as steps, and a static script that a shell reads from a heredoc or a pipe.
-A pipe gives a static script only from one whole simple stage before it. Each other script on stdin is unreadable.
-An unquoted heredoc with `$` or a backtick and a here-string with a variable are unreadable too.
+A shell reads a static script on stdin only from four sources, and only when the command defines no function or alias.
+Two sources are a quoted heredoc and a static here-string.
+The other two are a whole pipe stage before the shell: `echo` with no flag or backslash, or `printf '%s'` with one static argument.
+`printf '%s\n'` counts as that `printf` form.
+Each other script on stdin gets a deny with no search of its text.
+An unquoted heredoc with `$`, a backtick or a backslash is dynamic for each reader of stdin.
 A guarded verb that a variable hides is unreadable.
 An unreadable work-loss command gets a deny on a changed tree when astack can read its folder.
 Each other unreadable guarded verb gets a deny at once.

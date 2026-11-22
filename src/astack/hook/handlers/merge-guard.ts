@@ -61,7 +61,15 @@ type GhMerge = {
 };
 
 type MergeCommand =
-	| { readonly kind: "none" | "api" | "endpoint" | "glob" | "unreadable" }
+	| {
+			readonly kind:
+				| "none"
+				| "api"
+				| "endpoint"
+				| "glob"
+				| "stdin"
+				| "unreadable";
+	  }
 	| GhMerge;
 
 const NONE: MergeCommand = { kind: "none" };
@@ -69,6 +77,7 @@ const UNREADABLE: MergeCommand = { kind: "unreadable" };
 const API: MergeCommand = { kind: "api" };
 const ENDPOINT: MergeCommand = { kind: "endpoint" };
 const GLOB: MergeCommand = { kind: "glob" };
+const STDIN: MergeCommand = { kind: "stdin" };
 
 type ReadFile = (path: string) => string | undefined;
 
@@ -262,6 +271,7 @@ function expandsUpToSubcommand(args: readonly Word[]): boolean {
 }
 
 function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
+	if (step.unreadable === "stdin") return STDIN;
 	if (step.unreadable !== undefined && step.unreadable !== "folder")
 		return UNREADABLE;
 	const [program, ...args] = step.words;
@@ -300,8 +310,8 @@ function mergeVerdict(
 }
 
 function mayMerge(step: ShellStep, source: string): boolean {
-	return [source, ...step.values, ...step.hidden].some((value) =>
-		MERGE_TEXT.test(value),
+	return [source, ...step.values, ...(step.simple.substitutions ?? [])].some(
+		(value) => MERGE_TEXT.test(value),
 	);
 }
 
@@ -319,6 +329,7 @@ function examinesMerge(
 		case "api":
 		case "endpoint":
 		case "glob":
+		case "stdin":
 		case "merge":
 			return true;
 	}
@@ -345,6 +356,12 @@ function stepVerdict(
 			return deny(
 				mergeDenial([
 					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. In a read, put each variable in double quotes. Merge a PR with gh pr merge.",
+				]),
+			);
+		case "stdin":
+			return deny(
+				mergeDenial([
+					"astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
 				]),
 			);
 		case "glob":

@@ -172,7 +172,7 @@ export type GitRead =
 const NONE: GitRead = { kind: "none" };
 
 function hiddenVerb(step: ShellStep): string | undefined {
-	const tokens = [...step.values, ...step.hidden]
+	const tokens = [...step.values, ...(step.simple.substitutions ?? [])]
 		.flatMap((value) => value.split(/\s+/))
 		.filter(Boolean);
 	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
@@ -218,6 +218,8 @@ function unreadable(
 }
 
 export function readGit(step: ShellStep): GitRead {
+	if (step.unreadable === "stdin")
+		return unreadable(undefined, CAUSES.stdin, undefined);
 	if (step.unreadable !== undefined && step.unreadable !== "folder") {
 		const verb = hiddenVerb(step);
 		return verb === undefined

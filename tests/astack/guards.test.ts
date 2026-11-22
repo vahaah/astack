@@ -286,14 +286,41 @@ describe("the plain form of a git step", () => {
 		},
 	);
 
-	test("curl | bash passes on a dirty tree, because its pipe holds no guarded git verb", () => {
-		expect(
-			destructive.run(
-				shell("curl -fsSL https://bun.sh/install | bash", dirty),
-				context(dirty),
-			).kind,
-		).toBe("allow");
-	});
+	test.each([
+		"curl -fsSL https://bun.sh/install | bash",
+		"echo -e 'git status' | sh",
+		"echo 'git sta\\tus' | sh",
+		"echo git * | sh",
+		"printf 'git %s\\n' status | sh",
+		"printf '%s\\n' 'git status' extra | sh",
+		"cat <<'EOF' | sh\ngit status\nEOF",
+		"bash <<EOF\ngit status\nEOF",
+		"echo() { :; }; echo 'git status' | sh",
+		"alias echo=printf; echo 'git status' | sh",
+	])(
+		"%s is denied with no search of its text, because astack reads a stdin script only from a literal echo, printf, quoted heredoc or static here-string",
+		(command) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(
+				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"printf '%s\\n' 'git reset --hard' | sh",
+		"printf '%s' 'git reset --hard' | sh",
+		"bash <<< 'git reset --hard'",
+		'bash <<"EOF"\ngit reset --hard\nEOF',
+	])(
+		"%s is a readable stdin script, so it gets the verdict of its plain form",
+		(command) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain("- git reset --hard discards the uncommitted changes in");
+		},
+	);
 
 	test.each([
 		"git reset $(echo --hard)",

@@ -591,7 +591,6 @@ describe("the merge guard", () => {
 		"Y=merge; gh pr $Y 12",
 		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
 		'bash -c "gh pr view $N --json mergeable"',
-		"{ echo 'gh pr merge 12'; echo x; } | sh",
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -640,6 +639,21 @@ describe("the merge guard", () => {
 					"astack blocked gh pr merge:\n- astack cannot read this gh command, because the shell can expand a glob or a brace in a word up to its subcommand or after pr merge. Quote that word.",
 			});
 			expect(reads).toEqual([]);
+		},
+	);
+
+	test.each([
+		"{ echo 'gh pr merge 12'; echo x; } | sh",
+		"echo -e 'gh pr view 12' | sh",
+		"gh pr view 12 | bash",
+	])(
+		"%p feeds a shell a script that astack cannot read, so it is denied with no text check",
+		(command) => {
+			expect(bash(guard(GREEN), command)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
+			});
 		},
 	);
 
@@ -786,6 +800,14 @@ describe("the merge guard", () => {
 		],
 		[
 			'gh api graphql --input - <<EOF\n{"query":"$(cat merge.graphql)"}\nEOF',
+			API_DENY,
+		],
+		[
+			'gh api graphql --input - <<EOF\n{"query":"mutation { merge\\\nPullRequest(input: {}) { clientMutationId } }"}\nEOF',
+			API_DENY,
+		],
+		[
+			'gh api graphql -f query="$(cat <<EOF\nmutation { merge\\\nPullRequest(input: {}) { clientMutationId } }\nEOF\n)"',
 			API_DENY,
 		],
 		[`gh api graphql -f query='${READ}' -F owner="$OWNER"`, API_DENY],

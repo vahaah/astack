@@ -17,6 +17,7 @@ export interface SimpleCommand {
 	words: Word[];
 	stdin: string | undefined;
 	stdinDynamic?: boolean;
+	stdinFrom?: "heredoc" | "quoted heredoc" | "here-string";
 	redirects: Redirect[];
 	substitutions?: string[];
 	piped?: boolean;
@@ -24,7 +25,9 @@ export interface SimpleCommand {
 	background?: boolean;
 }
 
-const EXPANDS_IN_HEREDOC = /[$`]/;
+const EXPANDS_IN_HEREDOC = /[$`\\]/;
+const DEFINES_COMMAND =
+	/\bfunction\b|\balias\b|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
 
 const UNQUOTED_EXPANSION = /[*?]|\[[^\]]*\]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
 
@@ -92,6 +95,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		unquoted = "";
 		if (hereStringNext) {
 			hereStringNext.stdin = word.value;
+			hereStringNext.stdinFrom = "here-string";
 			if (word.dynamic) hereStringNext.stdinDynamic = true;
 			hereStringNext = undefined;
 		} else if (redirectNext) {
@@ -147,6 +151,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					lines.push(line);
 				}
 				doc.command.stdin = stripTabs(lines.join("\n"), doc.strip);
+				doc.command.stdinFrom = doc.quoted ? "quoted heredoc" : "heredoc";
 				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(doc.command.stdin))
 					doc.command.stdinDynamic = true;
 			}
@@ -320,7 +325,6 @@ export interface ShellStep {
 	unsetsEnv: boolean;
 	words: Word[];
 	values: string[];
-	hidden: readonly string[];
 	dir: string;
 	unreadable: Unreadable | undefined;
 }
@@ -589,35 +593,58 @@ type Body = {
 	readonly stdin: boolean;
 };
 
+const UNREAD_STDIN: Body = { text: "", dynamic: true, stdin: true };
+
+function literalPrint(step: ShellStep): string | undefined {
+	const [name, ...args] = step.words;
+	if (step.unreadable !== undefined || name === undefined || name.dynamic)
+		return undefined;
+	if (args.some((arg) => arg.dynamic || arg.expands === true)) return undefined;
+	if (name.value === "echo")
+		return args.every(
+			(arg) => !arg.value.startsWith("-") && !arg.value.includes("\\"),
+		)
+			? `${args.map((arg) => arg.value).join(" ")}\n`
+			: undefined;
+	const [format, value, ...extra] = args;
+	if (name.value !== "printf" || value === undefined || extra.length > 0)
+		return undefined;
+	if (format?.value === "%s") return value.value;
+	return format?.value === "%s\\n" ? `${value.value}\n` : undefined;
+}
+
+function literalScript(
+	simple: SimpleCommand,
+	previous: ShellStep | undefined,
+): string | undefined {
+	if (simple.stdin !== undefined)
+		return simple.stdinDynamic !== true &&
+			(simple.stdinFrom === "quoted heredoc" ||
+				simple.stdinFrom === "here-string")
+			? simple.stdin
+			: undefined;
+	return previous?.simple.wholeStage === true
+		? literalPrint(previous)
+		: undefined;
+}
+
 function stdinScript(
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
+	defines: boolean,
 ): Body | undefined {
-	if (simple.stdin !== undefined)
-		return {
-			text: simple.stdin,
-			dynamic: simple.stdinDynamic === true,
-			stdin: true,
-		};
-	if (simple.piped !== true) return undefined;
-	const previous = earlier.at(-1);
-	const printed =
-		previous?.simple.wholeStage === true ? printedText(previous) : undefined;
-	return printed === undefined
-		? {
-				text: earlier
-					.flatMap((step) => [...step.values, ...step.hidden])
-					.join(" "),
-				dynamic: true,
-				stdin: true,
-			}
-		: { text: printed, dynamic: false, stdin: true };
+	if (simple.stdin === undefined && simple.piped !== true) return undefined;
+	const script = defines ? undefined : literalScript(simple, earlier.at(-1));
+	return script === undefined
+		? UNREAD_STDIN
+		: { text: script, dynamic: false, stdin: true };
 }
 
 function scriptBody(
 	words: readonly Word[],
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
+	defines: boolean,
 ): Body | undefined {
 	const [program, ...args] = words;
 	if (program === undefined || program.dynamic) return undefined;
@@ -644,11 +671,11 @@ function scriptBody(
 			if (command)
 				return arg && { text: arg.value, dynamic: arg.dynamic, stdin: false };
 			return fromStdin || text === "-"
-				? stdinScript(simple, earlier)
+				? stdinScript(simple, earlier, defines)
 				: undefined;
 		}
 	}
-	return command ? undefined : stdinScript(simple, earlier);
+	return command ? undefined : stdinScript(simple, earlier, defines);
 }
 
 type Folder = { readonly dir: string; readonly known: boolean };
@@ -686,7 +713,11 @@ function bodyMark(
 	return body.stdin ? "stdin" : "body";
 }
 
-type Inherited = { readonly env: readonly Word[]; readonly unsetsEnv: boolean };
+type Inherited = {
+	readonly env: readonly Word[];
+	readonly unsetsEnv: boolean;
+	readonly defines: boolean;
+};
 
 function scriptSteps(
 	src: string,
@@ -721,10 +752,14 @@ function scriptSteps(
 		}
 		const body = plain.unreadable
 			? undefined
-			: scriptBody(plain.words, simple, steps);
+			: scriptBody(plain.words, simple, steps, inherited.defines);
 		if (body !== undefined && !body.dynamic && nested) {
 			steps.push(
-				...scriptSteps(body.text, folder, depth + 1, { env, unsetsEnv }),
+				...scriptSteps(body.text, folder, depth + 1, {
+					env,
+					unsetsEnv,
+					defines: inherited.defines,
+				}),
 			);
 			continue;
 		}
@@ -735,10 +770,6 @@ function scriptSteps(
 				unsetsEnv,
 				words: plain.words,
 				values: plain.words.map((word) => word.value),
-				hidden: [
-					...bodies,
-					...(body?.dynamic === true && body.stdin ? [body.text] : []),
-				],
 				dir: folder.dir,
 				unreadable: folder.known
 					? bodyMark(plain, body, !nested && bodies.length > 0)
@@ -753,6 +784,7 @@ export function shellSteps(command: string, cwd: string): ShellStep[] {
 	return scriptSteps(command, { dir: cwd, known: true }, 0, {
 		env: [],
 		unsetsEnv: false,
+		defines: DEFINES_COMMAND.test(command),
 	});
 }
 
