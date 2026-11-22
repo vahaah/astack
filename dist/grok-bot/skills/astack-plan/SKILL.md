@@ -186,7 +186,7 @@ When a stage runs inline with no subagent, the main thread reads the skills of t
 | S1 | None | The S1 subagents read `astack-how`, `astack-why` and `astack-recall`. A fact outside the repo takes the research brief of `references/stages.md` |
 | S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
 | S4 | `astack-codebase-design` for the depth words | The S4 lead reads `astack-architect` and `astack-arena`. A prototype fork reads `astack-mode playbooks/prototype.md`, with its "Person-judged prototype" section when a person must judge it |
-| S5 | None | `astack-principles` and each reference that its index says applies. The slicing rules of `astack-to-tickets`. `astack-figure-it-out` for a large migration or an unattended run. The charting rules of `astack-wayfinder`, in a programme |
+| S5 | None | `astack-principles` and each reference that its index says applies. `astack-figure-it-out` for a large migration or an unattended run. `references/programme.md`, in a programme |
 | S6 | None | The S6 lead reads `references/spec-review.md`. It reads `astack-principles references/attack-the-premise.md` when needed |
 | S7 | `astack-write-ticket` for each ticket | Its umbrella template, when the owner asks for a spec |
 | S8 | `astack-write-docs` for ADRs, the glossary and PR bodies | None |

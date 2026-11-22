@@ -3,9 +3,7 @@
 A programme is a destination that needs more than one milestone.
 It has an index and one brief for each block.
 Write a brief at most two sessions before its first session starts.
-Read the charting rules of wayfinder through `astack skill-path astack:wayfinder`.
-Follow those rules with one change.
-Keep the decisions in the index instead of the map issue.
+Keep the decisions in the index, not in a map issue.
 
 ## The index
 

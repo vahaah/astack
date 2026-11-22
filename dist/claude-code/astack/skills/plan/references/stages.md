@@ -152,7 +152,6 @@ Exit. A sketch that compiles, a rationale, and its open questions sorted.
 
 Read `astack:principles` by path.
 Follow its index to each principle that applies.
-Read the slicing rules of `astack:to-tickets` by path.
 
 1. Cut the work into sessions.
    The standard tier usually has one session and one PR.
