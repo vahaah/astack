@@ -487,6 +487,8 @@ function overwrittenPaths(dir: string, target: string): readonly string[] {
 
 type SessionRepoTest = (root: string) => boolean;
 
+const NO_SESSION_REPO: SessionRepoTest = () => false;
+
 function lostPaths(
 	loss: WorkLoss,
 	dir: string,
@@ -541,6 +543,16 @@ function tarExtracts(step: ShellStep): boolean {
 	);
 }
 
+const TAR_HERE =
+	/^(?:-|-?[fkmopvx]+|--(?:extract|get|verbose|keep-old-files|file(?:=-)?))$/;
+
+function extractsHere(step: ShellStep): boolean {
+	return (
+		step.env.length === 0 &&
+		step.words.slice(1).every((word) => TAR_HERE.test(word.value))
+	);
+}
+
 function statusFails(dir: string): boolean {
 	return (
 		repoRoot(dir) !== undefined &&
@@ -570,7 +582,7 @@ function extractReasons(
 		command,
 		{ lost: "tracked", pathspecs: WHOLE_TREE },
 		step.dir,
-		sessionRepo,
+		extractsHere(step) ? sessionRepo : NO_SESSION_REPO,
 	);
 }
 
@@ -938,7 +950,7 @@ function sessionRepoTest(
 	repos: SessionRepos,
 	placed: boolean,
 ): SessionRepoTest {
-	return placed ? () => false : (root) => isSessionRepo(repos, root);
+	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root);
 }
 
 export const handler = defineHandler({

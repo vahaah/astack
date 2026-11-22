@@ -957,6 +957,7 @@ describe("a repo that this session made", () => {
 		"git checkout -- .",
 		"git clean -f",
 		"git restore :/",
+		"git archive HEAD | tar -xf -",
 	];
 
 	test.each(DISCARDS)(
@@ -1109,6 +1110,10 @@ describe("a repo that this session made", () => {
 		["git $'--git\\x2ddir=REPO/.git' reset --hard", DISCARDED],
 		["trap '. ./env.sh' DEBUG; git reset --hard", DISCARDED],
 		["git config core.worktree REPO; git reset --hard", DISCARDED],
+		["git archive HEAD | tar -x -C REPO", DISCARDED],
+		["git archive HEAD | tar --directory=REPO -x", DISCARDED],
+		["git archive --prefix=REPO/ HEAD | tar -xP", DISCARDED],
+		["export TAR_OPTIONS=-CREPO; git archive HEAD | tar -x", DISCARDED],
 	])(
 		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
 		(command, text) => {

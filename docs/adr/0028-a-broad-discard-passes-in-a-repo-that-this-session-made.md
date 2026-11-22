@@ -40,7 +40,7 @@ A folder with files, a file and a symlink give no record.
 A dynamic word gives no target. So do `--bare`, `--mirror` and `--separate-git-dir`.
 `--git-dir`, `--work-tree`, a `core.worktree` setting and a place variable give no target too.
 A `core.worktree` key in any case and in any word of a step is such a setting, as in `git clone -c` or `git config`.
-A place variable is `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_CONFIG_PARAMETERS` or `GIT_CONFIG_COUNT`.
+A place variable is `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_CONFIG_PARAMETERS`, `GIT_CONFIG_COUNT` or `TAR_OPTIONS`.
 
 The hook reads the place forms of the whole command line, in any order of its steps.
 A loop or a function can run a step after a later step of the text.
@@ -54,6 +54,10 @@ So does a word that the parser cannot read in full, in any step of the line.
 That is a dynamic word, a word with a glob or a brace expansion, and a word with a backslash.
 The parser does not decode each escape of a `$'...'` string, so a backslash can hide a place form.
 A line with a place form records no target and gets no exemption, so it gets the verdict of ADR 0010 D3.
+
+A `git archive` pipe keeps the exemption only when its `tar` step stays in the folder of the step.
+Each word of that step must be an extract, verbose, keep, mode or stdin file flag, and the step must have no env.
+So `-C`, `--directory`, `-P` and each other `tar` flag give the verdict of ADR 0010 D3.
 
 ### D4. A record starts pending, and the next shell call settles it
 
