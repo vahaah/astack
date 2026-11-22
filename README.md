@@ -441,9 +441,9 @@ The [review checks runbook](docs/runbooks/review-checks.md) gives the commands f
 
 ### Change proof
 
-`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract. That contract is the glossary, the aggregate, the terms and the invariants. The check fails when any part is missing or stale. With `--base <ref>`, the diff starts at the merge base of the ref and `HEAD`. The manifest `base` can be older than that merge base, so a merge to main keeps the proof of a PR valid. Do not move `base` after such a merge. Fetch enough git history in CI for `base` and the merge base to resolve.
+`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract. That contract is the glossary, the aggregate, the terms and the invariants. The check fails when any part is missing or stale. With `--base <ref>`, the diff starts at the merge base of the ref and `HEAD`. The manifest `base` can be older than that merge base, so a merge to main keeps the proof of a PR valid. Without `--base`, the diff starts at the manifest `base`, so a merge of main puts the paths of main in scope. So pass `--base origin/<base>` in the proof job of CI and in the `change-proof` gate. Do not move `base` after such a merge. Fetch enough git history in CI for `base` and the merge base to resolve.
 
-`bun run apply` requires one gate named `change-proof`. That gate cannot be optional or limited to some paths. Its command runs `astack check proof`. `review-growth` warns and still exits 0. `spec-drift` exits 1 when a link is missing. Neither replaces the proof gate. Add `interrogate` only when you want that review.
+`bun run apply` requires one gate named `change-proof`. That gate cannot be optional or limited to some paths. Its command runs `astack check proof`, such as `astack check proof --base origin/main`. `review-growth` warns and still exits 0. `spec-drift` exits 1 when a link is missing. Neither replaces the proof gate. Add `interrogate` only when you want that review.
 The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
 The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption in existing repositories.
 
@@ -525,7 +525,7 @@ bun run check:drift
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof. `bun run check` runs that proof twice. The `test` script runs it, and `check` runs it again at the end.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof. `bun run check` runs that proof twice. The `test` script runs it, and `check` runs it again at the end. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it passes no `--base`, so after a merge of main the local run reports the paths of main as a scope gap. Then run `bun src/astack/cli/bin.ts check proof --base origin/main`, as CI does.
 
 `check:drift` compares fresh build output with the committed files and does not rewrite them. `check` builds every target. It runs validation, neutrality and secret scans, STE checks, the skill word budget, tests, formatting, lint and type checks. The word budget, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test needs an API key or OAuth token. It is reported as skipped without one.
 

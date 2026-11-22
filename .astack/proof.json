@@ -24,6 +24,16 @@
 			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
 		},
 		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/profile.md",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+		},
+		{
+			"path": "examples/companion/projects/acme/**",
+			"obligation": "CP-13",
+			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+		},
+		{
 			"path": "CONTRIBUTING.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]

@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-This release keeps the proof of a PR valid when main moves. It also cuts the parts with no measured use and adds a word budget for skill text.
+This release keeps the proof of a PR valid when main moves, when the proof run gets `--base`. It also cuts the parts with no measured use and adds a word budget for skill text.
 
 ### Change proof
 
@@ -12,6 +12,12 @@ This release keeps the proof of a PR valid when main moves. It also cuts the par
 - Each base read and each diff read ignores replace objects and grafts.
 - A move of main that changes the authority of a ratified ADR stops the proof. The stop names the ADR, both commits and the repair.
 - The proof contract names the base of each CI run. The refresh playbook and the modernize skill do not set the manifest base by hand.
+- The `change-proof` gate of the profile template and of the example companion passes `--base origin/<base>`.
+
+### Upgrade
+
+- Pass the base branch to the proof in the CI job and in the `change-proof` gate. An example is `astack check proof --base origin/main`. Without `--base`, the diff still starts at the manifest base. Then a merge of main puts the paths of main in scope.
+- Do not move the manifest base after a merge of main.
 
 ### Removed parts
 
