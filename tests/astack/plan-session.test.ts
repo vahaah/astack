@@ -4,6 +4,7 @@ import {
 	readFileSync,
 	realpathSync,
 	rmSync,
+	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -111,19 +112,20 @@ describe("astack session", () => {
 		writeFileSync(path, text);
 	});
 
-	test("[control:cwd-free] start of the next session from outside the repo writes its record in the state folder of the programme", () => {
+	test("[control:cwd-free] start of the next session from outside the repo, through a symlink, writes its record in the state folder of the programme", () => {
 		const outside = realpathSync(
 			mkdtempSync(join(tmpdir(), "astack-outside-")),
 		);
 		dirs.push(outside);
 		const other = freshRepo(dirs);
+		symlinkSync(other, join(outside, "linked"));
 		const record = join(
 			git(other, "rev-parse", "--absolute-git-dir"),
 			"astack/plans/data-platform/session-B01-S2.json",
 		);
 		const result = run(
 			session.run,
-			["start", join(other, BRIEF), "B01/S2", "--prefix", "sam"],
+			["start", join(outside, "linked", BRIEF), "B01/S2", "--prefix", "sam"],
 			outside,
 		);
 		expect(result.err).toBe("");

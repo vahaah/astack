@@ -1,4 +1,4 @@
-import { relative, resolve } from "node:path";
+import { resolve } from "node:path";
 import { tierOf } from "../../plan/check.ts";
 import {
 	gitText,
@@ -8,7 +8,7 @@ import {
 	readText,
 	writeRecord,
 } from "../../plan/edge.ts";
-import { type PlanState, planStateFor } from "../../plan/files.ts";
+import { type PlanFileState, planFileState } from "../../plan/files.ts";
 import { parsePlan } from "../../plan/parse.ts";
 import {
 	branchName,
@@ -48,25 +48,17 @@ const VALUE_FLAGS = [
 	"--pr",
 ];
 
-type Loaded = PlanState & {
+type Loaded = PlanFileState & {
 	readonly plan: Plan;
-	readonly path: string;
 };
 
 function load(file: string, io: Io): Loaded | undefined {
-	const absolute = resolve(io.cwd, file);
-	const text = readText(absolute);
-	if (text === undefined) {
-		usageError(io, `astack session: cannot read ${file}`);
-		return undefined;
-	}
-	const state = planStateFor(absolute, io.cwd);
+	const state = planFileState(file, io.cwd);
 	if (!state.ok) {
 		usageError(io, `astack session: ${state.error}`);
 		return undefined;
 	}
-	const path = relative(state.value.root, absolute);
-	const plan = parsePlan(path, text);
+	const plan = parsePlan(state.value.path, state.value.text);
 	if (tierOf(plan) === "programme") {
 		usageError(
 			io,
@@ -74,7 +66,7 @@ function load(file: string, io: Io): Loaded | undefined {
 		);
 		return undefined;
 	}
-	return { ...state.value, plan, path };
+	return { ...state.value, plan };
 }
 
 function session(
