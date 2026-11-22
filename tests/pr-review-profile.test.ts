@@ -1,9 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import {
-	reviewStubSource,
-} from "../scripts/lib/render.ts";
+import { reviewStubSource } from "../scripts/lib/render.ts";
 import {
 	extractProfileBlock,
 	FIXER_FLAGS,
