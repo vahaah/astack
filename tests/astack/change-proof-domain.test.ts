@@ -7,6 +7,7 @@ import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	git,
+	LADDER_FILES,
 	PLAN_BLOCK,
 	PLAN_FILES,
 	PLAN_RECORD,
@@ -95,7 +96,7 @@ describe("a manifest that cites a plan record", () => {
 			`stop: proof category: ${PLAN_RECORD}:12: law L1 cites control:C9, which no matrix links row lists`,
 		],
 		[
-			"a tla law whose invariant the repo does not hold",
+			"a tla law in a repo with no registry",
 			{
 				[PLAN_RECORD]: planText(
 					PLAN_BLOCK.replace("check: prop C1", "check: tla Gate.Nope").replace(
@@ -105,6 +106,19 @@ describe("a manifest that cites a plan record", () => {
 				),
 			},
 			`stop: proof category: ${PLAN_RECORD}:12: law L1 checks tla Gate.Nope, but the repo has no formal/models.json`,
+		],
+		[
+			"a tla law whose invariant the registry does not hold",
+			{
+				...LADDER_FILES,
+				[PLAN_RECORD]: planText(
+					PLAN_BLOCK.replace("check: prop C1", "check: tla Gate.Nope").replace(
+						"rung R3",
+						"rung R4",
+					),
+				),
+			},
+			`stop: proof category: ${PLAN_RECORD}:12: law L1 checks tla Gate.Nope, which formal/models.json does not hold`,
 		],
 		[
 			"a context that the card does not hold",
