@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "fixture-isolation",
-	"base": "16f6cb81083189e5b1f939fd7534df6e200b7129",
+	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
 	"scope": [
 		{
 			"path": ".astack/**",
@@ -40,6 +40,11 @@
 		},
 		{
 			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/adr-numbers.test.ts",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
