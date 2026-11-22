@@ -28,6 +28,8 @@ import {
 	type Snapshot,
 } from "../../doctor.ts";
 import { repoRoot } from "../../git.ts";
+import { MANAGED_PATHS } from "../../managed.ts";
+import { reviewProfileState } from "../../pr-review-profile.ts";
 import { PROFILE_PATH } from "../../profile.ts";
 import type { Command } from "../command.ts";
 import { type Io, usageError } from "../io.ts";
@@ -382,6 +384,10 @@ export async function gather(io: Io): Promise<Snapshot> {
 		agentsSkills: list(join(home, ".agents", "skills")),
 		claudeSkills: claudeSkillFolders(claude, home),
 		profile: profileState(io.cwd),
+		reviewProfile: reviewProfileState(
+			MANAGED_PATHS.reviewProfile,
+			readText(join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile)),
+		),
 		unattendedReason: unattendedReason(io.env),
 	};
 }
@@ -458,7 +464,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins and the repo profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile and the review profile with the rules of astack check hardening-profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
 	usage: "doctor [--json]\ndoctor --save-runtime\ndoctor --skip-profile <dir>",
 	run,
 };

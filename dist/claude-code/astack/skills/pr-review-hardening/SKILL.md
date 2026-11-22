@@ -64,7 +64,7 @@ Use the interrupted-run resume rule only when a new run starts after an interrup
 ## Load the profile
 
 1. Find the repository root with `git rev-parse --show-toplevel` and read `.claude/pr-review-hardening.profile.md` there. Take the first fenced code block tagged `yaml` or `json`. `${CLAUDE_SKILL_DIR}/references/profile.md` defines every key and its default.
-2. If the file is missing or the block does not parse, stop with principled incompletion. Offer to draft a profile with the procedure in `references/profile.md`. Never run gate commands you guessed.
+2. Run `astack check hardening-profile`. When it does not exit 0, stop with principled incompletion and print each problem with its repair. Never run gate commands you guessed.
 3. Print `RUN_CONFIG`. It holds the profile path and its `git hash-object`, and the base branch. It holds each gate with its command, `env` names, `ci_env` entries, prerequisites, `setup` commands, `when_changed` globs, `after` gates, `tools` versions and `rewrites` paths. It also holds the reviewer set, the iteration bounds and the push policy. When `metrics` is not `null`, it holds the metrics command and its budget keys. Last are the repo keep patterns from `.astack/profile.json` and the profile. It holds no value from the session or from a file.
 
 The config is frozen for the run. Never edit the profile, package scripts, linter or compiler config, or CI config to make the run pass.

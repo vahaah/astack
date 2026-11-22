@@ -64,6 +64,7 @@ describe("the command registry", () => {
 			"check-review-growth",
 			"check-spec-drift",
 			"check-proof",
+			"check-hardening-profile",
 		]);
 	});
 
@@ -164,7 +165,7 @@ describe("the command registry", () => {
 		const badCheck = capture();
 		expect(main(["check", "spelling"], badCheck.io)).toBe(2);
 		expect(badCheck.err()).toBe(
-			"astack check: give one of comments, types, ticket, pr, plan, ste, migrations, stack-config, ci-pins, pr-head, review-growth, spec-drift, proof\n",
+			"astack check: give one of comments, types, ticket, pr, plan, ste, migrations, stack-config, ci-pins, pr-head, review-growth, spec-drift, proof, hardening-profile\n",
 		);
 	});
 

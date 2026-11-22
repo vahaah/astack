@@ -79,6 +79,11 @@ function snapshot(extra: Partial<Snapshot> = {}): Snapshot {
 		profile: { kind: "present", repo: "/repo", keys: ["ste", "tracker"] },
 		unattendedReason: undefined,
 		skipped: { file: "/state/skip-profiles", dirs: [] },
+		reviewProfile: {
+			kind: "checked",
+			path: ".claude/pr-review-hardening.profile.md",
+			problems: [],
+		},
 		...extra,
 	};
 }
@@ -751,6 +756,45 @@ describe("astack doctor", () => {
 			snapshot({ cursor: { local: "0.1.0", imported: ["astack@astack"] } }),
 		);
 		expect(fails(findings)).toHaveLength(1);
+	});
+
+	test.each<[string, Snapshot["reviewProfile"], string]>([
+		[
+			"[control:dt-review-missing] a repo with no review profile gives a note",
+			{ kind: "missing", path: ".claude/pr-review-hardening.profile.md" },
+			"note no .claude/pr-review-hardening.profile.md, so /astack:pr-review-hardening stops at load. Draft a profile as the Draft a profile section of references/profile.md of the pr-review-hardening skill says",
+		],
+		[
+			"[control:dt-review-drift] a drifted review profile fails with the problem and its repair",
+			{
+				kind: "checked",
+				path: ".claude/pr-review-hardening.profile.md",
+				problems: [
+					{
+						path: "gates",
+						message:
+							"needs one gate named change-proof that runs astack check proof",
+						repair: "Copy the change-proof gate",
+					},
+				],
+			},
+			"fail .claude/pr-review-hardening.profile.md: gates: needs one gate named change-proof that runs astack check proof. Copy the change-proof gate",
+		],
+		[
+			"a review profile that passes each rule is ok",
+			{
+				kind: "checked",
+				path: ".claude/pr-review-hardening.profile.md",
+				problems: [],
+			},
+			"ok .claude/pr-review-hardening.profile.md passes the hardening profile rules",
+		],
+	])("%s", (_name, reviewProfile, line) => {
+		expect(
+			diagnose(snapshot({ reviewProfile }))
+				.filter((item) => item.area === "review profile /repo")
+				.map((item) => `${item.level} ${item.text}`),
+		).toEqual([line]);
 	});
 
 	test("reports an invalid profile", () => {

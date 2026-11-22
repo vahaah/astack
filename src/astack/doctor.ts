@@ -4,7 +4,14 @@ import {
 	CODEX_HOOK_HASHES,
 	type CodexHookEvent,
 } from "./codex-trust.ts";
+import { MANAGED_PATHS } from "./managed.ts";
 import { MARKETPLACE_NAME, PLUGIN_IDS } from "./marketplace.ts";
+import {
+	MISSING_PROFILE_REPAIR,
+	NO_BLOCK_REPAIR,
+	problemText,
+	type ReviewProfileState,
+} from "./pr-review-profile.ts";
 import { ASTACK_RULES, ruleLinkName } from "./rules.ts";
 
 export const ASTACK_PLUGINS: readonly string[] = PLUGIN_IDS.map(pluginName);
@@ -79,6 +86,7 @@ export type Snapshot = {
 		readonly file: string;
 		readonly dirs: readonly string[];
 	};
+	readonly reviewProfile: ReviewProfileState;
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -616,6 +624,43 @@ function profileFindings(profile: ProfileState): Finding[] {
 	}
 }
 
+function reviewProfileFindings(
+	repo: string,
+	state: ReviewProfileState,
+): Finding[] {
+	const area = `review profile ${repo}`;
+	switch (state.kind) {
+		case "missing":
+			return [
+				finding(
+					area,
+					"note",
+					`no ${MANAGED_PATHS.reviewProfile}, so /astack:pr-review-hardening stops at load. ${MISSING_PROFILE_REPAIR}`,
+				),
+			];
+		case "no-block":
+			return [
+				finding(
+					area,
+					"fail",
+					`${state.path} has no fenced yaml or json block. ${NO_BLOCK_REPAIR}`,
+				),
+			];
+		case "checked":
+			return state.problems.length === 0
+				? [
+						finding(
+							area,
+							"ok",
+							`${state.path} passes the hardening profile rules`,
+						),
+					]
+				: state.problems.map((problem) =>
+						finding(area, "fail", `${state.path}: ${problemText(problem)}`),
+					);
+	}
+}
+
 function sessionFinding(unattendedReason: string | undefined): Finding {
 	return unattendedReason === undefined
 		? finding(
@@ -650,6 +695,7 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 		),
 		...duplicateFindings(snapshot),
 		...profileFindings(snapshot.profile),
+		...reviewProfileFindings(snapshot.profile.repo, snapshot.reviewProfile),
 		sessionFinding(snapshot.unattendedReason),
 	];
 }

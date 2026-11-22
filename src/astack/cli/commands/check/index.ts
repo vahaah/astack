@@ -1,6 +1,7 @@
 import type { Command } from "../../command.ts";
 import { command as ciPins } from "./ci-pins.ts";
 import { command as comments } from "./comments.ts";
+import { command as hardeningProfile } from "./hardening-profile.ts";
 import { command as migrations } from "./migrations.ts";
 import { command as plan } from "./plan.ts";
 import { command as pr } from "./pr.ts";
@@ -27,4 +28,5 @@ export const CHECKS: readonly Command<number | Promise<number>>[] = [
 	reviewGrowth,
 	specDrift,
 	proof,
+	hardeningProfile,
 ];

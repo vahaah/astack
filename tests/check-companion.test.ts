@@ -61,7 +61,7 @@ describe("bun run check:companion", () => {
 			"ledger:\n  carry_over: true\n",
 			"",
 			(root) => [
-				`acme: ${profile}: the stub fallback reads ledger.carry_over, which the profile does not define`,
+				`acme: ${profile}: the stub fallback reads ledger.carry_over, which the profile does not define. Define each key as references/profile.md of the pr-review-hardening skill says`,
 				`profile scan: keys the stub fallback reads > ${relative(repoRoot, join(root, profile))} defines every key the fallback reads`,
 			],
 		],
@@ -80,7 +80,7 @@ describe("bun run check:companion", () => {
 			"after_create_pr: harden\n",
 			"after_create_pr: maybe\n",
 			(root) => [
-				`acme: ${profile}: after_create_pr: must be one of harden, none`,
+				`acme: ${profile}: after_create_pr: must be one of harden, none. Change it as references/profile.md of the pr-review-hardening skill says`,
 				`profile scan: project profiles > ${relative(repoRoot, join(root, profile))} parses with no issues`,
 				"profile scan: validateProfile > every repo runs one hardening run after create pr, with a cap of 2",
 			],
