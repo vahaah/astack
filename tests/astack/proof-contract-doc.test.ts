@@ -5,6 +5,7 @@ import {
 	parseChangeProof,
 	STAGE_SECTIONS,
 	STAGES,
+	type Stage,
 } from "../../src/astack/change-proof/contract.ts";
 
 const REFERENCES = join(
@@ -122,9 +123,25 @@ describe("the proof contract reference", () => {
 		).toEqual(kinds.map(() => "accepted"));
 	});
 
-	test("[control:proof-stop-heading] the section of each stop stage is a heading of the proof contract", () => {
+	test("[control:proof-stop-heading] the section of each stop stage holds the rule of each cause of that stage", () => {
+		const causes: Readonly<Record<Stage, readonly string[]>> = {
+			schema: ["Unknown fields"],
+			domain: ["glossary", "integratedAt"],
+			category: ["must compose"],
+			controls: ["no row is idle", "spec-links.md"],
+			model: ["A positive result needs"],
+			countermodel: ["The negative control"],
+			stale: ["must be an ancestor", "before and after execution"],
+		};
 		expect(
-			STAGES.filter((stage) => !SECTIONS.has(slug(STAGE_SECTIONS[stage]))),
+			STAGES.flatMap((stage) =>
+				causes[stage]
+					.filter(
+						(rule) =>
+							!(SECTIONS.get(slug(STAGE_SECTIONS[stage])) ?? "").includes(rule),
+					)
+					.map((rule) => `${stage}: ${rule}`),
+			),
 		).toEqual([]);
 	});
 });

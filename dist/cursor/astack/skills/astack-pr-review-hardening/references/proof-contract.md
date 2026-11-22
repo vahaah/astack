@@ -12,6 +12,7 @@ Without `--base`, the diff base is the manifest base. It must be an ancestor of 
 With `--base <ref>`, the diff base is the merge base of the ref and HEAD.
 The manifest base must be an ancestor of that merge base. Otherwise the gate stops and names both commits.
 
+The checker binds current candidate files and model inputs before and after execution.
 The scope check and both input snapshots read from the diff base, so a file that only the base branch changed stays out of scope.
 The receipt prints the manifest base and the diff base.
 Do not change the manifest base after a merge or a rebase of the base branch.
@@ -40,8 +41,12 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 Unknown fields, duplicate names, unresolved references, and empty text fail.
 Paths stay inside the repo and outside `.git`.
 A proof reference is a regular file with no symlink in its path.
-The checker binds current candidate files and model inputs before and after execution.
 The manifest never stores its own digest or commit hash.
+
+The matrix uses [spec-links.md](spec-links.md).
+Criterion and control markers come from their source files independently of the links.
+Implementation gates run those controls separately.
+Link validation is not semantic coverage.
 
 ## Domain and decisions
 
@@ -102,11 +107,6 @@ The proof record connects the function contract to formal claims, category compo
 The ADR explains the claim and its limits.
 Models and tests remain executable files linked from that explanation.
 Do not copy a transient pass log into an ADR.
-
-The matrix uses [spec-links.md](spec-links.md).
-Criterion and control markers come from their source files independently of the links.
-Implementation gates run those controls separately.
-Link validation is not semantic coverage.
 
 ## Category and abstraction
 
