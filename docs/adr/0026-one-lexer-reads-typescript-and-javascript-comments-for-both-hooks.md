@@ -54,9 +54,9 @@ The model does not read a character class, flags, a template or JSX.
 #### Category composition
 
 ```text
-scan     : ScanInput -> Scan            effects: none
-lex      : LexInput -> LexResult        effects: none
-unitsOf  : LexInput -> CommentUnit      effects: none
+scan     : ScanInput -> Scan | undefined           effects: none
+lex      : LexInput -> LexResult                   effects: none
+unitsOf  : LexInput -> CommentUnit[] | undefined   effects: none
 ```
 
 `scan` reads a source and a JSX flag, and returns the tokens and comments, or no value.

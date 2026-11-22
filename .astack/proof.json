@@ -195,7 +195,7 @@
 				"name": "ScanInput",
 				"link": {
 					"path": "src/astack/types/scan.ts",
-					"symbol": "source"
+					"symbol": "scan"
 				}
 			},
 			{
@@ -260,7 +260,7 @@
 			}
 		],
 		"composites": [],
-		"equality": "Two scans are equal when their token lists and their comment lists are equal in order. Two lex results are equal when their comment offsets, their markers and their complete flags are equal.",
+		"equality": "scan gives undefined for a source that it cannot read, and unitsOf gives undefined for an incomplete lex result. Two scans are equal when both are undefined, or when their token lists and their comment lists are equal in order. Two lex results are equal when their comment offsets, their markers and their complete flags are equal. Two unit results are equal when both are undefined, or when their units are equal in order.",
 		"laws": [
 			{
 				"law": "id-left",
