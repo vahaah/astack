@@ -28,6 +28,8 @@ import {
 } from "../events.ts";
 
 const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
+const GRAPHQL_ENDPOINT =
+	/^(?:\/?graphql|https?:\/\/[^/]+\/(?:api\/)?graphql)\/?$/i;
 const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH =
@@ -60,7 +62,7 @@ function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
 	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
 	if (
-		args.includes("graphql") &&
+		args.some((value) => GRAPHQL_ENDPOINT.test(value)) &&
 		args.some((value) => UNREAD_QUERY.test(value))
 	)
 		return true;

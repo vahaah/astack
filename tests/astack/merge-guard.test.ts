@@ -641,6 +641,10 @@ describe("the merge guard", () => {
 		["gh api graphql -Fquery=@-", API_DENY],
 		["gh api graphql --field query=@merge.graphql", API_DENY],
 		["gh api graphql --input query.json", API_DENY],
+		["gh api /graphql -F query=@merge.graphql", API_DENY],
+		["gh api https://api.github.com/graphql --input query.json", API_DENY],
+		["gh api https://ghe.example.com/api/graphql -Fquery=@-", API_DENY],
+		["gh api repos/o/r/issues --input body.json", PASSES],
 		[
 			'gh api graphql -f query=\'query { repository(owner: "o", name: "r") { pullRequest(number: 12) { mergeable } } }\'',
 			PASSES,
