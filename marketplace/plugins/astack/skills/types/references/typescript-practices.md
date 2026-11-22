@@ -2,7 +2,7 @@
 
 Find principles in `astack:principles` with `astack skill-path astack:principles references/<title>.md`.
 Read each one in full when you apply it.
-Apply **type-system-discipline** first.
+Apply rules 2, 6 to 9 and 16 of `SKILL.md` first.
 `SKILL.md` owns the house restrictions and their named kernel exceptions.
 
 | Rule | Summary |
@@ -27,7 +27,6 @@ Apply **type-system-discipline** first.
 ## Code examples
 
 The principles apply across languages.
-Consult **type-system-discipline** and **boundary-discipline** for the underlying rules.
 
 ## Branded types
 
