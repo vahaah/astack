@@ -152,11 +152,11 @@ Keep functional conventions within these limits.
 2. Write no higher-kinded encodings, such as `Kind<F, A>` or an `HKT` interface. Write no `Functor` or `Monad` interface and no type-class dictionary. A monoid is two named functions, such as `addUsage` and `emptyUsage`.
 3. Write no interface or class with one implementation. A test fake counts as the second one.
 4. Add no new generic before 3 real call sites use different types. Each type parameter must appear twice in the signature.
-5. Build no monad transformer stacks. Plain code returns `Promise<Result<T, E>>` and uses early return. In Effect, `Effect<A, E, R>` is already the stack.
+5. Build no monad transformer stacks. Plain code returns `Promise<Result<T, E>>` with early return or the Result helpers. In Effect, `Effect<A, E, R>` is the stack.
 6. Write no custom `pipe`, `flow`, `compose` or `curry` outside Effect. Name the values between the steps.
 7. Use no `Option` type outside Effect. Under `strictNullChecks`, `T | undefined` is the option type.
 8. Add no Result helpers before 3 call sites chain results. Bound 4 counts `map`, `andThen` and `all` as one generic.
-9. Give a type-level program of more than approximately 10 lines a type test. Prefer a runtime parse to a clever type.
+9. Give a type-level program over approximately 10 lines a type test. Prefer a runtime parse to a clever type.
 10. Keep category names in internal contracts, models, law tests, and reviews. Names in production code follow the domain.
 11. Prefer a `switch` over a union to visitor, strategy or registry objects. Change only when 3 call sites dispatch on the same union.
 12. Local mutation inside one function is allowed. Purity is a property of the interface of a function, not of each line.
