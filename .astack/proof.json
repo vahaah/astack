@@ -94,6 +94,11 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
+			"path": "tests/astack/pr-head.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "tests/drift.test.ts",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
