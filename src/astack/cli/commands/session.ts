@@ -8,8 +8,8 @@ import {
 	readText,
 	writeRecord,
 } from "../../plan/edge.ts";
-import { frontmatterValue, parsePlan } from "../../plan/parse.ts";
-import { slugOf } from "../../plan/planset.ts";
+import { type PlanState, planStateFor } from "../../plan/files.ts";
+import { parsePlan } from "../../plan/parse.ts";
 import {
 	branchName,
 	checkpointPackage,
@@ -23,12 +23,11 @@ import {
 	type SessionRecord,
 	startSession,
 } from "../../plan/session.ts";
-import { appendTrail, trailPath } from "../../plan/trail.ts";
+import { appendTrail } from "../../plan/trail.ts";
 import type { Plan, Session } from "../../plan/types.ts";
 import { positional, valueAfter } from "../args.ts";
 import type { Command } from "../command.ts";
 import { type Io, usageError } from "../io.ts";
-import { rootOf } from "./plan.ts";
 
 const USAGE = [
 	"session start <plan> [<session>] [--prefix <name>] [--ultracode] [--json]",
@@ -49,22 +48,24 @@ const VALUE_FLAGS = [
 	"--pr",
 ];
 
-type Loaded = {
+type Loaded = PlanState & {
 	readonly plan: Plan;
 	readonly path: string;
-	readonly root: string;
-	readonly slug: string;
 };
 
 function load(file: string, io: Io): Loaded | undefined {
-	const root = rootOf(io);
 	const absolute = resolve(io.cwd, file);
 	const text = readText(absolute);
 	if (text === undefined) {
 		usageError(io, `astack session: cannot read ${file}`);
 		return undefined;
 	}
-	const path = relative(root, absolute);
+	const state = planStateFor(absolute, io.cwd);
+	if (!state.ok) {
+		usageError(io, `astack session: ${state.error}`);
+		return undefined;
+	}
+	const path = relative(state.value.root, absolute);
 	const plan = parsePlan(path, text);
 	if (tierOf(plan) === "programme") {
 		usageError(
@@ -73,10 +74,7 @@ function load(file: string, io: Io): Loaded | undefined {
 		);
 		return undefined;
 	}
-	const slug = (
-		frontmatterValue(plan, "programme") ?? slugOf(plan, path)
-	).toLowerCase();
-	return { plan, path, root, slug };
+	return { ...state.value, plan, path };
 }
 
 function session(
@@ -97,6 +95,7 @@ function emit(
 	args: readonly string[],
 	output: SessionOutput,
 	loaded: Loaded,
+	namesRecord = false,
 ): number {
 	const previous = readRecord(loaded.root, loaded.slug, output.record.session);
 	const record =
@@ -116,10 +115,11 @@ function emit(
 		record !== output.record
 			? `The record of ${record.session} already existed, so its ${record.checkpoints.length} ${record.checkpoints.length === 1 ? "checkpoint stays" : "checkpoints stay"}.\n`
 			: "";
+	const text = `${output.text}${namesRecord ? `Record. ${saved.value}\n` : ""}${kept}`;
 	io.out(
 		args.includes("--json")
-			? `${JSON.stringify({ ...output, record }, null, 2)}\n`
-			: `${output.text}${kept}`,
+			? `${JSON.stringify({ ...output, text, record }, null, 2)}\n`
+			: text,
 	);
 	return 0;
 }
@@ -167,6 +167,7 @@ function start(args: readonly string[], io: Io): number {
 			base,
 		}),
 		loaded,
+		true,
 	);
 }
 
@@ -262,21 +263,19 @@ function checkpoint(args: readonly string[], io: Io): number {
 			now: io.now,
 		},
 	);
-	const trail = trailPath(loaded.root, loaded.slug);
-	if (trail)
-		appendTrail(
-			trail,
+	appendTrail(
+		loaded.trail,
+		[
 			[
-				[
-					"checkpoint",
-					`${record.session} steps ${scope.steps.map((step) => step.id).join(",")}`,
-					"checkpoint package",
-					output.record.checkpoints.at(-1)?.head ?? "no head",
-					"report",
-				],
+				"checkpoint",
+				`${record.session} steps ${scope.steps.map((step) => step.id).join(",")}`,
+				"checkpoint package",
+				output.record.checkpoints.at(-1)?.head ?? "no head",
+				"report",
 			],
-			io.now,
-		);
+		],
+		io.now,
+	);
 	return emit(io, args, output, loaded);
 }
 
@@ -290,21 +289,19 @@ function handoffCommand(args: readonly string[], io: Io): number {
 	if (!chosen) return 2;
 	const record = recordFor(loaded, chosen, io);
 	if (!record) return 2;
-	const trail = trailPath(loaded.root, loaded.slug);
-	if (trail)
-		appendTrail(
-			trail,
+	appendTrail(
+		loaded.trail,
+		[
 			[
-				[
-					"handoff",
-					record.session,
-					"the session pauses",
-					record.branch,
-					"paused",
-				],
+				"handoff",
+				record.session,
+				"the session pauses",
+				record.branch,
+				"paused",
 			],
-			io.now,
-		);
+		],
+		io.now,
+	);
 	return emit(
 		io,
 		args,
@@ -409,7 +406,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "session",
 	summary:
-		"Starts, checkpoints, hands off and resumes one plan session. State lives in git and the tracker. Tracker writes print as a plan for the skill to run.",
+		"Starts, checkpoints, hands off and resumes one plan session. Start writes the session record to astack/plans/<slug>/session-<session>.json in the git common dir of the plan, and it makes no worktree and no checkout. State lives in git and the tracker. Tracker writes print as a plan for the skill to run.",
 	usage: USAGE.join("\n"),
 	run,
 };

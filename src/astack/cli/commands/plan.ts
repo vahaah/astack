@@ -144,7 +144,7 @@ function draft(args: readonly string[], io: Io): number {
 	return 0;
 }
 
-export function rootOf(io: Io): string {
+function rootOf(io: Io): string {
 	return repoRoot(io.cwd) ?? io.cwd;
 }
 
