@@ -232,7 +232,7 @@ describe("astack doctor", () => {
 		],
 		[
 			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
-			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.",
+			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant comes only from merge.authority or merge.standingBases in .astack/profile.json on the PR base branch.",
 		],
 	])(
 		"[control:sg-doctor-unattended] the command names the setting that makes the session unattended (%p)",

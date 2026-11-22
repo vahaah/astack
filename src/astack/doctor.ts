@@ -484,7 +484,7 @@ function sessionFinding(unattendedReason: string | undefined): Finding {
 		: finding(
 				"session",
 				"note",
-				`unattended, because ${unattendedReason}. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.`,
+				`unattended, because ${unattendedReason}. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant comes only from merge.authority or merge.standingBases in .astack/profile.json on the PR base branch.`,
 			);
 }
 

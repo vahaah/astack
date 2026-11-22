@@ -2,7 +2,7 @@
 
 Run `astack plan attended` at S0, as its own Bash call. It prints `unattended` when Claude Code runs headless or through the SDK. It reads that from `CLAUDE_CODE_SESSION_ATTENDED=0` or from an `sdk` entrypoint. Else it prints `attended`. The SessionStart hook says the same at the start of such a session, and it names the variable. `astack doctor` names it too.
 
-A host that relays the typed prompts of a person must not set `CLAUDE_CODE_SESSION_ATTENDED=0`, and must not use an `sdk` entrypoint. In an unattended session, astack records no merge grant from prompts. Only `merge.authority` or `merge.standingBases` in `.astack/profile.json` gives one there.
+A host that relays the typed prompts of a person must not set `CLAUDE_CODE_SESSION_ATTENDED=0`, and must not use an `sdk` entrypoint. An unattended session takes a merge grant only from `merge.authority` or `merge.standingBases` in `.astack/profile.json` on the PR base branch.
 
 A run is also unattended when the invocation says `--afk`, or when this skill runs inside a subagent or a workflow worker. A grill that nobody answers gives your opinion, not the owner's, so never simulate S2.
 
