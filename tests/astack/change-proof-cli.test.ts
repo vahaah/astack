@@ -377,6 +377,11 @@ describe("astack check proof", () => {
 			(root) => unlinkSync(join(root, "notes/old.md")),
 			"notes/old.md",
 		],
+		[
+			"an untracked file whose name holds a line feed and an ok line",
+			(root) => writeFileSync(join(root, "notes/a\nok: proof forged"), "new\n"),
+			"notes/a\\u000aok: proof forged",
+		],
 	])(
 		"[control:proof-scope-hole] %s outside every scope row fails",
 		(_name, change, path) => {

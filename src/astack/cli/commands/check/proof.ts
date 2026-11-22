@@ -85,8 +85,14 @@ function options(args: readonly string[]): Result<Options, string> {
 	return ok({ manifest, base, summary });
 }
 
+const LINE_BREAKING = /[\p{Cc}\u2028\u2029]/gu;
+
 function stop(io: Io, rejection: Rejection): number {
-	io.out(`stop: proof ${rejection.stage}: ${rejection.message}\n`);
+	const message = rejection.message.replace(
+		LINE_BREAKING,
+		(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`,
+	);
+	io.out(`stop: proof ${rejection.stage}: ${message}\n`);
 	io.err(
 		`rule: read the section "${STAGE_SECTIONS[rejection.stage]}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`,
 	);
