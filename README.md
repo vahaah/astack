@@ -17,7 +17,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 - 5 agents: 2 read-only language reviewers and 3 helpers that the skills start.
 - 5 rules files, and hooks with 12 handlers that check replies, types, comments and PR text, and guard merges and destructive commands.
 - The `astack` CLI for sessions, the board, `doctor` and 13 repository checks.
-- A change proof: in a repo that applies astack, each change needs a domain contract, its ADRs and a TLA+ model check that passes.
+- A [change proof](#change-proof) for each change: a TLA+ model check that passes, with its domain contract and decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
 
 ## Contents
 
