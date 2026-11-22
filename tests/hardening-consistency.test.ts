@@ -5160,6 +5160,8 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 describe("an accepted skill edit lands in the source checkout of the skill", () => {
 	const repairRule = "never in a project copy or an installed copy";
 	const backlogRule = "With no source checkout, the edit goes to Backlog.";
+	const checkoutTest =
+		"A source checkout is a git work tree that tracks the skill, outside `dist/`, a plugin cache and an install folder.";
 	const reflect = "marketplace/plugins/astack/skills/reflect/SKILL.md";
 	const repairTexts = [
 		"marketplace/plugins/astack/skills/mode/references/card.md",
@@ -5173,5 +5175,9 @@ describe("an accepted skill edit lands in the source checkout of the skill", () 
 			repairTexts.filter((path) => !read(path).includes(repairRule)),
 		).toEqual([]);
 		expect(read(reflect)).toContain(backlogRule);
+	});
+
+	test("reflect tells a source checkout from an install folder or a tracked dist copy", () => {
+		expect(read(reflect)).toContain(checkoutTest);
 	});
 });
