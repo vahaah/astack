@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-	fallbackParity,
 	planUpfrontSkills,
 	pointerProblems,
 	type Scenario,
@@ -69,18 +69,22 @@ describe("the static checks of the skill load report", () => {
 		]);
 	});
 
-	test("the fallback parity names a line that the moved fallback dropped", () => {
-		const oldStub = "# Stub\n\n## Fallback\n\nStep one.\nStep two.\n";
+	test("the plugin-absent row reads only the stub, and the report exits 0 on this tree", () => {
+		const stub = "templates/pr-review-hardening.stub.SKILL.md";
 		expect(
-			fallbackParity(oldStub, "# F\n\n## Fallback\n\nStep one.\nStep two.\n"),
-		).toEqual({ identical: true, onlyInOld: [], onlyInNew: [] });
-		expect(
-			fallbackParity(oldStub, "# F\n\n## Fallback\n\nStep one.\n"),
-		).toEqual({
-			identical: false,
-			onlyInOld: ["Step two."],
-			onlyInNew: [],
+			scenarios("", () => undefined)
+				.filter((scenario) => scenario.entry === stub)
+				.map((scenario) => [scenario.name, scenario.after]),
+		).toEqual([
+			["review stub, plugin available", [stub]],
+			["review stub, plugin absent", [stub]],
+		]);
+		const run = spawnSync("bun", ["scripts/skill-load-report.ts"], {
+			cwd: root,
+			encoding: "utf8",
 		});
+		expect(run.stdout).not.toContain("Fallback parity");
+		expect(run.status).toBe(0);
 	});
 
 	test("the upfront list of the old plan skill takes skill names and leaves slash commands out", () => {

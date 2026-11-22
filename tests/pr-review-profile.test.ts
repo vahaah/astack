@@ -1,10 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import {
-	reviewFallbackSource,
-	reviewStubSource,
-} from "../scripts/lib/render.ts";
+import { reviewStubSource } from "../scripts/lib/render.ts";
 import {
 	extractProfileBlock,
 	FIXER_FLAGS,
@@ -12,6 +9,7 @@ import {
 	gateForbiddenCommands,
 	parseProfile,
 	profileGates,
+	reviewProfileProblems,
 	validateProfile,
 } from "../src/astack/pr-review-profile.ts";
 import { exampleProfilePaths, profilePaths } from "./profile-paths.ts";
@@ -75,8 +73,27 @@ describe("project profiles", () => {
 	});
 
 	test("the shared stub names no old install", () => {
-		for (const source of [reviewStubSource, reviewFallbackSource])
-			expect(readFileSync(source, "utf8")).not.toMatch(/agent-stack/i);
+		expect(readFileSync(reviewStubSource, "utf8")).not.toMatch(/agent-stack/i);
+	});
+});
+
+describe("reviewProfileProblems", () => {
+	test("[control:rs-rules] a profile with only its required keys and the change-proof gate gets no problem", () => {
+		const minimal = [
+			"# Profile",
+			"",
+			"```yaml",
+			"version: 1",
+			"gates:",
+			"  - name: change-proof",
+			"    command: astack check proof --base origin/main",
+			"test:",
+			"  name: test",
+			"  command: bun test",
+			"```",
+			"",
+		].join("\n");
+		expect(reviewProfileProblems(minimal, [])).toEqual([]);
 	});
 });
 
@@ -252,22 +269,6 @@ describe("validateProfile", () => {
 		expect(
 			issuesFor({ reviewers: { agents: ["code-simplifier"] } }),
 		).toHaveLength(1);
-	});
-
-	test("requires a keep pattern for a boundary cast marker", () => {
-		const typescript = {
-			rules: true,
-			boundary_cast_marker: "// BOUNDARY-CAST:",
-		};
-		expect(issuesFor({ typescript })).toEqual([
-			"typescript.boundary_cast_marker: needs a comments.keep_patterns entry that matches it",
-		]);
-		expect(
-			issuesFor({
-				typescript,
-				comments: { keep_patterns: ["^\\s*// BOUNDARY-CAST: "] },
-			}),
-		).toEqual([]);
 	});
 
 	test("requires a merge command and a condition that checks CI on the head when the run may merge", () => {

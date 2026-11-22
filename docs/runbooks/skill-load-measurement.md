@@ -8,7 +8,7 @@ It keeps source metrics apart from the figures that only a real host can give.
 | Kind | Source | Status |
 |---|---|---|
 | Source words and bytes of the files in a read set | `bun scripts/skill-load-report.ts` | Measured on source files |
-| Fallback parity and pointers of the read sets | The same script and `tests/skill-load-report.test.ts` | Structural |
+| Pointers of the read sets | The same script and `tests/skill-load-report.test.ts` | Structural |
 | Prompt tokens, cache use, model calls, time and cost | A matched run with host counters | Unavailable until a run records them |
 | What the host lists, keeps or drops | The host diagnostics below | Measured on one host and one session |
 
@@ -29,7 +29,7 @@ The report does not expand shared or transitive dependencies.
 It is not a trace of a real run.
 The old plan baseline includes every skill name in its composition section, including conditional names.
 It is a broad source-list interpretation, not the required input for S0 or resume.
-The script exits 1 when a pointer is missing or when the moved fallback differs from the inline fallback of the base revision.
+The script exits 1 when a pointer is missing.
 
 ## Diagnose a real host
 

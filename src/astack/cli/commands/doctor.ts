@@ -34,7 +34,7 @@ import { MANAGED_PATHS } from "../../managed.ts";
 import { ghJson } from "../../pr/github.ts";
 import { parseMergeProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
-import { PROFILE_PATH, readProfileJson } from "../../profile.ts";
+import { loadProfile, PROFILE_PATH, readProfileJson } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
 import type { Command } from "../command.ts";
@@ -381,6 +381,7 @@ function steEventLogs(env: Io["env"]): readonly string[] {
 
 export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
+	const repo = repoRoot(io.cwd) ?? io.cwd;
 	const listed = claudeDirs(io.env, home);
 	const skipList = skippedProfiles(home);
 	const claude = claudeProfiles(
@@ -401,7 +402,8 @@ export async function gather(io: Io): Promise<Snapshot> {
 		bases: bases(io.cwd),
 		reviewProfile: reviewProfileState(
 			MANAGED_PATHS.reviewProfile,
-			readText(join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile)),
+			readText(join(repo, MANAGED_PATHS.reviewProfile)),
+			loadProfile(repo).commentKeep,
 		),
 		unattendedReason: unattendedReason(io.env),
 		steEvents: sumSteEvents(steEventLogs(io.env), io.now),

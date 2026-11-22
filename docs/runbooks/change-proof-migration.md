@@ -58,7 +58,7 @@ bun run apply --project <name> --companion <dir> --worktree --branch <adoption-b
 
 Use `--update` only for an existing clean apply worktree.
 Use `--overlay <branch>` when updating a branch overlay.
-Review the generated profile, shared fallback, mirrors, and source notices.
+Review the generated profile, mirrors, and source notices.
 Run the repo gates before and after the apply.
 
 ## Preserve a blocked transition

@@ -900,6 +900,64 @@ describe("astack doctor", () => {
 		).toEqual([line]);
 	});
 
+	test.each([
+		["matches", "^\\s*// BOUNDARY-CAST: ", []],
+		[
+			"does not match",
+			"^TODO",
+			[
+				{
+					path: "typescript.boundary_cast_marker",
+					message:
+						'no commentKeep pattern of the repo matches "// BOUNDARY-CAST:"',
+					repair:
+						"Add a pattern that matches the marker to commentKeep in .astack/profile.json. Apply writes that list from keepPatterns of the project config",
+				},
+			],
+		],
+	])(
+		"[control:rs-keep-doctor] doctor reads a boundary cast marker whose commentKeep pattern %s",
+		async (_case, keep, problems) => {
+			const repo = mkdtempSync(join(tmpdir(), "astack-doctor-keep-"));
+			try {
+				mkdirSync(join(repo, ".astack"));
+				mkdirSync(join(repo, ".claude"));
+				writeFileSync(
+					join(repo, ".astack/profile.json"),
+					JSON.stringify({ commentKeep: [keep] }),
+				);
+				writeFileSync(
+					join(repo, ".claude/pr-review-hardening.profile.md"),
+					[
+						"```yaml",
+						"version: 1",
+						"gates: [{name: change-proof, command: astack check proof --base origin/main}]",
+						"test: {name: test, command: bun test}",
+						"typescript: {rules: true, boundary_cast_marker: '// BOUNDARY-CAST:'}",
+						"```",
+						"",
+					].join("\n"),
+				);
+				const snapshot = await gather({
+					out: () => {},
+					err: () => {},
+					cwd: repo,
+					env: { HOME: repo, ASTACK_RUNTIME: process.execPath },
+					today: "2026-01-01",
+					now: new Date("2026-01-01T00:00:00Z"),
+					scriptPath: undefined,
+				});
+				expect(snapshot.reviewProfile).toEqual({
+					kind: "checked",
+					path: ".claude/pr-review-hardening.profile.md",
+					problems,
+				});
+			} finally {
+				rmSync(repo, { recursive: true, force: true });
+			}
+		},
+	);
+
 	test("reports an invalid profile", () => {
 		expect(
 			fails(diagnose(snapshot({ profile: { kind: "invalid", repo: "/r" } }))),

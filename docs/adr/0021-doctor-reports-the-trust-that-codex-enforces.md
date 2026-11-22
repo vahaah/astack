@@ -101,6 +101,8 @@ Each problem has a repair.
 The command exits 1 on a problem, and 2 for a missing profile or a profile with no fenced block.
 The hardening skill runs the command when it loads the profile.
 
+> Amended 2026-11-22: D3 said that the apply rules hold the fallback keys that the profile leaves out and the keys that the fallback does not follow. [ADR 0027](0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md) D1 and D4 remove the fallback copy and both rules. D5 moves the boundary cast marker rule into `reviewProfileProblems`, which takes the `commentKeep` list of the repo.
+
 The profile parser uses the bundled `yaml` package, because the CLI bundle runs on node.
 A repeated key keeps its last value, and a merge key such as `<<: *gate` fills its map, as `Bun.YAML` did.
 

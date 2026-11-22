@@ -21,7 +21,6 @@ type Copy =
 			readonly path: string;
 			readonly heading: string;
 	  }
-	| { readonly kind: "fallback-step"; readonly path: string }
 	| { readonly kind: "constant"; readonly name: string; readonly text: string };
 
 const ANCHOR: Copy = {
@@ -48,10 +47,6 @@ const COPIES: readonly Copy[] = [
 		path: "marketplace/plugins/astack/skills/pr-review-hardening/references/comments.md",
 		heading: "## Keep list",
 	},
-	{
-		kind: "fallback-step",
-		path: "templates/pr-review-hardening.stub.FALLBACK.md",
-	},
 	{ kind: "markdown", path: "AGENTS.md", heading: "## Write no comments" },
 ];
 
@@ -71,19 +66,10 @@ function firstListUnder(markdown: string, heading: string): string[] {
 	return items;
 }
 
-function fallbackSentences(markdown: string): string[] {
-	const found = /The keep list is (.*?\.) It also holds (.*?\.)/.exec(markdown);
-	return [found?.[1] ?? "", found?.[2] ?? ""].flatMap((sentence) =>
-		sentence.split(","),
-	);
-}
-
 function keepItems(copy: Copy): string[] {
 	switch (copy.kind) {
 		case "markdown":
 			return firstListUnder(repoText(copy.path), copy.heading);
-		case "fallback-step":
-			return fallbackSentences(repoText(copy.path));
 		case "constant":
 			return (copy.text.split(":")[1] ?? "").split(";");
 		default: {

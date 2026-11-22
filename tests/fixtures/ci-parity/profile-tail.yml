@@ -10,8 +10,6 @@ test_adequacy: changed-behaviour
 ledger:
   carry_over: false
 prepasses: []
-comments:
-  keep_patterns: []
 forbidden:
   commands: []
   paths:

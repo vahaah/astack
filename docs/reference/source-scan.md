@@ -9,7 +9,7 @@ The [model](../../formal/SourceScan.tla) examines each sequence of up to 4 name,
 - [criterion:CS-MEMBER] After `obj.default / 2;` and after `obj.return / 2;`, the comment check and the type check each keep the comment. A word after `.` or `?.` ends a value, also a keyword.
 - [criterion:CS-NAME] After a name `as`, `satisfies`, `keyof` or `let`, as in `const as = 4; as / 2; // note`, the comment check and the type check each keep the comment.
 - [criterion:CS-INCOMPLETE] An unterminated template in a ts file gives no comments and `complete` false.
-- [criterion:KEEP-TIE] Each of the 7 keep-list copies names each of the 5 keep classes in exactly one item. A copy that loses its RFC item or its license item fails, and the failure names that copy and that class.
+- [criterion:KEEP-TIE] Each of the 6 keep-list copies names each of the 5 keep classes in exactly one item. A copy that loses its RFC item or its license item fails, and the failure names that copy and that class.
 
 ## Claim boundary
 

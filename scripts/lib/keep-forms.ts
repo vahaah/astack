@@ -58,7 +58,7 @@ export function unkeptCitations(
 						? `${sample.slice(0, MAX_SAMPLE - 1)}…`
 						: sample;
 				return [
-					`${file.path}:${line.line} \`${shown}\` cites a decision, and the comment hook gives ${verdict ?? "no verdict"} for it with the keep patterns ${JSON.stringify(keepPatterns)}. Add a keep pattern for this spelling to projects/<name>.json and the profile, or change the comment.`,
+					`${file.path}:${line.line} \`${shown}\` cites a decision, and the comment hook gives ${verdict ?? "no verdict"} for it with the keep patterns ${JSON.stringify(keepPatterns)}. Add a keep pattern for this spelling to keepPatterns of projects/<name>.json, or change the comment.`,
 				];
 			}),
 		);
