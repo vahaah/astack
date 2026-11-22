@@ -591,6 +591,10 @@ describe("the merge guard", () => {
 		"Y=merge; gh pr $Y 12",
 		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
 		'bash -c "gh pr view $N --json mergeable"',
+		"gh pr merg* 12",
+		"gh p? merge 12",
+		"g? pr merge 12",
+		"gh pr merge 1?",
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -812,8 +816,10 @@ describe("the merge guard", () => {
 		"gh api -X PUT repos/o/r/pulls/12/mer{g,}e",
 		"gh api -X PUT repos/o/r/pulls/12/m[e]rge",
 		"gh api -X PUT repos/o/r/pulls/12/merg?",
+		"gh api repos/o/r/pulls/12/mer{g..g}e",
+		"gh api -H X-* repos/o/r/pulls/12/m[e]rge",
 	])(
-		"the shell expands a glob or a brace in the endpoint, so the write call %s is denied",
+		"the shell expands a glob or a brace in a word after api, so %s is denied",
 		(command) => {
 			const run = bash(guard(GREEN), command);
 			expect(run.exit).toBe(2);
@@ -824,8 +830,7 @@ describe("the merge guard", () => {
 	test.each([
 		"gh api -X POST 'repos/o/r/issues?state=open'",
 		"gh api -X POST repos/{owner}/{repo}/issues",
-		"gh api repos/o/r/pulls/12/mer{g..g}e",
-	])("a quoted glob, a gh placeholder and a read pass: %s", (command) => {
+	])("a quoted glob and a gh placeholder pass: %s", (command) => {
 		expect(bash(guard(GREEN), command).exit).toBe(0);
 	});
 

@@ -99,22 +99,17 @@ function shortInput(letter: string, word: Word): GraphqlInput | undefined {
 type Method = { readonly word: Word | undefined; readonly at: number };
 
 type ApiParts = {
-	readonly endpoint: Word | undefined;
 	readonly inputs: readonly GraphqlInput[];
 	readonly method: Method | undefined;
 };
 
 function apiParts(args: readonly Word[]): ApiParts {
 	const inputs: GraphqlInput[] = [];
-	let endpoint: Word | undefined;
 	let method: Method | undefined;
 	for (let index = 1; index < args.length; index++) {
 		const word = args[index];
 		if (word === undefined) continue;
-		if (!word.value.startsWith("-")) {
-			endpoint ??= word;
-			continue;
-		}
+		if (!word.value.startsWith("-")) continue;
 		const attached = (value: string): Word => ({
 			value,
 			dynamic: word.dynamic,
@@ -144,7 +139,7 @@ function apiParts(args: readonly Word[]): ApiParts {
 			if (input) inputs.push(input);
 		}
 	}
-	return { endpoint, inputs, method };
+	return { inputs, method };
 }
 
 function provablyGet(method: Method | undefined, lastDynamic: number): boolean {
@@ -186,8 +181,7 @@ function apiCall(
 	if (values.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return API;
 	const writes = values.some((value) => METHOD_CHANGING_FLAG.test(value));
 	if (writes && values.some((value) => MERGE_PATH.test(value))) return API;
-	const parts = apiParts(args);
-	const { endpoint, inputs } = parts;
+	const { inputs, method } = apiParts(args);
 	const mergesThroughGraphql =
 		values.some(namesGraphql) &&
 		inputs.some((input) => {
@@ -195,11 +189,9 @@ function apiCall(
 			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
 		});
 	if (mergesThroughGraphql) return API;
-	if (writes && endpoint?.expands === true) return ENDPOINT;
+	if (args.some((word) => word.expands === true)) return ENDPOINT;
 	const lastDynamic = args.findLastIndex((word) => word.dynamic);
-	return lastDynamic > 0 && !provablyGet(parts.method, lastDynamic)
-		? ENDPOINT
-		: NONE;
+	return lastDynamic > 0 && !provablyGet(method, lastDynamic) ? ENDPOINT : NONE;
 }
 
 function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
@@ -238,10 +230,13 @@ function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
 	if (step.unreadable !== undefined && step.unreadable !== "folder")
 		return UNREADABLE;
 	const [program, ...args] = step.words;
+	if (program?.expands === true) return UNREADABLE;
 	if (program === undefined || !GH.test(program.value)) return NONE;
 	const api = apiCall(step, args, readFile);
 	if (api.kind !== "none") return api;
-	return prMerge(args, step.env.length > 0 || step.unsetsEnv);
+	return args.some((word) => word.expands === true)
+		? UNREADABLE
+		: prMerge(args, step.env.length > 0 || step.unsetsEnv);
 }
 
 function mergeVerdict(
