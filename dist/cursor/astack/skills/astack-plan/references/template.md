@@ -11,8 +11,8 @@ The checker enforces each rule on this page that a script can prove.
 - The plan directory is `plan.dir` in `.astack/profile.json`, else `docs/plans`. A convention of the repo wins.
 - The glossary is the `CONTEXT.md` or `GLOSSARY.md` of the repo, or the `plan.glossary` file. ADRs follow `astack-write-docs` under `plan.adr`, else `docs/adr`.
 - Commit plans so each agent in each tool can read them.
-  A plan with `home: linear` or `home: github` lives in the tracker instead.
-  `tracker.md` has the rules.
+  No command sets `home: linear` or `home: github`.
+  `tracker.md` says how drift reads such a plan.
 - When the repo forbids committed plans, keep each plan in one folder outside the worktree.
   Run `astack check-plan` and `astack plan trail` from the repo.
   The checker then reads the ADRs, the glossary and the trail of that repo.

@@ -1,5 +1,5 @@
 {
-	"total": 140953,
+	"total": 140952,
 	"skills": {
 		"architect": 2119,
 		"arena": 1056,
@@ -28,7 +28,7 @@
 		"mode": 29211,
 		"modernize": 1066,
 		"no-comments": 492,
-		"plan": 14585,
+		"plan": 14584,
 		"pr-review-hardening": 22624,
 		"principles": 5217,
 		"prototype": 1922,
