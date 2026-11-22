@@ -1074,6 +1074,11 @@ describe("a repo that this session made", () => {
 		"GIT_INDEX_FILE=REPO/.git/index git reset --hard",
 		"export GIT_DIR=REPO/.git && git reset --hard",
 		"GIT_DIR=REPO/.git; export GIT_DIR; git reset --hard",
+		"declare -x GIT_WORK_TREE=REPO; git reset --hard",
+		"set -a; GIT_WORK_TREE=REPO; git reset --hard",
+		'set -o allexport; read -r "$name" < place.txt; git reset --hard',
+		'eval "$SETUP"; git reset --hard',
+		"source ./setup.sh; git reset --hard",
 	])(
 		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
 		(command) => {

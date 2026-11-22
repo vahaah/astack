@@ -10,6 +10,7 @@ import {
 	isLongForm,
 	isPlaceVariable,
 	madeRepoTarget,
+	placesLaterSteps,
 	readGit,
 } from "../../git-command.ts";
 import {
@@ -934,15 +935,7 @@ function placedSteps(steps: readonly ShellStep[], env: Env): boolean[] {
 		(step, index) =>
 			hookPlaced ||
 			hasPlaceForm(step) ||
-			steps
-				.slice(0, index)
-				.some(
-					(earlier) =>
-						earlier.values[0] === "export" &&
-						earlier.words
-							.slice(1)
-							.some((word) => word.dynamic || isPlaceVariable(word)),
-				),
+			steps.slice(0, index).some(placesLaterSteps),
 	);
 }
 

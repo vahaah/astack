@@ -40,7 +40,10 @@ A folder with files, a file and a symlink give no record.
 A dynamic word gives no target. So do `--bare`, `--mirror` and `--separate-git-dir`.
 `--git-dir`, `--work-tree`, a `core.worktree` setting and a place variable give no target too.
 A place variable is `GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE`, `GIT_COMMON_DIR`, `GIT_CONFIG_PARAMETERS` or `GIT_CONFIG_COUNT`.
-A place variable counts in the env of the step, in an `export` of an earlier step and in the env of the hook.
+
+A place variable counts in the env of the step, in an earlier step that names it and in the env of the hook.
+An earlier `set -a`, `source` or `.` step also removes the exemption.
+So does an earlier `export`, `declare`, `typeset`, `local`, `readonly` or `eval` with a dynamic word.
 A discard with a place form gets no exemption, so it gets the verdict of ADR 0010 D3.
 
 ### D4. A record starts pending, and the next shell call settles it

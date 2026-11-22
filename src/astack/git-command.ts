@@ -23,8 +23,20 @@ const CONFIG_ENV = "--config-env";
 const REPO_FLAGS = ["--git-dir", "--work-tree"];
 const PLACE_FLAGS = ["-c", CONFIG_ENV, ...REPO_FLAGS, "--namespace"];
 const WORK_TREE_KEY = /^core\.worktree$/i;
-const PLACE_VARIABLE =
-	/^GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)(?:=|$)/;
+const PLACE_NAME =
+	"GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)";
+const PLACE_VARIABLE = new RegExp(`^${PLACE_NAME}(?:=|$)`);
+const PLACE_MENTION = new RegExp(`(?:^|\\W)${PLACE_NAME}(?:\\W|$)`);
+const DECLARES = new Set([
+	"declare",
+	"eval",
+	"export",
+	"local",
+	"readonly",
+	"typeset",
+]);
+const SOURCES = new Set([".", "source"]);
+const ALL_EXPORT = /^(?:-[A-Za-z]*a[A-Za-z]*|allexport)$/;
 
 export function isLongForm(flag: string, long: string): boolean {
 	return (
@@ -81,6 +93,23 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 
 export function isPlaceVariable(word: Word): boolean {
 	return PLACE_VARIABLE.test(word.value);
+}
+
+export function placesLaterSteps(step: ShellStep): boolean {
+	const [program, ...args] = step.words;
+	const name = program?.dynamic === false ? program.value : undefined;
+	return (
+		program?.dynamic === true ||
+		[...step.env, ...step.words].some((word) =>
+			PLACE_MENTION.test(word.value),
+		) ||
+		(name !== undefined && SOURCES.has(name)) ||
+		(name === "set" &&
+			args.some((word) => word.dynamic || ALL_EXPORT.test(word.value))) ||
+		(name !== undefined &&
+			DECLARES.has(name) &&
+			args.some((word) => word.dynamic))
+	);
 }
 
 export function hasPlaceForm(step: ShellStep): boolean {
