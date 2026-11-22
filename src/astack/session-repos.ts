@@ -15,12 +15,17 @@ import { sessionFileName, stateDir } from "./state.ts";
 
 type Env = Readonly<Record<string, string | undefined>>;
 
-export type RepoIdentity = {
-	readonly gitDir: string;
+export type FolderIdentity = {
 	readonly device: string;
 	readonly inode: string;
 	readonly birth: string;
 };
+
+export type RepoIdentity = FolderIdentity & { readonly gitDir: string };
+
+export type FreeTarget =
+	| { readonly kind: "missing"; readonly since: string }
+	| { readonly kind: "empty"; readonly folder: FolderIdentity };
 
 export type RepoProbe = {
 	readonly root: string;
@@ -29,7 +34,11 @@ export type RepoProbe = {
 };
 
 export type SessionRepo =
-	| { readonly kind: "pending"; readonly path: string }
+	| {
+			readonly kind: "pending";
+			readonly path: string;
+			readonly free: FreeTarget;
+	  }
 	| {
 			readonly kind: "bound";
 			readonly path: string;
@@ -46,6 +55,23 @@ function ownsGitDir(probe: RepoProbe): boolean {
 	);
 }
 
+function sameFolder(a: FolderIdentity, b: FolderIdentity): boolean {
+	return a.device === b.device && a.inode === b.inode && a.birth === b.birth;
+}
+
+function madeAfter(free: FreeTarget, identity: RepoIdentity): boolean {
+	switch (free.kind) {
+		case "missing":
+			return BigInt(identity.birth) >= BigInt(free.since);
+		case "empty":
+			return sameFolder(free.folder, identity);
+		default: {
+			const unknown: never = free;
+			return unknown;
+		}
+	}
+}
+
 export function settleRepos(
 	repos: SessionRepos,
 	probes: ReadonlyMap<string, RepoProbe>,
@@ -53,19 +79,17 @@ export function settleRepos(
 	return repos.flatMap((repo): SessionRepo[] => {
 		if (repo.kind === "bound") return [repo];
 		const probe = probes.get(repo.path);
-		return probe !== undefined && probe.root === repo.path && ownsGitDir(probe)
+		return probe !== undefined &&
+			probe.root === repo.path &&
+			ownsGitDir(probe) &&
+			madeAfter(repo.free, probe.identity)
 			? [{ kind: "bound", path: repo.path, identity: probe.identity }]
 			: [];
 	});
 }
 
 function sameIdentity(a: RepoIdentity, b: RepoIdentity): boolean {
-	return (
-		a.gitDir === b.gitDir &&
-		a.device === b.device &&
-		a.inode === b.inode &&
-		a.birth === b.birth
-	);
+	return a.gitDir === b.gitDir && sameFolder(a, b);
 }
 
 export function sessionRepoAt(
@@ -121,17 +145,41 @@ function field(value: object, key: string): unknown {
 	return Reflect.get(value, key);
 }
 
-function parseIdentity(value: unknown): RepoIdentity | undefined {
+const COUNT = /^\d+$/;
+
+function parseFolder(value: unknown): FolderIdentity | undefined {
 	if (typeof value !== "object" || value === null) return undefined;
-	const gitDir = field(value, "gitDir");
 	const device = field(value, "device");
 	const inode = field(value, "inode");
 	const birth = field(value, "birth");
-	return typeof gitDir === "string" &&
-		typeof device === "string" &&
+	return typeof device === "string" &&
 		typeof inode === "string" &&
-		typeof birth === "string"
-		? { gitDir, device, inode, birth }
+		typeof birth === "string" &&
+		COUNT.test(birth)
+		? { device, inode, birth }
+		: undefined;
+}
+
+function parseIdentity(value: unknown): RepoIdentity | undefined {
+	if (typeof value !== "object" || value === null) return undefined;
+	const folder = parseFolder(value);
+	const gitDir = field(value, "gitDir");
+	return folder !== undefined && typeof gitDir === "string"
+		? { ...folder, gitDir }
+		: undefined;
+}
+
+function parseFree(value: unknown): FreeTarget | undefined {
+	if (typeof value !== "object" || value === null) return undefined;
+	const kind = field(value, "kind");
+	const since = field(value, "since");
+	if (kind === "missing")
+		return typeof since === "string" && COUNT.test(since)
+			? { kind, since }
+			: undefined;
+	const folder = parseFolder(field(value, "folder"));
+	return kind === "empty" && folder !== undefined
+		? { kind, folder }
 		: undefined;
 }
 
@@ -141,7 +189,10 @@ function parseRepo(value: unknown): SessionRepo | undefined {
 	const path = field(value, "path");
 	if (typeof path !== "string" || !isAbsolute(path) || path.includes("\0"))
 		return undefined;
-	if (kind === "pending") return { kind, path };
+	if (kind === "pending") {
+		const free = parseFree(field(value, "free"));
+		return free === undefined ? undefined : { kind, path, free };
+	}
 	const identity = parseIdentity(field(value, "identity"));
 	return kind === "bound" && identity !== undefined
 		? { kind, path, identity }
@@ -196,13 +247,30 @@ export function saveSessionRepos(
 	}
 }
 
-function freeFolder(target: string): string | undefined {
+const CLOCK_SLACK_MS = 1000n;
+
+function freeTarget(target: string): SessionRepo | undefined {
 	try {
-		const stat = lstatSync(target, { throwIfNoEntry: false });
-		return stat === undefined ||
-			(stat.isDirectory() && readdirSync(target).length === 0)
-			? canonicalFile(target)
-			: undefined;
+		const stat = lstatSync(target, { bigint: true, throwIfNoEntry: false });
+		const free: FreeTarget | undefined =
+			stat === undefined
+				? {
+						kind: "missing",
+						since: String((BigInt(Date.now()) - CLOCK_SLACK_MS) * 1_000_000n),
+					}
+				: stat.isDirectory() && readdirSync(target).length === 0
+					? {
+							kind: "empty",
+							folder: {
+								device: String(stat.dev),
+								inode: String(stat.ino),
+								birth: String(stat.birthtimeNs),
+							},
+						}
+					: undefined;
+		return free === undefined
+			? undefined
+			: { kind: "pending", path: canonicalFile(target), free };
 	} catch {
 		return undefined;
 	}
@@ -242,10 +310,11 @@ export function rememberRepos(
 	repos: SessionRepos,
 	targets: readonly string[],
 ): Result<void, string> {
-	const paths = targets.flatMap((target) => freeFolder(target) ?? []);
-	if (paths.length === 0) return ok(undefined);
+	const pending = targets.flatMap((target) => freeTarget(target) ?? []);
+	if (pending.length === 0) return ok(undefined);
+	const paths = pending.map((repo) => repo.path);
 	return saveSessionRepos(env, session, [
 		...repos.filter((repo) => !paths.includes(repo.path)),
-		...paths.map((path): SessionRepo => ({ kind: "pending", path })),
+		...pending,
 	]);
 }

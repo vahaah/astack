@@ -113,7 +113,7 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
 | `CodeLost` and `RunGit` | `workLossReasons` and its status reader in `src/astack/hook/handlers/destructive.ts` |
 | `MakeRepo` | `madeRepoTarget` in `src/astack/git-command.ts`, and `rememberRepos` in `src/astack/session-repos.ts`, which records a free target as pending |
-| `Shell` and `Settle` | `settledRepos` and `settleRepos` in `src/astack/session-repos.ts`, which bind a pending repo root with its own git dir and drop each other pending path |
+| `Shell` and `Settle` | `settledRepos` and `settleRepos` in `src/astack/session-repos.ts`, which bind a pending repo root with its own git dir that the call made, and drop each other pending path |
 | `Exempt` | `isSessionRepo` and `sessionRepoAt` in `src/astack/session-repos.ts`, which `lostPaths` reads through the session repo test of each step |
 | `Appear` | A repo that another process makes. No function of astack maps to it |
 | `GitLost` and `After` | The documented effect of each git command on the index, the work tree and untracked files |

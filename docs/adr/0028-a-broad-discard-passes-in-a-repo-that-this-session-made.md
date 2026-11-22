@@ -34,6 +34,8 @@ Each other repo keeps the gate of ADR 0010 D3.
 A target counts when it does not exist or is an empty folder at PreToolUse.
 An empty folder holds no work, and each of the three verbs accepts one.
 A folder with files, a file and a symlink give no record.
+For a missing target, the pending entry holds the time of the call less one second.
+For an empty folder, it holds the device, inode and birth time of that folder.
 
 ### D3. Only static words give a target
 
@@ -64,6 +66,8 @@ So `-C`, `--directory`, `-P` and each other `tar` flag give the verdict of ADR 0
 A new record is pending, because the hook cannot see whether the command ran.
 Each later shell call of the session settles each pending path before the command filter of the hook.
 A pending path that is now a repo root with its own git dir binds.
+The root must be born at or after the time of a missing target, or be the same empty folder.
+So a repo that the call moved to the path drops, and its discard keeps the gate.
 Each other pending path drops, also when the command did not run.
 The hook saves the record only when the settle changed it.
 
@@ -100,6 +104,8 @@ Branch protection and the review of the owner stay the control for a hostile age
 - Harder: each shell call of a session with a pending path spawns `git rev-parse` once for each pending path.
 - Limit: when another process makes a repo at a pending path before the next Bash call of the session, the settle binds it. An Edit, Write or MCP call does not end this window.
 - Limit: a file system with no birth time can reuse the inode of a removed session repo for a new folder at its path.
+- Limit: on a file system with no birth time, a missing target never binds, so the repo keeps the gate.
+- Limit: a repo that the call copies to a missing target across file systems has a new birth time and binds. The source keeps its work.
 - Limit: two hook processes of one session can save the record at the same time, and one entry can go. A lost entry only gives a deny.
 - Limit: a Cursor session has no session id, so it gets no exemption.
 

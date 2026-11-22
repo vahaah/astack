@@ -1,4 +1,11 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {
+	afterAll,
+	beforeAll,
+	describe,
+	expect,
+	setSystemTime,
+	test,
+} from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
 	chmodSync,
@@ -1027,6 +1034,35 @@ describe("a repo that this session made", () => {
 	});
 
 	test.each([
+		["mv OWNER NEW && git init NEW", (owner: string) => dirtyRepoAt(owner)],
+		[
+			"rmdir NEW && mv OWNER NEW && git init NEW",
+			(owner: string, dir: string) => {
+				dirtyRepoAt(owner);
+				mkdirSync(dir);
+			},
+		],
+	])(
+		"[control:sg-session-repo-moved] after %s a reset in the moved repo is denied",
+		(command, prepare) => {
+			const { dir, state } = fresh("new");
+			const parent = join(dir, "..");
+			const owner = join(parent, "owner");
+			prepare(owner, dir);
+			const made = command.replaceAll("OWNER", owner).replaceAll("NEW", dir);
+			setSystemTime(Date.now() + 60_000);
+			const recorded = sessionRun(made, parent, state).kind;
+			setSystemTime();
+			expect(recorded).toBe("allow");
+			expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test.each([
 		[
 			"a symlink to another dirty repo",
 			(dir: string) => symlinkSync(dirty, dir),
@@ -1175,7 +1211,13 @@ describe("a repo that this session made", () => {
 		expect([first, second]).toEqual(["allow", "allow"]);
 		expect(
 			JSON.parse(readFileSync(join(folder, "session-1.json"), "utf8")),
-		).toEqual([{ kind: "pending", path: realpathSync(dir) }]);
+		).toEqual([
+			{
+				kind: "pending",
+				path: realpathSync(dir),
+				free: { kind: "missing", since: expect.stringMatching(/^\d+$/) },
+			},
+		]);
 	});
 
 	test.each<[string, (state: string, target: string) => string]>([

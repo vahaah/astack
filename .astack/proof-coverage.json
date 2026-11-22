@@ -346,6 +346,7 @@
 			"criterion": "SG-session-repo-identity",
 			"controls": [
 				"sg-session-repo-identity",
+				"sg-session-repo-moved",
 				"sg-session-repo-replaced",
 				"sg-session-repo-separate",
 				"sg-session-repo-place",

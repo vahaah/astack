@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	type FreeTarget,
 	loadSessionRepos,
 	probeRepo,
 	type RepoIdentity,
@@ -27,8 +28,15 @@ const IDENTITY: RepoIdentity = {
 	birth: "3",
 };
 
-function probe(root: string, gitDir: string, commonDir: string): RepoProbe {
-	return { root, commonDir, identity: { ...IDENTITY, gitDir } };
+const MISSING: FreeTarget = { kind: "missing", since: "3" };
+
+function probe(
+	root: string,
+	gitDir: string,
+	commonDir: string,
+	birth = IDENTITY.birth,
+): RepoProbe {
+	return { root, commonDir, identity: { ...IDENTITY, gitDir, birth } };
 }
 
 describe("[control:sg-session-repo-store] the settle of the session repo record", () => {
@@ -41,6 +49,11 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 			"a repo root with its own git dir binds",
 			probe("/w/made", "/w/made/.git", "/w/made/.git"),
 			[{ kind: "bound", path: "/w/made", identity: IDENTITY }],
+		],
+		[
+			"a repo root born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", "2"),
+			[],
 		],
 		[
 			"a worktree with a git dir under the worktrees folder binds",
@@ -67,15 +80,41 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 	])("%s", (_, seen, settled) => {
 		const probes = new Map(seen === undefined ? [] : [["/w/made", seen]]);
 		expect(
-			settleRepos([...bound, { kind: "pending", path: "/w/made" }], probes),
+			settleRepos(
+				[...bound, { kind: "pending", path: "/w/made", free: MISSING }],
+				probes,
+			),
 		).toEqual([...bound, ...settled]);
+	});
+
+	test.each<[string, RepoIdentity, SessionRepos]>([
+		[
+			"the same empty folder binds",
+			IDENTITY,
+			[{ kind: "bound", path: "/w/made", identity: IDENTITY }],
+		],
+		["a folder with another inode drops", { ...IDENTITY, inode: "9" }, []],
+		["a folder with another birth drops", { ...IDENTITY, birth: "9" }, []],
+	])("%s", (_, seen, settled) => {
+		const empty: FreeTarget = { kind: "empty", folder: IDENTITY };
+		expect(
+			settleRepos(
+				[{ kind: "pending", path: "/w/made", free: empty }],
+				new Map([
+					[
+						"/w/made",
+						{ root: "/w/made", commonDir: "/w/made/.git", identity: seen },
+					],
+				]),
+			),
+		).toEqual(settled);
 	});
 });
 
 describe("[control:sg-session-repo-match] the match of a session repo", () => {
 	const repos: SessionRepos = [
 		{ kind: "bound", path: "/w/made", identity: IDENTITY },
-		{ kind: "pending", path: "/w/later" },
+		{ kind: "pending", path: "/w/later", free: MISSING },
 	];
 
 	test.each<[string, string, RepoIdentity, boolean]>([
@@ -115,7 +154,7 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 	let root = "";
 	const session = "session-1";
 	const record: SessionRepos = [
-		{ kind: "pending", path: "/w/later" },
+		{ kind: "pending", path: "/w/later", free: MISSING },
 		{ kind: "bound", path: "/w/made", identity: IDENTITY },
 	];
 
@@ -156,8 +195,30 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 				writeFileSync(
 					join(dir, "session-repos", `${session}.json`),
 					JSON.stringify([
-						{ kind: "pending", path: "/w/a" },
+						{ kind: "pending", path: "/w/a", free: MISSING },
 						{ kind: "bound", path: "/w/b" },
+					]),
+				),
+		],
+		[
+			"a pending entry with no free target",
+			(dir) =>
+				writeFileSync(
+					join(dir, "session-repos", `${session}.json`),
+					JSON.stringify([{ kind: "pending", path: "/w/a" }]),
+				),
+		],
+		[
+			"a pending entry whose since is no count",
+			(dir) =>
+				writeFileSync(
+					join(dir, "session-repos", `${session}.json`),
+					JSON.stringify([
+						{
+							kind: "pending",
+							path: "/w/b",
+							free: { ...MISSING, since: "1e3" },
+						},
 					]),
 				),
 		],
@@ -167,8 +228,8 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 				writeFileSync(
 					join(dir, "session-repos", `${session}.json`),
 					JSON.stringify([
-						{ kind: "pending", path: "w/a" },
-						{ kind: "pending", path: "/w/a\u0000b" },
+						{ kind: "pending", path: "w/a", free: MISSING },
+						{ kind: "pending", path: "/w/a\u0000b", free: MISSING },
 					]),
 				),
 		],
