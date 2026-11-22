@@ -55,19 +55,19 @@ The gate cannot see a PR, so the reviewer of the `scripts/lib/budget.json` diff 
 
 #### Formal claim
 
-A pass of the gate means that each skill and the total are at or under their caps.
-A fail names a skill or a total over its cap.
+A pass of the gate means that each skill, the total and each named line are at or under their caps.
+A fail names a skill, the total or a file over its cap.
 The lower step never raises a cap above its start.
 
 ```text
-PassWithinCaps   == a pass has each count at or under its cap, and the total at or under its cap
-FailNamesOverrun == a fail has a count or the total over its cap
-CapsNeverRise    == each cap and the total cap stay at or under their start
+PassWithinCaps   == a pass has each count, the total and each line at or under its cap
+FailNamesOverrun == a fail has a count, the total or a line over its cap
+CapsNeverRise    == each cap, the total cap and each line cap stay at or under their start
 ```
 
-The [model](../../formal/WordBudget.tla) and its [configuration](../../formal/WordBudget.cfg) check these invariants over two skills and counts from 0 to 2.
+The [model](../../formal/WordBudget.tla) and its [configuration](../../formal/WordBudget.cfg) check these invariants over two skills, one named file and counts from 0 to 2.
 They cover each order of the edit, check and lower steps.
-The model takes the word count of each skill tree as a true observation.
+The model takes the word count of each skill tree and the longest line of the file as true observations.
 
 #### Category composition
 

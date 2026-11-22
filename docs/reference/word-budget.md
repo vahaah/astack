@@ -1,7 +1,7 @@
 # Word budget and zero-use cut requirements
 
 [ADR 0013](../adr/0013-astack-keeps-a-part-only-on-measured-use.md) governs the keep rule, the word budget and the cut set.
-The [model](../../formal/WordBudget.tla) examines the gate over two skills and three counts.
+The [model](../../formal/WordBudget.tla) examines the gate over two skills, one named file and three counts.
 
 ## Acceptance criteria
 
@@ -14,7 +14,7 @@ The [model](../../formal/WordBudget.tla) examines the gate over two skills and t
 
 ## Claim boundary
 
-The model covers two skills, counts from 0 to 2 and the edit, check and lower steps.
+The model covers two skills, one named file, counts from 0 to 2 and the edit, check and lower steps.
 It takes the word count of each skill tree and the longest line of each named file as a true observation.
 The docs-versus-tree test reads the README text. The model does not.
 The gate does not see a PR, so a reviewer enforces the rule that a cap rises only while the total falls by more.

@@ -107,6 +107,18 @@
 			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
+			"path": "formal/WordBudget.tla",
+			"obligation": "WB-line",
+			"modelRefs": [
+				"Edit",
+				"Check",
+				"Lower",
+				"PassWithinCaps",
+				"FailNamesOverrun",
+				"CapsNeverRise"
+			]
+		},
+		{
 			"path": "formal/models.json",
 			"obligation": "PH-LINE",
 			"modelRefs": ["ActOnlyOnHeldHead"]
@@ -396,7 +408,7 @@
 		],
 		"properties": [],
 		"bounds": [
-			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+			"Two skills and one named file, counts from 0 to 2, a start cap of 1 for each skill and for the file, and a start total cap of 2.",
 			"Each order of the edit, check and lower steps."
 		],
 		"fairness": []
@@ -413,7 +425,7 @@
 		}
 	},
 	"limits": [
-		"The finite model takes the word counts and the line counts as true observations, and it covers two counted items only.",
+		"The finite model takes the word counts and the line counts as true observations, and it covers two skills and one named file only.",
 		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
 		"No cap rose in this change, and the total cap fell from 133,781 to 128,940 words.",
 		"The model does not check the words of the cut texts, the moved sentences, the runbooks or the ADR notes. Review, validate and the STE gates examine them.",

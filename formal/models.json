@@ -461,7 +461,7 @@
 				"config": "formal/WordBudget.cfg",
 				"dependencies": [],
 				"bounds": [
-					"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+					"Two skills and one named file, counts from 0 to 2, a start cap of 1 for each skill and for the file, and a start total cap of 2.",
 					"Each order of the edit, check and lower steps."
 				],
 				"fairness": [],
