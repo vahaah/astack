@@ -126,7 +126,9 @@ describe("the seats of the sol-loop reviewer", () => {
 		const header = lineWith(setupModels, "# External seats (");
 		const row = lineWith(subagents, "| Cross-family reviewer |");
 		const values = setupValues();
-		expect(values).toEqual(expect.arrayContaining(["claude", "claude:<model>"]));
+		expect(values).toEqual(
+			expect.arrayContaining(["claude", "claude:<model>"]),
+		);
 		expect(values.filter((value) => !header.includes(value))).toEqual([]);
 		expect(values.filter((value) => !valuesIn(row).includes(value))).toEqual(
 			[],
