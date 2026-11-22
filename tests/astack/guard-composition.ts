@@ -9,12 +9,17 @@ import { handler as destructiveHandler } from "../../src/astack/hook/handlers/de
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { handler as steArtifactHandler } from "../../src/astack/hook/handlers/ste-artifact.ts";
 import { handler as typesHandler } from "../../src/astack/hook/handlers/types.ts";
-import type { ReadPullRequest } from "../../src/astack/pr/github.ts";
+import {
+	type ReadPullRequest,
+	readPullRequestWithGh,
+} from "../../src/astack/pr/github.ts";
 import { type MergeGrant, mergeGrantIn } from "../../src/astack/pr/grant.ts";
 
 export type GuardArrow = (event: HookEvent, context: Context) => Verdict;
 
 export const grantArrow: (prompt: string) => MergeGrant = mergeGrantIn;
+
+export const pullRequestArrow: ReadPullRequest = readPullRequestWithGh;
 
 export function guardArrows(read: ReadPullRequest) {
 	const merge: Handler = mergeGuard(read);

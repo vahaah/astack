@@ -45,7 +45,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 | Layer | What runs | Where | What it guarantees |
 |---|---|---|---|
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
-| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
+| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler, but a merge guard error refuses the merge. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
 | CI | This repo's Check workflow runs `bun run check` on a push to main and on each pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
@@ -332,7 +332,7 @@ What is only analogy:
 
 One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients. All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#quickstart)).
 
-### Claude Code and Grok Build
+### Claude Code
 
 Add the marketplace from the stable link `$ASTACK_CURRENT`, so that an [update](#update) only moves the link:
 
@@ -343,7 +343,19 @@ claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Grok Build uses the Claude plugin build through its own marketplace install from the same link.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root.
+
+### Grok Build
+
+Grok Build installs the Claude plugin build from its folder in the release:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Grok keeps a copy of the plugin, so the link does not move it to a new release. Grok Build reads the shared rules that you linked for Claude Code.
 
 ### Codex
 
@@ -379,7 +391,16 @@ claude plugin marketplace update astack
 claude plugin update astack@astack
 ```
 
-Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link.
+
+Grok Build keeps a copy of the plugin, and `grok plugin update astack` keeps the old copy. These commands remove the copy and install the new release. `--keep-data` keeps the data of the plugin:
+
+```sh
+grok plugin uninstall astack --keep-data
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Then restart Grok Build.
 
 An older install that added the marketplace from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the marketplace from the link and install the plugin again:
 
@@ -422,6 +443,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus `.astack/proof.json` or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
 | `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
+| `astack check hardening-profile` | Check `.claude/pr-review-hardening.profile.md` with the rules that apply uses. Each problem prints with its repair and exits 1. A missing profile or fenced block exits 2. `astack doctor` runs the same rules |
 | `astack check proof [--base <ref>] [--summary]` | Admit a change only with a domain contract, composition records and passing TLC runs. A cited ADR is Accepted, or Proposed with an integrated-proposal ratification. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
 | `astack check comments\|types [--staged\|--base <ref>]` | Fail when an added comment is in a class that no keep rule covers, or when an unsafe type-pattern count rises in a file |
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
@@ -429,10 +451,10 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
 | `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
 | `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
-| `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
+| `astack managed <path>` | Print whether apply writes the path or the repo owns it. Exit 0 when the owner is known, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
-| `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
+| `astack doctor` | Report the runtime, installed copies, duplicate skills and the hook trust that Codex reports. Also count the STE and comment hook findings of the last 7 days by rule, surface and outcome. `--skip-profile <dir>` skips a Claude config folder on purpose. Doctor writes only its skip file, its runtime file and the state that `codex app-server` keeps in `CODEX_HOME` |
 | `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
 Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
@@ -455,7 +477,7 @@ Cursor calls `astack hook cursor <event>`. `encodeCursor` always exits 0 and wri
 
 `afterFileEdit` and `afterAgentResponse` do not block. An edit saves a type, comment or STE finding. The reply event saves the reply text. At `stop`, a saved finding comes back as `followup_message`.
 
-In Cursor, deny means a follow-up prompt, unless the change goes through `preToolUse` on Write. That event can refuse the write before it lands. A shell or MCP deny still blocks through the permission JSON. If a handler throws, the action is allowed. If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
+In Cursor, deny means a follow-up prompt, unless the change goes through `preToolUse` on Write. That event can refuse the write before it lands. A shell or MCP deny still blocks through the permission JSON. If a handler throws, the action is allowed, but a merge guard error refuses the merge. If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
 
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|

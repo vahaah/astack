@@ -1,7 +1,20 @@
 import { NODE_FLOOR } from "./cli/floor.ts";
-import { CODEX_HOOK_EVENTS, CODEX_HOOK_HASHES } from "./codex-trust.ts";
+import type { CodexHookList, CodexHooksRead } from "./codex-hooks.ts";
+import {
+	CODEX_HOOK_EVENTS,
+	CODEX_HOOK_HASHES,
+	type CodexHookEvent,
+} from "./codex-trust.ts";
+import { MANAGED_PATHS } from "./managed.ts";
 import { MARKETPLACE_NAME, PLUGIN_IDS } from "./marketplace.ts";
+import {
+	MISSING_PROFILE_REPAIR,
+	NO_BLOCK_REPAIR,
+	problemText,
+	type ReviewProfileState,
+} from "./pr-review-profile.ts";
 import { ASTACK_RULES, ruleLinkName } from "./rules.ts";
+import { EVENT_OUTCOMES } from "./ste/events.ts";
 
 export const ASTACK_PLUGINS: readonly string[] = PLUGIN_IDS.map(pluginName);
 
@@ -41,6 +54,7 @@ export type CodexState = {
 	readonly enabled: readonly string[];
 	readonly trusted: Readonly<Record<string, string>>;
 	readonly fragment: string | undefined;
+	readonly hooks: CodexHooksRead | undefined;
 };
 
 export type CursorState = {
@@ -57,6 +71,22 @@ export type ProfileState =
 			readonly keys: readonly string[];
 	  };
 
+export type SteEventCount = {
+	readonly rule: string;
+	readonly surface: string;
+	readonly outcome: string;
+	readonly count: number;
+};
+
+export type SteEvents = {
+	readonly logs: number;
+	readonly broken: number;
+	readonly counts: readonly SteEventCount[];
+};
+
+export const EVENT_WINDOW_DAYS = 7;
+const DAY_MS = 86_400_000;
+
 export type Snapshot = {
 	readonly runtime: {
 		readonly current: string;
@@ -70,6 +100,13 @@ export type Snapshot = {
 	readonly claudeSkills?: readonly SkillFolder[];
 	readonly profile: ProfileState;
 	readonly unattendedReason: string | undefined;
+	readonly skipped: {
+		readonly file: string;
+		readonly dirs: readonly string[];
+	};
+	readonly reviewProfile: ReviewProfileState;
+	readonly bases: BaseReport | undefined;
+	readonly steEvents?: SteEvents;
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -283,45 +320,177 @@ export function codexTrustKey(id: string, event: string): string {
 	return `${id}:hooks/hooks.json:${event}:0:0`;
 }
 
+type HookVerdict =
+	| "missing"
+	| "disabled"
+	| "untrusted"
+	| "modified"
+	| "managed"
+	| "trusted";
+
+function hookVerdict(
+	list: CodexHookList,
+	id: string,
+	event: CodexHookEvent,
+): HookVerdict {
+	const key = codexTrustKey(id, event);
+	const hook = list.data
+		.flatMap((entry) => entry.hooks)
+		.find((each) => each.key === key);
+	if (hook === undefined) return "missing";
+	return hook.enabled ? hook.trustStatus : "disabled";
+}
+
+const HOOK_VERDICT_TEXT: Readonly<
+	Record<
+		Exclude<HookVerdict, "trusted">,
+		{
+			readonly level: Level;
+			readonly text: (id: string, events: string) => string;
+		}
+	>
+> = {
+	missing: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex lists no hook for ${events}. Add the plugin again with codex plugin add ${id}.`,
+	},
+	disabled: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but its hooks for ${events} are off in Codex. Turn them on in /hooks in Codex.`,
+	},
+	untrusted: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex does not trust its hooks for ${events}. Open /hooks in Codex and trust them.`,
+	},
+	modified: {
+		level: "fail",
+		text: (id, events) =>
+			`${id} is on, but Codex marks its hooks for ${events} modified and skips them. Open /hooks in Codex and trust them again.`,
+	},
+	managed: {
+		level: "note",
+		text: (id, events) =>
+			`${id}: a managed Codex config sets the trust of its hooks for ${events}`,
+	},
+};
+
+function listedFindings(
+	area: string,
+	id: string,
+	list: CodexHookList,
+): Finding[] {
+	const verdicts = CODEX_HOOK_EVENTS.map((event) => ({
+		event,
+		verdict: hookVerdict(list, id, event),
+	}));
+	const grouped = (["missing", "disabled", "untrusted", "modified"] as const)
+		.map((verdict) => ({
+			verdict,
+			events: verdicts.filter((each) => each.verdict === verdict),
+		}))
+		.filter(({ events }) => events.length > 0);
+	const managed = verdicts.filter((each) => each.verdict === "managed");
+	const said = (verdict: Exclude<HookVerdict, "trusted">, events: string) =>
+		finding(
+			area,
+			HOOK_VERDICT_TEXT[verdict].level,
+			HOOK_VERDICT_TEXT[verdict].text(id, events),
+		);
+	return [
+		...grouped.map(({ verdict, events }) =>
+			said(verdict, events.map((each) => each.event).join(", ")),
+		),
+		...(grouped.length === 0
+			? [
+					finding(
+						area,
+						"ok",
+						`${id} is on, and Codex trusts its ${CODEX_HOOK_EVENTS.length} hooks`,
+					),
+				]
+			: []),
+		...(managed.length === 0
+			? []
+			: [said("managed", managed.map((each) => each.event).join(", "))]),
+	];
+}
+
+function pinnedFindings(
+	area: string,
+	id: string,
+	codex: CodexState,
+): Finding[] {
+	const untrusted = CODEX_HOOK_EVENTS.filter(
+		(event) => codex.trusted[codexTrustKey(id, event)] === undefined,
+	);
+	const modified = CODEX_HOOK_EVENTS.filter((event) => {
+		const hash = codex.trusted[codexTrustKey(id, event)];
+		return hash !== undefined && hash !== CODEX_HOOK_HASHES[event];
+	});
+	const cause =
+		codex.hooks?.kind === "failed"
+			? codex.hooks.cause
+			: "doctor did not ask codex app-server";
+	return [
+		finding(
+			area,
+			"warn",
+			`astack cannot read the Codex trust of the ${id} hooks, because ${cause}. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.`,
+		),
+		...(untrusted.length === 0
+			? []
+			: [
+					finding(
+						area,
+						"fail",
+						`${id} is on, but Codex does not trust its hooks for ${untrusted.join(", ")}. Open /hooks in Codex and trust them.`,
+					),
+				]),
+		...(modified.length === 0
+			? []
+			: [
+					finding(
+						area,
+						"fail",
+						`${id} is on, but the trusted hash of ${modified.join(", ")} is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.`,
+					),
+				]),
+	];
+}
+
 function codexFindings(codex: CodexState): Finding[] {
 	const area = `codex ${codex.home}`;
 	const findings = migrationWarnings(area, codex.enabled);
 	const astack = codex.enabled.filter((id) => pluginName(id) === "astack");
-	for (const id of astack) {
-		const untrusted = CODEX_HOOK_EVENTS.filter(
-			(event) => codex.trusted[codexTrustKey(id, event)] === undefined,
+	const list = codex.hooks?.kind === "listed" ? codex.hooks.list : undefined;
+	for (const id of astack)
+		findings.push(
+			...(list === undefined
+				? pinnedFindings(area, id, codex)
+				: listedFindings(area, id, list)),
 		);
-		const modified = CODEX_HOOK_EVENTS.filter((event) => {
-			const hash = codex.trusted[codexTrustKey(id, event)];
-			return hash !== undefined && hash !== CODEX_HOOK_HASHES[event];
-		});
-		if (untrusted.length > 0)
-			findings.push(
-				finding(
-					area,
-					"fail",
-					`${id} is on, but Codex does not trust its hooks for ${untrusted.join(", ")}. Open /hooks in Codex and trust them.`,
-				),
-			);
-		if (modified.length > 0)
-			findings.push(
-				finding(
-					area,
-					"fail",
-					`${id} is on, but the trusted hash of ${modified.join(", ")} is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.`,
-				),
-			);
-		if (untrusted.length === 0 && modified.length === 0)
-			findings.push(
-				finding(
-					area,
-					"ok",
-					`${id} is on, and its 4 hooks are trusted with the hashes of this release`,
-				),
-			);
-	}
+	if (astack.length > 0 && list !== undefined)
+		for (const entry of list.data) {
+			for (const error of entry.errors)
+				findings.push(
+					finding(
+						area,
+						"warn",
+						`Codex hooks/list reports an error in ${error.path}: ${error.message}`,
+					),
+				);
+			for (const warning of entry.warnings)
+				findings.push(
+					finding(area, "note", `Codex hooks/list warns: ${warning}`),
+				);
+		}
 	const rung =
-		astack.length > 0 && findings.every((item) => item.level !== "fail")
+		astack.length > 0 &&
+		list !== undefined &&
+		findings.every((item) => item.level !== "fail")
 			? 1
 			: 5;
 	if (astack.length === 0)
@@ -475,6 +644,171 @@ function profileFindings(profile: ProfileState): Finding[] {
 	}
 }
 
+function reviewProfileFindings(
+	repo: string,
+	state: ReviewProfileState,
+): Finding[] {
+	const area = `review profile ${repo}`;
+	switch (state.kind) {
+		case "missing":
+			return [
+				finding(
+					area,
+					"note",
+					`no ${MANAGED_PATHS.reviewProfile}, so /astack:pr-review-hardening stops at load. ${MISSING_PROFILE_REPAIR}`,
+				),
+			];
+		case "no-block":
+			return [
+				finding(
+					area,
+					"fail",
+					`${state.path} has no fenced yaml or json block. ${NO_BLOCK_REPAIR}`,
+				),
+			];
+		case "checked":
+			return state.problems.length === 0
+				? [
+						finding(
+							area,
+							"ok",
+							`${state.path} passes the hardening profile rules`,
+						),
+					]
+				: state.problems.map((problem) =>
+						finding(area, "fail", `${state.path}: ${problemText(problem)}`),
+					);
+	}
+}
+
+export type GhRead = (args: readonly string[]) => unknown;
+
+export const BASE_READ_CAP = 3;
+
+type BaseVerdict = "blocks" | "classic" | "open";
+
+export type BaseReport = {
+	readonly repo: string;
+	readonly checked: readonly {
+		readonly base: string;
+		readonly verdict: BaseVerdict;
+	}[];
+	readonly pastCap: readonly string[];
+	readonly failure: string | undefined;
+};
+
+const BLOCKING_RULES = ["pull_request", "update", "required_status_checks"];
+
+function fieldOf(value: unknown, ...path: readonly string[]): unknown {
+	let current = value;
+	for (const key of path)
+		current =
+			typeof current === "object" && current !== null
+				? Reflect.get(current, key)
+				: undefined;
+	return current;
+}
+
+function baseVerdict(branch: unknown, rules: unknown): BaseVerdict {
+	const blockingRule =
+		Array.isArray(rules) &&
+		rules.some((rule) =>
+			BLOCKING_RULES.includes(String(fieldOf(rule, "type"))),
+		);
+	if (blockingRule) return "blocks";
+	if (fieldOf(branch, "protected") !== true) return "open";
+	const enforcement = fieldOf(
+		branch,
+		"protection",
+		"required_status_checks",
+		"enforcement_level",
+	);
+	return typeof enforcement === "string" && enforcement !== "off"
+		? "blocks"
+		: "classic";
+}
+
+export function readBases(
+	read: GhRead,
+	repo: string,
+	standingBases: readonly string[],
+): BaseReport {
+	const defaultBranch = fieldOf(
+		read(["api", `repos/${repo}`]),
+		"default_branch",
+	);
+	if (typeof defaultBranch !== "string")
+		return {
+			repo,
+			checked: [],
+			pastCap: [],
+			failure: "the default branch",
+		};
+	const bases = [...new Set([defaultBranch, ...standingBases])];
+	const pastCap = bases.slice(BASE_READ_CAP);
+	const checked: { base: string; verdict: BaseVerdict }[] = [];
+	for (const base of bases.slice(0, BASE_READ_CAP)) {
+		const path = encodeURIComponent(base);
+		const branch = read(["api", `repos/${repo}/branches/${path}`]);
+		if (branch === undefined)
+			return { repo, checked, pastCap, failure: `the branch ${base}` };
+		const rules = read(["api", `repos/${repo}/rules/branches/${path}`]);
+		if (rules === undefined)
+			return { repo, checked, pastCap, failure: `the rules of ${base}` };
+		checked.push({ base, verdict: baseVerdict(branch, rules) });
+	}
+	return { repo, checked, pastCap, failure: undefined };
+}
+
+function baseFindings(report: BaseReport): Finding[] {
+	const area = `base protection ${report.repo}`;
+	const profile = MANAGED_PATHS.reviewProfile;
+	return [
+		...report.checked.map(({ base, verdict }) => {
+			switch (verdict) {
+				case "blocks":
+					return finding(
+						area,
+						"ok",
+						`${base} has protection that blocks an unreviewed push`,
+					);
+				case "classic":
+					return finding(
+						area,
+						"note",
+						`${base} has classic protection with required checks off. Only an admin can see a required review, so doctor cannot tell whether a pushed edit of ${profile} needs review.`,
+					);
+				case "open":
+					return finding(
+						area,
+						"note",
+						`${base} has no branch protection and no ruleset rule that blocks a push, so a pushed edit of ${profile} needs no review. Add a ruleset with a pull_request rule on ${base}.`,
+					);
+				default: {
+					const exhaustive: never = verdict;
+					return exhaustive;
+				}
+			}
+		}),
+		...(report.failure === undefined
+			? []
+			: [
+					finding(
+						area,
+						"note",
+						`gh could not read ${report.failure}, so doctor reads no more bases`,
+					),
+				]),
+		...report.pastCap.map((base) =>
+			finding(
+				area,
+				"note",
+				`doctor reads at most ${BASE_READ_CAP} bases, so it did not read ${base}`,
+			),
+		),
+	];
+}
+
 function sessionFinding(unattendedReason: string | undefined): Finding {
 	return unattendedReason === undefined
 		? finding(
@@ -485,14 +819,113 @@ function sessionFinding(unattendedReason: string | undefined): Finding {
 		: finding(
 				"session",
 				"note",
-				`unattended, because ${unattendedReason}. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.`,
+				`unattended, because ${unattendedReason}. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant comes only from merge.authority or merge.standingBases in .astack/profile.json on the PR base branch.`,
 			);
+}
+
+type LoggedEvent = Omit<SteEventCount, "count"> & { readonly time: number };
+
+function parseEvent(line: string): LoggedEvent | undefined {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(line);
+	} catch {
+		return undefined;
+	}
+	if (typeof parsed !== "object" || parsed === null) return undefined;
+	const rule: unknown = Reflect.get(parsed, "rule");
+	const surface: unknown = Reflect.get(parsed, "surface");
+	const outcome = EVENT_OUTCOMES.find(
+		(known) => known === Reflect.get(parsed, "outcome"),
+	);
+	const time = Date.parse(String(Reflect.get(parsed, "time")));
+	if (
+		typeof rule !== "string" ||
+		typeof surface !== "string" ||
+		outcome === undefined ||
+		Number.isNaN(time)
+	)
+		return undefined;
+	return { rule, surface, outcome, time };
+}
+
+export function sumSteEvents(logs: readonly string[], now: Date): SteEvents {
+	const parsed = logs
+		.flatMap((text) => text.split("\n"))
+		.filter((line) => line.trim() !== "")
+		.map(parseEvent);
+	const from = now.getTime() - EVENT_WINDOW_DAYS * DAY_MS;
+	const counts = new Map<string, SteEventCount>();
+	for (const event of parsed) {
+		if (event === undefined || event.time < from) continue;
+		const key = [event.rule, event.surface, event.outcome].join("\u0000");
+		const count = (counts.get(key)?.count ?? 0) + 1;
+		counts.set(key, {
+			rule: event.rule,
+			surface: event.surface,
+			outcome: event.outcome,
+			count,
+		});
+	}
+	return {
+		logs: logs.length,
+		broken: parsed.filter((event) => event === undefined).length,
+		counts: [...counts.values()].sort(
+			(a, b) =>
+				b.count - a.count ||
+				a.rule.localeCompare(b.rule) ||
+				a.surface.localeCompare(b.surface) ||
+				a.outcome.localeCompare(b.outcome),
+		),
+	};
+}
+
+function counted(count: number, word: string): string {
+	return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function steEventFindings(events: SteEvents): Finding[] {
+	const area = "ste-events";
+	if (events.logs === 0)
+		return [
+			finding(
+				area,
+				"note",
+				"no events.jsonl in the state folder, so no hook finding is in the log",
+			),
+		];
+	const total = events.counts.reduce((sum, item) => sum + item.count, 0);
+	const broken =
+		events.broken === 0
+			? ""
+			: ` ${counted(events.broken, "broken line")} skipped.`;
+	return [
+		finding(
+			area,
+			"note",
+			`${counted(total, "event")} of the last ${EVENT_WINDOW_DAYS} days in ${counted(events.logs, "session log")}.${broken}`,
+		),
+		...events.counts.map((item) =>
+			finding(
+				area,
+				"note",
+				`${item.rule}, ${item.surface}, ${item.outcome}: ${item.count}`,
+			),
+		),
+	];
 }
 
 export function diagnose(snapshot: Snapshot): Finding[] {
 	return [
 		...runtimeFindings(snapshot),
 		...snapshot.claude.flatMap(claudeFindings),
+		...snapshot.skipped.dirs.map((dir) =>
+			finding(
+				`claude-code ${dir}`,
+				"note",
+				`doctor skips this folder, because ${snapshot.skipped.file} lists it. Remove that line to check the folder again.`,
+			),
+		),
 		...(snapshot.codex === undefined ? [] : codexFindings(snapshot.codex)),
 		...(snapshot.cursor === undefined ? [] : cursorFindings(snapshot.cursor)),
 		finding(
@@ -502,7 +935,12 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 		),
 		...duplicateFindings(snapshot),
 		...profileFindings(snapshot.profile),
+		...reviewProfileFindings(snapshot.profile.repo, snapshot.reviewProfile),
+		...(snapshot.bases === undefined ? [] : baseFindings(snapshot.bases)),
 		sessionFinding(snapshot.unattendedReason),
+		...(snapshot.steEvents === undefined
+			? []
+			: steEventFindings(snapshot.steEvents)),
 	];
 }
 

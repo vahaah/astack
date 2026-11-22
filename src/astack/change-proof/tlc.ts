@@ -7,6 +7,11 @@ export type TlcRecord = {
 	readonly body: string;
 };
 
+export type TlcOutput = {
+	readonly records: readonly TlcRecord[];
+	readonly loose: readonly string[];
+};
+
 export type RunEnd =
 	| {
 			readonly kind: "exited";
@@ -15,7 +20,7 @@ export type RunEnd =
 			readonly stderr: string;
 	  }
 	| { readonly kind: "signalled"; readonly signal: string }
-	| { readonly kind: "timeout"; readonly ms: number }
+	| { readonly kind: "timeout"; readonly ms: number; readonly stdout: string }
 	| { readonly kind: "output-cap"; readonly bytes: number }
 	| { readonly kind: "failed"; readonly message: string };
 
@@ -25,7 +30,11 @@ export type Counts = {
 	readonly queued: number;
 };
 
-export type Violation = { readonly name: string; readonly states: number };
+export type Violation = {
+	readonly name: string;
+	readonly states: number;
+	readonly trace: string;
+};
 
 export type RunLabel = "positive" | "negative" | "restored";
 
@@ -35,22 +44,26 @@ const CODE = {
 	behaviorHeader: 2121,
 	temporal: 2116,
 	temporalCounterexample: 2264,
+	backToState: 2122,
 	mode: 2187,
 	success: 2193,
 	stats: 2199,
 	finished: 2186,
 	temporalStart: 2192,
 	temporalDone: 2267,
+	sanyFailed: 3002,
 } as const;
 
 const SEVERITY = { error: 1, bug: 2, warning: 3, state: 4 } as const;
 
-export function parseTlcRecords(
-	output: string,
-): Result<readonly TlcRecord[], string> {
+const TRACE_STEPS = 20;
+const STEP_CHARS = 200;
+
+export function parseTlcRecords(output: string): Result<TlcOutput, string> {
 	const records: TlcRecord[] = [];
+	const loose: string[] = [];
 	let open: { code: number; severity: number; lines: string[] } | undefined;
-	for (const line of output.split("\n")) {
+	for (const line of output.split(/\r?\n/)) {
 		const start = /^@!@!@STARTMSG (\d+):(\d+) @!@!@$/.exec(line);
 		const end = /^@!@!@ENDMSG (\d+) @!@!@$/.exec(line);
 		if (start !== null) {
@@ -67,9 +80,134 @@ export function parseTlcRecords(
 			});
 			open = undefined;
 		} else if (open !== undefined) open.lines.push(line);
+		else loose.push(line);
 	}
 	if (open !== undefined) return err(`record ${open.code} has no end`);
-	return ok(records);
+	return ok({ records, loose });
+}
+
+function sanyLocation(loose: readonly string[]): string | undefined {
+	const located = (
+		module: string | undefined,
+		line: string | undefined,
+		column: string | undefined,
+		message: string | undefined,
+	): string =>
+		`SANY reports ${module === undefined ? "" : `module ${module}, `}line ${line}, column ${column}: ${(message ?? "").trim()}`;
+	for (const [at, text] of loose.entries()) {
+		const rest = loose.slice(at + 1);
+		const parse = /\bat line (\d+), column (\d+)\b/.exec(text);
+		if (parse !== null) {
+			const module = rest
+				.map((next) => /^In module (\S+)$/.exec(next.trim())?.[1])
+				.find((name) => name !== undefined);
+			return located(module, parse[1], parse[2], text);
+		}
+		const semantic =
+			/^line (\d+), col (\d+) to line \d+, col \d+ of module (\S+)$/.exec(
+				text.trim(),
+			);
+		if (semantic !== null)
+			return located(
+				semantic[3],
+				semantic[1],
+				semantic[2],
+				rest.find((next) => next.trim() !== ""),
+			);
+	}
+	return undefined;
+}
+
+function sanyNote(output: TlcOutput): string {
+	if (!output.records.some((record) => record.code === CODE.sanyFailed))
+		return "";
+	const location = sanyLocation(output.loose);
+	return location === undefined ? "" : `. ${location}`;
+}
+
+function step(record: TlcRecord): string {
+	const text = record.body
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line !== "")
+		.join(" ");
+	const loop =
+		record.code === CODE.backToState
+			? /^(\d+): Back to state: ?(.*)$/.exec(text)
+			: null;
+	const shown = loop === null ? text : `back to state ${loop[1]}: ${loop[2]}`;
+	return shown.length > STEP_CHARS
+		? `${shown.slice(0, STEP_CHARS - 3)}...`
+		: shown;
+}
+
+function counterexample(records: readonly TlcRecord[]): {
+	readonly states: number;
+	readonly trace: string;
+} {
+	const steps = records.filter((record) => record.severity === SEVERITY.state);
+	const rest = steps.length - TRACE_STEPS;
+	return {
+		states: steps.filter((record) => record.code !== CODE.backToState).length,
+		trace: [
+			...steps.slice(0, TRACE_STEPS).map(step),
+			...(rest > 0 ? [`and ${rest} more steps`] : []),
+		].join("; "),
+	};
+}
+
+function invariantName(record: TlcRecord): string | undefined {
+	return /^Invariant ([A-Za-z_][A-Za-z0-9_]*) is violated/.exec(
+		record.body.trim(),
+	)?.[1];
+}
+
+function brokenClaim(
+	records: readonly TlcRecord[],
+	properties: readonly string[],
+): string | undefined {
+	const invariant = records.find(
+		(record) =>
+			record.code === CODE.invariantInitial ||
+			record.code === CODE.invariantBehavior,
+	);
+	if (invariant !== undefined)
+		return `invariant ${invariantName(invariant) ?? "with no name"}`;
+	if (!records.some((record) => record.code === CODE.temporal))
+		return undefined;
+	const [property] = properties;
+	if (properties.length === 1) return `the temporal property ${property}`;
+	return properties.length === 0
+		? "a temporal property"
+		: `one of the temporal properties ${properties.join(", ")}`;
+}
+
+function failureNotes(
+	output: TlcOutput,
+	properties: readonly string[],
+): string {
+	const { states, trace } = counterexample(output.records);
+	const claim = brokenClaim(output.records, properties);
+	const broke =
+		states === 0
+			? ""
+			: `. It ${claim === undefined ? "stopped" : `broke ${claim}`} with a trace of ${states} states: ${trace}`;
+	return `${broke}${sanyNote(output)}`;
+}
+
+function lastProgress(stdout: string): string {
+	const progress = [
+		...stdout.matchAll(
+			/^@!@!@STARTMSG 2200:\d+ @!@!@\r?\n(.*)\r?\n@!@!@ENDMSG 2200 @!@!@$/gm,
+		),
+	].at(-1)?.[1];
+	const time = / at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}): /.exec(
+		progress ?? "",
+	)?.[1];
+	const distinct = /([\d,]+) distinct states found/.exec(progress ?? "")?.[1];
+	return time === undefined || distinct === undefined
+		? ""
+		: `. It found at least ${counted(distinct)} distinct states by ${time}`;
 }
 
 function interrupted(label: RunLabel, end: RunEnd): string | undefined {
@@ -79,7 +217,7 @@ function interrupted(label: RunLabel, end: RunEnd): string | undefined {
 		case "signalled":
 			return `the ${label} run stopped on signal ${end.signal}`;
 		case "timeout":
-			return `the ${label} run passed the ${end.ms} ms deadline and was stopped`;
+			return `the ${label} run passed the ${end.ms} ms deadline and was stopped${lastProgress(end.stdout)}`;
 		case "output-cap":
 			return `the ${label} run printed more than ${end.bytes} bytes and was stopped`;
 		case "failed":
@@ -134,14 +272,14 @@ type Exited = Extract<RunEnd, { kind: "exited" }>;
 function exitedRecords(
 	label: RunLabel,
 	end: RunEnd,
-): Result<{ run: Exited; records: readonly TlcRecord[] }, string> {
+): Result<{ run: Exited; output: TlcOutput }, string> {
 	const stopped = interrupted(label, end);
 	if (stopped !== undefined || end.kind !== "exited")
 		return err(stopped ?? `the ${label} run did not exit`);
-	const records = parseTlcRecords(end.stdout);
-	if (!records.ok)
-		return err(`the ${label} run printed malformed output: ${records.error}`);
-	return ok({ run: end, records: records.value });
+	const output = parseTlcRecords(end.stdout);
+	if (!output.ok)
+		return err(`the ${label} run printed malformed output: ${output.error}`);
+	return ok({ run: end, output: output.value });
 }
 
 function noiseProblem(
@@ -156,7 +294,7 @@ function noiseProblem(
 	if (noisy !== undefined)
 		return `the ${label} run printed ${noisy.severity === SEVERITY.bug ? "checker bug" : "warning"} ${noisy.code}`;
 	if (run.stderr.trim() !== "")
-		return `the ${label} run wrote to stderr: ${run.stderr.trim().split("\n")[0] ?? ""}`;
+		return `the ${label} run wrote to stderr: ${run.stderr.trim().split(/\r?\n/)[0] ?? ""}`;
 	if (records.at(-1)?.code !== CODE.finished)
 		return `the ${label} run has no final finished record ${CODE.finished}`;
 	return undefined;
@@ -165,19 +303,22 @@ function noiseProblem(
 export function judgePositive(
 	label: RunLabel,
 	end: RunEnd,
-	temporal: boolean,
+	properties: readonly string[],
 ): Result<Counts, string> {
 	const exited = exitedRecords(label, end);
 	if (!exited.ok) return exited;
-	const { run, records } = exited.value;
+	const { run, output } = exited.value;
+	const { records } = output;
 	if (run.code !== 0)
 		return err(
-			`the ${label} run exited ${run.code} with ${errorCodes(records)}`,
+			`the ${label} run exited ${run.code} with ${errorCodes(records)}${failureNotes(output, properties)}`,
 		);
 	const noise = noiseProblem(label, run, records);
 	if (noise !== undefined) return err(noise);
 	if (records.some((record) => record.severity === SEVERITY.error))
-		return err(`the ${label} run reported ${errorCodes(records)}`);
+		return err(
+			`the ${label} run reported ${errorCodes(records)}${failureNotes(output, properties)}`,
+		);
 	const temporalRecords: readonly (readonly [number, string])[] = [
 		[CODE.temporalStart, "temporal check"],
 		[CODE.temporalDone, "temporal check completion"],
@@ -185,7 +326,7 @@ export function judgePositive(
 	const required: readonly (readonly [number, string])[] = [
 		[CODE.mode, "model-check mode"],
 		[CODE.success, "success"],
-		...(temporal ? temporalRecords : []),
+		...(properties.length > 0 ? temporalRecords : []),
 	];
 	const missing = required.find(([code]) => only(records, code) === undefined);
 	if (missing !== undefined)
@@ -216,14 +357,15 @@ export function judgeNegative(
 ): Result<Violation, string> {
 	const exited = exitedRecords("negative", end);
 	if (!exited.ok) return exited;
-	const { run, records } = exited.value;
+	const { run, output } = exited.value;
+	const { records } = output;
 	const temporal = expect.kind === "temporal";
 	const wanted = temporal
 		? "temporal property violation"
 		: "invariant violation";
 	if (run.code !== (temporal ? 13 : 12))
 		return err(
-			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}`,
+			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}${failureNotes(output, [])}`,
 		);
 	const noise = noiseProblem("negative", run, records);
 	if (noise !== undefined) return err(noise);
@@ -238,9 +380,7 @@ export function judgeNegative(
 		return err(
 			`the negative run reported the unrelated error ${unrelated.code}`,
 		);
-	const states = records.filter(
-		(record) => record.severity === SEVERITY.state,
-	).length;
+	const { states, trace } = counterexample(records);
 	if (states === 0)
 		return err("the negative run printed no counterexample state");
 	if (temporal) {
@@ -248,7 +388,7 @@ export function judgeNegative(
 			return err(
 				`the negative run has no single temporal violation record ${CODE.temporal}`,
 			);
-		return ok({ name: expect.name, states });
+		return ok({ name: expect.name, states, trace });
 	}
 	const violations = records.filter(
 		(record) =>
@@ -260,12 +400,10 @@ export function judgeNegative(
 		return err(
 			`the negative run has ${violations.length} invariant violation records, not 1`,
 		);
-	const name = /^Invariant ([A-Za-z_][A-Za-z0-9_]*) is violated/.exec(
-		violation.body.trim(),
-	)?.[1];
+	const name = invariantName(violation);
 	if (name !== expect.name)
 		return err(
 			`the negative run violated ${name ?? "an unnamed invariant"}, not the expected invariant ${expect.name}`,
 		);
-	return ok({ name, states });
+	return ok({ name, states, trace });
 }

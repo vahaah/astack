@@ -1,3 +1,4 @@
+import { adrProse, decisionHeading } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
@@ -55,6 +56,9 @@ export type Snapshot = {
 	readonly head: string;
 	readonly digest: string;
 	readonly files: number;
+	readonly index: string;
+	readonly history: string;
+	readonly entries: ReadonlyMap<string, string>;
 };
 
 export type ModelEvidence = {
@@ -169,26 +173,6 @@ function headings(text: string): readonly string[] {
 	);
 }
 
-function adrProse(text: string): string {
-	let closing: RegExp | undefined;
-	return text
-		.split("\n")
-		.map((line) => {
-			if (closing !== undefined) {
-				if (closing.test(line)) closing = undefined;
-				return line.replace(/[^\r]/g, " ");
-			}
-			const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line)?.[1];
-			if (marker === undefined) return line;
-			const character = marker.startsWith("`") ? "`" : "~";
-			closing = new RegExp(
-				`^ {0,3}${character}{${marker.length},}[ \\t]*\\r?$`,
-			);
-			return line.replace(/[^\r]/g, " ");
-		})
-		.join("\n");
-}
-
 function adrMetadata(
 	text: string,
 	file: string,
@@ -209,14 +193,11 @@ function adrMetadata(
 		return fail(
 			`${file} has status ${JSON.stringify(status)}, not ${expected}`,
 		);
-	const heading = new RegExp(
-		`^###[ \\t]+${decision}(?:\\.[ \\t]+|[ \\t]+—[ \\t]+)\\S`,
-		"m",
-	).exec(prose);
-	if (heading === null)
+	const heading = decisionHeading(text, decision);
+	if (heading === undefined)
 		return fail(`${file} has no ### ${decision}. decision heading`);
 	if (requireBody) {
-		const lineEnd = prose.indexOf("\n", heading.index);
+		const lineEnd = prose.indexOf("\n", heading);
 		const tail = lineEnd < 0 ? "" : prose.slice(lineEnd + 1);
 		const end = tail.search(/^#{1,6}[ \t]+/m);
 		if ((end < 0 ? tail : tail.slice(0, end)).trim() === "")
@@ -598,6 +579,24 @@ export function checkReferences(
 	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
 
+const STALE_NAMES = 10;
+
+export function staleInputs(
+	before: Snapshot,
+	after: Snapshot,
+): readonly string[] {
+	const paths = [
+		...new Set([...before.entries.keys(), ...after.entries.keys()]),
+	]
+		.sort()
+		.filter((path) => before.entries.get(path) !== after.entries.get(path));
+	return [
+		...(before.history === after.history ? [] : ["the ratification history"]),
+		...(before.index === after.index ? [] : ["the index"]),
+		...paths,
+	];
+}
+
 export function admitChangeProof(
 	proof: ChangeProof,
 	facts: AdmissionFacts,
@@ -622,11 +621,14 @@ export function admitChangeProof(
 			"stale",
 			`HEAD moved from ${before.head} to ${after.head} during the proof`,
 		);
-	if (before.digest !== after.digest)
+	const stale = staleInputs(before, after);
+	if (stale.length > 0) {
+		const rest = stale.length - STALE_NAMES;
 		return rejection(
 			"stale",
-			`the candidate inputs changed during the proof: digest ${before.digest} became ${after.digest}`,
+			`the candidate inputs changed during the proof: ${stale.slice(0, STALE_NAMES).join(", ")}${rest > 0 ? ` and ${rest} more` : ""}`,
 		);
+	}
 	return ok({
 		change: proof.change,
 		base: proof.base,

@@ -11,10 +11,15 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import {
+	STAGE_SECTIONS,
+	type Stage,
+} from "../../src/astack/change-proof/contract.ts";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	BASE_FILES,
+	GATE_RUNS,
 	git,
 	PROOF_FILES,
 	scratchDir,
@@ -125,12 +130,20 @@ function run(
 	return { code: result.status, out: result.stdout, err: result.stderr };
 }
 
-function refusal(repo: Candidate, message: string, stage = "domain"): void {
+const rule = (stage: Stage): string =>
+	`rule: read the section "${STAGE_SECTIONS[stage]}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
+const STALE_RULE = rule("stale");
+
+function refusal(
+	repo: Candidate,
+	message: string,
+	stage: Stage = "domain",
+): void {
 	const result = run(repo.root);
 	expect(result).toEqual({
 		code: stage === "schema" ? 2 : 1,
 		out: `stop: proof ${stage}: ${message}\n`,
-		err: "",
+		err: rule(stage),
 	});
 }
 
@@ -207,9 +220,7 @@ describe("integrated ADR ratification", () => {
 			const result = run(repo.root);
 			expect(result.code).toBe(0);
 			expect(result.err).toBe("");
-			expect(result.out).toStartWith(
-				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-			);
+			expect(result.out).toStartWith(`${GATE_RUNS}receipt:`);
 			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
 				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
 			);
@@ -376,7 +387,7 @@ describe("integrated ADR ratification", () => {
 		expect(run(repo.root, { GIT_GRAFT_FILE: grafts })).toEqual({
 			code: 1,
 			out: `stop: proof domain: ratification ${sibling} is not an ancestor of the fixed proof base ${repo.base}\n`,
-			err: "",
+			err: rule("domain"),
 		});
 	});
 
@@ -502,9 +513,7 @@ describe("integrated ADR ratification", () => {
 			const result = run(repo.root);
 			expect(result.code).toBe(0);
 			expect(result.err).toBe("");
-			expect(result.out).toStartWith(
-				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-			);
+			expect(result.out).toStartWith(`${GATE_RUNS}receipt:`);
 			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
 				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
 			);
@@ -564,7 +573,7 @@ describe("integrated ADR ratification", () => {
 			const moved = mainMoves(repo, path, `${text}\nAmended on main.\n`);
 			expect(run(repo.root, {}, ["--base", "origin/main"])).toEqual({
 				code: 1,
-				err: "",
+				err: rule("domain"),
 				out: `stop: proof domain: ${path} changed between the manifest base ${repo.base} and the merge base ${moved}. Set base to ${moved}, set integratedAt to a commit that holds the new text, and prove the change again.\n`,
 			});
 		},
@@ -851,16 +860,10 @@ describe("integrated ADR ratification", () => {
 			});
 			expect(removed).toBe(true);
 			expect(result.code).toBe(1);
-			expect(result.err).toBe("");
-			const last = result.out.trimEnd().split("\n").at(-1) ?? "";
-			expect(last).toMatch(
-				/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+			expect(result.err).toBe(STALE_RULE);
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				"stop: proof stale: the candidate inputs changed during the proof: the ratification history",
 			);
-			const hashes = [...last.matchAll(/sha256:([0-9a-f]{64})/g)].map(
-				(match) => match[1],
-			);
-			expect(hashes).toHaveLength(2);
-			expect(hashes[0]).not.toBe(hashes[1]);
 		},
 		heavyTestTimeout,
 	);
@@ -902,9 +905,9 @@ describe("integrated ADR ratification", () => {
 			});
 			expect(changed).toBe(true);
 			expect(result.code).toBe(1);
-			expect(result.err).toBe("");
-			expect(result.out.trimEnd().split("\n").at(-1)).toMatch(
-				/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+			expect(result.err).toBe(STALE_RULE);
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				"stop: proof stale: the candidate inputs changed during the proof: ignored/proof.md",
 			);
 		},
 		heavyTestTimeout,

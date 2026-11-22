@@ -5,6 +5,9 @@
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
 		"docs/reference/word-budget.md",
+		"docs/reference/plan-boundary.md",
+		"docs/reference/doctor.md",
+		"docs/reference/finding-telemetry.md",
 		"docs/reference/test-fixtures.md"
 	],
 	"tests": [
@@ -13,6 +16,8 @@
 		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof-snapshot.test.ts",
 		"tests/astack/change-proof.test.ts",
+		"tests/astack/proof-contract-doc.test.ts",
+		"tests/astack/tlc-output.test.ts",
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts",
 		"tests/astack/change-proof-ratification.test.ts",
@@ -28,6 +33,25 @@
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
 		"tests/validate.test.ts",
+		"tests/astack/dispatch.test.ts",
+		"tests/astack/cursor-hook.test.ts",
+		"tests/astack/adr.test.ts",
+		"tests/astack/plan-cli.test.ts",
+		"tests/astack/plan-session.test.ts",
+		"tests/astack/plan-check.test.ts",
+		"tests/tracker-schema.test.ts",
+		"tests/astack/pr-links.test.ts",
+		"tests/astack/classify.test.ts",
+		"tests/astack/codex-hooks.test.ts",
+		"tests/astack/version.test.ts",
+		"tests/astack/hardening-profile.test.ts",
+		"tests/astack/managed.test.ts",
+		"tests/astack/watch-pr/policy.test.ts",
+		"tests/dist/external.test.ts",
+		"tests/pr-review-profile.test.ts",
+		"tests/astack/verdict.test.ts",
+		"tests/ste-own.test.ts",
+		"tests/dist/render.test.ts",
 		"tests/git-template.test.ts",
 		"tests/check-companion.test.ts"
 	],
@@ -136,6 +160,36 @@
 			]
 		},
 		{
+			"criterion": "CP-17",
+			"controls": ["tlc-line-ends"]
+		},
+		{
+			"criterion": "CP-18",
+			"controls": ["tlc-sany-location"]
+		},
+		{
+			"criterion": "CP-19",
+			"controls": ["tlc-violation-trace"]
+		},
+		{
+			"criterion": "CP-20",
+			"controls": [
+				"proof-stale-paths",
+				"proof-timeout-progress",
+				"proof-timeout-stdout"
+			]
+		},
+		{
+			"criterion": "CP-21",
+			"controls": [
+				"proof-stop-section",
+				"proof-stop-heading",
+				"proof-example-parses",
+				"proof-example-keys",
+				"proof-carrier-forms"
+			]
+		},
+		{
 			"criterion": "proof-ratification",
 			"controls": [
 				"proof-ratification",
@@ -198,9 +252,36 @@
 			"controls": [
 				"sg-unattended-denial",
 				"sg-relayed-prompt",
+				"sg-unattended-channel",
 				"sg-machine-prompt",
 				"sg-doctor-unattended"
 			]
+		},
+		{
+			"criterion": "SG-base-authority",
+			"controls": [
+				"sg-working-tree-profile",
+				"sg-base-authority",
+				"sg-absent-base",
+				"sg-other-repo"
+			]
+		},
+		{
+			"criterion": "SG-framed-prompt",
+			"controls": [
+				"sg-framed-prompt",
+				"sg-framed-channel",
+				"sg-frame-class",
+				"sg-cursor-attended"
+			]
+		},
+		{
+			"criterion": "SG-mcp-merge",
+			"controls": ["sg-mcp-merge", "sg-mcp-input"]
+		},
+		{
+			"criterion": "SG-guard-error",
+			"controls": ["sg-guard-error"]
 		},
 		{
 			"criterion": "SG-scratch",
@@ -258,6 +339,160 @@
 		{
 			"criterion": "WB-validate",
 			"controls": ["wb-validate-skip"]
+		},
+		{
+			"criterion": "ADR-HEADING",
+			"controls": ["adr-heading", "proof-adr-format", "proof-adr-examples"]
+		},
+		{
+			"criterion": "TRAIL-BATCH",
+			"controls": ["trail-batch"]
+		},
+		{
+			"criterion": "CWD-FREE",
+			"controls": ["cwd-free", "cwd-free-plan", "cwd-free-slug"]
+		},
+		{
+			"criterion": "GRAD-ONCE",
+			"controls": ["grad-once"]
+		},
+		{
+			"criterion": "BOUNDARY-ONCE",
+			"controls": ["boundary-once"]
+		},
+		{
+			"criterion": "SPAN-RUN",
+			"controls": [
+				"span-run",
+				"span-run-links",
+				"span-run-mask",
+				"span-run-classify"
+			]
+		},
+		{
+			"criterion": "DT-TRUST",
+			"controls": [
+				"dt-trust-modified",
+				"dt-trust-untrusted",
+				"dt-trust-disabled",
+				"dt-trust-missing",
+				"dt-trust-ok",
+				"dt-trust-entry-error",
+				"dt-trust-command",
+				"dt-reader-order"
+			]
+		},
+		{
+			"criterion": "DT-FALLBACK",
+			"controls": [
+				"dt-fallback-pinned",
+				"dt-fallback-modified",
+				"dt-fallback-command"
+			]
+		},
+		{
+			"criterion": "DT-READ-FAIL",
+			"controls": [
+				"dt-read-hang",
+				"dt-read-exit",
+				"dt-read-rpc-error",
+				"dt-read-no-codex",
+				"dt-reader-shape",
+				"dt-dist-cause"
+			]
+		},
+		{
+			"criterion": "DT-SKIP",
+			"controls": ["dt-skip", "dt-skip-unlisted", "dt-skip-write"]
+		},
+		{
+			"criterion": "CLI-VERSION",
+			"controls": [
+				"cli-version-claude",
+				"cli-version-cursor",
+				"cli-version-package",
+				"cli-version-none",
+				"cli-version-link"
+			]
+		},
+		{
+			"criterion": "HP-RULES",
+			"controls": [
+				"hp-proof-gate",
+				"hp-ok",
+				"hp-missing",
+				"hp-no-block",
+				"dt-review-missing",
+				"dt-review-drift",
+				"hp-merge-key"
+			]
+		},
+		{
+			"criterion": "DT-BASE",
+			"controls": [
+				"dt-base-open",
+				"dt-base-classic",
+				"dt-base-cap",
+				"dt-base-gh-fail"
+			]
+		},
+		{
+			"criterion": "WP-DEADLINE",
+			"controls": [
+				"wp-deadline-simple",
+				"wp-deadline-queued",
+				"wp-deadline-retry"
+			]
+		},
+		{
+			"criterion": "CLI-MANAGED",
+			"controls": ["cli-managed"]
+		},
+		{
+			"criterion": "OWN-FENCE",
+			"controls": ["own-fence", "own-fence-list"]
+		},
+		{
+			"criterion": "OWN-ZERO",
+			"controls": ["own-zero"]
+		},
+		{
+			"criterion": "UNIT-ONE",
+			"controls": ["unit-one"]
+		},
+		{
+			"criterion": "NOUN-CHECKS",
+			"controls": ["noun-checks"]
+		},
+		{
+			"criterion": "TEL-NOTEXT",
+			"controls": ["tel-notext", "tel-comment", "tel-release"]
+		},
+		{
+			"criterion": "TEL-APPEND",
+			"controls": ["tel-append"]
+		},
+		{
+			"criterion": "TEL-OUTCOME",
+			"controls": ["tel-outcome", "tel-outcome-map", "tel-comment", "tel-reply"]
+		},
+		{
+			"criterion": "TEL-MASKED",
+			"controls": ["tel-masked", "tel-comment-masked", "tel-outcome-map"]
+		},
+		{
+			"criterion": "TEL-SAFE",
+			"controls": [
+				"tel-safe",
+				"tel-comment-safe",
+				"tel-reply-safe",
+				"tel-refresh",
+				"tel-comment-refresh"
+			]
+		},
+		{
+			"criterion": "TEL-SUM",
+			"controls": ["tel-sum"]
 		},
 		{
 			"criterion": "FX-ISOLATE",

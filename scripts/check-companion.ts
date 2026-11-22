@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
-import { parseProfile } from "../src/astack/pr-review-profile.ts";
 import { profileProblems } from "../src/astack/profile.ts";
 import { findingLine } from "../src/astack/ste/format.ts";
 import { loadSettings } from "../src/astack/ste/profile.ts";
@@ -58,11 +57,6 @@ function checkProject(
 		...branches.flatMap(
 			(branch) =>
 				renderReviewCopies(project, dir, reviewSources, branch).problems,
-		),
-		...profiles.flatMap((profile) =>
-			parseProfile(profile.text).issues.map(
-				(issue) => `${profile.path}: ${issue.path}: ${issue.message}`,
-			),
 		),
 		...profileProblems(JSON.parse(renderAstackProfile(project).content)).map(
 			(problem) => `.astack/profile.json: ${problem}`,

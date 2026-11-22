@@ -12,6 +12,7 @@ import type {
 	Milestone,
 	Plan,
 	Question,
+	Retirement,
 	Section,
 	Session,
 	Step,
@@ -400,10 +401,20 @@ function parseDecisions(section: Section | undefined): DecisionTable {
 				door,
 				settled,
 				record,
-				supersededBy: /^Superseded by (D\d+)\.?$/i.exec(decision)?.[1],
+				retired: retirementOf(decision),
 			};
 		}),
 	};
+}
+
+function retirementOf(decision: string): Retirement | undefined {
+	const by = /^Superseded by (D\d+)\.?$/i.exec(decision)?.[1];
+	if (by !== undefined) return { kind: "superseded", by };
+	const [, adr, number] =
+		/^Graduated to ADR (\d{4}) D(\d+)\.?$/i.exec(decision) ?? [];
+	return adr !== undefined && number !== undefined
+		? { kind: "graduated", adr, decision: number }
+		: undefined;
 }
 
 function items(section: Section | undefined, start: RegExp): Item[] {

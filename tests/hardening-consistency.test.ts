@@ -2605,7 +2605,7 @@ describe("a PR that changes CI", () => {
 			"In mode `ci_proof`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge, whatever `after_clean_stop` and `conditions` say.",
 		);
 		expect(paragraphStarting(gate, "/goal Run")).toContain(
-			"with every gate exit 0, or ADVISORY_CI_PROOF only when that GATE_SUMMARY shows mode ci_proof,",
+			"It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof.",
 		);
 	});
 
@@ -2782,7 +2782,7 @@ describe("the proof of a clean stop", () => {
 			condition: "The iteration is clean when the gate is green",
 			fields: ["METRICS_EXIT", "gateFindings", "gitStatusChangedByGate"],
 			goal: [
-				"with every gate exit 0",
+				"every gate exit 0",
 				"If metrics ran, that GATE_SUMMARY also shows METRICS_EXIT 0",
 				"gitStatusChangedByGate false",
 			],
@@ -3475,13 +3475,15 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 			"defines every key and its default",
 			"The fallback has no defaults, so the profile defines every key that it reads.",
 		),
-		stubbed(
-			"If the file is missing or the block does not parse",
-			"If the file is missing or the block does not parse, stop with principled incompletion.",
-		),
 		reasoned(
-			"Offer to draft a profile",
-			"The draft procedure is in references/profile.md of the astack plugin, which the fallback runs without.",
+			"Run `astack check hardening-profile`.",
+			"The fallback runs without the plugin, so it has no astack CLI. Its own steps below stop on each profile problem that it can see.",
+		),
+		stubbed(
+			"When it does not exit 0, stop with principled incompletion and print each problem with its repair.",
+			"If the file is missing or the block does not parse, stop with principled incompletion.",
+			"If a key that this section names is missing, stop with principled incompletion.",
+			"Name the missing key.",
 		),
 		stubbed(
 			"Never run gate commands you guessed.",

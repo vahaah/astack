@@ -1,5 +1,5 @@
 {
-	"total": 141172,
+	"total": 140801,
 	"skills": {
 		"architect": 2119,
 		"arena": 1056,
@@ -14,7 +14,7 @@
 		"council": 841,
 		"deslop": 373,
 		"diagnosing-bugs": 1286,
-		"domain-modeling": 1258,
+		"domain-modeling": 1256,
 		"figure-it-out": 646,
 		"file-pr": 542,
 		"full-send": 1227,
@@ -25,11 +25,11 @@
 		"in-your-own-words": 40,
 		"interrogate": 429,
 		"leaving-pr-comments": 524,
-		"mode": 29173,
+		"mode": 29155,
 		"modernize": 1028,
 		"no-comments": 492,
-		"plan": 14584,
-		"pr-review-hardening": 22920,
+		"plan": 14280,
+		"pr-review-hardening": 22911,
 		"principles": 5217,
 		"prototype": 1922,
 		"recall": 765,
@@ -45,11 +45,11 @@
 		"takeover": 667,
 		"tdd": 1007,
 		"to-tickets": 919,
-		"types": 5029,
+		"types": 4993,
 		"wayfinder": 1874,
 		"why": 6435,
-		"write-docs": 5826,
-		"write-ticket": 4056,
+		"write-docs": 5825,
+		"write-ticket": 4055,
 		"writing-for-agents": 1778
 	}
 }

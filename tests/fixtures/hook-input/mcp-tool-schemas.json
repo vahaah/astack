@@ -1,0 +1,230 @@
+{
+	"host": "Claude Code 2.1.327",
+	"tools": [
+		{
+			"name": "mcp__cocode__pull_request_merge",
+			"required": [
+				"expectedHeadSha"
+			],
+			"properties": {
+				"auto": "boolean",
+				"environmentId": "string",
+				"expectedHeadSha": "string",
+				"method": [
+					"merge",
+					"squash",
+					"rebase",
+					"fast-forward"
+				],
+				"number": "integer",
+				"repository": "string",
+				"stack": "boolean"
+			},
+			"mergeInputs": [
+				"auto",
+				"expectedHeadSha",
+				"method",
+				"stack"
+			]
+		},
+		{
+			"name": "mcp__plugin_linear_linear__merge_diff",
+			"required": [
+				"urlOrId"
+			],
+			"properties": {
+				"mergeMethod": [
+					"MERGE",
+					"REBASE",
+					"SQUASH"
+				],
+				"urlOrId": "string"
+			},
+			"mergeInputs": [
+				"mergeMethod"
+			]
+		},
+		{
+			"name": "mcp__plugin_supabase_supabase__merge_branch",
+			"required": [
+				"branch_id"
+			],
+			"properties": {
+				"branch_id": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__cocode__pull_request_create",
+			"required": [
+				"title",
+				"body"
+			],
+			"properties": {
+				"base": "string",
+				"body": "string",
+				"draft": "boolean",
+				"environmentId": "string",
+				"title": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__cocode__pull_request_update",
+			"required": [],
+			"properties": {
+				"addLabels": "array",
+				"body": "string",
+				"environmentId": "string",
+				"number": "integer",
+				"ready": "boolean",
+				"removeLabels": "array",
+				"repository": "string",
+				"requestReviewers": "array",
+				"state": [
+					"open",
+					"closed"
+				],
+				"title": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__cocode__pull_request_review",
+			"required": [
+				"verdict"
+			],
+			"properties": {
+				"body": "string",
+				"comments": "array",
+				"environmentId": "string",
+				"number": "integer",
+				"repository": "string",
+				"verdict": [
+					"comment",
+					"approve",
+					"request-changes"
+				]
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__cocode__pull_request_respond",
+			"required": [],
+			"properties": {
+				"body": "string",
+				"environmentId": "string",
+				"number": "integer",
+				"repository": "string",
+				"resolved": "boolean",
+				"reviewThreadId": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__cocode__pull_request_list",
+			"required": [],
+			"properties": {
+				"cursor": "string",
+				"environmentId": "string",
+				"involvement": [
+					"all",
+					"reviewing",
+					"authored"
+				],
+				"limit": "integer",
+				"query": "string",
+				"state": [
+					"all",
+					"open",
+					"closed",
+					"merged"
+				]
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__plugin_linear_linear__update_diff",
+			"required": [
+				"urlOrId"
+			],
+			"properties": {
+				"addedIssueLinks": "array",
+				"addedReviewRequests": "array",
+				"description": "string",
+				"removedIssueLinks": "array",
+				"removedReviewRequests": "array",
+				"statusAction": [
+					"markReadyForReview",
+					"convertToDraft",
+					"close",
+					"reopen"
+				],
+				"title": "string",
+				"urlOrId": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__plugin_greptile_greptile__list_merge_requests",
+			"required": [],
+			"properties": {
+				"authorLogin": "string",
+				"defaultBranch": "string",
+				"limit": "number",
+				"name": "string",
+				"offset": "number",
+				"organization": "string",
+				"remote": "string",
+				"remoteUrl": "string",
+				"sourceBranch": "string",
+				"state": [
+					"open",
+					"closed",
+					"merged"
+				]
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__plugin_greptile_greptile__get_merge_request",
+			"required": [
+				"name",
+				"remote",
+				"defaultBranch",
+				"prNumber"
+			],
+			"properties": {
+				"defaultBranch": "string",
+				"name": "string",
+				"organization": "string",
+				"prNumber": "number",
+				"remote": "string",
+				"remoteUrl": "string"
+			},
+			"mergeInputs": []
+		},
+		{
+			"name": "mcp__plugin_greptile_greptile__list_merge_request_comments",
+			"required": [
+				"name",
+				"remote",
+				"defaultBranch",
+				"prNumber"
+			],
+			"properties": {
+				"addressed": "boolean",
+				"createdAfter": "string",
+				"createdBefore": "string",
+				"defaultBranch": "string",
+				"greptileGenerated": "boolean",
+				"name": "string",
+				"organization": "string",
+				"prNumber": "number",
+				"remote": "string",
+				"remoteUrl": "string"
+			},
+			"mergeInputs": []
+		}
+	]
+}

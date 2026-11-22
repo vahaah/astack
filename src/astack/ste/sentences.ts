@@ -22,6 +22,12 @@ export function tokens(text: string): readonly string[] {
 	return text.match(TOKEN) ?? [];
 }
 
+export function commaAfter(text: string): readonly boolean[] {
+	return [...text.matchAll(TOKEN)].map(
+		(match) => text[(match.index ?? 0) + match[0].length] === ",",
+	);
+}
+
 function splitSentences(text: string): readonly string[] {
 	const guarded = text
 		.replace(LIST_END, "etc\u0000")

@@ -1,0 +1,94 @@
+{
+	"id": 2,
+	"result": {
+		"data": [
+			{
+				"cwd": "/workspace",
+				"hooks": [
+					{
+						"key": "astack@astack:hooks/hooks.json:pre_tool_use:0:0",
+						"eventName": "preToolUse",
+						"handlerType": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code PreToolUse'",
+						"async": false,
+						"matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|mcp__.*",
+						"timeoutSec": 10,
+						"statusMessage": null,
+						"additionalContextLimit": null,
+						"sourcePath": "/codex-home/plugins/cache/astack/astack/0.3.0/hooks/hooks.json",
+						"source": "plugin",
+						"pluginId": "astack@astack",
+						"environmentId": null,
+						"displayOrder": 0,
+						"enabled": true,
+						"isManaged": false,
+						"currentHash": "sha256:aa971d04c3732d60ef09bc50a0f8df632760cdc8adb24cfec167a8b77c6b1fb4/sha256:1642a07e7923af1cf8a35eecfa09b1da6fc368656e12303b30d0fbd416a64721",
+						"trustStatus": "trusted"
+					},
+					{
+						"key": "astack@astack:hooks/hooks.json:session_start:0:0",
+						"eventName": "sessionStart",
+						"handlerType": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code SessionStart'",
+						"async": false,
+						"matcher": null,
+						"timeoutSec": 10,
+						"statusMessage": null,
+						"additionalContextLimit": null,
+						"sourcePath": "/codex-home/plugins/cache/astack/astack/0.3.0/hooks/hooks.json",
+						"source": "plugin",
+						"pluginId": "astack@astack",
+						"environmentId": null,
+						"displayOrder": 1,
+						"enabled": true,
+						"isManaged": false,
+						"currentHash": "sha256:c97e0509168621377828309337bdcdc46b4744ac3257cb0e9ad7758bc3c02454/sha256:1642a07e7923af1cf8a35eecfa09b1da6fc368656e12303b30d0fbd416a64721",
+						"trustStatus": "trusted"
+					},
+					{
+						"key": "astack@astack:hooks/hooks.json:user_prompt_submit:0:0",
+						"eventName": "userPromptSubmit",
+						"handlerType": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code UserPromptSubmit'",
+						"async": false,
+						"matcher": null,
+						"timeoutSec": 10,
+						"statusMessage": null,
+						"additionalContextLimit": null,
+						"sourcePath": "/codex-home/plugins/cache/astack/astack/0.3.0/hooks/hooks.json",
+						"source": "plugin",
+						"pluginId": "astack@astack",
+						"environmentId": null,
+						"displayOrder": 2,
+						"enabled": true,
+						"isManaged": false,
+						"currentHash": "sha256:82211d4532a5ae0b6d0dd79f92b2d7b207ddda27adefe58a911906ee741bcc9e/sha256:1642a07e7923af1cf8a35eecfa09b1da6fc368656e12303b30d0fbd416a64721",
+						"trustStatus": "trusted"
+					},
+					{
+						"key": "astack@astack:hooks/hooks.json:stop:0:0",
+						"eventName": "stop",
+						"handlerType": "command",
+						"command": "sh -c '\"${CLAUDE_PLUGIN_ROOT:-$GROK_PLUGIN_ROOT}/bin/astack\" hook claude-code Stop'",
+						"async": false,
+						"matcher": null,
+						"timeoutSec": 10,
+						"statusMessage": null,
+						"additionalContextLimit": null,
+						"sourcePath": "/codex-home/plugins/cache/astack/astack/0.3.0/hooks/hooks.json",
+						"source": "plugin",
+						"pluginId": "astack@astack",
+						"environmentId": null,
+						"displayOrder": 3,
+						"enabled": true,
+						"isManaged": false,
+						"currentHash": "sha256:3d34211eed034969701c95a72e3554a1bf43c2769d44b9948eaa8a70edf1af94/sha256:1642a07e7923af1cf8a35eecfa09b1da6fc368656e12303b30d0fbd416a64721",
+						"trustStatus": "trusted"
+					}
+				],
+				"warnings": [],
+				"errors": []
+			}
+		]
+	}
+}

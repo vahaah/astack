@@ -37,8 +37,6 @@ The last PR of the plan deletes the plan.
 Wave, Lane and Kind are labels.
 A wave is a batch of steps that run in parallel.
 A lane partitions the work between workers.
-The `integrator` lane is the main thread.
-Kind marks a decision row as `goal`, `decision`, `rule` or `tech`.
 
 "Step" is the word astack uses. The owner also says "bucket" and `W<n>`. Accept the words of the owner and never correct them.
 
@@ -105,7 +103,7 @@ Parallel step workers build it in worktrees, in waves.
 | programme | session sub-issues, decision issues | Through `astack plan export`, after a dry run |
 
 In the standard tier, the PR fixes each in-scope defect and lists it in its body.
-Put each out-of-scope finding in the drafts file with `astack plan draft <slug> "<title>" "<why>"`.
+Put each out-of-scope finding in the drafts file with `astack plan draft <plan> "<title>" "<why>"`.
 The owner files those findings with "agree" through `astack-write-ticket`.
 Never edit the description of a product spec ticket.
 Put an addendum in a comment.
@@ -218,13 +216,13 @@ Each ticket still goes through `astack-write-ticket`.
 
 A host can keep only part of this file after a compaction.
 During planning, after a compaction, read this file again.
-Run `astack check-plan --brief`, and read the plan file and the last trail rows.
+Run `astack check-plan --brief`.
+Read the plan file and the last trail rows.
 
 Select the mode from the request, plan, tracker, and Git with the existing route rules.
 For an existing plan, follow Resume in `references/upkeep.md`.
 Use the trail and current artifacts to recover unfinished planning work.
-The plan records implementation sessions, and its frontmatter holds status, tier, home, and grants.
-Read the skills required by the recovered mode and current work, because earlier reads can be gone.
+Read the skills of the recovered mode again, because earlier reads can be gone.
 
 ## Write the plan
 

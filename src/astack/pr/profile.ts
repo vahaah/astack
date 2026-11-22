@@ -2,16 +2,14 @@ import { readProfileJson } from "../profile.ts";
 
 export type MergeAuthority = "standing" | "turn";
 
-export type PrProfile = {
-	readonly requirePartOf: boolean;
-	readonly mergeAuthority: MergeAuthority;
+export type MergeProfile = {
+	readonly authority: MergeAuthority;
 	readonly standingBases: readonly string[];
 	readonly requireChecks: boolean;
 };
 
-export const DEFAULT_PR_PROFILE: PrProfile = {
-	requirePartOf: false,
-	mergeAuthority: "turn",
+export const DEFAULT_MERGE_PROFILE: MergeProfile = {
+	authority: "turn",
 	standingBases: [],
 	requireChecks: true,
 };
@@ -35,18 +33,17 @@ function branchNames(value: unknown): readonly string[] {
 		: [];
 }
 
-export function parsePrProfile(parsed: unknown): PrProfile {
-	const root = record(parsed);
-	const tracker = record(root.tracker);
-	const merge = record(root.merge);
+export function parseMergeProfile(parsed: unknown): MergeProfile {
+	const merge = record(record(parsed).merge);
 	return {
-		requirePartOf: tracker.requirePartOf === true,
-		mergeAuthority: merge.authority === "standing" ? "standing" : "turn",
+		authority: merge.authority === "standing" ? "standing" : "turn",
 		standingBases: branchNames(merge.standingBases),
 		requireChecks: merge.requireChecks !== false,
 	};
 }
 
-export function loadPrProfile(projectDir: string): PrProfile {
-	return parsePrProfile(readProfileJson(projectDir));
+export function partOfRequired(projectDir: string): boolean {
+	return (
+		record(record(readProfileJson(projectDir)).tracker).requirePartOf === true
+	);
 }

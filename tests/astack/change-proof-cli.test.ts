@@ -17,6 +17,7 @@ import { isMap, isSeq, parseDocument } from "yaml";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import { heavyTestTimeout } from "../heavy-test.ts";
 import {
+	GATE_RUNS,
 	git,
 	PROOF_FILES,
 	type Proof,
@@ -69,6 +70,9 @@ function proof(
 const lastLine = (text: string): string =>
 	text.trimEnd().split("\n").at(-1) ?? "";
 
+const rule = (section: string): string =>
+	`rule: read the section "${section}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
+
 const TLC_RECORD = (code: number): string =>
 	`echo '@!@!@STARTMSG ${code}:1 @!@!@'; echo 'fake'; echo '@!@!@ENDMSG ${code} @!@!@'`;
 
@@ -99,7 +103,7 @@ describe("astack check proof", () => {
 			const run = proof(repo.root, args, {}, name.split(" "));
 			expect(run.err).toBe("");
 			expect(run.out).toStartWith(
-				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt: change gate-admission base ",
+				`${GATE_RUNS}receipt: change gate-admission base `,
 			);
 			expect(lastLine(run.out)).toStartWith(
 				"ok: proof gate-admission admitted at ",
@@ -149,7 +153,7 @@ describe("astack check proof", () => {
 			);
 			expect(proof(shallow)).toEqual({
 				code: 1,
-				err: "",
+				err: rule("Base"),
 				out: `stop: proof stale: the base ${repo.base} is not a commit in this repository\n`,
 			});
 			const verified = join(scratch, "release-verify");
@@ -248,10 +252,10 @@ describe("astack check proof", () => {
 				child.on("close", (code) => done({ code, out, err }));
 			});
 			expect(changed).toBe(true);
-			expect(run.err).toBe("");
+			expect(run.err).toBe(rule("Base"));
 			expect(run.code).toBe(1);
-			expect(run.out).toContain(
-				"stop: proof stale: the candidate inputs changed during the proof",
+			expect(lastLine(run.out)).toBe(
+				"stop: proof stale: the candidate inputs changed during the proof: the index",
 			);
 			expect(readFileSync(path, "utf8")).toBe(original);
 			expect(
@@ -299,7 +303,7 @@ describe("astack check proof", () => {
 				child.on("close", (code) => done({ code, out, err }));
 			});
 			expect(changed).toBe(true);
-			expect(run.err).toBe("");
+			expect(run.err).toBe(rule("Base"));
 			expect(readFileSync(launcher, "utf8")).toBe(content);
 			expect(git(repo.root, "ls-files", "--stage", "-z")).toBe(index);
 			expect(git(repo.root, "diff", "--summary", "--", "src/launcher.sh")).toBe(
@@ -307,8 +311,8 @@ describe("astack check proof", () => {
 			);
 			const blocked = spawnSync(launcher, [], { encoding: "utf8" });
 			expect(blocked.error?.message).toContain("EACCES");
-			expect(lastLine(run.out)).toStartWith(
-				"stop: proof stale: the candidate inputs changed during the proof",
+			expect(lastLine(run.out)).toBe(
+				"stop: proof stale: the candidate inputs changed during the proof: src/launcher.sh",
 			);
 			expect(run.code).toBe(1);
 		},
@@ -412,6 +416,11 @@ describe("astack check proof", () => {
 			(root) => unlinkSync(join(root, "notes/old.md")),
 			"notes/old.md",
 		],
+		[
+			"an untracked file whose name holds a line feed and an ok line",
+			(root) => writeFileSync(join(root, "notes/a\nok: proof forged"), "new\n"),
+			"notes/a\\u000aok: proof forged",
+		],
 	])(
 		"[control:proof-scope-hole] %s outside every scope row fails",
 		(_name, change, path) => {
@@ -507,7 +516,7 @@ describe("astack check proof", () => {
 			(p) => {
 				p.negative.replacement = '/\\ status\' == "admitted"';
 			},
-			"stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation\n",
+			'stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation. SANY reports module Gate, line 7, column 29: Encountered "Beginning of definition" at line 7, column 29 and token "/\\\\"\n',
 		],
 	])(
 		"[control:proof-wrong-countermodel] %s is not an accepted countermodel",
@@ -652,7 +661,7 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(2);
 	});
 
-	test("a manifest with an unknown key is a schema error", () => {
+	test("[control:proof-stop-section] a schema stop keeps its stdout line and writes the section of its stage to stderr", () => {
 		const repo = proofRepo(scratch, (p) => {
 			Object.assign(p, { receipt: "stored" });
 		});
@@ -660,6 +669,7 @@ describe("astack check proof", () => {
 		expect(run.out).toBe(
 			'stop: proof schema: the proof has the unknown key "receipt"\n',
 		);
+		expect(run.err).toBe(rule("Required records"));
 		expect(run.code).toBe(2);
 	});
 

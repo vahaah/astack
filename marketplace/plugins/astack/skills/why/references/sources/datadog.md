@@ -40,9 +40,9 @@ They can explain why code uses a particular limit.
 ### 3. Inspect metrics
 
    ```
-   search_datadog_metrics (by name pattern, e.g., the feature or symbol)
+   search_datadog_metrics (by a name pattern for the feature or symbol)
    get_datadog_metric_context (metadata: description, units, tags)
-   get_datadog_metric (timeseries; "was there a spike around the PR date?")
+   get_datadog_metric (timeseries: "was there a spike around the PR date?")
    ```
 
 Compare metric behavior with the target's introduction or change date.

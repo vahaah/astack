@@ -1,18 +1,30 @@
 import { spawnSync } from "node:child_process";
+import { PROFILE_PATH } from "../profile.ts";
+import { type MergeProfile, parseMergeProfile } from "./profile.ts";
 
 export type CheckState = "success" | "pending" | "failure" | "none";
+
+export type BaseAuthority =
+	| {
+			readonly kind: "committed";
+			readonly commit: string;
+			readonly profile: MergeProfile;
+	  }
+	| { readonly kind: "absent"; readonly commit: string }
+	| { readonly kind: "unread"; readonly reason: string };
 
 export type PullRequestState = {
 	readonly number: number;
 	readonly url: string;
 	readonly title: string;
 	readonly body: string;
-	readonly base: string | undefined;
+	readonly base: string;
 	readonly head: string;
 	readonly openThreads: number;
 	readonly threadsListed: boolean;
 	readonly checks: CheckState;
 	readonly checkedHead: string | undefined;
+	readonly authority: BaseAuthority;
 };
 
 export type PrTarget = {
@@ -45,14 +57,53 @@ function text(value: unknown): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
-const THREADS_AND_CHECKS = `query($owner: String!, $name: String!, $number: Int!) {
+const PULL_REQUEST_FACTS = `query($owner: String!, $name: String!, $number: Int!, $profile: String!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $number) {
       reviewThreads(first: 100) { pageInfo { hasNextPage } nodes { isResolved } }
       commits(last: 1) { nodes { commit { oid statusCheckRollup { state } } } }
+      baseRef { target { oid } }
     }
+    object(expression: $profile) { ... on Blob { text isBinary isTruncated } }
   }
 }`;
+
+function baseProfileExpression(base: string): string {
+	return `refs/heads/${base}:${PROFILE_PATH}`;
+}
+
+function parsedJson(text: string): { readonly value: unknown } | undefined {
+	try {
+		return { value: JSON.parse(text) };
+	} catch {
+		return undefined;
+	}
+}
+
+function baseAuthorityFrom(repository: unknown, base: string): BaseAuthority {
+	const commit = text(
+		at(repository, "pullRequest", "baseRef", "target", "oid"),
+	);
+	if (!commit)
+		return {
+			kind: "unread",
+			reason: `the PR read gives no commit for the base branch ${base}`,
+		};
+	const blob = at(repository, "object");
+	if (blob === null) return { kind: "absent", commit };
+	const where = `${PROFILE_PATH} at ${commit.slice(0, 7)}`;
+	const body = text(at(blob, "text"));
+	if (
+		body === undefined ||
+		at(blob, "isBinary") === true ||
+		at(blob, "isTruncated") === true
+	)
+		return { kind: "unread", reason: `${where} is not a readable text file` };
+	const parsed = parsedJson(body);
+	return parsed === undefined
+		? { kind: "unread", reason: `${where} is not valid JSON` }
+		: { kind: "committed", commit, profile: parseMergeProfile(parsed.value) };
+}
 
 export function checkState(rollup: unknown): CheckState {
 	switch (rollup) {
@@ -85,8 +136,10 @@ export function pullRequestFrom(
 	const number = at(view, "number");
 	const url = text(at(view, "url"));
 	const head = text(at(view, "headRefOid"));
-	if (typeof number !== "number" || !url || !head) return undefined;
-	const pull = at(graph, "data", "repository", "pullRequest");
+	const base = text(at(view, "baseRefName"));
+	if (typeof number !== "number" || !url || !head || !base) return undefined;
+	const repository = at(graph, "data", "repository");
+	const pull = at(repository, "pullRequest");
 	const threads = at(pull, "reviewThreads", "nodes");
 	if (!Array.isArray(threads)) return undefined;
 	const commit = at(pull, "commits", "nodes", 0, "commit");
@@ -95,7 +148,7 @@ export function pullRequestFrom(
 		url,
 		title: text(at(view, "title")) ?? "",
 		body: text(at(view, "body")) ?? "",
-		base: text(at(view, "baseRefName")),
+		base,
 		head,
 		openThreads: threads.filter((thread) => at(thread, "isResolved") !== true)
 			.length,
@@ -103,12 +156,13 @@ export function pullRequestFrom(
 			at(pull, "reviewThreads", "pageInfo", "hasNextPage") !== true,
 		checks: checkState(at(commit, "statusCheckRollup", "state")),
 		checkedHead: text(at(commit, "oid")),
+		authority: baseAuthorityFrom(repository, base),
 	};
 }
 
 const GH_TIMEOUT_MS = 4000;
 
-function ghJson(dir: string, args: readonly string[]): unknown {
+export function ghJson(dir: string, args: readonly string[]): unknown {
 	const result = spawnSync("gh", args, {
 		cwd: dir,
 		encoding: "utf8",
@@ -133,18 +187,21 @@ export const readPullRequestWithGh: ReadPullRequest = (target) => {
 	]);
 	const number = at(view, "number");
 	const repo = repoOfUrl(text(at(view, "url")) ?? "");
-	if (typeof number !== "number" || !repo) return undefined;
+	const base = text(at(view, "baseRefName"));
+	if (typeof number !== "number" || !repo || !base) return undefined;
 	const graph = ghJson(target.dir, [
 		"api",
 		"graphql",
 		"-f",
-		`query=${THREADS_AND_CHECKS}`,
+		`query=${PULL_REQUEST_FACTS}`,
 		"-f",
 		`owner=${repo.owner}`,
 		"-f",
 		`name=${repo.name}`,
 		"-F",
 		`number=${number}`,
+		"-f",
+		`profile=${baseProfileExpression(base)}`,
 	]);
 	return pullRequestFrom(view, graph);
 };

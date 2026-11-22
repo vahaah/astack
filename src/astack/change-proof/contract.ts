@@ -14,6 +14,16 @@ export const STAGES = [
 
 export type Stage = (typeof STAGES)[number];
 
+export const STAGE_SECTIONS: Readonly<Record<Stage, string>> = {
+	schema: "Required records",
+	domain: "Domain and decisions",
+	category: "Category and abstraction",
+	controls: "Required records",
+	model: "TLC execution",
+	countermodel: "TLC execution",
+	stale: "Base",
+};
+
 export type Rejection = { readonly stage: Stage; readonly message: string };
 
 export function rejection(

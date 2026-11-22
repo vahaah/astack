@@ -16,7 +16,7 @@ If the project and organization are unknown, discover them:
 ### 2. Search relevant issues
 
    ```
-   search_issues (natural language, e.g., "errors in PaymentService timeout", "unhandled exceptions in uploadFile")
+   search_issues (natural language: "errors in PaymentService timeout", "unhandled exceptions in uploadFile")
    ```
 
 Use handled exception classes, function or class names, checked error messages, and file paths as queries.

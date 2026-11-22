@@ -36,7 +36,7 @@ Blocks.
 - A `now` milestone needs Demo, Proof and Blocks. A `later` milestone needs Demo and can carry Fog.
 - Each block bullet reads `B<nn> <outcome>. Lane. <x>. Depends on. <B handles>. Brief. <file|stub|done>.`. A lane must be under `## Lanes` when that section exists.
 - The index holds no status of blocks or sessions. The tracker holds it, and `astack board` shows it.
-- The index warns past 250 lines or 15 live D rows, and stops at 16 KB. Move detail into the briefs.
+- Over a `template.md` cap, move detail into the briefs.
 
 ## Briefs
 
@@ -89,11 +89,7 @@ Never commit it.
 ## Milestone exit
 
 After all sessions of the `now` milestone merge, run the milestone exit of `upkeep.md`.
-It runs the gates on a fresh stack, the journeys for each persona and the demo.
-It posts one tracker update.
-Then collapse the milestone line to `State. exited`.
-Hold one re-grill round of 7 questions or fewer.
 
 ## Close
 
-A programme closes when its last milestone exits. Delete `<plan dir>/<slug>/` in the closing PR. Keep the ADRs and the glossary. Mark the tracker container complete.
+A programme closes when its last milestone exits. The last session PR deletes `<plan dir>/<slug>/`. Keep the ADRs and the glossary. Mark the tracker container complete.

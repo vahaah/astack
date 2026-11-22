@@ -19,11 +19,7 @@ With Effect, use `FastCheck` and `Arbitrary` from `effect`.
 | Kleisli chain | Steps return `Result` values with early return | The first failure stops the chain |
 
 First-failure behavior is one implementation control, not all monad laws.
-A claimed Result monad also needs left identity, right identity, and associativity witnesses.
-Keep the error type fixed across the composition.
-For Promise<Result>, state rejection behavior and observable equality.
-Associativity changes parentheses, never the order of effects.
-The ChangeProof records these claims and their applicable controls.
+The [proof contract](../../pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the law witnesses of each carrier.
 
 ## Monoid
 

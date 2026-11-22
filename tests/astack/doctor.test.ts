@@ -1,8 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import {
 	chmodSync,
 	mkdirSync,
 	mkdtempSync,
+	readFileSync,
 	rmSync,
 	symlinkSync,
 	unlinkSync,
@@ -17,20 +18,33 @@ import {
 	tomlTables,
 } from "../../src/astack/cli/commands/doctor.ts";
 import {
+	type CodexHooksRead,
+	parseHookList,
+} from "../../src/astack/codex-hooks.ts";
+import {
 	CODEX_HOOK_EVENTS,
 	CODEX_HOOK_HASHES,
 } from "../../src/astack/codex-trust.ts";
 import {
+	type BaseReport,
 	type ClaudeProfile,
 	codexTrustKey,
 	diagnose,
 	type Finding,
 	failed,
+	type GhRead,
 	type Install,
+	readBases,
 	type Snapshot,
 } from "../../src/astack/doctor.ts";
 import { withFragment } from "../../src/astack/print.ts";
 import { ASTACK_RULES, ruleLinkName } from "../../src/astack/rules.ts";
+import {
+	fakeCodex,
+	type RecordedReply,
+	recordedReply,
+	withHook,
+} from "./codex-fake.ts";
 
 function install(
 	plugin: string,
@@ -68,6 +82,13 @@ function snapshot(extra: Partial<Snapshot> = {}): Snapshot {
 		agentsSkills: [],
 		profile: { kind: "present", repo: "/repo", keys: ["ste", "tracker"] },
 		unattendedReason: undefined,
+		skipped: { file: "/state/skip-profiles", dirs: [] },
+		reviewProfile: {
+			kind: "checked",
+			path: ".claude/pr-review-hardening.profile.md",
+			problems: [],
+		},
+		bases: undefined,
 		...extra,
 	};
 }
@@ -171,6 +192,7 @@ describe("astack doctor", () => {
 					enabled: ["flow@astack"],
 					trusted: {},
 					fragment: "0.1.0",
+					hooks: undefined,
 				},
 				cursor: { local: "0.1.0", imported: ["pstack@native"] },
 			}),
@@ -233,7 +255,7 @@ describe("astack doctor", () => {
 		],
 		[
 			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
-			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant in .astack/profile.json uses merge.authority or merge.standingBases.",
+			"NOTE session: unattended, because CLAUDE_CODE_ENTRYPOINT=sdk-ts. astack records no merge grant from prompts, and /astack:plan asks no questions. A standing grant comes only from merge.authority or merge.standingBases in .astack/profile.json on the PR base branch.",
 		],
 	])(
 		"[control:sg-doctor-unattended] the command names the setting that makes the session unattended (%p)",
@@ -263,7 +285,270 @@ describe("astack doctor", () => {
 		},
 	);
 
-	test("reads missing and broken pack links from an isolated profile", () => {
+	describe("the Codex trust read of the command", () => {
+		const homes: string[] = [];
+		afterAll(() => {
+			for (const home of homes) rmSync(home, { recursive: true, force: true });
+		});
+		const pinnedHome = () => {
+			const home = mkdtempSync(join(tmpdir(), "astack-doctor-codex-"));
+			homes.push(home);
+			mkdirSync(join(home, ".codex"));
+			mkdirSync(join(home, "bin"));
+			writeFileSync(
+				join(home, ".codex", "config.toml"),
+				[
+					'[plugins."astack@astack"]',
+					"enabled = true",
+					...CODEX_HOOK_EVENTS.flatMap((event) => [
+						`[hooks.state."${codexTrustKey("astack@astack", event)}"]`,
+						`trusted_hash = "${CODEX_HOOK_HASHES[event]}"`,
+					]),
+				].join("\n"),
+			);
+			return home;
+		};
+		const doctor = async (home: string) => {
+			let output = "";
+			const status = await command.run([], {
+				out: (text) => {
+					output += text;
+				},
+				err: (text) => {
+					throw new Error(text);
+				},
+				cwd: home,
+				env: {
+					HOME: home,
+					ASTACK_RUNTIME: process.execPath,
+					PATH: join(home, "bin"),
+				},
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			});
+			return {
+				status,
+				codex: output
+					.split("\n")
+					.filter((line) => line.includes(` codex ${home}/.codex: `))
+					.map((line) => line.replace(` codex ${home}/.codex:`, "")),
+			};
+		};
+
+		test("[control:dt-trust-command] a hooks/list reply with one modified astack hook makes doctor fail with its name", async () => {
+			const home = pinnedHome();
+			fakeCodex(join(home, "bin"), {
+				kind: "reply",
+				reply: withHook(codexTrustKey("astack@astack", "stop"), {
+					trustStatus: "modified",
+				}),
+			});
+			expect(await doctor(home)).toEqual({
+				status: 1,
+				codex: [
+					"FAIL astack@astack is on, but Codex marks its hooks for stop modified and skips them. Open /hooks in Codex and trust them again.",
+					"NOTE lowest enforcement rung: 5, text only",
+					"NOTE ~/.codex/AGENTS.md holds no astack fragment",
+				],
+			});
+		});
+
+		test("[control:dt-fallback-command] with no codex on PATH, pinned hashes give a WARN and no ok line for the hooks", async () => {
+			const home = pinnedHome();
+			expect(await doctor(home)).toEqual({
+				status: 0,
+				codex: [
+					"WARN astack cannot read the Codex trust of the astack@astack hooks, because no codex on PATH. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.",
+					"NOTE lowest enforcement rung: 5, text only",
+					"NOTE ~/.codex/AGENTS.md holds no astack fragment",
+				],
+			});
+		});
+	});
+
+	describe("doctor --skip-profile", () => {
+		const homes: string[] = [];
+		afterAll(() => {
+			for (const home of homes) rmSync(home, { recursive: true, force: true });
+		});
+		const twoProfiles = () => {
+			const home = mkdtempSync(join(tmpdir(), "astack-doctor-skip-"));
+			homes.push(home);
+			for (const [name, plugins] of [
+				[".claude", {}],
+				[
+					".claude-extra",
+					{ "astack@astack": [{ installPath: join(home, "p") }] },
+				],
+			] as const) {
+				mkdirSync(join(home, name, "plugins"), { recursive: true });
+				writeFileSync(
+					join(home, name, "plugins", "installed_plugins.json"),
+					JSON.stringify({ plugins }),
+				);
+			}
+			return home;
+		};
+		const doctor = async (home: string, args: readonly string[] = []) => {
+			let out = "";
+			let err = "";
+			const status = await command.run(args, {
+				out: (text) => {
+					out += text;
+				},
+				err: (text) => {
+					err += text;
+				},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: process.execPath },
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			});
+			return { status, out, err };
+		};
+		const extraLines = (home: string, out: string) =>
+			out
+				.split("\n")
+				.filter((line) => line.includes(` ${join(home, ".claude-extra")}`));
+
+		test("[control:dt-skip] a skipped folder gives one NOTE with the skip file, and its failures no longer fail doctor", async () => {
+			const home = twoProfiles();
+			const extra = join(home, ".claude-extra");
+			const file = join(home, ".local", "state", "astack", "skip-profiles");
+			expect((await doctor(home)).status).toBe(1);
+			expect(await doctor(home, ["--skip-profile", extra])).toEqual({
+				status: 0,
+				out: `doctor skips ${extra}, because ${file} lists it\n`,
+				err: "",
+			});
+			expect(await doctor(home, ["--skip-profile", extra])).toEqual({
+				status: 0,
+				out: `${file} already lists ${extra}\n`,
+				err: "",
+			});
+			expect(readFileSync(file, "utf8")).toBe(`${extra}\n`);
+			const after = await doctor(home);
+			expect(after.status).toBe(0);
+			expect(extraLines(home, after.out)).toEqual([
+				`NOTE claude-code ${extra}: doctor skips this folder, because ${file} lists it. Remove that line to check the folder again.`,
+			]);
+		});
+
+		test("[control:dt-skip-unlisted] a folder that doctor does not check exits 1 with the path", async () => {
+			const home = twoProfiles();
+			const other = join(home, "elsewhere");
+			const result = await doctor(home, ["--skip-profile", other]);
+			expect(result.status).toBe(1);
+			expect(result.err).toBe(
+				`astack doctor: ${other} is not a Claude config folder that doctor checks: ${join(home, ".claude")}, ${join(home, ".claude-extra")}\n`,
+			);
+		});
+
+		test("[control:dt-skip-write] a failed write exits 1 with the skip file path", async () => {
+			const home = twoProfiles();
+			mkdirSync(join(home, ".local", "state"), { recursive: true });
+			writeFileSync(join(home, ".local", "state", "astack"), "not a folder\n");
+			const result = await doctor(home, [
+				"--skip-profile",
+				join(home, ".claude-extra"),
+			]);
+			expect(result.status).toBe(1);
+			expect(
+				result.err.startsWith(
+					`astack doctor: cannot write ${join(home, ".local", "state", "astack", "skip-profiles")}: `,
+				),
+			).toBe(true);
+		});
+	});
+
+	test("[control:tel-sum] the command sums the events of the last 7 days by rule, surface and outcome, skips a broken line and an older event, and notes a missing log", async () => {
+		const home = mkdtempSync(join(tmpdir(), "astack-doctor-events-"));
+		const now = new Date("2026-11-20T12:00:00Z");
+		const at = (days: number) =>
+			new Date(now.getTime() - days * 86_400_000).toISOString();
+		const line = (
+			days: number,
+			rule: string,
+			surface: string,
+			outcome: string,
+		) =>
+			JSON.stringify({
+				time: at(days),
+				turn: 1,
+				release: "0.3.0",
+				pid: 7,
+				handler: "ste-artifact",
+				check: "ste",
+				event: "write",
+				surface,
+				rule,
+				outcome,
+				fingerprint: `${rule}:0000000${days}`,
+			});
+		const doctor = async (env: Record<string, string>) => {
+			let output = "";
+			await command.run(["--json"], {
+				out: (text) => {
+					output += text;
+				},
+				err: (text) => {
+					throw new Error(text);
+				},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: process.execPath, ...env },
+				today: "2026-11-20",
+				now,
+				scriptPath: undefined,
+			});
+			const findings: readonly Finding[] = JSON.parse(output);
+			return findings
+				.filter((item) => item.area === "ste-events")
+				.map((item) => `${item.level} ${item.text}`);
+		};
+		try {
+			const state = join(home, "state");
+			expect(await doctor({ ASTACK_STATE_DIR: state })).toEqual([
+				"note no events.jsonl in the state folder, so no hook finding is in the log",
+			]);
+			for (const [session, lines] of [
+				[
+					"one",
+					[
+						line(0.5, "contraction", "doc", "deny"),
+						line(3, "contraction", "doc", "deny"),
+						"{broken",
+						line(8, "contraction", "doc", "deny"),
+					],
+				],
+				[
+					"two",
+					[
+						line(1, "word-broad", "commit", "masked"),
+						line(6.9, "contraction", "doc", "deny"),
+						line(2, "judge", "comment", "advise"),
+					],
+				],
+			] as const) {
+				mkdirSync(join(state, "ste", session), { recursive: true });
+				writeFileSync(
+					join(state, "ste", session, "events.jsonl"),
+					`${lines.join("\n")}\n`,
+				);
+			}
+			expect(await doctor({ ASTACK_STATE_DIR: state })).toEqual([
+				"note 5 events of the last 7 days in 2 session logs. 1 broken line skipped.",
+				"note contraction, doc, deny: 3",
+				"note judge, comment, advise: 1",
+				"note word-broad, commit, masked: 1",
+			]);
+		} finally {
+			rmSync(home, { recursive: true, force: true });
+		}
+	});
+
+	test("reads missing and broken pack links from an isolated profile", async () => {
 		const home = mkdtempSync(join(tmpdir(), "astack-doctor-packs-"));
 		try {
 			const dir = join(home, ".claude");
@@ -287,11 +572,11 @@ describe("astack doctor", () => {
 				now: new Date("2026-01-01T00:00:00Z"),
 				scriptPath: undefined,
 			};
-			expect(fails(diagnose(gather(io)))).toEqual([]);
+			expect(fails(diagnose(await gather(io)))).toEqual([]);
 			unlinkSync(join(rules, "astack-typescript.md"));
 			unlinkSync(join(rules, "astack-postgres.md"));
 			symlinkSync(join(home, "absent.md"), join(rules, "astack-postgres.md"));
-			expect(fails(diagnose(gather(io)))).toEqual([
+			expect(fails(diagnose(await gather(io)))).toEqual([
 				"rules/astack-typescript.md is missing or unreadable. Add the rule link from the install steps.",
 				"rules/astack-postgres.md is missing or unreadable. Add the rule link from the install steps.",
 			]);
@@ -309,6 +594,7 @@ describe("astack doctor", () => {
 					enabled: ["explanatory-output-style@official"],
 					trusted: {},
 					fragment: undefined,
+					hooks: undefined,
 				},
 				cursor: {
 					local: undefined,
@@ -319,48 +605,139 @@ describe("astack doctor", () => {
 		expect(fails(findings)).toHaveLength(3);
 	});
 
-	test("fails on untrusted or modified Codex hooks and passes when all four match", () => {
-		const codex = (trusted: Record<string, string>) =>
+	const pinned = Object.fromEntries(
+		CODEX_HOOK_EVENTS.map((event) => [
+			codexTrustKey("astack@astack", event),
+			CODEX_HOOK_HASHES[event],
+		]),
+	);
+	const stopKey = codexTrustKey("astack@astack", "stop");
+	const listed = (reply: RecordedReply): CodexHooksRead => {
+		const list = parseHookList(reply.result);
+		if (list === undefined) throw new Error("the reply does not parse");
+		return { kind: "listed", list };
+	};
+	const withCodex = (
+		hooks: CodexHooksRead,
+		trusted: Record<string, string> = pinned,
+	) =>
+		diagnose(
 			snapshot({
 				codex: {
 					home: "/c",
 					enabled: ["astack@astack"],
 					trusted,
 					fragment: "1.0.0",
+					hooks,
 				},
-			});
-		const pinned = Object.fromEntries(
-			CODEX_HOOK_EVENTS.map((event) => [
-				codexTrustKey("astack@astack", event),
-				CODEX_HOOK_HASHES[event],
-			]),
+			}),
 		);
-		expect(
-			fails(
-				diagnose(
-					codex({
-						[codexTrustKey("astack@astack", "stop")]: CODEX_HOOK_HASHES.stop,
-					}),
-				),
-			),
-		).toEqual([
-			"astack@astack is on, but Codex does not trust its hooks for session_start, user_prompt_submit, pre_tool_use. Open /hooks in Codex and trust them.",
+	const codexLines = (findings: readonly Finding[]) =>
+		findings
+			.filter((item) => item.area === "codex /c")
+			.map((item) => `${item.level} ${item.text}`);
+	const missingStop = () => {
+		const reply = recordedReply();
+		for (const entry of reply.result.data)
+			entry.hooks = entry.hooks.filter((hook) => hook.key !== stopKey);
+		return reply;
+	};
+
+	test.each([
+		[
+			"[control:dt-trust-modified] modified",
+			withHook(stopKey, { trustStatus: "modified" }),
+			"astack@astack is on, but Codex marks its hooks for stop modified and skips them. Open /hooks in Codex and trust them again.",
+		],
+		[
+			"[control:dt-trust-untrusted] untrusted",
+			withHook(stopKey, { trustStatus: "untrusted" }),
+			"astack@astack is on, but Codex does not trust its hooks for stop. Open /hooks in Codex and trust them.",
+		],
+		[
+			"[control:dt-trust-disabled] disabled",
+			withHook(stopKey, { enabled: false }),
+			"astack@astack is on, but its hooks for stop are off in Codex. Turn them on in /hooks in Codex.",
+		],
+		[
+			"[control:dt-trust-missing] missing",
+			missingStop(),
+			"astack@astack is on, but Codex lists no hook for stop. Add the plugin again with codex plugin add astack@astack.",
+		],
+	])(
+		"a %s astack hook in the hooks/list reply fails with its name",
+		(_name, reply, text) => {
+			const findings = withCodex(listed(reply));
+			expect(fails(findings)).toEqual([text]);
+			expect(codexLines(findings)).toContain(
+				"note lowest enforcement rung: 5, text only",
+			);
+		},
+	);
+
+	test("[control:dt-trust-ok] 4 trusted hooks pass, and a managed hook passes with a note", () => {
+		expect(codexLines(withCodex(listed(recordedReply())))).toEqual([
+			"ok astack@astack is on, and Codex trusts its 4 hooks",
+			"note lowest enforcement rung: 1",
+			"ok ~/.codex/AGENTS.md holds the astack 1.0.0 fragment",
 		]);
 		expect(
-			fails(
-				diagnose(
-					codex({
-						...pinned,
-						[codexTrustKey("astack@astack", "stop")]:
-							`sha256:${"0".repeat(64)}`,
-					}),
-				),
-			),
+			codexLines(
+				withCodex(listed(withHook(stopKey, { trustStatus: "managed" }))),
+			).slice(0, 2),
 		).toEqual([
-			"astack@astack is on, but the trusted hash of stop is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.",
+			"ok astack@astack is on, and Codex trusts its 4 hooks",
+			"note astack@astack: a managed Codex config sets the trust of its hooks for stop",
 		]);
-		expect(fails(diagnose(codex(pinned)))).toEqual([]);
 	});
+
+	test("[control:dt-trust-entry-error] each error of a hooks/list entry gives a WARN", () => {
+		const reply = recordedReply();
+		for (const entry of reply.result.data)
+			Object.assign(entry, {
+				errors: [{ path: "/codex-home/hooks.json", message: "bad matcher" }],
+			});
+		expect(warnings(withCodex(listed(reply)))).toEqual([
+			{
+				area: "codex /c",
+				level: "warn",
+				text: "Codex hooks/list reports an error in /codex-home/hooks.json: bad matcher",
+			},
+		]);
+	});
+
+	test.each([
+		["[control:dt-fallback-pinned] pinned hashes", pinned, []],
+		[
+			"[control:dt-fallback-modified] a hash that is not the pin",
+			{ ...pinned, [stopKey]: `sha256:${"0".repeat(64)}` },
+			[
+				"astack@astack is on, but the trusted hash of stop is not the hash of this release, so Codex marks the hooks modified and skips them. Open /hooks in Codex and trust them again.",
+			],
+		],
+	])(
+		"with no hooks/list reply, %s give a WARN with the cause and no ok line",
+		(_name, trusted, failures) => {
+			const findings = withCodex(
+				{ kind: "failed", cause: "no codex on PATH" },
+				trusted,
+			);
+			expect(fails(findings)).toEqual(failures);
+			expect(warnings(findings)).toEqual([
+				{
+					area: "codex /c",
+					level: "warn",
+					text: "astack cannot read the Codex trust of the astack@astack hooks, because no codex on PATH. A trusted hash that matches its pin proves no trust, because Codex also checks a content hash.",
+				},
+			]);
+			expect(
+				codexLines(findings).filter((line) => line.startsWith("ok astack")),
+			).toEqual([]);
+			expect(codexLines(findings)).toContain(
+				"note lowest enforcement rung: 5, text only",
+			);
+		},
+	);
 
 	test("fails with no rule card where astack is installed, and names the effect of other Stop hooks", () => {
 		const findings = diagnose(
@@ -415,7 +792,7 @@ describe("astack doctor", () => {
 		);
 	});
 
-	test("fails when the first runtime of bin/astack is a node below the floor, though a newer node comes later", () => {
+	test("fails when the first runtime of bin/astack is a node below the floor, though a newer node comes later", async () => {
 		const home = mkdtempSync(join(tmpdir(), "astack-doctor-floor-"));
 		try {
 			const old = join(home, "node");
@@ -435,7 +812,7 @@ describe("astack doctor", () => {
 				scriptPath: undefined,
 			};
 			expect(
-				fails(diagnose(gather(io))).filter((text) =>
+				fails(diagnose(await gather(io))).filter((text) =>
 					text.startsWith("bin/astack"),
 				),
 			).toEqual([
@@ -484,10 +861,160 @@ describe("astack doctor", () => {
 		expect(fails(findings)).toHaveLength(1);
 	});
 
+	test.each<[string, Snapshot["reviewProfile"], string]>([
+		[
+			"[control:dt-review-missing] a repo with no review profile gives a note",
+			{ kind: "missing", path: ".claude/pr-review-hardening.profile.md" },
+			"note no .claude/pr-review-hardening.profile.md, so /astack:pr-review-hardening stops at load. Draft a profile as the Draft a profile section of references/profile.md of the pr-review-hardening skill says",
+		],
+		[
+			"[control:dt-review-drift] a drifted review profile fails with the problem and its repair",
+			{
+				kind: "checked",
+				path: ".claude/pr-review-hardening.profile.md",
+				problems: [
+					{
+						path: "gates",
+						message:
+							"needs one gate named change-proof that runs astack check proof",
+						repair: "Copy the change-proof gate",
+					},
+				],
+			},
+			"fail .claude/pr-review-hardening.profile.md: gates: needs one gate named change-proof that runs astack check proof. Copy the change-proof gate",
+		],
+		[
+			"a review profile that passes each rule is ok",
+			{
+				kind: "checked",
+				path: ".claude/pr-review-hardening.profile.md",
+				problems: [],
+			},
+			"ok .claude/pr-review-hardening.profile.md passes the hardening profile rules",
+		],
+	])("%s", (_name, reviewProfile, line) => {
+		expect(
+			diagnose(snapshot({ reviewProfile }))
+				.filter((item) => item.area === "review profile /repo")
+				.map((item) => `${item.level} ${item.text}`),
+		).toEqual([line]);
+	});
+
 	test("reports an invalid profile", () => {
 		expect(
 			fails(diagnose(snapshot({ profile: { kind: "invalid", repo: "/r" } }))),
 		).toEqual([".astack/profile.json is not a JSON object"]);
+	});
+});
+
+describe("base protection", () => {
+	const branch = (
+		isProtected: boolean,
+		enforcement: string,
+	): Readonly<Record<string, unknown>> => ({
+		name: "main",
+		protected: isProtected,
+		protection: {
+			enabled: isProtected,
+			required_status_checks: {
+				enforcement_level: enforcement,
+				contexts: [],
+				checks: [],
+			},
+		},
+	});
+	const area = "base protection owner/repo";
+	const linesFor = (report: BaseReport) =>
+		diagnose(snapshot({ bases: report }))
+			.filter((item) => item.area === area)
+			.map((item) => `${item.level} ${item.text}`);
+	const reader = (
+		replies: Readonly<Record<string, unknown>>,
+	): { read: GhRead; calls: string[] } => {
+		const calls: string[] = [];
+		return {
+			calls,
+			read: (args) => {
+				const path = args.at(-1) ?? "";
+				calls.push(path);
+				return replies[path];
+			},
+		};
+	};
+
+	test.each([
+		[
+			"[control:dt-base-open] protected false and no ruleset rule",
+			branch(false, "off"),
+			[],
+			"note main has no branch protection and no ruleset rule that blocks a push, so a pushed edit of .claude/pr-review-hardening.profile.md needs no review. Add a ruleset with a pull_request rule on main.",
+		],
+		[
+			"[control:dt-base-classic] classic protection with check enforcement off",
+			branch(true, "off"),
+			[{ type: "deletion" }],
+			"note main has classic protection with required checks off. Only an admin can see a required review, so doctor cannot tell whether a pushed edit of .claude/pr-review-hardening.profile.md needs review.",
+		],
+		[
+			"classic protection with required checks on",
+			branch(true, "non_admins"),
+			[],
+			"ok main has protection that blocks an unreviewed push",
+		],
+		[
+			"a pull_request ruleset rule",
+			branch(false, "off"),
+			[{ type: "pull_request" }],
+			"ok main has protection that blocks an unreviewed push",
+		],
+	])(
+		"%s gives one line and no FAIL",
+		(_name, branchReply, rulesReply, line) => {
+			const { read } = reader({
+				"repos/owner/repo": { default_branch: "main" },
+				"repos/owner/repo/branches/main": branchReply,
+				"repos/owner/repo/rules/branches/main": rulesReply,
+			});
+			expect(linesFor(readBases(read, "owner/repo", []))).toEqual([line]);
+		},
+	);
+
+	test("[control:dt-base-cap] reads the default branch and at most 3 bases, and notes each base past the cap", () => {
+		const replies: Record<string, unknown> = {
+			"repos/owner/repo": { default_branch: "main" },
+		};
+		for (const base of ["main", "v2", "v3"]) {
+			replies[`repos/owner/repo/branches/${base}`] = branch(true, "everyone");
+			replies[`repos/owner/repo/rules/branches/${base}`] = [];
+		}
+		const { read, calls } = reader(replies);
+		const report = readBases(read, "owner/repo", ["v2", "main", "v3", "v4"]);
+		expect(calls).toEqual([
+			"repos/owner/repo",
+			"repos/owner/repo/branches/main",
+			"repos/owner/repo/rules/branches/main",
+			"repos/owner/repo/branches/v2",
+			"repos/owner/repo/rules/branches/v2",
+			"repos/owner/repo/branches/v3",
+			"repos/owner/repo/rules/branches/v3",
+		]);
+		expect(linesFor(report).slice(-1)).toEqual([
+			"note doctor reads at most 3 bases, so it did not read v4",
+		]);
+	});
+
+	test("[control:dt-base-gh-fail] the first gh failure gives one note and ends the reads", () => {
+		const { read, calls } = reader({
+			"repos/owner/repo": { default_branch: "main" },
+		});
+		const report = readBases(read, "owner/repo", ["v2"]);
+		expect(calls).toEqual([
+			"repos/owner/repo",
+			"repos/owner/repo/branches/main",
+		]);
+		expect(linesFor(report)).toEqual([
+			"note gh could not read the branch main, so doctor reads no more bases",
+		]);
 	});
 });
 
@@ -520,6 +1047,7 @@ describe("the Codex config reader", () => {
 			enabled: ["astack@astack"],
 			trusted: { "astack@astack:hooks/hooks.json:stop:0:0": "sha256:abc" },
 			fragment: "0.1.0",
+			hooks: undefined,
 		});
 	});
 });

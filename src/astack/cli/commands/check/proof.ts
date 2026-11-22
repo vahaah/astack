@@ -27,6 +27,7 @@ import {
 	DEFAULT_PROOF_MANIFEST,
 	parseChangeProof,
 	type Rejection,
+	STAGE_SECTIONS,
 	type Stage,
 } from "../../../change-proof/contract.ts";
 import {
@@ -85,8 +86,17 @@ function options(args: readonly string[]): Result<Options, string> {
 	return ok({ manifest, base, summary });
 }
 
+const LINE_BREAKING = /[\p{Cc}\u2028\u2029]/gu;
+
 function stop(io: Io, rejection: Rejection): number {
-	io.out(`stop: proof ${rejection.stage}: ${rejection.message}\n`);
+	const message = rejection.message.replace(
+		LINE_BREAKING,
+		(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`,
+	);
+	io.out(`stop: proof ${rejection.stage}: ${message}\n`);
+	io.err(
+		`rule: read the section "${STAGE_SECTIONS[rejection.stage]}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`,
+	);
 	return rejection.stage === "schema" ? 2 : 1;
 }
 
@@ -289,7 +299,7 @@ async function prove(
 		java: java.value.java,
 		javaVersion: java.value.version,
 	};
-	const temporal = plan.value.config.properties.length > 0;
+	const { properties } = plan.value.config;
 
 	const cancel = new AbortController();
 	const start = (label: RunLabel, files: readonly ModelFile[]): StartedRun => ({
@@ -311,7 +321,7 @@ async function prove(
 
 	const positiveEnd = await ended(positiveRun);
 	const positive = positiveEnd.ok
-		? judgePositive("positive", positiveEnd.value, temporal)
+		? judgePositive("positive", positiveEnd.value, properties)
 		: positiveEnd;
 	if (!positive.ok) return stopRuns(io, cancel, runs, "model", positive.error);
 	io.out(countsLine("positive", positive.value));
@@ -323,12 +333,12 @@ async function prove(
 	if (!negative.ok)
 		return stopRuns(io, cancel, runs, "countermodel", negative.error);
 	io.out(
-		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states\n`,
+		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states: ${negative.value.trace}\n`,
 	);
 
 	const restoredEnd = await ended(restoredRun);
 	const restored = restoredEnd.ok
-		? judgePositive("restored", restoredEnd.value, temporal)
+		? judgePositive("restored", restoredEnd.value, properties)
 		: restoredEnd;
 	if (!restored.ok) return stopRuns(io, cancel, runs, "model", restored.error);
 	io.out(countsLine("restored", restored.value));

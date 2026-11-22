@@ -40,6 +40,13 @@ export const SLOW_GATE_TLA = GATE_TLA.replace(
 export const GATE_CFG =
 	"SPECIFICATION Spec\nINVARIANTS TypeOK AdmitFresh\nPROPERTY Ends\n";
 
+export const GATE_RUNS = [
+	"positive: 4 distinct states, 6 generated, 0 left on queue",
+	'negative: Admit violates AdmitFresh with a counterexample of 3 states: 1: <Initial predicate> /\\ status = "open" /\\ fresh = TRUE; 2: <Expire line 6, col 11 to line 6, col 72 of module Gate> /\\ status = "open" /\\ fresh = FALSE; 3: <Admit line 7, col 10 to line 7, col 67 of module Gate> /\\ status = "admitted" /\\ fresh = FALSE',
+	"restored: 4 distinct states, 6 generated, 0 left on queue",
+	"",
+].join("\n");
+
 export type Files = Readonly<Record<string, string>>;
 
 export const BASE_FILES: Files = {

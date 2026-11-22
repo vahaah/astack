@@ -10,6 +10,14 @@ export const PLACEHOLDER_SOURCE = `${OPEN}\\d+${CLOSE}`;
 const PLACEHOLDER = new RegExp(`${OPEN}(\\d+)${CLOSE}`, "g");
 const ONE_PLACEHOLDER = new RegExp(`^${PLACEHOLDER_SOURCE}$`);
 const TRAILING = /[.,;:!?)\]'"]+$/;
+const CODE_SPAN = /(?<!`)(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g;
+
+export function replaceCodeSpans(
+	text: string,
+	by: (span: string) => string,
+): string {
+	return text.replace(CODE_SPAN, by);
+}
 
 type Step =
 	| {
@@ -30,7 +38,7 @@ function replace(pattern: RegExp, by: string): Step {
 const P = PLACEHOLDER_SOURCE;
 
 const LEADING: readonly Step[] = [
-	mask(/(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g),
+	mask(CODE_SPAN),
 	replace(/\band\s*\/\s*or\b/gi, AND_OR),
 	replace(/!\[[^\]]*\]\([^)]*\)/g, " "),
 	mask(
@@ -56,6 +64,7 @@ const LEADING: readonly Step[] = [
 const TRAILING_STEPS: readonly Step[] = [
 	mask(/\$\{[^}\s]+\}|\$[A-Za-z_][A-Za-z0-9_]*/g),
 	mask(/(?<![\w-])--?[A-Za-z][\w-]*/g),
+	mask(/(?<![\w.,])\d+(?:,\d{3})*(?:\.\d+)? (?:ms|s|min|h|KB|MB|GB|px)\b/g),
 	mask(/\bv?\d+(?:\.\d+)+(?:-[\w.]+)?\b/g),
 	mask(/\b[A-Z][A-Z0-9]+-\d+\b/g),
 	mask(/(?<![\w&])#\d+\b/g),

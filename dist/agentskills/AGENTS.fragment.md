@@ -34,7 +34,7 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 - Delivery. One plan is one PR. A PR can serve more than one ticket. Split a PR only when the owner says so. Put follow-ups in the open PR.
 - PR text. Write `Part of <key>` on the first line when the repo profile asks for it. Never put a key or `#n` after a closing word.
 - Proof. Report gate counts. Walk the journey as a real persona. Measure before you make a claim, and open each file that you cite. A zero result needs a positive control.
-- Change proof. Every code, configuration, or docs change has a DDD contract and current TLA+ evidence. Internal briefs and handoffs name typed composition, effects, laws, abstraction, and ADRs. Run `astack check proof` before delivery. Missing or failed proof blocks delivery.
+- Change proof. Every code, configuration, or docs change has a DDD contract and current TLA+ evidence. Briefs and handoffs cite the record at `astack skill-path astack:pr-review-hardening references/proof-contract.md`. Delivery needs a pass of `astack check proof`.
 - State. The plan, the tracker and git hold the state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
 - Replies. Write every reply in ASD-STE100 Simplified Technical English, also short and simple replies. Give the result first. Do not repeat agreed items. A checkpoint reply has 6 lines or fewer.
 - STE. Use 20 words or fewer in an instruction and 25 or fewer in a description. Use the active voice and one instruction in each sentence. Do not use contractions, semicolons, long dashes, "e.g.", "i.e.", "etc." or "and/or". Write "make sure", not "ensure", and "use", not "utilize". Keep code, paths and names as they are. Quote text that is not yours. Put a cited title, a log line, a header value and the user's words in backticks or double quotes.
@@ -48,7 +48,7 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 
 ## Change
 
-- Plan work that needs a decision before code with `/astack-plan`, and build its `now` session with `astack session start <plan>`. When that PR merges, run `/astack-plan <slug>` before you build the next session.
+- Plan work that needs a decision before code with `/astack-plan`, and build its `now` session with `astack session start <plan>`. When that PR merges, run `/astack-plan <slug>` once, on the next session branch.
 - Make the smallest change that meets the acceptance criteria. Put what you find outside the scope fence, the files the change must edit, in a ticket.
 - Match the repo's code patterns, but never copy its comments. Finish someone else's migration only on lines you already change. When you replace an internal API, move every caller and delete the old one in the same PR. When that is too wide for one PR, plan it with `/astack-plan` as expand, migrate, contract.
 

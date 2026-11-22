@@ -16,6 +16,9 @@ import {
 import { heavyTestTimeout } from "./heavy-test.ts";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/check-proof.ts");
+
+const rule = (section: string): string =>
+	`rule: read the section "${section}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
 const scratch = scratchDir("astack-check-proof-script-");
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
@@ -178,7 +181,7 @@ test("[control:proof-local-untracked] an untracked path at the default tip reads
 	);
 	expect(localRun(repo.root)).toEqual({
 		code: 1,
-		err: "",
+		err: rule("Required records"),
 		out: `stop: proof controls: ${["no scope row covers the changed path notes/new.md", ...idle].join("; ")}\n`,
 	});
 });
@@ -202,7 +205,7 @@ test.each<[string, (root: string) => void]>([
 		setup(repo.root);
 		expect(localRun(repo.root)).toEqual({
 			code: 1,
-			err: "",
+			err: rule("Required records"),
 			out: "stop: proof controls: no scope row covers the changed path notes/r.md\n",
 		});
 	},
@@ -222,7 +225,7 @@ test("[control:proof-local-shallow] a local run on a clean default tip with no H
 	);
 	expect(localRun(shallow)).toEqual({
 		code: 1,
-		err: "",
+		err: rule("Base"),
 		out: `stop: proof stale: the base ${rootCommit(repo.root)} is not a commit in this repository\n`,
 	});
 });

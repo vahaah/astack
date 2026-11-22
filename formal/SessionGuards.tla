@@ -7,8 +7,10 @@ PRs == {1, 2}
 Clauses == {"merge", "mergeOne", "negatedMerge", "fullSend", "negatedFullSend",
             "fullStop", "other"}
 Prompts == {p \in SUBSET Clauses : Cardinality(p) \in {1, 2}}
-Sources == {"user", "none", "machine"}
+Sources == {"user", "none", "frame", "machine"}
 Authorities == {"turn", "standing", "base"}
+BaseAuthorities == Authorities \cup {"unread"}
+Channels == {"gh", "mcp"}
 Modes == {"plain", "fullSend", "fullStop"}
 
 OwnerCovers(said, n) == \/ {"merge", "fullSend"} \cap said # {}
@@ -77,10 +79,11 @@ After(cmd, t) == (t \ Touched(cmd, t))
                  \cup {[c EXCEPT !.kind = Rest(cmd.effect, c.kind)] :
                          c \in {d \in Touched(cmd, t) : Rest(cmd.effect, d.kind) # "gone"}}
 
-VARIABLES concern, attended, authority, said, saidBy, grant, mode, merged,
-          unauthorized, stopMerged, file, step, writeChecked, commitChecked,
-          tree, broadLoss, falseDenial
-mergeVars == <<attended, authority, said, saidBy, grant, mode, merged, unauthorized, stopMerged>>
+VARIABLES concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
+          mode, merged, unauthorized, stopMerged, mcpMerged, faultMerged,
+          file, step, writeChecked, commitChecked, tree, broadLoss, falseDenial
+mergeVars == <<attended, baseAuthority, workingAuthority, said, saidBy, grant, mode,
+               merged, unauthorized, stopMerged, mcpMerged, faultMerged>>
 writeVars == <<file, step, writeChecked, commitChecked>>
 gitVars == <<tree, broadLoss, falseDenial>>
 vars == <<concern, mergeVars, writeVars, gitVars>>
@@ -92,14 +95,20 @@ MergeStart == /\ said = {}
               /\ merged = {}
               /\ unauthorized = FALSE
               /\ stopMerged = FALSE
-MergeIdle == attended = TRUE /\ authority = "turn" /\ MergeStart
+              /\ mcpMerged = FALSE
+              /\ faultMerged = FALSE
+MergeIdle == /\ attended = TRUE
+             /\ baseAuthority = "turn"
+             /\ workingAuthority = "turn"
+             /\ MergeStart
 WriteStart == step = "new" /\ writeChecked = FALSE /\ commitChecked = FALSE
 WriteIdle == file = IdleFile /\ WriteStart
 GitIdle == tree = {} /\ broadLoss = FALSE /\ falseDenial = FALSE
 
 Init == \/ /\ concern = "merge"
            /\ attended \in BOOLEAN
-           /\ authority \in Authorities
+           /\ baseAuthority \in BaseAuthorities
+           /\ workingAuthority \in Authorities
            /\ MergeStart
            /\ WriteIdle
            /\ GitIdle
@@ -123,17 +132,28 @@ Prompt == /\ concern = "merge"
                       /\ saidBy' = source
                       /\ mode' = ModeOf(p)
                  ELSE UNCHANGED <<grant, said, saidBy, mode>>
-          /\ UNCHANGED <<concern, attended, authority, merged, unauthorized, stopMerged, writeVars, gitVars>>
+          /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged,
+                         unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars>>
+
+EditProfile == /\ concern = "merge"
+               /\ workingAuthority' \in Authorities
+               /\ UNCHANGED <<concern, attended, baseAuthority, said, saidBy, grant, mode, merged,
+                              unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars>>
 
 Merge == /\ concern = "merge"
          /\ mode # "fullStop"
-         /\ \E n \in PRs \ merged :
-              /\ ProfileCovers(authority, n) \/ n \in grant
+         /\ \E n \in PRs \ merged, channel \in Channels, fault \in BOOLEAN :
+              /\ channel = "gh"
+              /\ ~fault
+              /\ ProfileCovers(baseAuthority, n) \/ n \in grant
               /\ merged' = merged \cup {n}
-              /\ unauthorized' = (unauthorized \/ ~(ProfileCovers(authority, n)
+              /\ mcpMerged' = (mcpMerged \/ channel = "mcp")
+              /\ faultMerged' = (faultMerged \/ fault)
+              /\ unauthorized' = (unauthorized \/ ~(ProfileCovers(baseAuthority, n)
                                    \/ (OwnerCovers(said, n) /\ PersonTyped(saidBy, attended))))
          /\ stopMerged' = (stopMerged \/ mode = "fullStop")
-         /\ UNCHANGED <<concern, attended, authority, said, saidBy, grant, mode, writeVars, gitVars>>
+         /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
+                        mode, writeVars, gitVars>>
 
 Write == /\ concern = "write"
          /\ step = "new"
@@ -162,12 +182,13 @@ RunGit == /\ concern = "git"
                             /\ tree' = After(cmd, tree)
           /\ UNCHANGED <<concern, mergeVars, writeVars>>
 
-Next == Prompt \/ Merge \/ Write \/ Commit \/ Settled \/ RunGit
+Next == Prompt \/ EditProfile \/ Merge \/ Write \/ Commit \/ Settled \/ RunGit
 Spec == Init /\ [][Next]_vars
 
 TypeOK == /\ concern \in Concerns
           /\ attended \in BOOLEAN
-          /\ authority \in Authorities
+          /\ baseAuthority \in BaseAuthorities
+          /\ workingAuthority \in Authorities
           /\ said \in Prompts \cup {{}}
           /\ saidBy \in Sources \cup {"nobody"}
           /\ grant \subseteq PRs
@@ -175,6 +196,8 @@ TypeOK == /\ concern \in Concerns
           /\ merged \subseteq PRs
           /\ unauthorized \in BOOLEAN
           /\ stopMerged \in BOOLEAN
+          /\ mcpMerged \in BOOLEAN
+          /\ faultMerged \in BOOLEAN
           /\ file \in Files
           /\ step \in {"new", "written", "committed"}
           /\ writeChecked \in BOOLEAN
@@ -186,6 +209,8 @@ TypeOK == /\ concern \in Concerns
 GrantFromWords == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson == grant # {} => PersonTyped(saidBy, attended)
 MergeNeedsAuthority == ~unauthorized
+McpMergeDenied == ~mcpMerged
+GuardErrorDenies == ~faultMerged
 FullStopNeverMerges == ~stopMerged
 WriteChecksKept == step # "new" /\ (file.inProject \/ (~file.inTemp /\ (file.git \/ file.marked)))
                    => writeChecked

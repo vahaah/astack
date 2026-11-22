@@ -1,6 +1,7 @@
 import { isAbsolute, resolve } from "node:path";
 import { applyEdit } from "../../comments/added.ts";
-import type { HookEvent, HookEventName } from "../events.ts";
+import { humanPrompt } from "../../ste/session.ts";
+import type { Env, HookEvent, HookEventName } from "../events.ts";
 import { mcpParts } from "./claude-code.ts";
 import type { DecodeDeps, Decoded } from "./types.ts";
 
@@ -197,6 +198,10 @@ function mcpEvents(payload: Payload): HookEvent[] {
 	return [{ kind: "mcp", server: serverOf(payload), tool: name, input }];
 }
 
+function attendedIn(payload: Payload, env: Env): boolean {
+	return payload.is_background_agent !== true && env.ASTACK_ATTENDED !== "0";
+}
+
 function eventsFor(
 	event: CursorEvent,
 	payload: Payload,
@@ -214,15 +219,17 @@ function eventsFor(
 					attended: payload.is_background_agent !== true,
 				},
 			];
-		case "beforeSubmitPrompt":
+		case "beforeSubmitPrompt": {
+			const prompt = text(payload.prompt) ?? "";
 			return [
 				{
 					kind: "prompt",
-					text: text(payload.prompt) ?? "",
-					human: true,
+					text: prompt,
+					human: humanPrompt(undefined, prompt, attendedIn(payload, deps.env)),
 					session,
 				},
 			];
+		}
 		case "preToolUse": {
 			const tool = text(payload.tool_name) ?? "";
 			const input = parsedInput(payload.tool_input);
@@ -250,9 +257,7 @@ function eventsFor(
 							kind: "reply",
 							text: deps.reply,
 							session,
-							interactive:
-								payload.is_background_agent !== true &&
-								deps.env.ASTACK_ATTENDED !== "0",
+							interactive: attendedIn(payload, deps.env),
 							subagent: false,
 							fresh: payload.loop_count === 0,
 							chain: text(payload.generation_id),
