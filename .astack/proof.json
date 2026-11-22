@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "review-roadmap-b26-result-laws",
-	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
+	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
 	"scope": [
 		{
 			"path": "src/astack/result.ts",
@@ -351,8 +351,8 @@
 		"dependencies": [],
 		"bounds": [
 			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
-			"Nine failure kinds map to five sections of the proof contract.",
-			"The authority and base cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model."
+			"Each failure kind maps to one section of the proof contract.",
+			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 		],
 		"fairness": ["WF_vars(Next)"],
 		"invariants": [

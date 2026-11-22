@@ -80,7 +80,7 @@ function payload(fields: Record<string, unknown>): string {
 }
 
 describe("the handler registry", () => {
-	test("lists each handler once, and each handler names its events", () => {
+	test("[control:hook-registry] lists each handler once, and each handler names its events", () => {
 		const ids = HANDLERS.map((handler) => handler.id);
 		expect(ids).toEqual([
 			"comments",
@@ -136,7 +136,7 @@ describe("the handler registry", () => {
 		expect(sessions).toEqual(["s1"]);
 	});
 
-	test("a handler that throws fails open and keeps the other verdicts", () => {
+	test("[control:hook-fail-open] a handler that throws fails open and keeps the other verdicts", () => {
 		const throwing = defineHandler({
 			id: "throws",
 			on: ["shell"],

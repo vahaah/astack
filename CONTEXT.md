@@ -41,6 +41,19 @@ _Code_: `ProofBase.diff`
 A fresh positive model run or a named mutation that must produce its expected violation.
 _Avoid_: Any failed command
 
+### Proof rung
+
+The level of evidence that the changed paths and the profile floor give a ChangeProof, from R0 to R4.
+Only R4 runs TLC. A pull request cannot lower the floor of its diff base.
+_Avoid_: Proof level that the author picks, skip flag
+_Code_: `deriveLadder`
+
+### Model registry
+
+The file `formal/models.json`, which maps each path to its models, a fail-closed stop, an unmodelled control or a contract-only rung.
+_Avoid_: Model list in the profile, verdict cache
+_Code_: `ModelRegistry`
+
 ### Composition record
 
 The declared objects, typed arrows, effects, equality, laws, and witnesses for a candidate change.

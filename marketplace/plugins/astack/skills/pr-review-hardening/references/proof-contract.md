@@ -19,7 +19,7 @@ Do not change the manifest base after a merge or a rebase of the base branch.
 
 A CI run passes `--base`. A pull request run uses the base branch of the PR.
 A push to the default branch and a release use the first parent of HEAD.
-A branch push whose HEAD the default branch holds also uses the first parent of HEAD. An example is a new branch at the tip of the default branch.
+A branch push whose HEAD the default branch holds also uses the first parent of HEAD.
 A push to another branch uses the default branch.
 
 A local run with `--base HEAD` has an empty diff, so it stops.
@@ -30,7 +30,7 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 | Record | Keys of [proof-example.json](proof-example.json) |
 |---|---|
 | `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
-| `scope` | `[{path, obligation, modelRefs}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
+| `scope` | `[{path, obligation}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
 | `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
 | `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
 | `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
@@ -138,15 +138,16 @@ Its deletion test rejects a layer that adds no useful domain rule.
 These declarations require semantic review.
 The checker cannot infer their truth from names alone.
 
-## TLC execution
+## Rungs and models
 
-The runner pins `tla2tools.jar` release 1.7.4 and verifies its SHA-256 on every use.
-Java 17 or later is required.
-The runner downloads only the pinned jar into the astack cache when it is absent.
+Covered paths, model files and `formal/models.json` give R4. With no registry, each path gives R4. An uncovered fail-closed path or a deleted registry stops.
+
+Contract-only paths give R0, and other paths give R1. `proof.minRung` only raises the rung. Only R4 runs TLC, one triple for each selected model.
+
+## TLC execution
 
 `ASTACK_TLC_JAR` can name a verified jar outside the checkout.
 `ASTACK_PROOF_TIMEOUT_MS` can lower the 60000 ms policy cap.
-It cannot raise that cap.
 Model states and mutations use owned temporary directories.
 The child process receives no JVM option or TLA library overrides.
 

@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { RUNGS, type Rung } from "./change-proof/rung.ts";
 import type { CommentPolicy } from "./comments/classify.ts";
 import { limitsFor } from "./comments/limits.ts";
 import { parseHookConfig } from "./hook-profile.ts";
+import { err, ok, type Result } from "./result.ts";
 
 export type PlanProfile = {
 	readonly dir: string;
@@ -249,6 +251,34 @@ function planProblems(value: unknown): string[] {
 	];
 }
 
+function isRung(value: unknown): value is Rung {
+	return RUNGS.some((rung) => rung === value);
+}
+
+export function proofProblems(value: unknown): string[] {
+	if (!isRecord(value)) return ["proof must be an object"];
+	return [
+		...unknownKeys(value, "proof", ["minRung"]),
+		...optional(
+			value,
+			"proof",
+			"minRung",
+			isRung,
+			`one of ${RUNGS.join(", ")}`,
+		),
+	];
+}
+
+export function proofFloor(profile: unknown): Result<Rung, string> {
+	if (!isRecord(profile)) return err("the profile must be a JSON object");
+	const proof = profile.proof;
+	if (proof === undefined) return ok("R0");
+	const [problem] = proofProblems(proof);
+	if (problem !== undefined) return err(problem);
+	const floor = field(proof, "minRung");
+	return ok(isRung(floor) ? floor : "R0");
+}
+
 function patternProblems(value: unknown): string[] {
 	if (!isStringList(value)) return ["commentKeep must be a string list"];
 	return value.flatMap((pattern) => {
@@ -287,6 +317,8 @@ function sectionProblems(key: string, value: unknown): string[] {
 			return isRecord(value) && isStringList(value.deny)
 				? unknownKeys(value, "neutral", ["deny"])
 				: ["neutral must be an object with a deny string list"];
+		case "proof":
+			return proofProblems(value);
 		case "maxCommentLines":
 			return isPositiveInteger(value)
 				? []
