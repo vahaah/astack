@@ -90,11 +90,16 @@ const OPERAND_KEYWORDS: ReadonlySet<string> = new Set([
 	"yield",
 	"await",
 	"extends",
-	"default",
+]);
+
+const TYPE_PARAMETER_KEYWORDS: ReadonlySet<string> = new Set([
+	"extends",
+	"new",
 ]);
 
 export const EXPRESSION_KEYWORDS: ReadonlySet<string> = new Set([
 	...OPERAND_KEYWORDS,
+	"default",
 	"as",
 	"satisfies",
 	"keyof",
@@ -204,14 +209,36 @@ function isMemberDot(draft: Draft | undefined, src: string): boolean {
 	return text === "." || text === "?.";
 }
 
-function endsValue(drafts: readonly Draft[], src: string): boolean {
+function takesOperand(
+	word: string,
+	before: Draft | undefined,
+	src: string,
+	opening: "/" | "<",
+): boolean {
+	if (isMemberDot(before, src)) return false;
+	if (word === "default")
+		return (
+			before?.kind === "word" &&
+			src.slice(before.start, before.end) === "export"
+		);
+	if (opening === "<" && TYPE_PARAMETER_KEYWORDS.has(word)) return false;
+	return OPERAND_KEYWORDS.has(word);
+}
+
+function endsValue(
+	drafts: readonly Draft[],
+	src: string,
+	opening: "/" | "<",
+): boolean {
 	const draft = drafts[drafts.length - 1];
 	if (!draft) return false;
 	switch (draft.kind) {
 		case "word":
-			return (
-				isMemberDot(drafts[drafts.length - 2], src) ||
-				!OPERAND_KEYWORDS.has(src.slice(draft.start, draft.end))
+			return !takesOperand(
+				src.slice(draft.start, draft.end),
+				drafts[drafts.length - 2],
+				src,
+				opening,
 			);
 		case "punct": {
 			const text = src.slice(draft.start, draft.end);
@@ -389,7 +416,7 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 			if (!template(i, "template-head")) return undefined;
 			continue;
 		}
-		if (c === "/" && !endsValue(drafts, source)) {
+		if (c === "/" && !endsValue(drafts, source, "/")) {
 			const end = regexEnd(source, i);
 			if (end > 0) {
 				push("regex", i, end);
@@ -400,7 +427,7 @@ export function scan(source: string, jsx: boolean): Scan | undefined {
 		if (
 			c === "<" &&
 			jsx &&
-			!endsValue(drafts, source) &&
+			!endsValue(drafts, source, "<") &&
 			jsxStarts(source, i)
 		) {
 			stack.push({ kind: "jsx", open: 1, inTag: true, typeArgs: 0, from: i });

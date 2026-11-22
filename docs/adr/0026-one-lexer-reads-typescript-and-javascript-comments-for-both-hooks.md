@@ -70,7 +70,7 @@ No two arrows compose with `o`, so the record declares no composite arrow, and n
 #### Implementation correspondence
 
 `scan` in `src/astack/types/scan.ts` maps to the `Step` and `Fail` actions.
-Its value rule maps to the `value` expression of `Step`, with `OPERAND_KEYWORDS` and `isMemberDot`.
+Its value rule maps to the `value` expression of `Step`, with `takesOperand`, `OPERAND_KEYWORDS` and `isMemberDot`.
 `lex` in `lexer.ts` maps to the `Finish` action, and `unitsOf` in `added.ts` reads its `complete` flag.
 In the model, the reading of each slash and the context before it are state.
 
@@ -92,10 +92,15 @@ The hatch walk of the type hook already reads a member name in this way.
 
 ### D3. A regex or JSX starts after a keyword only when the keyword takes an operand
 
-`OPERAND_KEYWORDS` holds the 14 words of the old comment lexer, `extends` and `default`.
+`OPERAND_KEYWORDS` holds the 14 words of the old comment lexer and `extends`.
 A word that is not in the set ends a value, so `as`, `satisfies`, `keyof` and `let` end a value when they are names.
 No regex and no JSX can follow these words when they are keywords, so the rule loses no form.
 `EXPRESSION_KEYWORDS` keeps its 24 words for the hatch walk of the type hook.
+
+`default` takes an operand only after `export`, as in `export default /[//]/.source;` and `export default <App />;`.
+Elsewhere `default` is a name, such as the method name in `default<Item>(x: Item)`.
+In a tsx file, no JSX follows `extends` or `new`.
+A type parameter list follows them instead, as in `T extends <Item>(x: Item) => void` and `new <Item>(x: Item) => Item`.
 
 ### D4. A test ties each keep-list copy to the 5 keep classes by keyword
 
@@ -110,6 +115,7 @@ The test does not compare words, because each copy paraphrases the frozen quote.
 - Easier: the comment hook keeps the comment after `obj.return / 2;` and after a name `as`, and it reports no false comment in `export default /[//]/.source;`.
 - Harder: the comment hook now builds a token list. On the 916 KB bundle, the scan took 11.0 ms against 8.2 ms for the old lexer.
 - Limit: a regex right after the `)` of an `if`, `while` or `for` head is still a division. A slash after a name `of`, `yield` or `await` is still a regex. Only a parser can tell these apart.
+- Limit: in a tsx file, a type parameter list such as `<Item>(` after `=` or `:` still starts JSX, as in the old lexer. The scan then fails, and the comment hook allows the change. A name of 1 or 2 characters, such as `<T>(`, is not JSX.
 - Follow-up: of B24 and B25, the block that merges second drops the stub fallback row of the keep-list test with the file.
 
 ## Alternatives considered

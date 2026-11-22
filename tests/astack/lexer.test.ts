@@ -133,6 +133,23 @@ describe("TypeScript and JavaScript", () => {
 		expect(commentTexts(source, "tsx")).toEqual(["// cmp"]);
 	});
 
+	test.each([
+		["type F<T> = T extends <Item>(x: Item) => void ? 1 : 0; // note"],
+		["type C = new <Item>(x: Item) => Item; // note"],
+		["class C {\n  default<Item>(x: Item) {\n    return x;\n  }\n} // note"],
+	])(
+		"reads a type parameter list after extends, new or a method name default as no JSX in tsx, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "tsx")).toEqual(["// note"]);
+		},
+	);
+
+	test("starts JSX after export default in tsx, so the JSX text holds no comment", () => {
+		expect(
+			commentTexts("export default <p>it's // text</p>; // note\n", "tsx"),
+		).toEqual(["// note"]);
+	});
+
 	test("does not start JSX in plain .ts files", () => {
 		const source = "const cast = <Foo>value; // cast\n";
 		expect(commentTexts(source, "ts")).toEqual(["// cast"]);

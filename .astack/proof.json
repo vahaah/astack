@@ -311,7 +311,8 @@
 			"lex gives the comments of a ts, tsx or jsx file with their offsets and markers.",
 			"A scan that fails gives no comments and complete false, and unitsOf then gives no units.",
 			"A slash after a value, a member name or a name word is a division, and a slash after an operand keyword starts a regex.",
-			"A regex after the ) of an if, while or for head, and a slash after a name of, yield or await, stay wrong in both hooks."
+			"A regex after the ) of an if, while or for head, and a slash after a name of, yield or await, stay wrong in both hooks.",
+			"In a tsx file, a type parameter list such as <Item>( after = or : starts JSX in both hooks, the scan fails, and unitsOf gives no units."
 		],
 		"deletionTest": "Deleting the shared scan puts a second TS and JS lexer back in the comment hook, and each regex fix lands twice.",
 		"alternatives": [
@@ -351,6 +352,13 @@
 				"concrete": {
 					"path": "src/astack/types/scan.ts",
 					"symbol": "isMemberDot"
+				},
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "takesOperand"
 				},
 				"modelAction": "Step"
 			},
