@@ -21,6 +21,8 @@ A copied retry example does not establish a model relation.
 ## Register a model
 
 Each entry of `formal/models.json` has `name`, `model`, `negative`, `records`, `covers` and `text`.
+An entry can also have `conformance`, which names its conformance test and a code mutation with its `file`, `symbol`, `original`, `replacement` and `defect`.
+The test of the registry finds the original text once in that function, and the conformance test must fail with the mutation.
 The `name` is the module name, and `model` and `negative` use the manifest shape.
 `records` lists each file whose Formal claim names the model.
 `covers` lists the code globs of the model, and `text` lists its skill text globs.

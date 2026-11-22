@@ -73,6 +73,7 @@ A guard returns a plain value and reads files, git and the environment at the ho
 
 ```data
 mergeGrantIn : PromptText -> MergeGrant   effects: none
+startsFullStop : PromptText -> boolean    effects: none
 mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, network
 handler      : HookCall -> Verdict        comments: fs-read, fs-write, spawn, env
 handler      : HookCall -> Verdict        types: fs-read, spawn, env
@@ -80,6 +81,7 @@ handler      : HookCall -> Verdict        ste-artifact: fs-read, fs-write, env
 handler      : HookCall -> Verdict        destructive: fs-read, fs-write, spawn, env
 shellSteps   : HookCall -> ShellStep      effects: none
 readGit      : ShellStep -> GitRead       effects: none
+workLoss     : (GitInvocation, Treeish) -> WorkLoss | undefined          effects: none
 madeRepoTarget   : ShellStep -> AbsolutePath | undefined                   effects: none
 settleRepos      : (SessionRepos, Map<Path, RepoProbe>) -> SessionRepos      effects: none
 sessionRepoAt    : (SessionRepos, Root, RepoIdentity) -> boolean            effects: none
@@ -91,7 +93,9 @@ recordOf     : GateRun -> GateRecord      effects: none
 ```
 
 `mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
-`mergeGuard` saves that grant for a person's prompt, and it reads the grant back when a `gh pr merge` call arrives.
+`startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only clause is "full stop".
+`mergeGuard` saves that grant and the full-stop record for a person's prompt, and it reads both back when a `gh pr merge` call arrives.
+`workLoss` is pure. It takes the treeish reader as a parameter, and the destructive `handler` passes a reader that runs `git rev-parse`.
 
 `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
 It also saves the session repo record, so it gets the fs-write effect.
@@ -117,7 +121,7 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | `ModeOf` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for a person's prompt. `preflightReasons` denies each merge while `loadFullStop` finds the record. `--disable-auto` passes |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
-| `CodeLost` and `RunGit` | `workLossReasons` and its status reader in `src/astack/hook/handlers/destructive.ts` |
+| `CodeLost` and `RunGit` | `workLoss`, which gives the kind and the pathspecs that one git call loses, and `workLossReasons` with its status reader in `src/astack/hook/handlers/destructive.ts` |
 | `MakeRepo` | `madeRepoTarget` in `src/astack/git-command.ts`, and `rememberRepos` in `src/astack/session-repos.ts`, which records a free target as pending |
 | `Shell` and `Settle` | `settledRepos` and `settleRepos` in `src/astack/session-repos.ts`, which bind a pending repo root with its own git dir that the call made, and drop each other pending path |
 | `Exempt` | `isSessionRepo` and `sessionRepoAt` in `src/astack/session-repos.ts`, which `lostPaths` reads through the session repo test of each step |
@@ -139,6 +143,8 @@ The merge guard, hook, STE hook, guard and doctor suites run each control throug
 The normal test gate also runs the tests of the notice, the upstream snapshot and the skill shape for ADR 0009 D1, D2, D5 and D6.
 
 The registry negative of the model in `formal/models.json` must give its named violation with a counterexample.
+The `conformance` field of the registry names `tests/astack/session-guards-model.test.ts` and a code mutation of `grantReasons`. The conformance test reads the tables of the model and drives the real guards with each row. With the mutation, it fails.
+`tests/property/session-guards-merge.test.ts` and `tests/property/session-guards-work-loss.test.ts` drive the merge guard, the destructive guard and real git beside the model with fast-check commands.
 The manifest negative of the session repo change cuts the identity compare of `Exempt`, and TLC must report `BroadLossDenied`.
 The unchanged model must pass again with the same state counts.
 `tests/property/shell-wrapper-law.test.ts` examines the wrapper law on both guards, and `tests/fixtures/guard-bypass.json` holds the probe forms.

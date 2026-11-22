@@ -82,7 +82,11 @@
 		"tests/keep-list.test.ts",
 		"tests/doc-facts.test.ts",
 		"tests/apply/flow-config.test.ts",
-		"tests/apply/review-stub.test.ts"
+		"tests/apply/review-stub.test.ts",
+		"tests/astack/session-guards-model.test.ts",
+		"tests/property/session-guards-merge.test.ts",
+		"tests/property/session-guards-work-loss.test.ts",
+		"tests/astack/model-audit.test.ts"
 	],
 	"links": [
 		{
@@ -154,7 +158,11 @@
 		},
 		{
 			"criterion": "CP-11",
-			"controls": ["proof-profile-gate", "proof-fallback-marker"]
+			"controls": [
+				"proof-profile-gate",
+				"proof-fallback-marker",
+				"ci-proof-current"
+			]
 		},
 		{
 			"criterion": "CP-12",
@@ -275,7 +283,12 @@
 		},
 		{
 			"criterion": "SG-full-stop",
-			"controls": ["sg-full-send-clause", "sg-negated-merge"]
+			"controls": [
+				"sg-full-send-clause",
+				"sg-negated-merge",
+				"sg-full-stop-merge",
+				"sg-model-merge"
+			]
 		},
 		{
 			"criterion": "SG-unattended",
@@ -405,6 +418,19 @@
 			]
 		},
 		{
+			"criterion": "SG-conformance",
+			"controls": [
+				"sg-conformance-work-loss",
+				"sg-conformance-push",
+				"sg-conformance-merge",
+				"sg-conformance-scratch",
+				"sg-model-pin",
+				"sg-model-merge",
+				"sg-model-work-loss",
+				"rl-conformance"
+			]
+		},
+		{
 			"criterion": "SG-preserve",
 			"controls": [
 				"sg-grant-words",
@@ -458,7 +484,7 @@
 		},
 		{
 			"criterion": "BOUNDARY-ONCE",
-			"controls": ["boundary-once"]
+			"controls": ["boundary-once", "boundary-not-last", "close-deletes-plan"]
 		},
 		{
 			"criterion": "SPAN-RUN",
@@ -747,6 +773,10 @@
 		{
 			"criterion": "CP-adr-decision",
 			"controls": ["proof-adr-contract", "cp-adr-span"]
+		},
+		{
+			"criterion": "CP-invariant-audit",
+			"controls": ["model-audit"]
 		},
 		{
 			"criterion": "CP-record-decision",

@@ -229,7 +229,7 @@ export type ChangeProof = {
 };
 
 const FULL_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
-const SYMBOL = /^[A-Za-z_$][\w$]*$/;
+export const SYMBOL = /^[A-Za-z_$][\w$]*$/;
 export const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
 const DECISION = /^D[1-9]\d*$/;

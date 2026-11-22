@@ -10,6 +10,19 @@ export const RUNGS = ["R0", "R1", "R2", "R3", "R4"] as const;
 export type Rung = (typeof RUNGS)[number];
 const TLC_RUNG: Rung = "R4";
 
+export type CodeMutation = {
+	readonly file: string;
+	readonly symbol: string;
+	readonly original: string;
+	readonly replacement: string;
+	readonly defect: string;
+};
+
+export type Conformance = {
+	readonly test: string;
+	readonly mutation: CodeMutation;
+};
+
 export type RegistryModel = {
 	readonly name: string;
 	readonly model: ModelContract;
@@ -17,6 +30,7 @@ export type RegistryModel = {
 	readonly records: readonly string[];
 	readonly covers: readonly string[];
 	readonly text: readonly string[];
+	readonly conformance?: Conformance;
 };
 
 export type Unmodelled = {

@@ -91,6 +91,8 @@ It also holds the `failClosed`, `contractOnly` and `unmodelled` entries.
 The `name` of a model is its module name.
 An `unmodelled` entry names its reason and a control marker of a test.
 
+> Note 2026-11-22: TLC reads only the model files, so a code change cannot fail a model. The first record of each registry entry now holds a dated `## Invariant audit` table, with one row for each invariant and property except `TypeOK`. A `restates` row names the action whose guard or update it repeats, and a control that a test holds. An `independent` row gives its reason. `tests/astack/model-audit.test.ts` fails a missing, stale or uncontrolled row. An entry can also hold a `conformance` field with its conformance test and a code mutation of the function that the test guards. The SessionGuards entry names `grantReasons`.
+
 ### D3. One run starts at most one triple for each model, and no verdict persists
 
 A model runs once, also when the manifest and a path both select it.

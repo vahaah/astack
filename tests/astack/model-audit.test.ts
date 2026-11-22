@@ -114,7 +114,7 @@ function testFiles(dir: string): readonly string[] {
 function controlMarkers(): ReadonlySet<string> {
 	return new Set(
 		testFiles("tests").flatMap((path) =>
-			[...read(path).matchAll(/\[control:([A-Za-z][\w.-]*)\]/g)].map(
+			[...read(path).matchAll(/\[(?:control):([A-Za-z][\w.-]*)\]/g)].map(
 				(match) => match[1] ?? "",
 			),
 		),
