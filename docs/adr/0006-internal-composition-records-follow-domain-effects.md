@@ -20,6 +20,8 @@ It also names the hidden rule, caller facts, abstraction relation, alternatives,
 Messages cite the shared record and report evidence status.
 They do not contain a private reasoning transcript.
 
+> Amended 2026-11-22: A plan whose Files name a code path holds the record as one `domain` block under `## Domain and effects`. A manifest cites that block with `domain.plan` and holds no `category`. The tsc witness compares each linked step with the code. [ADR 0018](0018-one-domain-and-effects-record-is-checked-against-code.md) D1 and D10 hold these decisions.
+
 ### D2. Law claims match the actual carrier
 
 Pure total work uses ordinary composition and its identity and associativity laws.

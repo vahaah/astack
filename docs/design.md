@@ -253,7 +253,7 @@ The main shape is one big-bang PR per session. Parallel step workers build it in
 
 The caps fit the owner's real plans. Fixtures with the size and shape of three real plans of 10.8 KB, 19.7 KB and 27 KB must pass with no deny. They are in `tests/fixtures/plans/shapes/`.
 
-`astack check-plan` examines the frontmatter, the section order, the decision rows, the sessions, the steps and the hot-file rule. It also examines the milestones and blocks, the questions, the gates, the caps, the ledger rules, the links and the prose. The prose rules give the ASD-STE100 findings as warnings.
+`astack check-plan` examines the frontmatter, the section order, the decision rows, the sessions, the steps and the hot-file rule. It also examines the milestones and blocks, the questions, the gates, the caps, the ledger rules, the links and the prose. The prose rules give the ASD-STE100 findings as warnings. In a repo with a contexts card, it also examines the `## Domain and effects` block of each code plan, as [ADR 0018](adr/0018-one-domain-and-effects-record-is-checked-against-code.md) says.
 
 | Artifact | Warn | Deny |
 |---|---|---|

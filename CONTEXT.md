@@ -18,6 +18,8 @@ context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/
 cap  TypeCheck [fs-read, fs-write, spawn] @ src/astack/domain/witness-run.ts: typeCheck(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
+pure src/astack/domain/rules.ts
+pure src/astack/domain/witness.ts
 ```
 
 ## Language
@@ -77,6 +79,20 @@ _Code_: `deriveLadder`
 The file `formal/models.json`, which maps each path to its models, a fail-closed stop, an unmodelled control or a contract-only rung.
 _Avoid_: Model list in the profile, verdict cache
 _Code_: `ModelRegistry`
+
+### Domain block
+
+The one `domain` fence under `## Domain and effects` of a code plan.
+It names the context, caps, steps, flows and laws of the change, and check-plan, the tsc witness and the rung read it.
+_Avoid_: Prose effect list, category section
+_Code_: `DomainBlock`
+
+### Contexts card
+
+The one `domain` fence under `## Contexts` of the context map, else of the glossary file.
+Each card context groups code owners under one glossary.
+_Avoid_: Card path key, a glossary for each code owner
+_Code_: `parseCard`
 
 ### Composition record
 

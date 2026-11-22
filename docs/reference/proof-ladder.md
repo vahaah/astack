@@ -27,5 +27,5 @@ The [model](../../formal/ProofLadder.tla) examines two models, seven path kinds,
 
 The model takes the glob match, the registry parse and the TLC verdict as true observations.
 The CLI controls use fixture repos and a Java shim that logs each start of Java.
-R2 and R3 wait for the plan laws of a later block, and no path gives them now.
+No path gives R2 or R3. A law of a plan block gives them, as [the domain record requirements](domain-record.md) say.
 A path outside the fail-closed globs that no glob lists runs at R1, so review of each registry diff must catch it.
