@@ -18,9 +18,10 @@ The user can redirect it.
 
 Start one read-only Agent subagent with `subagent_type: general-purpose`.
 It explores and explains in one pass.
-Read the `judgment and prose` role line from `astack-models.md`, and set `model` to its value.
-With no line, or for `auto` or `inherit-parent`, omit `model`.
-If the Agent tool refuses the value, omit `model` and report that fallback.
+Set `model` from the `judgment and prose` role line of `astack-models.md`, or to `opus` with no line.
+For `auto` or `inherit-parent`, omit `model`.
+If the Agent tool refuses the value, use `opus`.
+Report that fallback.
 
 Give the subagent the user's question and this brief:
 
