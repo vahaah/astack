@@ -1,10 +1,25 @@
 {
 	"version": 1,
 	"change": "thinking-skill-cut",
-	"base": "0c409b8be7212a1ee3dee1c1a91d197c729c1a87",
+	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
 	"scope": [
 		{
-			"path": "marketplace/plugins/astack/skills/**",
+			"path": "marketplace/plugins/astack/skills/why/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/how/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/reflect/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/retro/**",
 			"obligation": "WB-cut",
 			"modelRefs": ["Edit", "Check"]
 		},
@@ -42,6 +57,31 @@
 			"path": "scripts/lib/budget.json",
 			"obligation": "WB-ratchet",
 			"modelRefs": ["Lower", "CapsNeverRise"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/coding-guide/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/recall/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "README.md",
@@ -307,7 +347,7 @@
 			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
 			"The model takes the word count of each skill tree as a true observation.",
 			"The duplicate map and its cut rule are outside the model. The wb-successor control examines the retro row from mattpocock/skills and with no lock entry.",
-			"The place of a skill edit is outside the model. The sg-repair-source control examines the four repair texts and the Backlog rule of reflect."
+			"The place of a skill edit is outside the model. The sg-repair-source control examines the four repair texts and the Backlog rule of reflect, and a text test holds the source checkout definition of reflect."
 		]
 	},
 	"model": {
@@ -341,7 +381,7 @@
 	"limits": [
 		"The finite model takes the word counts as true observations and covers two skills only.",
 		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"No cap rises in this change. The lower step sets each cap to its count, and the total cap falls by 9,071 words.",
+		"No cap rises in this change. The lower step sets each cap to its count, and the total cap falls by 9,096 words from the merge base.",
 		"The model does not check the words of the new why, how and reflect texts or of the repair rule. Review, validate, the text tests and the STE gates examine them.",
 		"The changed why and upkeep texts also select the PrHeadCheck and PlanBoundary models of the registry, and each runs with its own negative control.",
 		"Exact-head CI, review, Shipping and every ordinary gate stay required."
