@@ -4,8 +4,6 @@ A repo configures the hardening loop in `.claude/pr-review-hardening.profile.md`
 
 Every key except `version`, `gates` and `test` is optional. An unknown key is an error, so a typo never passes silently.
 
-The review stub that astack apply writes into a repo has a fallback for a session without the plugin. That fallback has no defaults. So a profile next to the stub sets every key that the fallback names, even at its default value. apply refuses a profile that leaves one out.
-
 ## Top level
 
 | Key | Type | Default | Meaning |
@@ -25,7 +23,7 @@ The review stub that astack apply writes into a repo has a fallback for a sessio
 | `test_adequacy` | `changed-behaviour` or `control-per-clause` | `changed-behaviour` | When a missing test blocks. |
 | `ledger` | object | `{carry_over: false}` | Whether earlier runs' findings carry over. |
 | `prepasses` | list | `[]` | One-off passes before the baseline. |
-| `comments` | object | `{keep_patterns: []}` | Extra keep patterns for the comment gate. |
+| `comments` | object | none | Retired. The comment gate and the marker rule read only `commentKeep` in `.astack/profile.json`. The check command passes a profile that still sets `comments.keep_patterns`, and apply refuses it. |
 | `forbidden` | object | see below | Commands, code, paths and gate flags the run must never use or touch. |
 | `conventions` | object | see below | Branch, commit, PR and ticket conventions. |
 | `proof` | object | `{pr_comment: null, on_unclean: null}` | Proof posted on the PR, and what an unclean stop does. |
@@ -199,7 +197,7 @@ With no `metrics`, the run reports `METRICS=UNAVAILABLE` and has no budget check
 | Key | Type | Default | Meaning |
 |---|---|---|---|
 | `rules` | boolean | `true` | Apply `references/typescript.md` to fixes. |
-| `boundary_cast_marker` | string or `null` | `null` | A comment prefix that must sit on every remaining non-const cast. Set it only together with a keep pattern that matches it. |
+| `boundary_cast_marker` | string or `null` | `null` | A comment prefix that must sit on every remaining non-const cast. Set it only together with a `commentKeep` pattern that matches it. |
 
 ## reviewers
 
@@ -237,12 +235,6 @@ An existing profile entry remains an explicit request until the owner changes it
 ## prepasses
 
 Each entry is `{name, when, sources}`. `name` is `contract-coverage` or `claims-audit`. `when` says which PRs it applies to. `sources` lists the specs to check against, for `contract-coverage`.
-
-## comments
-
-| Key | Type | Default | Meaning |
-|---|---|---|---|
-| `keep_patterns` | list of regular expressions | `[]` | A comment line that matches one survives the comment gate. Each pattern is a repo owner's decision. Add one only when the owner decides that form stays, and give the reason in the prose. |
 
 ## forbidden
 
@@ -383,8 +375,6 @@ test:
 metrics: null
 reviewers:
   select: applicable
-comments:
-  keep_patterns: []
 forbidden:
   paths:
     - <lockfile>

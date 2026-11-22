@@ -119,6 +119,27 @@ describe("the profile scans", () => {
 	});
 });
 
+describe("the one keep list of the repo", () => {
+	const retiredRow =
+		"| `comments` | object | none | Retired. The comment gate and the marker rule read only `commentKeep` in `.astack/profile.json`. The check command passes a profile that still sets `comments.keep_patterns`, and apply refuses it. |";
+
+	test("[control:rs-one-list] RUN_CONFIG names only commentKeep, and comments.keep_patterns stays only in the retired row of references/profile.md", () => {
+		expect(
+			stepWith(read(`${engine}/SKILL.md`), "Print `RUN_CONFIG`."),
+		).toContain(
+			"Last are the keep patterns of `commentKeep` in `.astack/profile.json`.",
+		);
+		expect(
+			markdownUnder(engine).flatMap((path) =>
+				read(path)
+					.split("\n")
+					.filter((line) => line.includes("keep_patterns"))
+					.map((line) => `${path}: ${line}`),
+			),
+		).toEqual([`${engine}/references/profile.md: ${retiredRow}`]);
+	});
+});
+
 describe("severity labels", () => {
 	const labels = paragraphStarting(
 		read(`${engine}/references/review.md`),
