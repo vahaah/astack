@@ -107,7 +107,7 @@ Only the engine, the stub fallback and the setup seed keep their own forms, and 
 - Easier: the owner changes the head check in one place, the command, and 15 texts follow it.
 - Easier: the skill texts lose 100 words against the merge base, and no cap rises.
 - Harder: each text that reads a PR needs astack on the PATH. A run with no runtime gets the launcher note and stops.
-- Follow-up: the engine and the stub fallback still say that the launcher exits 0, and one test pins both. A ticket owns that fix.
+- Follow-up: the engine and the stub fallback still say that the launcher exits 0, and one test pins both. The `Not yet specified` list of the review-roadmap index holds that fix until the owner files a ticket.
 - Follow-up: B16 folds `opening-a-pr.md` into `create-pr.md`, and it must keep the head line.
 
 ## Alternatives considered
