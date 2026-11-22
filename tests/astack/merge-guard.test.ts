@@ -764,6 +764,24 @@ describe("the merge guard", () => {
 		},
 	);
 
+	test.each([
+		'U=repos/o/r/pulls/12/merge; gh api -X PUT "$U"',
+		'gh api --method PUT "repos/o/r/$TAIL"',
+	])(
+		"a write call to an endpoint that a variable gives is denied: %s",
+		(command) => {
+			expect(bash(guard(GREEN), command)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- astack cannot read the endpoint of this gh api call, because a variable gives it. Write the endpoint with static words. Merge a PR with gh pr merge.",
+			});
+		},
+	);
+
+	test("a read of an endpoint that a variable gives passes", () => {
+		expect(bash(guard(GREEN), 'gh api "repos/o/r/$TAIL"').exit).toBe(0);
+	});
+
 	test("other commands pass", () => {
 		expect(bash(guard(GREEN), "gh pr view 12 --json state").exit).toBe(0);
 	});
