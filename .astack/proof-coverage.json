@@ -186,6 +186,7 @@
 			"controls": [
 				"sg-unattended-denial",
 				"sg-relayed-prompt",
+				"sg-unattended-channel",
 				"sg-machine-prompt",
 				"sg-doctor-unattended"
 			]

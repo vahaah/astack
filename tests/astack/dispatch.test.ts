@@ -15,6 +15,7 @@ import {
 	type Context,
 	defineHandler,
 	deny,
+	type Env,
 	type EventKind,
 	type Handler,
 	HOOK_EVENTS,
@@ -415,9 +416,12 @@ describe("the captured prompt channels", () => {
 		);
 	}
 
-	function decodedPrompt(raw: unknown): HookEvent | undefined {
+	function decodedPrompt(
+		raw: unknown,
+		env: Env = { CLAUDE_CODE_ENTRYPOINT: "cli" },
+	): HookEvent | undefined {
 		return decode("claude-code", "UserPromptSubmit", raw, {
-			env: { CLAUDE_CODE_ENTRYPOINT: "cli" },
+			env,
 			cwd: project,
 			readText: () => undefined,
 		})?.events[0];
@@ -451,6 +455,19 @@ describe("the captured prompt channels", () => {
 			expect(decodedPrompt(captured(channel))).toMatchObject({
 				kind: "prompt",
 				human,
+			});
+		},
+	);
+
+	test.each([
+		{ CLAUDE_CODE_ENTRYPOINT: "sdk-cli" },
+		{ CLAUDE_CODE_ENTRYPOINT: "cli", CLAUDE_CODE_SESSION_ATTENDED: "0" },
+	])(
+		"[control:sg-unattended-channel] with env %p the print prompt is not a person's prompt",
+		(env) => {
+			expect(decodedPrompt(captured("print"), env)).toMatchObject({
+				kind: "prompt",
+				human: false,
 			});
 		},
 	);
