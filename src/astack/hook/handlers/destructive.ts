@@ -524,23 +524,49 @@ function extractDir(step: ShellStep): string | undefined {
 		: resolve(step.dir, target.value);
 }
 
-const ARCHIVE_VALUE_FLAGS = [
-	"-o",
-	"--add-file",
-	"--exec",
-	"--format",
-	"--output",
-	"--prefix",
-	"--remote",
+const ARCHIVE_PLAIN_FLAGS = [
+	"-l",
+	"--list",
+	"-v",
+	"--verbose",
+	"--worktree-attributes",
 ];
+const ARCHIVE_NAMED_VALUES = ["--exec", "--format", "--mtime", "--output"];
 
-function archivePathspecs(git: GitInvocation, dir: string): readonly string[] {
-	const { flags, plain } = operands(git.args, ARCHIVE_VALUE_FLAGS);
-	const paths = plain.slice(1);
-	const prefixed = flags.some((flag) =>
-		isLongForm(flag.split("=")[0] ?? "", "--prefix"),
+function archivePathspecs(
+	step: ShellStep,
+	git: GitInvocation,
+	dir: string,
+): readonly string[] {
+	if (git.dir !== dir || step.words.some((word) => word.dynamic))
+		return WHOLE_TREE;
+	const plain: string[] = [];
+	for (let at = 0; at < git.args.length; at++) {
+		const arg = git.args[at] ?? "";
+		if (arg === "--") {
+			plain.push(...git.args.slice(at + 1));
+			break;
+		}
+		const name = arg.split("=")[0] ?? "";
+		if (!arg.startsWith("-")) plain.push(arg);
+		else if (
+			!ARCHIVE_PLAIN_FLAGS.includes(arg) &&
+			!/^-\d$/.test(arg) &&
+			!(arg.includes("=") && ARCHIVE_NAMED_VALUES.includes(name))
+		)
+			return WHOLE_TREE;
+	}
+	const [tree, ...paths] = plain;
+	return tree === undefined || paths.length === 0 || !isTreeish(git.dir, tree)
+		? WHOLE_TREE
+		: paths;
+}
+
+function statusFails(dir: string): boolean {
+	return (
+		repoRoot(dir) !== undefined &&
+		!runGit(dir, [...READ_ONLY_GIT, "status", "--porcelain=v1", "-z"]).ok
 	);
-	return paths.length === 0 || prefixed || git.dir !== dir ? WHOLE_TREE : paths;
 }
 
 function extractReasons(
@@ -552,9 +578,14 @@ function extractReasons(
 	const dir = extractDir(step);
 	if (source.kind !== "plain" || source.git.sub !== "archive" || !dir)
 		return [];
+	const command = `${previous.values.join(" ")} | ${step.values.join(" ")}`;
+	if (statusFails(dir))
+		return [
+			`${command} extracts files, and git status fails in ${dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
+		];
 	return lossReasons(
-		`${previous.values.join(" ")} | ${step.values.join(" ")}`,
-		{ lost: "tracked", pathspecs: archivePathspecs(source.git, dir) },
+		command,
+		{ lost: "tracked", pathspecs: archivePathspecs(previous, source.git, dir) },
 		dir,
 	);
 }

@@ -474,6 +474,51 @@ describe("the whole-tree discard forms", () => {
 		},
 	);
 
+	test.each([
+		"git archive --add-virtual-file notes.txt:x HEAD docs | tar -x",
+		"git archive --mtime 2020-01-01 HEAD docs | tar -x",
+		'git archive HEAD "$P" | tar -x',
+		"git archive --forma tar HEAD docs | tar -x",
+		"git archive notes.txt docs | tar -x",
+	])(
+		"%s is read as the whole tree, because astack cannot read its paths with certainty",
+		(command) => {
+			const said = reason(
+				destructive.run(shell(command, dirty), context(dirty)),
+			);
+			expect(said).toContain(
+				"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+			);
+		},
+	);
+
+	test("git archive piped to tar -x in a repo where git status fails is denied", () => {
+		const broken = join(root, "broken");
+		mkdirSync(broken, { recursive: true });
+		initRepo(broken);
+		write(broken, { "a.txt": "a\n" });
+		git(broken, "add", "a.txt");
+		git(broken, "commit", "-q", "-m", "base");
+		writeFileSync(join(broken, ".git/index"), "not an index");
+		const said = reason(
+			destructive.run(
+				shell("git archive HEAD docs | tar -x -C ../broken", dirty),
+				context(dirty),
+			),
+		);
+		expect(said).toContain("git status fails in");
+		expect(said).toContain("owner gate");
+	});
+
+	test.each([
+		"git archive --format=tar HEAD docs | tar -x",
+		"git archive -v HEAD docs | tar -x",
+	])("%s names its paths, so it passes on a dirty tree", (command) => {
+		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+			"allow",
+		);
+	});
+
 	test.each(wholeTree)("%s passes on a clean tree", (command) => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 	});

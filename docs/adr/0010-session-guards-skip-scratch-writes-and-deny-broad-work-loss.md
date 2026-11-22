@@ -52,6 +52,8 @@ An unreadable work-loss command gets a deny on a changed tree when astack can re
 Each other unreadable guarded verb gets a deny at once.
 `git apply -R` from stdin or a substitution, `git read-tree -u --reset` and `git checkout-index -a -f` are work-loss commands.
 So is `git archive` piped to `tar -x`. A named-file form still passes.
+`git archive` names its files only when each word is static, each flag is known, and the first plain word is a tree. Else it covers the whole tree.
+A failed `git status` in the `tar` folder gets a deny.
 
 Amended 2026-11-22. A hook skip is an owner gate too.
 A hook skip is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder where HEAD does not hold each active hook as an executable file. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too.
