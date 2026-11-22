@@ -13,7 +13,7 @@
 
 astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you at each decision that is yours, such as a plan choice or a merge. To start, follow the [Quickstart](#quickstart).
 
-- 46 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
+- 44 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
@@ -53,7 +53,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 ```mermaid
 flowchart TD
   goal[You name the goal] --> plan["/astack:plan: grill rounds, you choose"]
-  plan --> spec["Spec and tickets (write-ticket, to-tickets)"]
+  plan --> spec["Spec and tickets (write-ticket)"]
   spec --> build["Build on a branch, failing test first (tdd)"]
   build --> gates{"Gates: lint, types, tests, astack check …"}
   gates -->|fail| build
@@ -372,7 +372,7 @@ Use the local-copy procedure in [`dist/cursor/astack/README.md`](dist/cursor/ast
 
 ### Grok Bot
 
-Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 48 skills.
+Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 46 skills.
 
 ### Other Agent Skills clients
 

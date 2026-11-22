@@ -66,8 +66,10 @@ describe("flowSupersedes", () => {
 		"research",
 		"to-questionnaire",
 		"to-spec",
+		"to-tickets",
 		"triage",
 		"wait-what",
+		"wayfinder",
 		"wizard",
 		"writing-for-agents",
 	];
@@ -106,8 +108,10 @@ describe("flowSupersedes", () => {
 				["research", "astack:plan", "not-in-flow"],
 				["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
 				["to-spec", "astack:write-ticket", "not-in-flow"],
+				["to-tickets", "astack:plan", "not-in-flow"],
 				["triage", "astack:write-ticket", "not-in-flow"],
 				["wait-what", "astack:wait-what", "not-in-flow"],
+				["wayfinder", "astack:plan", "not-in-flow"],
 				["wizard", "astack:wizard", "not-in-flow"],
 				["writing-for-agents", "astack:mode", "not-in-flow"],
 			]);
