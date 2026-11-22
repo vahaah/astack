@@ -825,7 +825,7 @@
 		},
 		{
 			"criterion": "DR-law-rung",
-			"controls": ["rung-law"]
+			"controls": ["rung-law", "rung-law-derived"]
 		},
 		{
 			"criterion": "DR-plan-record",

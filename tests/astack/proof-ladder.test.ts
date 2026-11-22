@@ -7,11 +7,17 @@ import type {
 import {
 	deriveLadder,
 	type LadderInput,
+	lawRung,
 	type ModelRegistry,
 	REGISTRY_PATH,
 	type RegistryModel,
 	type Rung,
 } from "../../src/astack/change-proof/rung.ts";
+import {
+	parseCard,
+	parseDomainBlock,
+} from "../../src/astack/domain/notation.ts";
+import { lawClaims } from "../../src/astack/domain/rules.ts";
 
 function contract(name: string): ModelContract {
 	return {
@@ -318,5 +324,36 @@ describe("deriveLadder", () => {
 			by: REGISTRY_PATH,
 			runs: ["Admission Admit", "Guards Step"],
 		});
+	});
+});
+
+describe("the law rung of a block", () => {
+	test("[control:rung-law-derived] a prop law on a read-only card cap gives R2, and a prop law on a block cap with a write op or on an invariant gives R3", () => {
+		const card = parseCard([
+			{
+				path: "CONTEXT.md",
+				text: "## Contexts\n\n```domain\ncontext Gate : src/**\ncap  Log [fs-read] @ src/log.ts: read(read)\n```\n",
+			},
+		]);
+		const block = parseDomainBlock(
+			[
+				"context Gate",
+				"agg  Gate @ src/gate.ts: Gate",
+				"inv  G1 Gate: only fresh input is admitted",
+				"cap  Store [fs-read, fs-write] @ src/store.ts: load(read), save(write)",
+				"law  L1 Log a read of the log gives the same rows   check: prop C1",
+				"law  L2 Store a save keeps each gate   check: prop C2",
+				"law  L3 G1 a stale gate is never admitted   check: prop C3",
+			].map((text, index) => ({ n: index + 1, text })),
+		);
+		if (!card.ok || card.value.kind !== "card" || !block.ok)
+			throw new Error(JSON.stringify({ card, block }));
+		expect(
+			lawClaims(block.value, card.value).map((law) => [law.id, lawRung(law)]),
+		).toEqual([
+			["L1", "R2"],
+			["L2", "R3"],
+			["L3", "R3"],
+		]);
 	});
 });
