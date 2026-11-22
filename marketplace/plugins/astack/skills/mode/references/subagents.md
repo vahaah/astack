@@ -15,13 +15,13 @@ This includes delegates that write code and helpers for other tasks.
 The chat that receives `/astack:mode` runs the playbook.
 Never spawn an `astack:delegate` to run the playbook itself.
 Routed skills set their own `subagent_type` for review with different models.
-These skills include `how`, `why`, `interrogate`, `reflect`, and `swarm`.
+These skills include `how`, `interrogate`, and `swarm`.
 Follow the type that the skill names.
 Do not replace it with `astack:delegate`.
 
 Set every `Agent` call from this table.
 Per-role lines in `${CLAUDE_CONFIG_DIR:-~/.claude}/rules/astack-models.md` override these defaults and the model choices in routed skills.
-The routed skills include `how`, `why`, `arena`, `swarm`, `architect`, `interrogate`, and `reflect`.
+The routed skills include `how`, `arena`, `swarm`, `architect`, and `interrogate`.
 Use `/astack:setup-models` to write those role lines.
 A role with no line keeps its default.
 
