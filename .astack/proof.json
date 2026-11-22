@@ -1,220 +1,203 @@
 {
 	"version": 1,
-	"change": "review-roadmap-b01-merge-authority",
-	"base": "ad80df7c445df5739f95342a02fd044047d10f25",
+	"change": "review-roadmap-b04-plain-form",
+	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
 	"scope": [
 		{
-			"path": "src/astack/pr/**",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
+			"path": "src/astack/shell.ts",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
 		},
 		{
-			"path": "src/astack/hook/handlers/merge-guard.ts",
-			"obligation": "SG-mcp-merge",
+			"path": "src/astack/git-command.ts",
+			"obligation": "SG-dynamic-word",
+			"modelRefs": ["RunGit", "BroadLossDenied", "DenialNeedsLoss"]
+		},
+		{
+			"path": "src/astack/hook/handlers/destructive.ts",
+			"obligation": "SG-hook-skip",
 			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "src/astack/hook/handlers/pr-body.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/cli/commands/check/pr.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/hook/dispatch.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Merge", "GuardErrorDenies"]
-		},
-		{
-			"path": "src/astack/hook/events.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Merge", "GuardErrorDenies"]
-		},
-		{
-			"path": "src/astack/ste/session.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "src/astack/hook/decode/**",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "src/astack/doctor.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "src/astack/cli/commands/doctor.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/astack/merge-guard.test.ts",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"EditProfile",
-				"Merge",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied"
-			]
-		},
-		{
-			"path": "tests/astack/hook.test.ts",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/astack/dispatch.test.ts",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["Prompt", "Merge", "GrantFromPerson", "GuardErrorDenies"]
-		},
-		{
-			"path": "tests/astack/cursor-hook.test.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/ste.test.ts",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/doctor.test.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/guard-composition.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["MergeNeedsAuthority"]
-		},
-		{
-			"path": "tests/fixtures/hook-input/**",
-			"obligation": "SG-framed-prompt",
-			"modelRefs": ["Prompt", "GrantFromPerson", "McpMergeDenied"]
-		},
-		{
-			"path": "formal/SessionGuards.*",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"EditProfile",
-				"Merge",
-				"TypeOK",
-				"GrantFromWords",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies",
-				"FullStopNeverMerges",
-				"WriteChecksKept",
-				"ScratchSkipped",
-				"CommitSurfaceChecked",
+				"Push",
+				"RunGit",
+				"HookSkipNeedsGates",
 				"BroadLossDenied",
 				"DenialNeedsLoss"
 			]
 		},
 		{
-			"path": "docs/adr/0011-*.md",
-			"obligation": "SG-base-authority",
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-api-merge",
+			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
+		},
+		{
+			"path": "src/astack/hook/handlers/turn.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
+		},
+		{
+			"path": "src/astack/gates.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
+		},
+		{
+			"path": "src/astack/cli/commands/gates.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
+		},
+		{
+			"path": "src/astack/cli/commands/index.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "src/astack/pr-review-profile.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/astack/shell.test.ts",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["RunGit", "Push"]
+		},
+		{
+			"path": "tests/fixtures/guard-bypass.json",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["Merge", "RunGit", "Push"]
+		},
+		{
+			"path": "tests/property/**",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["Merge", "RunGit", "Push"]
+		},
+		{
+			"path": "tests/astack/guards.test.ts",
+			"obligation": "SG-work-loss",
+			"modelRefs": [
+				"RunGit",
+				"Push",
+				"BroadLossDenied",
+				"DenialNeedsLoss",
+				"HookSkipNeedsGates"
+			]
+		},
+		{
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-api-merge",
+			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
+		},
+		{
+			"path": "tests/astack/gates.test.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/astack/registry.test.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/apply/ci-parity.test.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/pr-review-profile.test.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/astack/dispatch.test.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
+		},
+		{
+			"path": "tests/astack/headings.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/guard-composition.ts",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
+		},
+		{
+			"path": "formal/SessionGuards.*",
+			"obligation": "SG-hook-skip",
 			"modelRefs": [
 				"Prompt",
-				"EditProfile",
 				"Merge",
+				"RunGit",
+				"GatesRun",
+				"Push",
+				"TypeOK",
 				"GrantFromPerson",
 				"MergeNeedsAuthority",
 				"McpMergeDenied",
-				"GuardErrorDenies"
+				"BroadLossDenied",
+				"DenialNeedsLoss",
+				"HookSkipNeedsGates"
+			]
+		},
+		{
+			"path": "docs/adr/0010-*.md",
+			"obligation": "SG-hook-skip",
+			"modelRefs": [
+				"RunGit",
+				"GatesRun",
+				"Push",
+				"BroadLossDenied",
+				"HookSkipNeedsGates",
+				"GrantFromPerson"
 			]
 		},
 		{
 			"path": "docs/reference/session-guards.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
+			"obligation": "SG-plain-form",
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+			"obligation": "SG-plain-form",
+			"modelRefs": ["RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
 		},
 		{
 			"path": "docs/design.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
+			"obligation": "SG-plain-form",
+			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
 		},
 		{
 			"path": "README.md",
-			"obligation": "SG-guard-error",
-			"modelRefs": ["GuardErrorDenies"]
+			"obligation": "SG-hook-skip",
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/mode/references/routes.md",
-			"obligation": "SG-base-authority",
-			"modelRefs": ["MergeNeedsAuthority"]
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "SG-hook-skip",
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
 			"obligation": "SG-unattended",
-			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+			"modelRefs": ["Prompt", "GrantFromPerson"]
 		},
 		{
 			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
 		},
 		{
 			"path": "dist/**",
 			"obligation": "SG-generated",
-			"modelRefs": [
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"GuardErrorDenies"
-			]
+			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
 		},
 		{
-			"path": "docs/adr/README.md",
-			"obligation": "SG-preserve",
+			"path": "package.json",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "bun.lock",
+			"obligation": "SG-plain-form",
 			"modelRefs": ["TypeOK"]
 		},
 		{
@@ -237,68 +220,54 @@
 		},
 		"terms": [
 			"Session guard",
-			"Merge grant",
+			"Work-loss command",
 			"Unattended session",
-			"Base branch authority",
-			"Harness frame"
+			"Plain form",
+			"Hook skip",
+			"Gate record"
 		],
 		"invariants": [
+			{
+				"name": "A hook skip goes ahead only on a head whose gates pass",
+				"modelRef": "HookSkipNeedsGates"
+			},
+			{
+				"name": "No command on the tree or a folder discards a change and passes",
+				"modelRef": "BroadLossDenied"
+			},
+			{
+				"name": "Each work-loss denial names a change that git discards",
+				"modelRef": "DenialNeedsLoss"
+			},
 			{
 				"name": "A merge needs a grant of the base branch profile or a covering prompt of a person",
 				"modelRef": "MergeNeedsAuthority"
 			},
 			{
-				"name": "Only a person's prompt sets a grant, and a framed prompt is not one",
+				"name": "Only a person's prompt sets a grant",
 				"modelRef": "GrantFromPerson"
-			},
-			{
-				"name": "No merge goes through an MCP tool",
-				"modelRef": "McpMergeDenied"
-			},
-			{
-				"name": "No merge goes ahead after a guard error",
-				"modelRef": "GuardErrorDenies"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D1"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D2"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
 				"decision": "D4"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D5"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D6"
-			},
-			{
-				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
-				"decision": "D7"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"SG-merge-grant",
+				"SG-plain-form",
+				"SG-dynamic-word",
+				"SG-api-merge",
+				"SG-hook-skip",
+				"SG-gates-run",
+				"SG-work-loss",
 				"SG-unattended",
-				"SG-base-authority",
-				"SG-framed-prompt",
-				"SG-mcp-merge",
-				"SG-guard-error",
 				"SG-generated",
 				"SG-preserve"
 			]
@@ -307,37 +276,9 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each guard maps one decoded hook call to one Verdict. The PR read gives the base branch authority with the threads and the checks. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+			"contract": "Each guard maps one decoded hook call to one Verdict. shellSteps gives each guard the plain form of each shell step, and readGit reads a git step of it. A gate run maps the gates of the hardening profile to runs, and recordOf keeps a record only when each gate that applies passes. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
 		},
 		"objects": [
-			{
-				"name": "PromptText",
-				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "HookEvent"
-				}
-			},
-			{
-				"name": "MergeGrant",
-				"link": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "MergeGrant"
-				}
-			},
-			{
-				"name": "PrTarget",
-				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "PrTarget"
-				}
-			},
-			{
-				"name": "PullRequestState",
-				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "PullRequestState"
-				}
-			},
 			{
 				"name": "HookCall",
 				"link": {
@@ -351,28 +292,73 @@
 					"path": "src/astack/hook/events.ts",
 					"symbol": "Verdict"
 				}
+			},
+			{
+				"name": "ShellStep",
+				"link": {
+					"path": "src/astack/shell.ts",
+					"symbol": "ShellStep"
+				}
+			},
+			{
+				"name": "GitRead",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "GitRead"
+				}
+			},
+			{
+				"name": "ProfileGate",
+				"link": {
+					"path": "src/astack/pr-review-profile.ts",
+					"symbol": "ProfileGate"
+				}
+			},
+			{
+				"name": "GateRun",
+				"link": {
+					"path": "src/astack/gates.ts",
+					"symbol": "GateRun"
+				}
+			},
+			{
+				"name": "GateRecord",
+				"link": {
+					"path": "src/astack/gates.ts",
+					"symbol": "GateRecord"
+				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "mergeGrantIn",
-				"from": "PromptText",
-				"to": "MergeGrant",
+				"name": "shellSteps",
+				"from": "HookCall",
+				"to": "ShellStep",
 				"link": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "mergeGrantIn"
+					"path": "src/astack/shell.ts",
+					"symbol": "shellSteps"
 				},
 				"effects": []
 			},
 			{
-				"name": "readPullRequestWithGh",
-				"from": "PrTarget",
-				"to": "PullRequestState",
+				"name": "readGit",
+				"from": "ShellStep",
+				"to": "GitRead",
 				"link": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "readPullRequestWithGh"
+					"path": "src/astack/git-command.ts",
+					"symbol": "readGit"
 				},
-				"effects": ["spawn", "network"]
+				"effects": []
+			},
+			{
+				"name": "destructive",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "spawn", "env"]
 			},
 			{
 				"name": "mergeGuard",
@@ -383,123 +369,147 @@
 					"symbol": "mergeGuard"
 				},
 				"effects": ["fs-read", "fs-write", "spawn", "network"]
+			},
+			{
+				"name": "runGates",
+				"from": "ProfileGate",
+				"to": "GateRun",
+				"link": {
+					"path": "src/astack/gates.ts",
+					"symbol": "runGates"
+				},
+				"effects": ["spawn", "fs-read", "fs-write", "env"]
+			},
+			{
+				"name": "recordOf",
+				"from": "GateRun",
+				"to": "GateRecord",
+				"link": {
+					"path": "src/astack/gates.ts",
+					"symbol": "recordOf"
+				},
+				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their kind and their text are equal. Two base authorities are equal when their kind, their commit and their merge profile are equal.",
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two plain steps are equal when their env words, their words, their folder and their unreadable mark are equal. Two gate records are equal when their head, base, base commit and gate names are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
 			}
 		],
 		"typedWitness": "tests/astack/guard-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The GraphQL read of the profile at the base tip and its parse, the frame test of a prompt, the token grammar of an MCP tool name and the failure verdict of the merge guard.",
+		"hides": "The shell grammar of reserved words, wrappers and bodies, the flag grammar of each guarded git verb, the GraphQL body reader of gh api, the hook-skip forms and the gate run of the hardening profile.",
 		"callersKnow": [
-			"A merge needs a grant of the profile on the PR base branch, or a covering prompt of a person in this turn.",
-			"A working-tree edit of the profile changes no merge verdict.",
-			"A workflow brief, a relay message and a Cursor background prompt never give a grant.",
-			"Each MCP tool with a merge word gets a deny, and an error of the merge guard on a merge gives a deny."
+			"Both guards judge the plain form of each shell step, so a known wrapper gives the verdict of the command that it runs.",
+			"A guarded verb that a variable hides gets a deny, and a work-loss verb gets it only on a changed tree.",
+			"A hook skip on a push passes only for a source that astack gates run recorded as green. A hook skip on a commit or a config write is an owner gate.",
+			"A GraphQL merge body that astack cannot read gets a deny."
 		],
-		"deletionTest": "Deleting baseAuthorityFrom puts the profile read back in the guard, and each caller must again choose a working tree, a cwd and an origin repo. Deleting isMcpMergeTool brings back a list of known tools for each host.",
+		"deletionTest": "Deleting shellSteps puts a wrapper list back in each of 8 handlers, and the two guards drift apart again. Deleting readGit puts the dynamic-word rule in each git caller. Deleting recordOf lets a red gate run write a record.",
 		"alternatives": [
 			{
-				"name": "Read origin/<base> from local git",
-				"rejectedBecause": "A session can move a remote-tracking ref with git update-ref or a fetch."
+				"name": "Fix each wrapper in each guard",
+				"rejectedBecause": "The two guards had two wrapper rules, and review E2 found wrappers that passed both."
 			},
 			{
-				"name": "Deny each write of the profile",
-				"rejectedBecause": "Shell writes, branch switches and old worktrees are open sets, so the guard cannot cover them."
+				"name": "Use a shell AST library",
+				"rejectedBecause": "It needs the same wrapper, body and folder rules, and it adds a runtime dependency to the bundle."
 			},
 			{
-				"name": "Add only the literal prefix of the workflow frame",
-				"rejectedBecause": "The next frame label passes again."
+				"name": "Deny each unreadable step",
+				"rejectedBecause": "It blocks cd \"$dir\" && git status, which reads nothing."
 			},
 			{
-				"name": "Keep an exact deny list of MCP merge tools",
-				"rejectedBecause": "The list missed CoCode and Linear, and it drifts with each host."
+				"name": "Pass a hook skip after a gate command in the same chain",
+				"rejectedBecause": "An agent can chain any command, and a red gate still lets the push run."
+			},
+			{
+				"name": "Deny only --no-verify",
+				"rejectedBecause": "HUSKY=0 and LEFTHOOK=0 skip the same hooks with no flag."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/pr/grant.ts",
-					"symbol": "mergeGrantIn"
+					"path": "src/astack/shell.ts",
+					"symbol": "shellSteps"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "RunGit"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/ste/session.ts",
-					"symbol": "humanPrompt"
+					"path": "src/astack/git-command.ts",
+					"symbol": "readGit"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "RunGit"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/decode/cursor.ts",
-					"symbol": "decodeCursor"
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
 				},
-				"modelAction": "Prompt"
+				"modelAction": "RunGit"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/github.ts",
-					"symbol": "readPullRequestWithGh"
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
 				},
-				"modelAction": "Merge"
+				"modelAction": "Push"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/merge.ts",
-					"symbol": "stateReasons"
+					"path": "src/astack/gates.ts",
+					"symbol": "runGates"
 				},
-				"modelAction": "Merge"
+				"modelAction": "GatesRun"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/pr/merge.ts",
-					"symbol": "preflightReasons"
+					"path": "src/astack/gates.ts",
+					"symbol": "recordOf"
 				},
-				"modelAction": "Merge"
+				"modelAction": "GatesRun"
 			},
 			{
 				"concrete": {
@@ -510,19 +520,18 @@
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/dispatch.ts",
-					"symbol": "judgeEach"
+					"path": "src/astack/hook/handlers/turn.ts",
+					"symbol": "handler"
 				},
-				"modelAction": "Merge"
+				"modelAction": "Prompt"
 			}
 		],
 		"omitted": [
-			"The GraphQL reply is abstracted to one base observation of turn, standing, base or unread.",
-			"The frame test is abstracted to the source class frame.",
-			"The MCP token grammar is abstracted to two channels, gh and mcp.",
-			"A guard error is abstracted to one fault flag for each merge.",
-			"One repo is modeled, so the same-repo rule holds by the shape of the base read.",
-			"The host decides the prompt source and the attended variables, and the model takes them as true."
+			"The model takes the plain form of each shell step as given. The wrapper law and the shell table tests examine the parser.",
+			"A gate run is abstracted to one fact that the gates pass at HEAD, and a record that the run writes only for that fact.",
+			"A push target is abstracted to a recorded head, refs that a record cannot cover, or a new commit.",
+			"The REST and GraphQL forms of the merge guard are abstracted to the gh channel.",
+			"One repo and one HEAD are modeled for the push group."
 		]
 	},
 	"model": {
@@ -541,31 +550,34 @@
 			"ScratchSkipped",
 			"CommitSurfaceChecked",
 			"BroadLossDenied",
-			"DenialNeedsLoss"
+			"DenialNeedsLoss",
+			"HookSkipNeedsGates"
 		],
 		"properties": [],
 		"bounds": [
 			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
 			"Each combination of four path facts for one write and an optional commit.",
-			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects."
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
 		],
 		"fairness": []
 	},
 	"negative": {
 		"file": "formal/SessionGuards.tla",
-		"action": "Merge",
-		"original": "/\\ ProfileCovers(baseAuthority, n) \\/ n \\in grant",
-		"replacement": "/\\ ProfileCovers(workingAuthority, n) \\/ n \\in grant",
-		"defect": "The merge guard reads the working-tree profile, so an uncommitted edit of merge.authority gives standing merge authority with no owner word.",
+		"action": "Push",
+		"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+		"replacement": "/\\ ~skips \\/ target = \"head\"",
+		"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
 		"expect": {
 			"kind": "invariant",
-			"name": "MergeNeedsAuthority"
+			"name": "HookSkipNeedsGates"
 		}
 	},
 	"limits": [
-		"The finite model takes the base read, the prompt source class, the attended state and the tool channel as true observations.",
-		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"A session that can push to an unprotected base branch can change the base profile. Branch protection is the control for that case.",
+		"The finite model takes the plain form of each step, the gate result at HEAD and the push target as true observations.",
+		"The model does not show that the TypeScript code refines it. The wrapper law, the probe fixture, the linked controls and review examine that relation.",
+		"An agent can write a gate record in the state folder, so the record guards against a mistake, not against a hostile agent.",
+		"A guarded verb behind a fully dynamic program, such as $CMD, stays out of reach of the hook.",
 		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

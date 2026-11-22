@@ -523,7 +523,7 @@ describe("the attended note", () => {
 
 	test.each([
 		[
-			"a person's prompt in an unattended session gets the note, with hooks.ste off and no state folder",
+			"[control:sg-attended-note] a person's prompt in an unattended session gets the note, with hooks.ste off and no state folder",
 			{ source: "user" },
 			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
 			NOTE,

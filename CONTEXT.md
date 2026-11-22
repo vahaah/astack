@@ -147,6 +147,27 @@ It is an owner gate.
 _Avoid_: Destructive command, cleanup
 _Code_: `workLossReasons`
 
+### Plain form
+
+The command that a shell step runs, after astack drops reserved words and braces and unwraps a known wrapper or a static shell body.
+A step that a variable hides is unreadable.
+_Avoid_: Normalized command, raw command
+_Code_: `shellSteps`
+
+### Hook skip
+
+A git commit or push that runs without the git hooks of the repo.
+It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` that git does not track.
+_Avoid_: Bypass, quiet push
+_Code_: `skipForm`
+
+### Gate record
+
+The record that `astack gates run` writes in the state folder when each gate that applies exits 0 at a clean HEAD.
+A hook-skip push of a recorded source passes.
+_Avoid_: Green stamp, gate cache
+_Code_: `GateRecord`
+
 ### Skill word budget
 
 The cap on the `*.md` words of each skill tree and on their total, in `scripts/lib/budget.json`.
