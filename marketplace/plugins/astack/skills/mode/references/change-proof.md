@@ -20,6 +20,7 @@ Preserve superseded decisions and their reasons.
 Create `.astack/proof.json` with the [proof contract](../../pr-review-hardening/references/proof-contract.md).
 It links changed paths, criteria, domain references, composition, abstraction, models, and controls.
 Every changed path needs an obligation. The registry selects the models of each path.
+With no registry, the manifest model must model the change.
 
 Before implementation, state each record of the contract in the internal brief.
 [Category and abstraction](../../pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the composition rules.
@@ -41,14 +42,12 @@ A progress claim needs a temporal property.
 
 Use `astack check proof --summary` to print the shared intent record.
 Give each code delegate that record, its scope, and the permitted effects.
-The summary is explicitly unverified.
-It cannot satisfy a gate.
+The summary is unverified and cannot satisfy a gate.
 
 Each handoff cites the same record and governing ADR decisions.
 It states the current input digest, commands, outcomes, and unfinished obligations.
 A safe pause can report incomplete proof.
 A delivery claim cannot.
-Keep user-facing progress short and in plain language.
 
 ## Execute before delivery
 
@@ -63,7 +62,7 @@ Run the proof again after any change to candidate inputs.
 
 Keep the existing tests, static checks, removal controls, review cap, and owner gates.
 A model result does not establish implementation correspondence.
-Semantic review still checks domain meaning, abstraction suitability, and the model relation.
+Semantic review checks domain meaning, abstraction suitability, and the model relation.
 
 ## Missing adoption
 
