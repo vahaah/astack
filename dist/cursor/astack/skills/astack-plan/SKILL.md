@@ -37,8 +37,6 @@ The last PR of the plan deletes the plan.
 Wave, Lane and Kind are labels.
 A wave is a batch of steps that run in parallel.
 A lane partitions the work between workers.
-The `integrator` lane is the main thread.
-Kind marks a decision row as `goal`, `decision`, `rule` or `tech`.
 
 "Step" is the word astack uses. The owner also says "bucket" and `W<n>`. Accept the words of the owner and never correct them.
 

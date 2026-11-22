@@ -137,6 +137,32 @@ describe("the caps fit the owner's real plans", () => {
 		);
 	});
 
+	test("a programme index gets a size note at 90% of its cap, and each byte finding names the largest sections", () => {
+		const line = "- A question nobody can ask yet.\n";
+		const grow = (bytes: number) =>
+			index.replace(
+				"## Not yet specified\n",
+				`## Not yet specified\n\n${line.repeat(Math.ceil((bytes - Buffer.byteLength(index)) / line.length))}`,
+			);
+		const largest =
+			/The largest sections are ## Not yet specified \(\d+ bytes\), ## \w[\w ]* \(\d+ bytes\) and ## \w[\w ]* \(\d+ bytes\)\./;
+		const noteAt = (text: string) =>
+			check(text, INDEX).filter(
+				(f) => f.severity === "note" && f.message.includes("bytes"),
+			);
+		expect(noteAt(grow(PLAN_CAPS.indexDenyBytes * 0.85))).toEqual([]);
+		const near = noteAt(grow(PLAN_CAPS.indexDenyBytes * 0.9));
+		expect(near.map((f) => f.message)).toEqual([
+			expect.stringMatching(largest),
+		]);
+		expect(near[0]?.message).toContain(
+			"at least 90% of the 16384 bytes of a programme index",
+		);
+		expect(
+			errors(check(grow(PLAN_CAPS.indexDenyBytes + 100), INDEX)),
+		).toContainEqual(expect.stringMatching(largest));
+	});
+
 	test("a programme index warns past 15 live decisions, and a standard plan has no row cap", () => {
 		const rows = Array.from(
 			{ length: 16 },
@@ -601,6 +627,27 @@ describe("check against the base", () => {
 			"State. done\nDepends on. None.",
 		);
 		expect(head(closed).filter((m) => m.includes("disappeared"))).toEqual([]);
+	});
+
+	test("[control:grad-once] an owner row graduates to an ADR only when its heading resolves, and never comes back", () => {
+		const graduate = (cite: string) =>
+			memberExport.replace(
+				/\| D1 \|.*\n/,
+				`| D1 | | Graduated to ${cite} | | | | |\n`,
+			);
+		expect(head(graduate("ADR 0012 D1"))).toEqual([]);
+		expect(head(graduate("ADR 0012 D9"))).toEqual([
+			"D1 graduated to ADR 0012 D9, and ADR 0012 has no ### D9. heading",
+		]);
+		expect(
+			checkAgainstBase(
+				parsePlan(EXPORT, memberExport),
+				parsePlan(EXPORT, graduate("ADR 0012 D1")),
+				fixtureEnv(),
+			).map((f) => f.message),
+		).toEqual([
+			"D1 was graduated at the base and is live again; handles are never reused",
+		]);
 	});
 
 	test("the slug of an index is its directory", () => {

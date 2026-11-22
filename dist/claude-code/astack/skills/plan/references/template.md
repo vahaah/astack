@@ -63,6 +63,7 @@ No other H2 is legal. A Progress, Log, Status, Defects or Findings section is a 
 - `Door` is `one-way` or `two-way`. A one-way row names its rejected option, and it cites an ADR or an unresolved question that says `Settles. D<n>.`.
 - `Settled` is `user R<n>` for the round where the owner decided, and `delegated` for a call under a grant. It is `evidence` when Record points at a prototype, an arena result or a research branch. It is `default` for an agent call, and each `default` row has a question that settles it.
 - Never reuse a handle. To change a `user` row, add a new row and shrink the old one to `| D3 | | Superseded by D4 | | | | |`. A `delegated`, `evidence` or `default` row can change its words in place.
+- A row that moves to an ADR shrinks to `Graduated to ADR 0021 D2` when that heading resolves, and never comes back.
 - Keep a row near 300 characters. Move detail to an ADR or to the step. A standard plan has no row limit.
 
 ## Sessions and steps
@@ -115,6 +116,7 @@ Number each question, and word it so that "yes" accepts the recommendation. Writ
 | session | over 12 steps | none |
 | hand-off comment | over 5 lines | none |
 
+An index gets a note at 90% of its deny cap.
 Over a deny cap, move durable decisions to ADRs, collapse done sessions or move a block into a brief.
 A cap never goes up.
 

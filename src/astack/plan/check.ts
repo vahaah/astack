@@ -46,6 +46,7 @@ export const PLAN_CAPS = {
 	indexWarnLines: 250,
 	indexLiveRows: 15,
 	indexDenyBytes: 16 * 1024,
+	indexNoteShare: 0.9,
 	intro: 5,
 	bullets: 7,
 	decisionRowChars: 400,
@@ -198,7 +199,7 @@ export function tierOf(plan: Pick<Plan, "frontmatter">): Tier {
 
 export function liveDecisionRows(plan: Plan): DecisionRow[] {
 	return plan.decisions.rows.filter(
-		(row) => HANDLE.decision.test(row.handle) && !row.supersededBy,
+		(row) => HANDLE.decision.test(row.handle) && !row.retired,
 	);
 }
 
@@ -651,20 +652,24 @@ function checkDecisionRow(
 			row.line,
 			`${h} has ${row.cells.length} cells; the table has ${DECISION_HEADER.length}`,
 		);
-	if (row.supersededBy) {
-		if (!handles.has(row.supersededBy) || row.supersededBy === h)
+	if (row.retired) {
+		const retired = row.retired;
+		if (
+			retired.kind === "superseded" &&
+			(!handles.has(retired.by) || retired.by === h)
+		)
 			emit(
 				"error",
 				"decisions",
 				row.line,
-				`${h} is superseded by ${row.supersededBy}, which is not another row`,
+				`${h} is superseded by ${retired.by}, which is not another row`,
 			);
 		if (row.cells.some((cell, i) => i !== 0 && i !== 2 && cell !== ""))
 			emit(
 				"error",
 				"decisions",
 				row.line,
-				`superseded ${h} keeps only | ${h} | | Superseded by ${row.supersededBy} | | | | |`,
+				`${retired.kind} ${h} keeps only | ${h} | | ${row.decision} | | | | |`,
 			);
 		return;
 	}
@@ -1419,6 +1424,23 @@ function allowedTable(ctx: Ctx, line: number): boolean {
 	return ctx.plan.sessions.some((session) => stepTable(session)?.line === line);
 }
 
+function largestSections(plan: Plan): string {
+	const sized = plan.sections
+		.map((section) => ({
+			title: section.title,
+			bytes: [`## ${section.title}`, ...section.body.map((line) => line.text)]
+				.map((text) => Buffer.byteLength(`${text}\n`, "utf8"))
+				.reduce((total, size) => total + size, 0),
+		}))
+		.sort((a, b) => b.bytes - a.bytes)
+		.slice(0, 3)
+		.map((section) => `## ${section.title} (${section.bytes} bytes)`);
+	const last = sized.pop();
+	return last === undefined
+		? ""
+		: `The largest sections are ${sized.length > 0 ? `${sized.join(", ")} and ` : ""}${last}.`;
+}
+
 function checkLedger(ctx: Ctx, emit: Emit): void {
 	const { plan } = ctx;
 	const lineCount =
@@ -1432,7 +1454,17 @@ function checkLedger(ctx: Ctx, emit: Emit): void {
 			"error",
 			"ledger",
 			1,
-			`${bytes} bytes; ${what} stops at ${denyBytes(ctx.tier)}. Graduate decisions to ADRs, collapse done sessions, or split blocks into briefs`,
+			`${bytes} bytes; ${what} stops at ${denyBytes(ctx.tier)}. ${largestSections(plan)} Graduate decisions to ADRs, collapse done sessions, or split blocks into briefs`,
+		);
+	else if (
+		index &&
+		bytes >= PLAN_CAPS.indexDenyBytes * PLAN_CAPS.indexNoteShare
+	)
+		emit(
+			"note",
+			"ledger",
+			1,
+			`${bytes} bytes, at least ${PLAN_CAPS.indexNoteShare * 100}% of the ${PLAN_CAPS.indexDenyBytes} bytes of ${what}. ${largestSections(plan)}`,
 		);
 	else if (!index && bytes > PLAN_CAPS.planWarnBytes)
 		emit(
@@ -1640,6 +1672,28 @@ function decisionNumber(handle: string): number {
 	return Number(handle.slice(1));
 }
 
+function graduationProblem(
+	env: CheckEnv,
+	row: DecisionRow,
+): string | undefined {
+	if (row.retired?.kind !== "graduated") return undefined;
+	const { adr, decision } = row.retired;
+	const cite = `${row.handle} graduated to ADR ${adr} D${decision}`;
+	const found = adrResolves(env, adr, decision);
+	switch (found) {
+		case "ok":
+			return undefined;
+		case "no-file":
+			return `${cite}, and there is no ADR ${adr} under ${env.adrDir}`;
+		case "no-heading":
+			return `${cite}, and ADR ${adr} has no ### D${decision}. heading`;
+		default: {
+			const unreachable: never = found;
+			return unreachable;
+		}
+	}
+}
+
 export function checkAgainstBase(
 	head: Plan,
 	base: Plan,
@@ -1678,16 +1732,19 @@ export function checkAgainstBase(
 				);
 			continue;
 		}
-		if (row.supersededBy && !now.supersededBy)
+		const graduation = graduationProblem(env, now);
+		if (row.retired && !now.retired)
 			emit(
 				"error",
 				"base",
 				now.line,
-				`${row.handle} was superseded at the base and is live again; handles are never reused`,
+				`${row.handle} was ${row.retired.kind} at the base and is live again; handles are never reused`,
 			);
+		else if (graduation !== undefined)
+			emit("error", "base", now.line, graduation);
 		else if (
 			USER_ROUND.test(row.settled) &&
-			!now.supersededBy &&
+			!now.retired &&
 			normalizeText(now.decision) !== normalizeText(row.decision)
 		)
 			emit(
