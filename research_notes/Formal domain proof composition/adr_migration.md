@@ -78,8 +78,8 @@ Require one standalone checker that runs TLC now and feeds the existing delivery
 
 | Evidence | Finding | Source |
 |---|---|---|
-| E8 | Current formal-model guidance is optional unless an owner or profile requires it. It separates model checks from implementation tests. | [Formal-model reference](../../marketplace/plugins/astack/skills/plan/references/formal-models.md), [Formal-model runbook](../../docs/runbooks/formal-models.md) |
-| E9 | The model reference records bounds, assumptions, commands, explored states, and a planted defect. Generated model outputs stay outside the checkout. | [Formal-model reference](../../marketplace/plugins/astack/skills/plan/references/formal-models.md) |
+| E8 | Current formal-model guidance is optional unless an owner or profile requires it. It separates model checks from implementation tests. | [Change proof reference](../../marketplace/plugins/astack/skills/mode/references/change-proof.md), [Formal-model runbook](../../docs/runbooks/formal-models.md) |
+| E9 | The model reference records bounds, assumptions, commands, explored states, and a planted defect. Generated model outputs stay outside the checkout. | [Change proof reference](../../marketplace/plugins/astack/skills/mode/references/change-proof.md) |
 | E10 | `check spec-drift` reads criterion and control inventories independently. It checks declared links but does not run tests or establish semantic coverage. | [Spec-link reference](../../marketplace/plugins/astack/skills/pr-review-hardening/references/spec-links.md), [Command](../../src/astack/cli/commands/check/spec-drift.ts) |
 | E11 | Hook dispatch allows missing decoded events. It converts a handler exception into an absent verdict, then treats that verdict as allow. | [Hook dispatcher, `verdictFor`, `judgeEach`, and `judge`](../../src/astack/hook/dispatch.ts) |
 | E12 | Hook quality presets affect marked handlers. CLI checks remain separate. An unknown root profile section fails profile validation. | [Hook policy](../../src/astack/hook-profile.ts), [Profile validation, `sectionProblems`](../../src/astack/profile.ts) |

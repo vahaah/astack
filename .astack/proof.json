@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "plan-boundary-and-plan-tools",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"base": "32cafd14af4ebc8e3fcc49d6cc7a18a391f79645",
 	"scope": [
 		{
 			"path": "src/astack/adr.ts",
@@ -126,7 +126,7 @@
 			]
 		},
 		{
-			"path": "docs/adr/0021-*.md",
+			"path": "docs/adr/0020-*.md",
 			"obligation": "BOUNDARY-ONCE",
 			"modelRefs": [
 				"Boundary",
@@ -204,19 +204,19 @@
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
 				"decision": "D4"
 			}
 		],
@@ -410,7 +410,7 @@
 				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			}
 		],
-		"typedWitness": "docs/adr/0021-plan-tools-share-one-adr-reader.md"
+		"typedWitness": "docs/adr/0020-plan-tools-share-one-adr-reader.md"
 	},
 	"abstraction": {
 		"hides": "The fence mask of an ADR, the real path of a plan file, the git calls that find the common dir of a plan folder, the tab split of a batch and the one append call of the trail file.",

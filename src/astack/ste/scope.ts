@@ -28,7 +28,7 @@ export type ScopeOptions = {
 		| undefined;
 	readonly titleLines?: readonly number[] | undefined;
 	readonly lineBreaks?: boolean | undefined;
-	readonly proseFences?: boolean | undefined;
+	readonly proseFence?: ((info: string) => boolean) | undefined;
 	readonly headerFields?: boolean | undefined;
 };
 
@@ -156,9 +156,8 @@ function openFence(
 ): State {
 	const skipped = skip(flush(state, options), line);
 	const prose =
-		options.proseFences === true &&
 		state.proseFence === undefined &&
-		PROSE_FENCE.test(fenceInfo(line, marker));
+		options.proseFence?.(fenceInfo(line, marker)) === true;
 	return prose
 		? { ...skipped, proseFence: marker }
 		: { ...skipped, fence: marker };

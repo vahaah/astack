@@ -263,11 +263,16 @@ describe("review stub and profile copies", () => {
 			profileWith("[]"),
 		);
 		const rendered = renderReviewCopies(project(), dir, sources);
-		expect(rendered.problems).toHaveLength(1);
-		expect(rendered.problems[0]).toContain(
+		expect(rendered.problems).toHaveLength(2);
+		expect(rendered.problems[0]).toBe(
+			"projects/acme/pr-review-hardening.profile.md: test: is required. Change it as references/profile.md of the pr-review-hardening skill says",
+		);
+		expect(rendered.problems[1]).toContain(
 			"the stub fallback reads base.default, base.from_pr",
 		);
-		expect(rendered.problems[0]).toContain("merge.after_clean_stop");
+		expect(rendered.problems[1]).toEndWith(
+			"merge.after_clean_stop, merge.conditions, which the profile does not define. Define each key as references/profile.md of the pr-review-hardening skill says",
+		);
 	});
 
 	test("reports each key that the profile sets away from its default and the stub fallback does not follow", () => {
@@ -379,6 +384,11 @@ describe("review stub and profile copies", () => {
 				`\`\`\`yaml\n${JSON.stringify(data)}\n\`\`\`\n`,
 			);
 			expect(renderReviewCopies(project(), dir, sources).problems).toEqual([
+				...(key === "typescript.boundary_cast_marker"
+					? [
+							"projects/acme/pr-review-hardening.profile.md: typescript.boundary_cast_marker: needs a comments.keep_patterns entry that matches it. Change it as references/profile.md of the pr-review-hardening skill says",
+						]
+					: []),
 				`projects/acme/pr-review-hardening.profile.md: the profile sets ${key} away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it`,
 			]);
 		},
@@ -399,7 +409,7 @@ describe("review stub and profile copies", () => {
 			return renderReviewCopies(project(), dir, sources).problems;
 		};
 		expect(merging([])).toEqual([
-			"projects/acme/pr-review-hardening.profile.md: the profile merges after a clean stop, but no line of merge.conditions checks CI on the head. A local version note is advisory only when CI gates the merge. Add a condition that checks CI on the head SHA, or set merge.after_clean_stop to report",
+			"projects/acme/pr-review-hardening.profile.md: merge.conditions: needs a condition that checks CI on the head when after_clean_stop is merge, because a local version note is advisory only when CI gates the merge. Add a condition that checks CI on the head SHA, or set merge.after_clean_stop to report",
 		]);
 		expect(
 			merging(["The check job of CI is green on the exact head SHA."]),

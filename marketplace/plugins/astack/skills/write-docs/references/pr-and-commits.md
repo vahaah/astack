@@ -30,7 +30,7 @@ One to three bullets, each a gate or run path with its counts or outcome. For a 
 
 ## Risk and rollback
 
-One or two sentences. Say whether it is a one-way or two-way door, name the blast radius, what could break and how someone would notice, and say how to undo it: a revert, a flag, or a reversible migration.
+One or two sentences. Say whether it is a one-way or two-way door. Name the blast radius, what could break and how someone would notice. Say how to undo it: a revert, a flag, or a reversible migration.
 
 ## Deploy notes
 

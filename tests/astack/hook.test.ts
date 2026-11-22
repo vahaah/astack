@@ -27,6 +27,7 @@ interface HookRun {
 }
 
 let project = "";
+let stateRoot = "";
 
 function runHook(
 	payload: unknown,
@@ -37,7 +38,12 @@ function runHook(
 	const result = spawnSync(LAUNCHER, ["hook", "claude-code", "PreToolUse"], {
 		input: raw ?? JSON.stringify(payload),
 		encoding: "utf8",
-		env: { ...process.env, CLAUDE_PROJECT_DIR: project, ...env },
+		env: {
+			...process.env,
+			ASTACK_STATE_DIR: stateRoot,
+			CLAUDE_PROJECT_DIR: project,
+			...env,
+		},
 	});
 	const ms = performance.now() - started;
 	const stdout = result.stdout.trim();
@@ -107,6 +113,7 @@ beforeAll(() => {
 	if (!existsSync(BUNDLE))
 		throw new Error("run `bun run bundle` before the hook tests");
 	project = mkdtempSync(join(tmpdir(), "astack-hook-"));
+	stateRoot = mkdtempSync(join(tmpdir(), "astack-hook-state-"));
 	mkdirSync(join(project, "src"));
 	writeFileSync(join(project, "src/a.ts"), "export const a = 1;\n");
 	writeFileSync(join(project, "a.txt"), "hello\n");
@@ -117,7 +124,37 @@ beforeAll(() => {
 	);
 });
 
-afterAll(() => rmSync(project, { recursive: true, force: true }));
+afterAll(() => {
+	rmSync(project, { recursive: true, force: true });
+	rmSync(stateRoot, { recursive: true, force: true });
+});
+
+function eventLog(session: string): string {
+	const path = join(stateRoot, "ste", session, "events.jsonl");
+	return existsSync(path) ? readFileSync(path, "utf8") : "";
+}
+
+function loggedFindings(session: string): readonly (readonly unknown[])[] {
+	return eventLog(session)
+		.split("\n")
+		.filter((line) => line !== "")
+		.map((line): Record<string, unknown> => JSON.parse(line))
+		.map((line) => [
+			line.handler,
+			line.check,
+			line.event,
+			line.surface,
+			line.rule,
+			line.outcome,
+		]);
+}
+
+function inSession(
+	payload: Record<string, unknown>,
+	session: string,
+): Record<string, unknown> {
+	return { ...payload, session_id: session };
+}
 
 describe("captured payload shapes", () => {
 	test("Edit without comments prints nothing", () => {
@@ -157,21 +194,36 @@ describe("captured payload shapes", () => {
 });
 
 describe("comment enforcement on Edit and Write", () => {
-	test("a narration comment is denied with the quote, the keep list and the skill", () => {
-		const run = runHook(
-			tool("Write", {
-				file_path: join(project, "src/cache.ts"),
-				content: "// now uses the new cache\nexport const c = 1;\n",
-			}),
-		);
-		expect(decision(run)).toBe("deny");
-		expect(reason(run)).toContain(
-			"src/cache.ts:1 narrates a change or an earlier version: // now uses the new cache",
-		);
-		expect(reason(run)).toContain("a license or SPDX header");
-		expect(reason(run)).toContain("/astack:no-comments");
-		expect(reason(run)).toContain(".astack/profile.json");
-	});
+	test.each<[string, () => Record<string, string>]>([
+		["the launcher runtime", () => ({})],
+		[
+			"node in ASTACK_RUNTIME",
+			() => {
+				const node = Bun.which("node");
+				if (node === null) throw new Error("this test needs node on PATH");
+				return { ASTACK_RUNTIME: node };
+			},
+		],
+	])(
+		"a narration comment is denied with the quote, the keep list and the skill on %s",
+		(_name, env) => {
+			const run = runHook(
+				tool("Write", {
+					file_path: join(project, "src/cache.ts"),
+					content: "// now uses the new cache\nexport const c = 1;\n",
+				}),
+				undefined,
+				env(),
+			);
+			expect(decision(run)).toBe("deny");
+			expect(reason(run)).toContain(
+				"src/cache.ts:1 narrates a change or an earlier version: // now uses the new cache",
+			);
+			expect(reason(run)).toContain("a license or SPDX header");
+			expect(reason(run)).toContain("/astack:no-comments");
+			expect(reason(run)).toContain(".astack/profile.json");
+		},
+	);
 
 	test("a license header passes silently", () => {
 		const run = runHook(
@@ -548,6 +600,92 @@ describe("git commit", () => {
 		).toBe("");
 		expect(runHook(tool("Bash", { command: "ls -la" }, repo)).stdout).toBe("");
 		git(repo, "reset", "-q", "--hard");
+	});
+});
+
+describe("the comment event log", () => {
+	const NARRATION = "// now uses the new cache";
+	const JUDGED = "// the value must stay small";
+
+	function editWith(name: string, comment: string, session: string): HookRun {
+		const file_path = join(project, `src/${name}`);
+		writeFileSync(file_path, "export const e = 1;\n");
+		return runHook(
+			inSession(
+				tool("Edit", {
+					file_path,
+					old_string: "export const e = 1;",
+					new_string: `${comment}\nexport const e = 1;`,
+				}),
+				session,
+			),
+		);
+	}
+
+	test("[control:tel-comment] a comment deny and a comment note on an Edit and on a commit each write one comments line with no comment text", () => {
+		expect(decision(editWith("tel-deny.ts", NARRATION, "tel-c-edit"))).toBe(
+			"deny",
+		);
+		expect(decision(editWith("tel-note.ts", JUDGED, "tel-c-edit"))).toBe(
+			undefined,
+		);
+		const repo = mkdtempSync(join(tmpdir(), "astack-tel-commit-"));
+		git(repo, "init", "-q", "-b", "main");
+		writeFileSync(
+			join(repo, "a.ts"),
+			`// ABC-123 from the review\nexport const a = 1;\n`,
+		);
+		git(repo, "add", "a.ts");
+		const commit = () =>
+			runHook(
+				inSession(
+					tool("Bash", { command: 'git commit -m "Add the value"' }, repo),
+					"tel-c-commit",
+				),
+			);
+		expect(decision(commit())).toBe("deny");
+		writeFileSync(join(repo, "a.ts"), `${JUDGED}\nexport const a = 1;\n`);
+		git(repo, "add", "a.ts");
+		expect(decision(commit())).toBe(undefined);
+		rmSync(repo, { recursive: true, force: true });
+		expect([
+			...loggedFindings("tel-c-edit"),
+			...loggedFindings("tel-c-commit"),
+		]).toEqual([
+			["comments", "comments", "edit", "comment", "narration", "deny"],
+			["comments", "comments", "edit", "comment", "judge", "advise"],
+			["comments", "comments", "shell", "comment", "provenance", "deny"],
+			["comments", "comments", "shell", "comment", "judge", "advise"],
+		]);
+		expect(`${eventLog("tel-c-edit")}${eventLog("tel-c-commit")}`).not.toMatch(
+			/cache|small|ABC|review|a\.ts|tel-/,
+		);
+	});
+
+	test("[control:tel-comment-masked] a comment note under a comment deny of the same run writes masked", () => {
+		const run = runHook(
+			inSession(
+				tool("Write", {
+					file_path: join(project, "src/tel-masked.ts"),
+					content: `${NARRATION}\nexport const c = 1;\n\n${JUDGED}\nexport const d = 2;\n`,
+				}),
+				"tel-c-masked",
+			),
+		);
+		expect(decision(run)).toBe("deny");
+		expect(loggedFindings("tel-c-masked")).toEqual([
+			["comments", "comments", "write", "comment", "narration", "deny"],
+			["comments", "comments", "write", "comment", "judge", "masked"],
+		]);
+	});
+
+	test("[control:tel-comment-safe] an event log that refuses a line keeps the comment deny", () => {
+		mkdirSync(join(stateRoot, "ste", "tel-c-safe", "events.jsonl"), {
+			recursive: true,
+		});
+		const run = editWith("tel-safe.ts", NARRATION, "tel-c-safe");
+		expect(decision(run)).toBe("deny");
+		expect(reason(run)).toContain("narrates a change or an earlier version");
 	});
 });
 

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { todayIso } from "../plan/files.ts";
 
 export interface Io {
@@ -12,6 +12,10 @@ export interface Io {
 	input?: () => string;
 }
 
+function realScriptPath(path: string | undefined): string | undefined {
+	return path !== undefined && existsSync(path) ? realpathSync(path) : path;
+}
+
 export function processIo(): Io {
 	return {
 		out: (text) => process.stdout.write(text),
@@ -20,7 +24,7 @@ export function processIo(): Io {
 		env: process.env,
 		today: todayIso(),
 		now: new Date(),
-		scriptPath: process.argv[1],
+		scriptPath: realScriptPath(process.argv[1]),
 		input: () => (process.stdin.isTTY ? "" : readFileSync(0, "utf8")),
 	};
 }

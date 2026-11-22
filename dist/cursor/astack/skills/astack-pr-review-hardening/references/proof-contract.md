@@ -12,6 +12,7 @@ Without `--base`, the diff base is the manifest base. It must be an ancestor of 
 With `--base <ref>`, the diff base is the merge base of the ref and HEAD.
 The manifest base must be an ancestor of that merge base. Otherwise the gate stops and names both commits.
 
+The checker binds current candidate files and model inputs before and after execution.
 The scope check and both input snapshots read from the diff base, so a file that only the base branch changed stays out of scope.
 The receipt prints the manifest base and the diff base.
 Do not change the manifest base after a merge or a rebase of the base branch.
@@ -26,24 +27,26 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 
 ## Required records
 
-| Record | Required content |
+| Record | Keys of [proof-example.json](proof-example.json) |
 |---|---|
-| `version`, `change`, `base` | Version 1, a change name, and a full immutable base SHA |
-| `scope` | Globs for every live changed path, with criterion and model references |
-| `domain` | Context, glossary, aggregate, terms, invariants, effective ADRs, and a spec-drift matrix |
-| `category` | Objects, typed arrows, carrier, effects, composition, equality, laws, and a typed witness |
-| `abstraction` | Hidden rule, caller facts, deletion test, alternatives, concrete-to-model relations, and omissions |
-| `model` | TLA+ module, config, exact project dependency closure, bounds, fairness, invariants, and properties |
-| `negative` | One named action, one exact mutation, its defect, and the expected named violation |
-| `limits` | Explicit limits of the selected proof |
+| `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
+| `scope` | `[{path, obligation, modelRefs}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
+| `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
+| `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
+| `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
+| `model` | `module`, `config`, `dependencies`, `bounds`, `fairness`, `invariants` and `properties`. [TLC execution](#tlc-execution) |
+| `negative` | `file`, `action`, `original`, `replacement`, `defect` and `expect {kind, name}`. [TLC execution](#tlc-execution) |
+| `limits` | Proof limits |
 
-Unknown fields, duplicate names, unresolved references, and empty required text fail.
+Unknown fields, duplicate names, unresolved references, and empty text fail.
 Paths stay inside the repo and outside `.git`.
-Proof references must resolve directly to regular files, without a symlink in the path.
-Scope includes tracked edits, staged edits, deletions, and nonignored untracked files.
-A scope row must cover a changed path.
-The checker binds current candidate files and model inputs before and after execution.
-The manifest never stores its own digest or its containing commit's hash.
+A proof reference is a regular file with no symlink in its path.
+The manifest never stores its own digest or commit hash.
+
+The matrix uses [spec-links.md](spec-links.md).
+Criterion and control markers come from their source files independently of the links.
+Implementation gates run those controls separately.
+Link validation is not semantic coverage.
 
 ## Domain and decisions
 
@@ -105,21 +108,16 @@ The ADR explains the claim and its limits.
 Models and tests remain executable files linked from that explanation.
 Do not copy a transient pass log into an ADR.
 
-The matrix uses [spec-links.md](spec-links.md).
-Criterion and control markers come from their source files independently of the links.
-Implementation gates run those controls separately.
-Link validation is not semantic coverage.
-
 ## Category and abstraction
 
 Objects name valid values or artifact contracts.
 Arrows reference real functions or document transformations.
 Adjacent arrow types must compose.
 
-- `pure` uses ordinary `o` composition and declares no effects.
-- `result` fixes an error type and uses `>=>` composition.
-- `promise-result` also states observable equality and rejection behavior.
-- `artifact` states the preserved artifact contract and uses ordinary composition.
+- `carrier {kind: pure}` uses ordinary `o` composition and declares no effects.
+- `carrier {kind: result, error}` fixes the error type and uses `>=>` composition.
+- `carrier {kind: promise-result, error, observation, rejection}` also states observable equality and rejection behavior.
+- `carrier {kind: artifact, contract}` states the preserved artifact contract and uses ordinary composition.
 
 For `o`, `[g, f]` means that `f` runs first.
 For `>=>`, `[f, g]` means that `f` runs first.
@@ -143,10 +141,8 @@ The checker cannot infer their truth from names alone.
 ## TLC execution
 
 The runner pins `tla2tools.jar` release 1.7.4 and verifies its SHA-256 on every use.
-The pin was computed from the official release asset after its published SHA-1 was checked.
 Java 17 or later is required.
 The runner downloads only the pinned jar into the astack cache when it is absent.
-A cached digest mismatch fails.
 
 `ASTACK_TLC_JAR` can name a verified jar outside the checkout.
 `ASTACK_PROOF_TIMEOUT_MS` can lower the 60000 ms policy cap.

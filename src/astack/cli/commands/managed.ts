@@ -30,16 +30,7 @@ function describe(path: string, owner: Ownership): string {
 }
 
 function exitCode(owner: Ownership): number {
-	switch (owner.kind) {
-		case "written":
-		case "retired":
-		case "merged":
-			return 0;
-		case "repo":
-			return 1;
-		case "unknown":
-			return 2;
-	}
+	return owner.kind === "unknown" ? 2 : 0;
 }
 
 function realPath(path: string): string {
@@ -71,7 +62,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "managed",
 	summary:
-		"Tells whether astack apply writes a repo path. Exits 0 for an astack file, 1 for a repo file and 2 when the profile cannot tell.",
+		"Tells whether astack apply writes a repo path. It prints the owner class of each path: written, retired, merged or repo. Exits 0 when it knows each owner, and 2 when the profile cannot tell.",
 	usage: "managed <path>...",
 	run,
 };

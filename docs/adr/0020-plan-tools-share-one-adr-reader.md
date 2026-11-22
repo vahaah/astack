@@ -1,4 +1,4 @@
-# 0021. The plan tools share one ADR reader, and a session boundary rides in the next session PR
+# 0020. The plan tools share one ADR reader, and a session boundary rides in the next session PR
 
 Status: Accepted
 Date: 2026-11-22

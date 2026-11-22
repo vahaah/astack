@@ -5,7 +5,9 @@
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
 		"docs/reference/word-budget.md",
-		"docs/reference/plan-boundary.md"
+		"docs/reference/plan-boundary.md",
+		"docs/reference/doctor.md",
+		"docs/reference/finding-telemetry.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -13,6 +15,8 @@
 		"tests/astack/change-proof-submodules.test.ts",
 		"tests/astack/change-proof-snapshot.test.ts",
 		"tests/astack/change-proof.test.ts",
+		"tests/astack/proof-contract-doc.test.ts",
+		"tests/astack/tlc-output.test.ts",
 		"tests/astack/proof-migration.test.ts",
 		"tests/hardening-consistency.test.ts",
 		"tests/astack/change-proof-ratification.test.ts",
@@ -23,6 +27,7 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
@@ -31,7 +36,18 @@
 		"tests/astack/plan-cli.test.ts",
 		"tests/astack/plan-session.test.ts",
 		"tests/astack/plan-check.test.ts",
-		"tests/tracker-schema.test.ts"
+		"tests/tracker-schema.test.ts",
+		"tests/astack/codex-hooks.test.ts",
+		"tests/astack/version.test.ts",
+		"tests/astack/hardening-profile.test.ts",
+		"tests/astack/managed.test.ts",
+		"tests/astack/watch-pr/policy.test.ts",
+		"tests/dist/external.test.ts",
+		"tests/pr-review-profile.test.ts",
+		"tests/astack/verdict.test.ts",
+		"tests/astack/cursor-hook.test.ts",
+		"tests/ste-own.test.ts",
+		"tests/dist/render.test.ts"
 	],
 	"links": [
 		{
@@ -43,7 +59,8 @@
 			"controls": [
 				"proof-valid-triple",
 				"proof-restored-run",
-				"proof-release-history"
+				"proof-release-history",
+				"proof-run-order"
 			]
 		},
 		{
@@ -98,7 +115,7 @@
 		},
 		{
 			"criterion": "CP-10",
-			"controls": ["proof-timeout-cleanup"]
+			"controls": ["proof-timeout-cleanup", "proof-run-stop"]
 		},
 		{
 			"criterion": "CP-11",
@@ -121,10 +138,49 @@
 			"controls": ["proof-push-base", "proof-push-payload"]
 		},
 		{
+			"criterion": "CP-16",
+			"controls": [
+				"proof-local-base",
+				"proof-local-untracked",
+				"proof-local-fallback",
+				"proof-local-shallow"
+			]
+		},
+		{
 			"criterion": "CP-15",
 			"controls": [
 				"proof-ratification-names-a-base-move",
 				"proof-landing-base-move"
+			]
+		},
+		{
+			"criterion": "CP-17",
+			"controls": ["tlc-line-ends"]
+		},
+		{
+			"criterion": "CP-18",
+			"controls": ["tlc-sany-location"]
+		},
+		{
+			"criterion": "CP-19",
+			"controls": ["tlc-violation-trace"]
+		},
+		{
+			"criterion": "CP-20",
+			"controls": [
+				"proof-stale-paths",
+				"proof-timeout-progress",
+				"proof-timeout-stdout"
+			]
+		},
+		{
+			"criterion": "CP-21",
+			"controls": [
+				"proof-stop-section",
+				"proof-stop-heading",
+				"proof-example-parses",
+				"proof-example-keys",
+				"proof-carrier-forms"
 			]
 		},
 		{
@@ -215,6 +271,16 @@
 			"controls": ["sg-stale-cli"]
 		},
 		{
+			"criterion": "SG-runtime",
+			"controls": [
+				"sg-runtime-no-probe",
+				"sg-runtime-bun-first",
+				"sg-runtime-floor",
+				"sg-runtime-none",
+				"sg-runtime-entry"
+			]
+		},
+		{
 			"criterion": "SG-preserve",
 			"controls": [
 				"sg-grant-words",
@@ -260,6 +326,132 @@
 		{
 			"criterion": "BOUNDARY-ONCE",
 			"controls": ["boundary-once"]
+
+		},
+		{
+			"criterion": "DT-TRUST",
+			"controls": [
+				"dt-trust-modified",
+				"dt-trust-untrusted",
+				"dt-trust-disabled",
+				"dt-trust-missing",
+				"dt-trust-ok",
+				"dt-trust-entry-error",
+				"dt-trust-command",
+				"dt-reader-order"
+			]
+		},
+		{
+			"criterion": "DT-FALLBACK",
+			"controls": [
+				"dt-fallback-pinned",
+				"dt-fallback-modified",
+				"dt-fallback-command"
+			]
+		},
+		{
+			"criterion": "DT-READ-FAIL",
+			"controls": [
+				"dt-read-hang",
+				"dt-read-exit",
+				"dt-read-rpc-error",
+				"dt-read-no-codex",
+				"dt-reader-shape",
+				"dt-dist-cause"
+			]
+		},
+		{
+			"criterion": "DT-SKIP",
+			"controls": ["dt-skip", "dt-skip-unlisted", "dt-skip-write"]
+		},
+		{
+			"criterion": "CLI-VERSION",
+			"controls": [
+				"cli-version-claude",
+				"cli-version-cursor",
+				"cli-version-package",
+				"cli-version-none",
+				"cli-version-link"
+			]
+		},
+		{
+			"criterion": "HP-RULES",
+			"controls": [
+				"hp-proof-gate",
+				"hp-ok",
+				"hp-missing",
+				"hp-no-block",
+				"dt-review-missing",
+				"dt-review-drift",
+				"hp-merge-key"
+			]
+		},
+		{
+			"criterion": "DT-BASE",
+			"controls": [
+				"dt-base-open",
+				"dt-base-classic",
+				"dt-base-cap",
+				"dt-base-gh-fail"
+			]
+		},
+		{
+			"criterion": "WP-DEADLINE",
+			"controls": [
+				"wp-deadline-simple",
+				"wp-deadline-queued",
+				"wp-deadline-retry"
+			]
+		},
+		{
+			"criterion": "CLI-MANAGED",
+			"controls": ["cli-managed"]
+		},
+		{
+			"criterion": "OWN-FENCE",
+			"controls": ["own-fence", "own-fence-list"]
+		},
+		{
+			"criterion": "OWN-ZERO",
+			"controls": ["own-zero"]
+		},
+		{
+			"criterion": "UNIT-ONE",
+			"controls": ["unit-one"]
+		},
+		{
+			"criterion": "NOUN-CHECKS",
+			"controls": ["noun-checks"]
+		},
+		{
+			"criterion": "TEL-NOTEXT",
+			"controls": ["tel-notext", "tel-comment", "tel-release"]
+		},
+		{
+			"criterion": "TEL-APPEND",
+			"controls": ["tel-append"]
+		},
+		{
+			"criterion": "TEL-OUTCOME",
+			"controls": ["tel-outcome", "tel-outcome-map", "tel-comment", "tel-reply"]
+		},
+		{
+			"criterion": "TEL-MASKED",
+			"controls": ["tel-masked", "tel-comment-masked", "tel-outcome-map"]
+		},
+		{
+			"criterion": "TEL-SAFE",
+			"controls": [
+				"tel-safe",
+				"tel-comment-safe",
+				"tel-reply-safe",
+				"tel-refresh",
+				"tel-comment-refresh"
+			]
+		},
+		{
+			"criterion": "TEL-SUM",
+			"controls": ["tel-sum"]
 		}
 	]
 }

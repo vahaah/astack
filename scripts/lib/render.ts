@@ -1,6 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, posix } from "node:path";
-import { proofGateIssues } from "../../src/astack/change-proof/profile.ts";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
 import {
 	MANAGED_PATHS,
@@ -8,10 +7,9 @@ import {
 	REVIEW_FALLBACK_FILE,
 } from "../../src/astack/managed.ts";
 import {
-	mergesWithoutCi,
-	missingFallbackKeys,
 	parseProfile,
-	unreadFallbackKeys,
+	problemText,
+	reviewProfileProblems,
 } from "../../src/astack/pr-review-profile.ts";
 import { ASTACK_RULES } from "../../src/astack/rules.ts";
 import { renderFlowConfig } from "./flow-config.ts";
@@ -233,25 +231,8 @@ export function renderReviewCopies(
 		if (mismatch !== undefined) {
 			problems.push(`${profileLabel}: ${mismatch}`);
 		}
-		const data = parseProfile(profile).data;
-		for (const issue of proofGateIssues(data))
-			problems.push(`${profileLabel}: ${issue.path}: ${issue.message}`);
-		const missing = missingFallbackKeys(data);
-		if (missing.length > 0) {
-			problems.push(
-				`${profileLabel}: the stub fallback reads ${missing.join(", ")}, which the profile does not define`,
-			);
-		}
-		if (mergesWithoutCi(data))
-			problems.push(
-				`${profileLabel}: the profile merges after a clean stop, but no line of merge.conditions checks CI on the head. A local version note is advisory only when CI gates the merge. Add a condition that checks CI on the head SHA, or set merge.after_clean_stop to report`,
-			);
-		const unread = unreadFallbackKeys(data);
-		if (unread.length > 0) {
-			problems.push(
-				`${profileLabel}: the profile sets ${unread.join(", ")} away from the default, but the stub fallback does not follow them. Keep each at its default, or teach the stub to follow it`,
-			);
-		}
+		for (const problem of reviewProfileProblems(profile))
+			problems.push(`${profileLabel}: ${problemText(problem)}`);
 	}
 	return { artifacts, problems };
 }

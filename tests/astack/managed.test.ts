@@ -119,10 +119,10 @@ describe("astack managed", () => {
 		);
 	});
 
-	test("names a repo file and exits 1", () => {
+	test("[control:cli-managed] names a repo file and exits 0, because the answer is known", () => {
 		const repo = repoWith(profile);
 		const result = run(repo, ["src/index.ts"]);
-		expect(result.code).toBe(1);
+		expect(result.code).toBe(0);
 		expect(result.out).toBe(
 			"repo src/index.ts: astack apply does not write it. Fix it in this repo.\n",
 		);

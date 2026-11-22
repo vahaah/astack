@@ -11,6 +11,7 @@ import {
 	queryBackoffSeconds,
 	readSnapshot,
 	runQueued,
+	runSimple,
 	selectTierMajorStackDecision,
 } from "../../../src/astack/watch-pr/policy.ts";
 import type {
@@ -412,6 +413,88 @@ describe("queued-stack cadence", () => {
 		expect(second.emit).toBe(false);
 		expect(planQueue(second.state, 300).work?.kind).toBe("whole-stack-sweep");
 	});
+});
+
+describe("deadline clamp", () => {
+	const deadline = {
+		...options,
+		interval: 60,
+		timeout: 5,
+	} satisfies PollingOptions;
+	const retryableReader = {
+		...fakeReader(),
+		async pullRequest(): Promise<PullRequestFacts> {
+			throw new WatcherQueryError({
+				kind: "command-exit",
+				retryable: true,
+				detail: "rate limited",
+				code: 1,
+			});
+		},
+	} satisfies GitHubReader;
+	const pendingReader = fakeReader({
+		fastPath: { kind: "checks", checks: [pendingCheck("build")] },
+	});
+
+	test.each([
+		[
+			"[control:wp-deadline-simple] the simple runner",
+			"simple",
+			pendingReader,
+			[],
+		],
+		[
+			"[control:wp-deadline-queued] the queued runner",
+			"queued",
+			pendingReader,
+			[],
+		],
+		[
+			"[control:wp-deadline-retry] a retry backoff",
+			"simple",
+			retryableReader,
+			[5],
+		],
+	] as const)(
+		"%s sleeps only the 5 s left before the deadline, says so in each RETRY and returns TIMEOUT",
+		async (_name, runner, reader, retries) => {
+			let now = 0;
+			const sleeps: number[] = [];
+			const retryInSeconds: number[] = [];
+			const dependencies = {
+				reader,
+				clock: {
+					now: () => now,
+					observedAt: () => "2026-07-26T00:00:00.000Z",
+					async sleep(seconds: number) {
+						sleeps.push(seconds);
+						now += seconds;
+					},
+				},
+				emit(verdict: ProgressVerdict) {
+					if (verdict.kind === "RETRY")
+						retryInSeconds.push(verdict.retryInSeconds);
+				},
+			};
+			const verdict =
+				runner === "simple"
+					? await runSimple({
+							dependencies,
+							contexts: [context(60)],
+							mode: "single",
+							statusOnly: false,
+							options: deadline,
+						})
+					: await runQueued({
+							dependencies,
+							contexts: [context(60)],
+							options: deadline,
+						});
+			expect(sleeps).toEqual([5]);
+			expect(retryInSeconds).toEqual([...retries]);
+			expect(verdict).toMatchObject({ kind: "TIMEOUT", exitCode: 5 });
+		},
+	);
 });
 
 test("uses the specified retry floor and cap", () => {

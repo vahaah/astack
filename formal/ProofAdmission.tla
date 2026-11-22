@@ -6,6 +6,13 @@ Required == {Stages[i] : i \in 1..Len(Stages)}
 States == {"validating", "modeled", "checked", "restored", "admitted", "rejected"}
 PositiveResults == {"pending", "passed", "failed", "incomplete"}
 NegativeResults == {"pending", "expected", "parse", "other", "none"}
+Inputs == {"file", "index", "history"}
+Failures == {"model", "countermodel", "restore", "stale"} \cup Required
+Sections == [schema |-> "Required records", base |-> "Base",
+             domain |-> "Domain and decisions", category |-> "Category and abstraction",
+             controls |-> "Required records", model |-> "TLC execution",
+             countermodel |-> "TLC execution", restore |-> "TLC execution",
+             stale |-> "Base"]
 
 AcceptedAuthority == [lifecycle |-> "accepted", optIn |-> FALSE,
                       history |-> TRUE, ancestor |-> TRUE, unchanged |-> TRUE,
@@ -52,8 +59,10 @@ BaseViewsAllowed(b) == /\ b.diffFrom = IF b.ref THEN "merge" ELSE "manifest"
                        /\ b.historyAt = "manifest"
 MoveAllowed(a, b) == ~(a.optIn /\ b.moved)
 
-VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority, base
-vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority, base>>
+VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority, base,
+          changed, named, section
+vars == <<stage, verified, positive, negative, restored, current, status, firstFailure, authority, base,
+          changed, named, section>>
 
 Init == /\ stage = 1
         /\ verified = {}
@@ -65,6 +74,9 @@ Init == /\ stage = 1
         /\ firstFailure = "none"
         /\ authority \in AuthorityCases
         /\ base \in BaseCases
+        /\ changed = {}
+        /\ named = {}
+        /\ section = "none"
 
 ValidationPass == /\ status = "validating"
                   /\ stage <= Len(Stages)
@@ -75,42 +87,52 @@ ValidationPass == /\ status = "validating"
                   /\ (Stages[stage] # "domain" \/ MoveAllowed(authority, base))
                   /\ verified' = verified \cup {Stages[stage]}
                   /\ stage' = stage + 1
-                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority, base>>
+                  /\ UNCHANGED <<positive, negative, restored, current, status, firstFailure, authority, base,
+                                 changed, named, section>>
 
 ValidationFail == /\ status = "validating"
                   /\ stage <= Len(Stages)
                   /\ firstFailure' = Stages[stage]
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
+                  /\ section' = Sections[firstFailure']
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base,
+                                 changed, named>>
 
 RunPositive == /\ status = "validating"
                /\ stage > Len(Stages)
                /\ positive' \in PositiveResults \ {"pending"}
                /\ status' = "modeled"
-               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure, authority, base>>
+               /\ UNCHANGED <<stage, verified, negative, restored, current, firstFailure, authority, base,
+                              changed, named, section>>
 
 RejectPositive == /\ status = "modeled"
                   /\ positive # "passed"
                   /\ firstFailure' = "model"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
+                  /\ section' = Sections[firstFailure']
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base,
+                                 changed, named>>
 
 RunNegative == /\ status = "modeled"
                /\ positive = "passed"
                /\ negative' \in NegativeResults \ {"pending"}
                /\ status' = "checked"
-               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure, authority, base>>
+               /\ UNCHANGED <<stage, verified, positive, restored, current, firstFailure, authority, base,
+                              changed, named, section>>
 
 InputChange == /\ status \in {"modeled", "checked", "restored"}
                /\ current
                /\ current' = FALSE
-               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure, authority, base>>
+               /\ changed' \in SUBSET Inputs \ {{}}
+               /\ UNCHANGED <<stage, verified, positive, negative, restored, status, firstFailure, authority, base,
+                              named, section>>
 
 RunRestored == /\ status = "checked"
                /\ negative = "expected"
                /\ restored' \in PositiveResults \ {"pending"}
                /\ status' = "restored"
-               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure, authority, base>>
+               /\ UNCHANGED <<stage, verified, positive, negative, current, firstFailure, authority, base,
+                              changed, named, section>>
 
 Admit == /\ status = "restored"
          /\ verified = Required
@@ -119,7 +141,8 @@ Admit == /\ status = "restored"
          /\ restored = "passed"
          /\ current
          /\ status' = "admitted"
-         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure, authority, base>>
+         /\ UNCHANGED <<stage, verified, positive, negative, restored, current, firstFailure, authority, base,
+                        changed, named, section>>
 
 RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ IF status = "checked"
@@ -128,7 +151,10 @@ RejectEvidence == /\ status \in {"checked", "restored"}
                   /\ firstFailure' = IF status = "checked" THEN "countermodel"
                                       ELSE IF restored # "passed" THEN "restore" ELSE "stale"
                   /\ status' = "rejected"
-                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base>>
+                  /\ section' = Sections[firstFailure']
+                  /\ named' = IF firstFailure' = "stale" THEN changed ELSE {}
+                  /\ UNCHANGED <<stage, verified, positive, negative, restored, current, authority, base,
+                                 changed>>
 
 Finished == /\ status \in {"admitted", "rejected"}
             /\ UNCHANGED vars
@@ -146,7 +172,10 @@ TypeOK == /\ stage \in 1..(Len(Stages) + 1)
           /\ restored \in PositiveResults
           /\ current \in BOOLEAN
           /\ status \in States
-          /\ firstFailure \in {"none", "model", "countermodel", "restore", "stale"} \cup Required
+          /\ firstFailure \in {"none"} \cup Failures
+          /\ changed \subseteq Inputs
+          /\ named \subseteq Inputs
+          /\ section \in {"none"} \cup {Sections[failure] : failure \in Failures}
 
 AdmitSafe == status = "admitted" =>
             /\ verified = Required
@@ -165,6 +194,8 @@ BaseAncestry == status = "admitted" => base.relation \in {"equal", "ancestor"}
 ScopeFromMergeBase == status = "admitted" /\ base.ref => base.diffFrom = "merge"
 HistoryAtManifest == status = "admitted" => base.historyAt = "manifest"
 MovedAuthorityStops == status = "admitted" /\ authority.optIn => ~base.moved
+StaleStopNamesPaths == status = "rejected" /\ firstFailure = "stale" => named = changed /\ named # {}
+StopNamesSection == status = "rejected" => section = Sections[firstFailure]
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
 
 Values == {0, 1}

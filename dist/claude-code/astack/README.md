@@ -25,7 +25,7 @@ ln -s <repository root>/rules/typescript.md ~/.claude/rules/astack-typescript.md
 ln -s <repository root>/rules/postgres.md ~/.claude/rules/astack-postgres.md
 ```
 
-The hooks need Node 22 or later, or [Bun](https://bun.sh). `bin/astack` looks for a runtime in a fixed order. It tries `$ASTACK_RUNTIME`, the path in `~/.local/state/astack/runtime`, and `node` and `bun` on `PATH`. Then it tries the install paths of Homebrew, `/usr/local/bin`, Bun, Volta and nvm. When it finds no runtime, it writes one line to stderr and allows the tool call.
+The hooks need Node 22 or later, or [Bun](https://bun.sh). `bin/astack` looks for a runtime in a fixed order. It tries `$ASTACK_RUNTIME`, the path in `~/.local/state/astack/runtime`, and `bun` and `node` on `PATH`. Then it tries the install paths of Homebrew, `/usr/local/bin`, Bun, Volta and nvm, with Bun before Node. It runs the first runtime that it finds. When it finds no runtime, it writes one line to stderr and allows the tool call. When a hook fails on a Node older than 22, it does the same. `astack doctor` shows the runtime that it picks.
 
 The astack skills read their reference files and run the `astack` CLI. Add these rules to `permissions.allow` in your user settings or in the repo's `.claude/settings.json`. Then those reads and calls do not prompt or fail in a subagent:
 
@@ -275,7 +275,7 @@ The value is a whole number of 1 or more, and astack ignores anything else. The 
 
 The hooks fail open. When something goes wrong, the tool call goes ahead as if astack were not installed:
 
-- `bin/astack` exits 0 when it finds no Node or Bun runtime. It writes one line to stderr that says so.
+- A hook of `bin/astack` exits 0 when it finds no Node or Bun runtime, or when it fails on a Node older than 22. It writes one line to stderr that says so. Each other command exits 1.
 - To deny, astack exits 2 and writes the reason to stderr. To add a note, it exits 0 and prints JSON. Otherwise it exits 0 and prints nothing.
 - A handler that fails gives no verdict. The verdicts of the other handlers still apply.
 - Unreadable input, a file it cannot tokenize, an `Edit` whose `old_string` does not match, and any internal error all pass silently.
@@ -314,7 +314,7 @@ astack board docs/plans/x/index.md    # drain first, the startable frontier, the
 astack skill-path astack:architect    # the SKILL.md path of an installed plugin skill
 astack check-ste docs/x.md            # or - for stdin; --mode advise, --json, --profile <file>, --surface commit, --old <file>
 astack check-migrations supabase/migrations --db <url> --reset "supabase db reset" --allow-pending   # the stack against the files of the branch
-astack doctor                         # the runtime, the copies of each tool, Codex trust, duplicate skills and the profile
+astack doctor                         # the runtime, the copies of each tool, Codex trust, duplicate skills, the profile and 7 days of hook findings
 astack print codex-agents ~/.codex/AGENTS.md           # that file with the astack block in it; also print cursor-install
 ```
 

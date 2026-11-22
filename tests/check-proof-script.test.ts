@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { pinnedJar } from "../src/astack/change-proof/runner.ts";
 import {
 	BASE_FILES,
@@ -14,6 +15,9 @@ import {
 } from "./astack/change-proof-fixture.ts";
 
 const SCRIPT = resolve(import.meta.dir, "../scripts/check-proof.ts");
+
+const rule = (section: string): string =>
+	`rule: read the section "${section}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`;
 const scratch = scratchDir("astack-check-proof-script-");
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
@@ -124,5 +128,101 @@ test("[control:proof-push-payload] a branch push with no default branch in the e
 		code: 1,
 		out: "",
 		err: "A push proof needs repository.default_branch in the GITHUB_EVENT_PATH payload.\n",
+	});
+});
+
+function localRun(root: string) {
+	const result = spawnSync(process.execPath, [SCRIPT], {
+		cwd: root,
+		encoding: "utf8",
+		env: environment({}),
+	});
+	return { code: result.status, out: result.stdout, err: result.stderr };
+}
+
+const followMain = (root: string): void => {
+	git(
+		root,
+		"symbolic-ref",
+		"refs/remotes/origin/HEAD",
+		"refs/remotes/origin/main",
+	);
+};
+
+const rootCommit = (root: string): string =>
+	git(root, "rev-list", "--max-parents=0", "HEAD");
+
+test.each<[string, OriginMain, boolean]>([
+	["a branch that merged main", "r", true],
+	["a clean default tip with 0 changed files", "head", false],
+])(
+	"[control:proof-local-base] a local run on %s admits PR Q with base M0 after PR R merged",
+	(_name, originMain, extraCommit) => {
+		const repo = mergedQAfterR(originMain, extraCommit, PAYLOAD);
+		followMain(repo.root);
+		const run = localRun(repo.root);
+		expect(run.err).toBe("");
+		expect(run.out.trimEnd().split("\n").at(-1)).toBe(
+			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+		);
+		expect(run.code).toBe(0);
+	},
+);
+
+test("[control:proof-local-untracked] an untracked path at the default tip reads its diff from origin/main", () => {
+	const repo = mergedQAfterR("head", false, PAYLOAD);
+	followMain(repo.root);
+	writeFileSync(join(repo.root, "notes/new.md"), "new\n");
+	const idle = validProof(rootCommit(repo.root)).scope.map(
+		(row) => `scope row ${row.path} covers no changed path`,
+	);
+	expect(localRun(repo.root)).toEqual({
+		code: 1,
+		err: rule("Required records"),
+		out: `stop: proof controls: ${["no scope row covers the changed path notes/new.md", ...idle].join("; ")}\n`,
+	});
+});
+
+test.each<[string, (root: string) => void]>([
+	["a missing origin/HEAD", () => {}],
+	[
+		"a dangling origin/HEAD",
+		(root) =>
+			git(
+				root,
+				"symbolic-ref",
+				"refs/remotes/origin/HEAD",
+				"refs/remotes/origin/gone",
+			),
+	],
+])(
+	"[control:proof-local-fallback] a local run with %s keeps the manifest base",
+	(_name, setup) => {
+		const repo = mergedQAfterR("r", true, PAYLOAD);
+		setup(repo.root);
+		expect(localRun(repo.root)).toEqual({
+			code: 1,
+			err: rule("Required records"),
+			out: "stop: proof controls: no scope row covers the changed path notes/r.md\n",
+		});
+	},
+);
+
+test("[control:proof-local-shallow] a local run on a clean default tip with no HEAD^ keeps the manifest base", () => {
+	const repo = mergedQAfterR("head", false, PAYLOAD);
+	const shallow = `${repo.root}-shallow`;
+	git(
+		scratch,
+		"clone",
+		"-q",
+		"--depth",
+		"1",
+		pathToFileURL(repo.root).href,
+		shallow,
+	);
+	expect(localRun(shallow)).toEqual({
+		code: 1,
+		err: rule("Base"),
+		out: `stop: proof stale: the base ${rootCommit(repo.root)} is not a commit in this repository\n`,
 	});
 });

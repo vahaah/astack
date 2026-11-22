@@ -1,6 +1,6 @@
 # Plan boundary and plan tool requirements
 
-[ADR 0021](../adr/0021-plan-tools-share-one-adr-reader.md) governs the ADR heading reader, the session boundary and the graduated row.
+[ADR 0020](../adr/0020-plan-tools-share-one-adr-reader.md) governs the ADR heading reader, the session boundary and the graduated row.
 The [model](../../formal/PlanBoundary.tla) examines the boundary and the graduated row over three sessions and two rows.
 
 ## Acceptance criteria

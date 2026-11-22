@@ -1,0 +1,210 @@
+{
+	"version": 1,
+	"change": "gate-admission",
+	"base": "0123456789abcdef0123456789abcdef01234567",
+	"scope": [
+		{
+			"path": ".astack/**",
+			"obligation": "P1",
+			"modelRefs": ["AdmitFresh"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "P1",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/**",
+			"obligation": "P1",
+			"modelRefs": ["AdmitFresh"]
+		},
+		{
+			"path": "spec/**",
+			"obligation": "P1",
+			"modelRefs": ["AdmitFresh"]
+		},
+		{
+			"path": "tests/**",
+			"obligation": "P1",
+			"modelRefs": ["Admit"]
+		},
+		{
+			"path": "src/**",
+			"obligation": "P1",
+			"modelRefs": ["Admit"]
+		},
+		{
+			"path": "formal/*",
+			"obligation": "P1",
+			"modelRefs": ["Ends"]
+		}
+	],
+	"domain": {
+		"context": "Gate admission",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/gate.ts",
+			"symbol": "Gate"
+		},
+		"terms": ["Gate", "Fresh input"],
+		"invariants": [
+			{
+				"name": "Only fresh input is admitted",
+				"modelRef": "AdmitFresh"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0001-gate.md",
+				"decision": "D1"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/matrix.json",
+			"criteria": ["P1"]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "result",
+			"error": "Rejection"
+		},
+		"objects": [
+			{
+				"name": "Text",
+				"link": {
+					"path": "src/gate.ts",
+					"symbol": "Text"
+				}
+			},
+			{
+				"name": "Gate",
+				"link": {
+					"path": "src/gate.ts",
+					"symbol": "Gate"
+				}
+			},
+			{
+				"name": "Admitted",
+				"link": {
+					"path": "src/gate.ts",
+					"symbol": "Admitted"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "parse",
+				"from": "Text",
+				"to": "Gate",
+				"link": {
+					"path": "src/gate.ts",
+					"symbol": "parseGate"
+				},
+				"effects": []
+			},
+			{
+				"name": "admit",
+				"from": "Gate",
+				"to": "Admitted",
+				"link": {
+					"path": "src/gate.ts",
+					"symbol": "admitGate"
+				},
+				"effects": []
+			}
+		],
+		"composites": [
+			{
+				"arrows": ["parse", "admit"],
+				"op": ">=>"
+			}
+		],
+		"equality": "structural equality of the returned Result",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "witnessed",
+				"witness": "control:C1"
+			},
+			{
+				"law": "id-right",
+				"status": "witnessed",
+				"witness": "control:C1"
+			},
+			{
+				"law": "assoc",
+				"status": "witnessed",
+				"witness": "control:C1"
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "no map changes"
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "no map changes"
+			},
+			{
+				"law": "monad-left",
+				"status": "witnessed",
+				"witness": "model:TypeOK"
+			},
+			{
+				"law": "monad-right",
+				"status": "witnessed",
+				"witness": "model:TypeOK"
+			},
+			{
+				"law": "monad-assoc",
+				"status": "witnessed",
+				"witness": "control:C1"
+			}
+		],
+		"typedWitness": "tests/gate-types.ts"
+	},
+	"abstraction": {
+		"hides": "the freshness rule of admission",
+		"callersKnow": ["a stale gate is rejected"],
+		"deletionTest": "each caller would check freshness again",
+		"alternatives": [
+			{
+				"name": "a flag on the caller",
+				"rejectedBecause": "callers forget it"
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/gate.ts",
+					"symbol": "admitGate"
+				},
+				"modelAction": "Admit"
+			}
+		],
+		"omitted": ["the text format"]
+	},
+	"model": {
+		"module": "formal/Gate.tla",
+		"config": "formal/Gate.cfg",
+		"dependencies": [],
+		"bounds": ["one gate with two variables"],
+		"fairness": ["weak fairness on Next"],
+		"invariants": ["TypeOK", "AdmitFresh"],
+		"properties": ["Ends"]
+	},
+	"negative": {
+		"file": "formal/Gate.tla",
+		"action": "Admit",
+		"original": "/\\ fresh /\\ status' = \"admitted\"",
+		"replacement": "/\\ status' = \"admitted\"",
+		"defect": "admission skips the freshness guard",
+		"expect": {
+			"kind": "invariant",
+			"name": "AdmitFresh"
+		}
+	},
+	"limits": ["the model does not prove that admitGate implements Admit"]
+}

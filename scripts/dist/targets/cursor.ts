@@ -13,6 +13,7 @@ import {
 	flatSkills,
 } from "../flat.ts";
 import { type FileTree, mount, textFile, union } from "../tree.ts";
+import { buildStamp } from "./claude-code.ts";
 
 export const CURSOR_ROOT = "cursor/astack";
 
@@ -49,12 +50,12 @@ export function cursorHooks(): string {
 	return `${JSON.stringify({ version: 1, hooks }, null, "\t")}\n`;
 }
 
-function manifest(build: Build): string {
+function manifest(build: Build, stamp: string): string {
 	return `${JSON.stringify(
 		{
 			name: "astack",
 			displayName: "astack",
-			version: build.version,
+			version: `${build.version}+${stamp}`,
 			description:
 				"Plan, build, review and write, with hooks that check the work, plus the astack skills.",
 			author: { name: build.author },
@@ -172,9 +173,8 @@ export function cursorTarget(build: Build, flat: FlatBuild): FileTree {
 		const entry = astack.get(path);
 		return entry === undefined ? new Map() : new Map([[path, entry]]);
 	};
-	const plugin = union([
+	const files = union([
 		new Map([
-			[".cursor-plugin/plugin.json", textFile(manifest(build))],
 			["hooks/hooks.json", textFile(cursorHooks())],
 			["README.md", textFile(readme(skills.length))],
 			["LICENSE", textFile(build.licenses.astack)],
@@ -187,6 +187,15 @@ export function cursorTarget(build: Build, flat: FlatBuild): FileTree {
 		...skills.map((skill) => flatSkill(skill, flat)),
 		...agents.map((agent) => flatAgent(agent, flat)),
 		...rules.map((rule) => cursorRule(rule, flat)),
+	]);
+	const plugin = union([
+		new Map([
+			[
+				".cursor-plugin/plugin.json",
+				textFile(manifest(build, buildStamp(files))),
+			],
+		]),
+		files,
 	]);
 	return union([
 		new Map([
