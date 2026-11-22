@@ -53,6 +53,8 @@ These targets have no hook. The STE lines of the rule card and the `astack check
 The probes ran on Claude Code 2.1.301 on 2026-10-16.
 
 - In `claude -p`, a Stop hook sees `CLAUDE_CODE_ENTRYPOINT=sdk-cli` and `CLAUDE_CODE_SESSION_ATTENDED=0`. This is also true when the parent shell exports `cli` and `1`.
+- In `claude -p`, Bash commands and plugin SessionStart hooks see the same two values. An attended session sees `1` and `cli`. A plugin SessionStart note reached the model in `-p`.
+- A plugin `bin/` command that `Bash(<cmd>:*)` allows wrote under `$(git rev-parse --git-common-dir)/astack/plans/` with no prompt. Claude Code refused `mkdir -p .git/astack/...` as a sensitive file.
 - On the main thread, the Stop payload has `prompt_id` and no `agent_id`. A subagent fires SubagentStop with `agent_id`. astack never registers SubagentStop, and the decoder also treats an `agent_id` on Stop as a subagent.
 - The UserPromptSubmit schema of 2.1.301 has a `source` field with the values `user`, `sdk`, `system`, `loop_wakeup`, `schedule_wakeup` and `poll_event`. The payload does not carry it yet. The decoder uses it when it is present.
 - With `ASTACK_STE_TEST_INTERACTIVE=1`, a `claude -p` run with the astack plugin gave one block with exit 2, one rewrite, and a stop after 2 turns.

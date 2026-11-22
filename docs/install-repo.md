@@ -1,6 +1,6 @@
 # Install astack in a repo
 
-astack has two parts. The owner installs the plugins and the rules one time on each machine. Each repo then gets a small set of committed files. These files set astack for that repo and for each teammate.
+astack has two parts. The owner installs the plugin and the rules one time on each machine. Each repo then gets a small set of committed files. These files set astack for that repo and for each teammate.
 
 ## Install astack one time on your machine
 
@@ -54,7 +54,7 @@ The write mode never changes your checkout. It does these steps:
 | `--base <ref>` | Sets the start point. The default is `origin/<default branch>`. |
 | `--worktrees <dir>` | Sets the folder for the worktrees. It must be outside the repo. |
 | `--trailer "<Key: value>"` | Adds a trailer line to the commit. You can use it more than one time. |
-| `--marketplace-repo <owner/repo>` | Adds the marketplace and the three plugins to `.claude/settings.json`. |
+| `--marketplace-repo <owner/repo>` | Adds the marketplace and the astack plugin to `.claude/settings.json`. |
 | `--keep` | Keeps the worktree and the branch when the run fails. |
 | `--update` | Writes into the existing worktree of the setup branch, as "Update and uninstall" says. |
 | `--overlay <branch>` | Uses the overlay of that branch in `projects/<name>.json` of the companion. A `--base` that names the branch of an overlay uses it without this flag. An update needs the flag, as the README says. |
@@ -93,7 +93,7 @@ The command reads the tracker from the branch names and the commit subjects. It 
 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` and `docs/agents/domain.md` | They tell the astack skills where the tickets, the labels and the domain docs are. |
 | `.claude/rules/<dir>/agent-skills.md` | It points agents to the three flow docs. |
 | `.claude/rules/<dir>/coding.md` and `.claude/rules/<dir>/comments.md` | Copies of the coding rule and the comment rule. The write mode adds them only when the project config sets `artifacts.rules: true`. |
-| `.claude/settings.json` | The marketplace and the three plugins, for teammates. The write mode adds them only with `--marketplace-repo`. |
+| `.claude/settings.json` | The marketplace and the astack plugin, for teammates. The write mode adds them only with `--marketplace-repo`. |
 
 `astack init` writes only the first file. To add the review loop, run `/astack:pr-review-hardening` in the repo. To add the flow docs, run `/astack:setup`.
 
@@ -111,16 +111,14 @@ Never commit `node_modules` or the worktree folder.
 
 ## Teammates
 
-A teammate needs the published marketplace. Until then, only the owner gets the plugins. After the publication, each teammate installs the plugins one time:
+A teammate needs the published marketplace. Until then, only the owner gets the plugin. After the publication, each teammate installs the plugin one time:
 
 ```sh
 claude plugin marketplace add vahaah/astack
 claude plugin install astack@astack
-claude plugin install pstack@astack
-claude plugin install flow@astack
 ```
 
-To show the plugins to each teammate who opens the repo, add the marketplace block to `.claude/settings.json`. For a known repo, run the write mode with `--marketplace-repo <owner/repo>`. The source is always a GitHub repo, never a local folder. `astack init` prints the same block for any repo.
+To show the plugin to each teammate who opens the repo, add the marketplace block to `.claude/settings.json`. For a known repo, run the write mode with `--marketplace-repo <owner/repo>`. The source is always a GitHub repo, never a local folder. `astack init` prints the same block for any repo.
 
 ## Update and uninstall
 
@@ -148,4 +146,4 @@ To update astack in each client, follow [Update](../README.md#update) in the REA
 
 `bun run dist` adds a build stamp to the version of the astack plugin, such as `0.1.0+1a2b3c4d5e6f`. The stamp is a hash of the plugin files. So each new bundle or skill change is a new version, and `claude plugin update` installs it.
 
-To remove astack from a repo, delete the files in the table above in one PR. To remove the plugins, run `claude plugin uninstall` for each plugin. Then run `claude plugin marketplace remove astack`.
+To remove astack from a repo, delete the files in the table above in one PR. To remove the plugin, run `claude plugin uninstall astack@astack`. Then run `claude plugin marketplace remove astack`.
