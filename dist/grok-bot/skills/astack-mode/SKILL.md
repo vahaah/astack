@@ -61,7 +61,7 @@ Then take the first row that matches, and do that step. Do not only name it.
 | The branch is behind its base and the owner asked for a sync before | `references/refresh.md` |
 | The branch has a finished build and no PR | `references/create-pr.md` |
 | The open PR is green, has no open threads, and the profile wants a hardening run that did not run on this head | `astack-pr-review-hardening` |
-| The open PR is green and clean | Report it as ready to merge. Merge only with a grant, through the `astack-mode` Shipping playbook |
+| The open PR is green and clean | Read what the merge starts, as the Shipping playbook says. Report it as ready to merge, and name each deploy job, or say that there is none. Merge only with a grant, through the `astack-mode` Shipping playbook |
 | A plan has a `now` step with no branch that meets its Exit | Build that step with the route that the plan names. Read `references/resume.md` |
 | A draft plan has open questions | `/astack-plan <slug>`. It asks the queued round |
 | Nothing above | Ask the owner what to build. Recommend one option from the tracker frontier |

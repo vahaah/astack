@@ -2405,6 +2405,33 @@ describe("a failed gh is never a run with no PR", () => {
 	});
 });
 
+describe("the ready report names what the merge starts", () => {
+	const shipping = read(
+		"marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+	);
+	const readyRow = paragraphStarting(
+		read("marketplace/plugins/astack/skills/mode/SKILL.md"),
+		"| The open PR is green and clean |",
+	);
+	const readStarted = "Read what the merge starts";
+	const holdDeploy =
+		"Land a deployment only when the owner's words in this turn name that release or deployment.";
+
+	test("the ready report reads the started workflows before it asks for the merge, names each deploy job, and a deploy still needs the owner's words", () => {
+		expect(readyRow.indexOf(readStarted)).toBeGreaterThan(-1);
+		expect(readyRow.indexOf(readStarted)).toBeLessThan(
+			readyRow.indexOf("Report it as ready to merge"),
+		);
+		expect(readyRow).toContain(
+			"name each deploy job, or say that there is none",
+		);
+		const section = shipping.indexOf("\n## What the merge starts\n");
+		expect(section).toBeGreaterThan(-1);
+		expect(section).toBeLessThan(shipping.indexOf("\n## Steps\n"));
+		expect(shipping).toContain(holdDeploy);
+	});
+});
+
 describe("each diff runs against the fetched base", () => {
 	const gitOnBase = (text: string): string[] =>
 		[...text.matchAll(/`git (?:diff|merge-base|rev-parse|log|merge)\b[^`]*`/g)]
