@@ -33,7 +33,7 @@ A verdict holds for one PR head, and green CI is only input.
 The playbook has at most 400 words. It keeps no store file, no status file and no file of orders that each spawn pastes.
 A stable order goes into the brief template, the repo profile or an ADR.
 `paths-and-wakeups.md` names the plan, the board, the tracker and git as the programme state.
-The store path stays for decision trails and resume notes, because two playbooks and the install settings use it.
+The store path stays for decision trails, the agent records of Autopilot-full and resume notes, because two playbooks and the install settings use it.
 
 ### D2. A status ask goes to a Catch up part that only reads and lists each waiting item
 

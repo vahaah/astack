@@ -7,8 +7,8 @@ Keep no copy of it in a file of your own.
 
 ## Store
 
-The store at `~/.local/state/pstack/<repo slug>/` holds decision trails and resume notes.
-This legacy storage path stays unchanged.
+The store at `~/.local/state/pstack/<repo slug>/` holds decision trails, agent records and resume notes.
+This legacy path stays.
 Give Edit and Write its absolute path, with `~` expanded to `$HOME`.
 The store stays outside the Claude Code config directory.
 Claude Code treats files inside that directory as sensitive and prompts for each write.
