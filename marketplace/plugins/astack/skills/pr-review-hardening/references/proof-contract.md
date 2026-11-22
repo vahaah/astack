@@ -1,7 +1,5 @@
 # ChangeProof contract
 
-`astack check proof` requires `.astack/proof.json` by default.
-Pass another manifest path when the repo uses a named candidate contract.
 The gate admits only a complete current run.
 `--summary` prints unverified intent and never a proof success line.
 
@@ -16,6 +14,7 @@ The checker binds current candidate files and model inputs before and after exec
 The scope check and both input snapshots read from the diff base, so a file that only the base branch changed stays out of scope.
 The receipt prints the manifest base and the diff base.
 Do not change the manifest base after a merge or a rebase of the base branch.
+A change with a manifest under `.astack/proof/` deletes each manifest of its manifest base and `.astack/proof.json`, or the gate stops.
 
 A CI run passes `--base`. A pull request run uses the base branch of the PR.
 A push to the default branch and a release use the first parent of HEAD.
@@ -27,10 +26,16 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 
 ## Required records
 
+Each change adds the manifest `.astack/proof/<change>.json`.
+With no path, `astack check proof` reads the one manifest there.
+With `--base`, only a manifest that the diff from the merge base adds counts.
+More than one manifest stops, and with `--base` none stops.
+With none there, it reads `.astack/proof.json`.
+
 | Record | Keys of [proof-example.json](proof-example.json) |
 |---|---|
 | `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
-| `scope` | `[{path, obligation}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
+| `scope` | `[{path, obligation}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle except a manifest path |
 | `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
 | `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
 | `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
@@ -56,14 +61,10 @@ Each term must be the exact text of a heading or of a bold span, such as `**Orde
 Plain text in a table cell does not define a term.
 [GLOSSARY-FORMAT.md](../../domain-modeling/GLOSSARY-FORMAT.md) gives the glossary format.
 
-Each ordinary governing ADR reference must be accepted and contain the cited decision.
+Each ordinary governing ADR reference must be accepted and hold text under the cited decision.
 Metadata uses `Status: Accepted` or `- **Status:** Accepted · <stamp>`.
 Decision headings use `### D<n>. <claim>` or `### D<n> — <claim>`.
 Fenced examples and duplicate Status fields cannot provide governing metadata.
-
-An ordinary governing ADR also holds the four proof sections under `###` to `######` headings.
-They are `Formal claim`, `Category composition`, `Implementation correspondence` and `Verification`.
-[adr.md](../../write-docs/references/adr.md#integrate-a-governing-proof-adr) gives the content of each section.
 
 ### Integrated proposals
 
@@ -87,6 +88,7 @@ Examine the change against that text, and then run the proof again.
 
 The process must already be Accepted in all three views. Its authority cannot come from another Proposed record.
 The separate `proofRecord` supplies the four proof sections and their required links and arrow explanations.
+A section under the cited decision wins, else each section of the title counts.
 The checker binds those records and actual history facts before and after model execution.
 Semantic review must make sure the Accepted process ratifies the selected proposal.
 Ancestry establishes integration, not human approval or process meaning.
@@ -102,11 +104,6 @@ The supported flat preamble accepts plain `Landed: value` and zero-indent `- **L
 Fenced, nested, repeated, missing, multiline, or ambiguous headers fail even when unchanged.
 The selected value cannot introduce HTML, fences, control characters, line separators, or a Markdown continuation.
 Raw input freshness remains mandatory. A value change during model execution is still stale.
-
-The proof record connects the function contract to formal claims, category composition, implementation correspondence, and verification controls.
-The ADR explains the claim and its limits.
-Models and tests remain executable files linked from that explanation.
-Do not copy a transient pass log into an ADR.
 
 ## Category and abstraction
 

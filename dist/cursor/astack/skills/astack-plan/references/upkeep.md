@@ -93,4 +93,4 @@ Never add it quietly to an Exit.
 
 "pause" is a hard stop. Make a `wip:` commit on the current or next session branch, push it with no PR, and run `astack session handoff <plan>`. Give the resume prompt it prints, and stop. Set `status: paused` only when the owner stops the work for longer than a session.
 
-The last session PR carries the close. Compare the planned sessions with the merged ones. Count the superseded rows and the risks that fired. Send each lesson to its home, and delete the plan. Ask the user to run `/astack-retro` and `/astack-reflect`.
+The last session PR carries the close. Compare the planned sessions with the merged ones. Count the superseded rows and the risks that fired. Send each lesson to its home, and delete the plan. Ask the user to run `/astack-reflect`.

@@ -108,7 +108,7 @@ function githubTracker(
 	return lines(
 		"# Issue tracker: GitHub",
 		"",
-		"Issues and specs live as GitHub issues in this repo. Use the `gh` CLI, which infers the repo from `git remote -v` inside a clone.",
+		"Issues and specs live as GitHub issues in this repo. Use the `gh` CLI. Run `gh repo set-default --view` before the first `gh` command. If it does not print the repo of `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command.",
 		"",
 		"## Conventions",
 		"",

@@ -212,7 +212,7 @@ A nonzero exit means that the skill or reference is unavailable.
 Say so once.
 Use `references/fallbacks.md`.
 
-Name `/astack-retro` and `/astack-reflect` when they fit, because the user runs them. Never copy them.
+Name `/astack-reflect` when it fits, because the user runs it. Never copy it.
 Each ticket still goes through `astack-write-ticket`.
 
 ## Recover after a compaction

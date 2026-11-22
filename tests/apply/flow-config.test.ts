@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
 	companionPaths,
 	exampleCompanionRoot,
@@ -154,6 +156,48 @@ describe("renderIssueTracker", () => {
 		expect(doc).toContain(".github/ISSUE_TEMPLATE/");
 		expect(doc).toContain("as `Part of #123`");
 		expect(doc).toContain("When a PR serves a ticket");
+	});
+
+	test("[control:gh-read] the GitHub seed reads a PR with --json, and both GitHub sources check the default repo of gh", () => {
+		const seed = readFileSync(
+			join(
+				import.meta.dir,
+				"../../marketplace/plugins/astack/skills/setup/issue-tracker-github.md",
+			),
+			"utf8",
+		);
+		const targetGaps = (name: string, doc: string): string[] => [
+			...(doc.includes("`gh repo set-default --view`")
+				? []
+				: [`the ${name} has no gh repo set-default --view check`]),
+			...(doc.includes("`--repo <owner>/<name>` of `origin`")
+				? []
+				: [`the ${name} has no --repo of origin`]),
+			...(/inside a clone/i.test(doc)
+				? [`the ${name} says that gh finds the repo inside a clone`]
+				: []),
+			...(doc.includes("`gh api") &&
+			!doc.includes("to each `gh` command except `gh api`")
+				? [`the ${name} adds --repo to gh api, which has no --repo flag`]
+				: []),
+			...(/prints nothing/i.test(doc)
+				? [
+						`the ${name} waits for no output, but gh prints a message when no default is set`,
+					]
+				: []),
+		];
+		expect([
+			...(seed.includes(
+				"gh pr view <number> --json number,title,body,comments,reviews,headRefOid",
+			)
+				? []
+				: ["the seed has no --json read of a PR"]),
+			...(/gh pr view [^`\n]*--comments/.test(seed)
+				? ["the seed reads a PR with --comments"]
+				: []),
+			...targetGaps("seed", seed),
+			...targetGaps("render", renderIssueTracker(github)),
+		]).toEqual([]);
 	});
 
 	test("a GitHub tracker keeps the assignee claim that the frontier query reads, and puts each other claim on a line of its own", () => {

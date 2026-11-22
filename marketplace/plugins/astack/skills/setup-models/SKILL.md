@@ -20,7 +20,6 @@ Its role values override the astack skill defaults.
 
 External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, `council members`, `sol-loop reviewer`, and `arena cross-judge pool`.
 Every other role runs as a Claude subagent with the session's tools.
-The `why` and `reflect` roles need MCP access.
 Code roles need the astack agents.
 
 ## 1. Detect available models
@@ -134,12 +133,6 @@ perf-issue: sonnet
 hillclimb: sonnet
 judgment and prose: opus
 hardest tasks: opus
-how explorer: haiku
-how explainer: opus
-why investigators: sonnet
-why synthesizer: opus
-reflect tooling: sonnet
-reflect judgment, divergent, synthesizer: opus
 arena runners: opus, codex
 arena cross-judge pool: codex, opus
 swarm workers: sonnet

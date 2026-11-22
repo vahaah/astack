@@ -17,6 +17,7 @@
 | [0013](0013-astack-keeps-a-part-only-on-measured-use.md) | astack keeps a part only on measured use, and a word budget stops skill text from growing | Accepted |
 | [0014](0014-each-proof-stop-names-its-cause.md) | Each proof stop names its cause and the rule section of its stage | Accepted |
 | [0015](0015-change-proof-follows-risk.md) | Change proof runs a model only where the changed paths need one | Accepted |
+| [0016](0016-each-change-carries-its-own-proof-manifest.md) | Each change carries its own proof manifest, and an ordinary ADR reference needs only its decision | Accepted |
 | [0017](0017-law-claims-run-on-code.md) | Law claims run on code, and Result gets map, andThen and all | Accepted |
 | [0020](0020-plan-tools-share-one-adr-reader.md) | The plan tools share one ADR reader, and a session boundary rides in the next session PR | Accepted |
 | [0021](0021-doctor-reports-the-trust-that-codex-enforces.md) | Doctor reports the trust that Codex enforces, a drifted review profile and an unprotected base | Accepted |
@@ -24,4 +25,5 @@
 | [0023](0023-heavy-test-files-copy-one-template-repo.md) | Heavy test files copy one template repo, and the suite runs at the 5 s default | Accepted |
 | [0024](0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md) | Orchestrate supervises through the board, a status ask lists each waiting item, and watch-pr watches one PR | Accepted |
 | [0025](0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md) | Each text that reads a PR with gh runs the head check command | Accepted |
+| [0026](0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md) | One lexer reads TypeScript and JavaScript comments for the comment hook and the type hook | Accepted |
 | [0027](0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md) | The review stub needs the plugin, and commentKeep is the one keep list | Accepted |

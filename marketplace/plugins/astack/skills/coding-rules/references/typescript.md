@@ -1,9 +1,7 @@
 # TypeScript
 
 This file adds TypeScript examples to the coding rules.
-It follows `astack:types` and the type-system principle in `astack:principles`.
-Run `astack skill-path astack:principles references/type-system-discipline.md`.
-Read the path it prints.
+It follows rules 2, 6, 7, 8, 9 and 16 of `astack:types` first.
 `astack:types` holds the full type and FP rules and what enforces each one.
 The examples follow the comments rule too.
 

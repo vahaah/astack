@@ -17,7 +17,7 @@ An unknown command or an unverified summary is not proof admission.
 Add the affected glossary or context map and a governing adoption ADR.
 The ADR includes the function contract, category explanation, formal claim, correspondence, and control links.
 Preserve earlier decision bodies and record replacements explicitly.
-Add `.astack/proof.json`, its relevant TLA+ model and config, and the spec-drift matrix.
+Add `.astack/proof/<change>.json`, its relevant TLA+ model and config, and the spec-drift matrix.
 Keep the existing implementation controls.
 Add a named negative mutation for the changed contract.
 Run positive, negative, and unchanged positive controls with the pinned checker.

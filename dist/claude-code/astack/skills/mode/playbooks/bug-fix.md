@@ -21,7 +21,7 @@ Ship only the smallest change that the evidence justifies.
 3. Plan the fix. If it crosses a function boundary, use `architect` first. Delegate implementation to a subagent with a specific scope. Use the configured bug-fix model, which defaults to `sonnet`.
 4. Verify on the same surface. The original reproduction must now pass. Flag an inconclusive result or a result from the wrong surface. Neither is a pass. Unit tests show branch behavior, not the absence of the bug.
 5. Run the failing check before the fix. Record its output. Commit the failing check together with the fix, so every commit is green. Use `astack:tdd` when the bug has a cheap, correct local test path. Skip that test path when it is expensive, needs extensive integration, or is unclear. Follow [Sequence Work into Verifiable Units](../../principles/references/sequence-verifiable-units.md). Show the failing run before the passing run in Verification.
-6. Run Opening a PR.
+6. Run Create PR steps 1 to 8 (`references/create-pr.md`).
 
 ## Tickets
 

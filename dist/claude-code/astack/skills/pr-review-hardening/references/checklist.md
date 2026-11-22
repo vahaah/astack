@@ -1,6 +1,6 @@
 # Review checklist
 
-Each item is a class of finding that earlier hardening runs found and fixed. The question is what to ask of the diff. The guard is the test or check in the astack repo that now enforces the class. `docs/review-lessons.md` in the astack repo maps each earlier finding to its class.
+Each item is a class of finding that earlier hardening runs found and fixed. The question is what to ask of the diff. The guard is the test or check in the astack repo that now enforces the class. `docs/review-lessons.md` in astack maps each class to its rule and guards.
 
 ## Use it
 

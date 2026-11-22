@@ -30,7 +30,7 @@ Run `bun run check` before each commit. Do not weaken a check to make a change p
 - **Leave `upstream/` alone.** Those frozen snapshots are licence evidence and test data.
 - **Bugs start with a failing test.** Reproduce the failure first, write `Root cause: X because Y`, and keep the regression test with the fix.
 - **Use synthetic data.** Fixtures must not contain captured data.
-- Write `.astack/proof.json` for each pull request. Its `scope` must cover each changed path, and `bun run check:proof` must pass. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
+- Write `.astack/proof/<change>.json` for each pull request, and delete each manifest of its base, also the legacy `.astack/proof.json`. Its `scope` must cover each changed path, and `bun run check:proof` must pass. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
 - Keep each skill inside its word budget. `bun run budget` fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) says when a cap can rise.
 
 ## Privacy

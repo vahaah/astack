@@ -72,6 +72,29 @@ describe("TypeScript and JavaScript", () => {
 		expect(commentTexts(source, "ts")).toEqual(["// real"]);
 	});
 
+	test("[control:cs-regex] a slash after an operand keyword starts a regex, so its slashes are no comment", () => {
+		expect(commentTexts("export default /[//]/.source;\n", "ts")).toEqual([]);
+	});
+
+	test.each([["obj.default / 2; // note"], ["obj.return / 2; // note"]])(
+		"[control:cs-member-comment] a slash after a member keyword divides, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "ts")).toEqual(["// note"]);
+		},
+	);
+
+	test.each([
+		["const as = 4; as / 2; // note"],
+		["const satisfies = 4; satisfies / 2; // note"],
+		["const keyof = 4; keyof / 2; // note"],
+		["var let = 4; let / 2; // note"],
+	])(
+		"[control:cs-name-comment] a slash after a name word divides, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "ts")).toEqual(["// note"]);
+		},
+	);
+
 	test("treats a directive prologue and a shebang as code", () => {
 		const source =
 			"#!/usr/bin/env bun\n\"use client\";\n'use strict';\nexport {};\n";
@@ -110,15 +133,33 @@ describe("TypeScript and JavaScript", () => {
 		expect(commentTexts(source, "tsx")).toEqual(["// cmp"]);
 	});
 
+	test.each([
+		["type F<T> = T extends <Item>(x: Item) => void ? 1 : 0; // note"],
+		["type C = new <Item>(x: Item) => Item; // note"],
+		["class C {\n  default<Item>(x: Item) {\n    return x;\n  }\n} // note"],
+	])(
+		"reads a type parameter list after extends, new or a method name default as no JSX in tsx, so %p keeps its comment",
+		(source) => {
+			expect(commentTexts(source, "tsx")).toEqual(["// note"]);
+		},
+	);
+
+	test("starts JSX after export default in tsx, so the JSX text holds no comment", () => {
+		expect(
+			commentTexts("export default <p>it's // text</p>; // note\n", "tsx"),
+		).toEqual(["// note"]);
+	});
+
 	test("does not start JSX in plain .ts files", () => {
 		const source = "const cast = <Foo>value; // cast\n";
 		expect(commentTexts(source, "ts")).toEqual(["// cast"]);
 	});
 
-	test("reports an unterminated template literal as incomplete", () => {
-		expect(lex("const a = `open\n// not a comment\n", "ts").complete).toBe(
-			false,
-		);
+	test("[control:cs-incomplete] an unterminated template literal gives no comments and an incomplete result", () => {
+		expect(lex("const a = `open\n// not a comment\n", "ts")).toEqual({
+			comments: [],
+			complete: false,
+		});
 	});
 
 	test("groups consecutive line comments into one unit and keeps directives apart", () => {

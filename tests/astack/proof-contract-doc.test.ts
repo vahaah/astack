@@ -130,14 +130,22 @@ describe("the proof contract reference", () => {
 
 	test("[control:proof-stop-heading] the section of each stop stage holds the rule of each cause of that stage", () => {
 		const causes: Readonly<Record<Stage, readonly string[]>> = {
-			schema: ["Unknown fields"],
+			schema: [
+				"Unknown fields",
+				"More than one manifest stops",
+				"the diff from the merge base adds",
+			],
 			domain: ["glossary", "integratedAt"],
 			category: ["must compose", "monoid"],
 			controls: ["no row is idle", "spec-links.md"],
 			rung: ["uncovered fail-closed path", "deleted registry"],
 			model: ["A positive result needs"],
 			countermodel: ["The negative control"],
-			stale: ["must be an ancestor", "before and after execution"],
+			stale: [
+				"must be an ancestor",
+				"before and after execution",
+				"deletes each manifest",
+			],
 		};
 		expect(
 			STAGES.flatMap((stage) =>

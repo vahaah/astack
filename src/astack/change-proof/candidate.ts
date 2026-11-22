@@ -32,7 +32,7 @@ export function isInside(root: string, path: string): boolean {
 	);
 }
 
-function gitLines(
+export function gitLines(
 	root: string,
 	args: readonly string[],
 ): Result<readonly string[], string> {
@@ -142,7 +142,7 @@ export function changedPaths(
 	);
 }
 
-function lstatOrUndefined(path: string): Stats | undefined {
+export function lstatOrUndefined(path: string): Stats | undefined {
 	try {
 		return lstatSync(path);
 	} catch {

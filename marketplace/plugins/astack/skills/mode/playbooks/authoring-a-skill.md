@@ -6,7 +6,7 @@ These rules also cover `AGENTS.md`, `CLAUDE.md` and other documents that agents 
 1. Use Anthropic's `skill-creator` skill, or `plugin-dev:skill-development` for a plugin skill.
 2. Validate the skill. Make sure its frontmatter has `name` and `description`. Make sure referenced files exist and links between skills resolve. For a plugin, also run `claude plugin validate <plugin dir> --strict`.
 3. Add test cases for structural changes. Skip tests for subjective changes.
-4. Run Opening a PR.
+4. Run Create PR steps 1 to 8 (`references/create-pr.md`).
 
 When in doubt, delete.
 Keep only prose that changes a decision.

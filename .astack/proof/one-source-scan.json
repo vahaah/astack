@@ -1,0 +1,430 @@
+{
+	"version": 1,
+	"change": "one-source-scan",
+	"base": "d0c458625177e3a24c8acc49d57a5d3a39bfcc72",
+	"scope": [
+		{
+			"path": "src/astack/types/scan.ts",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex"
+			]
+		},
+		{
+			"path": "src/astack/comments/lexer.ts",
+			"obligation": "CS-REGEX",
+			"modelRefs": ["Finish", "NoCommentInRegex", "FailedScanIsIncomplete"]
+		},
+		{
+			"path": "tests/astack/types.test.ts",
+			"obligation": "CS-NAME",
+			"modelRefs": ["Step", "MemberNameIsValue", "NameWordIsValue"]
+		},
+		{
+			"path": "tests/astack/lexer.test.ts",
+			"obligation": "CS-INCOMPLETE",
+			"modelRefs": [
+				"Step",
+				"Finish",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "tests/astack/scan-composition.ts",
+			"obligation": "CS-INCOMPLETE",
+			"modelRefs": ["Finish", "FailedScanIsIncomplete"]
+		},
+		{
+			"path": "tests/keep-list.test.ts",
+			"obligation": "KEEP-TIE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "formal/SourceScan.*",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "CS-MEMBER",
+			"modelRefs": ["MemberNameIsValue"]
+		},
+		{
+			"path": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+			"obligation": "CS-MEMBER",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "docs/reference/source-scan.md",
+			"obligation": "CS-REGEX",
+			"modelRefs": [
+				"Step",
+				"Fail",
+				"Finish",
+				"TypeOK",
+				"MemberNameIsValue",
+				"NameWordIsValue",
+				"NoCommentInRegex",
+				"FailedScanIsIncomplete"
+			]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "CS-MEMBER",
+			"modelRefs": ["Step", "Finish"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "CS-REGEX",
+			"modelRefs": ["Step", "Finish"]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/astack/types/scan.ts",
+			"symbol": "Scan"
+		},
+		"terms": ["Source scan", "ChangeProof", "Model registry", "Session guard"],
+		"invariants": [
+			{
+				"name": "A slash after a dot and a word is a division",
+				"modelRef": "MemberNameIsValue"
+			},
+			{
+				"name": "A slash after a name as, satisfies, keyof or let is a division",
+				"modelRef": "NameWordIsValue"
+			},
+			{
+				"name": "A regex after an operand keyword yields no comment",
+				"modelRef": "NoCommentInRegex"
+			},
+			{
+				"name": "A failed scan gives no comments and complete false",
+				"modelRef": "FailedScanIsIncomplete"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+				"decision": "D4"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"CS-REGEX",
+				"CS-MEMBER",
+				"CS-NAME",
+				"CS-INCOMPLETE",
+				"KEEP-TIE",
+				"SG-preserve",
+				"SG-generated"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "pure"
+		},
+		"objects": [
+			{
+				"name": "ScanInput",
+				"link": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
+				}
+			},
+			{
+				"name": "Scan",
+				"link": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "Scan"
+				}
+			},
+			{
+				"name": "LexInput",
+				"link": {
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "LanguageId"
+				}
+			},
+			{
+				"name": "LexResult",
+				"link": {
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "LexResult"
+				}
+			},
+			{
+				"name": "CommentUnit",
+				"link": {
+					"path": "src/astack/comments/units.ts",
+					"symbol": "CommentUnit"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "scan",
+				"from": "ScanInput",
+				"to": "Scan",
+				"link": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
+				},
+				"effects": []
+			},
+			{
+				"name": "lex",
+				"from": "LexInput",
+				"to": "LexResult",
+				"link": {
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "lex"
+				},
+				"effects": []
+			},
+			{
+				"name": "unitsOf",
+				"from": "LexInput",
+				"to": "CommentUnit",
+				"link": {
+					"path": "src/astack/comments/added.ts",
+					"symbol": "unitsOf"
+				},
+				"effects": []
+			}
+		],
+		"composites": [],
+		"equality": "scan gives undefined for a source that it cannot read, and unitsOf gives undefined for an incomplete lex result. Two scans are equal when both are undefined, or when their token lists and their comment lists are equal in order. Two lex results are equal when their comment offsets, their markers and their complete flags are equal. Two unit results are equal when both are undefined, or when their units are equal in order.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "id-right",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "assoc",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-left",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-right",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-assoc",
+				"status": "not_applicable",
+				"reason": "lex calls scan and maps the result inline, and unitsOf calls lex and then commentUnits with the source again. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			}
+		],
+		"typedWitness": "tests/astack/scan-composition.ts"
+	},
+	"abstraction": {
+		"hides": "The token loop, the frames of templates and JSX, the punctuator table, the value rule and the line numbers of each token and comment.",
+		"callersKnow": [
+			"lex gives the comments of a ts, tsx or jsx file with their offsets and markers.",
+			"A scan that fails gives no comments and complete false, and unitsOf then gives no units.",
+			"A slash after a value, a member name or a name word is a division, and a slash after an operand keyword starts a regex.",
+			"A regex after the ) of an if, while or for head, and a slash after a name of, yield or await, stay wrong in both hooks.",
+			"In a tsx file, a type parameter list such as <Item>( after = or : starts JSX in both hooks, the scan fails, and unitsOf gives no units."
+		],
+		"deletionTest": "Deleting the shared scan puts a second TS and JS lexer back in the comment hook, and each regex fix lands twice.",
+		"alternatives": [
+			{
+				"name": "Port the keyword set into lexJs and keep two lexers",
+				"rejectedBecause": "Each regex fix still lands twice."
+			},
+			{
+				"name": "A new shared lexer module",
+				"rejectedBecause": "It moves 480 lines for one more importer."
+			},
+			{
+				"name": "The typescript package as the lexer",
+				"rejectedBecause": "It is a dev dependency only, so the bundle cannot use it."
+			},
+			{
+				"name": "Keep the 14-word set of lexJs in the scan",
+				"rejectedBecause": "It keeps the false comment in export default /[//]/.source;."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
+				},
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "endsValue"
+				},
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "isMemberDot"
+				},
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "takesOperand"
+				},
+				"modelAction": "Step"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/types/scan.ts",
+					"symbol": "scan"
+				},
+				"modelAction": "Fail"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/comments/lexer.ts",
+					"symbol": "lex"
+				},
+				"modelAction": "Finish"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/comments/added.ts",
+					"symbol": "unitsOf"
+				},
+				"modelAction": "Finish"
+			}
+		],
+		"omitted": [
+			"Done stands for the end of a run after Finish.",
+			"The model does not read a character class, flags, a string, a template or JSX. The lexer and type tests examine them.",
+			"The keep-list test is outside the model. It reads the 7 copies and changes no copy, no hook output and no model state.",
+			"The parity probe of the trunk lexer and the branch lex runs outside the repo, and the PR Verification holds its counts."
+		]
+	},
+	"model": {
+		"module": "formal/SourceScan.tla",
+		"config": "formal/SourceScan.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Each sequence of up to 4 tokens of 7 kinds: name, name word, operand keyword, dot, slash, close and comment.",
+			"One scan of each input, with a failure at each token, and one finish."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"MemberNameIsValue",
+			"NameWordIsValue",
+			"NoCommentInRegex",
+			"FailedScanIsIncomplete"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/SourceScan.tla",
+		"action": "Step",
+		"original": "\\/ (before = \"dot\" /\\ last \\in Words)",
+		"replacement": "\\/ FALSE",
+		"defect": "A scan that drops the member name rule reads the slash after obj.return as a regex, so both hooks lose the comment after it.",
+		"expect": {
+			"kind": "invariant",
+			"name": "MemberNameIsValue"
+		}
+	},
+	"limits": [
+		"The finite model takes the token kinds as true observations of the source text, and it covers inputs of up to 4 tokens.",
+		"A regex in the model ends at the next slash or comment token. The scan reads a character class and flags, and the lexer tests examine them.",
+		"The model does not show that the TypeScript code refines it. The linked controls, the parity probe and review examine that relation.",
+		"The model does not check the design text, the plan or the keep-list copies. Review, the keep-list test and the STE gates examine them.",
+		"Exact-head CI, review and every ordinary gate stay required."
+	]
+}

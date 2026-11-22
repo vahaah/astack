@@ -17,7 +17,7 @@ A stricter repo rule wins.
 
 Follow these steps in order for every change.
 Only the user can start a skill that sets `disable-model-invocation`.
-Here, those skills are `/astack-mode`, `/astack-interrogate`, `/astack-reflect` and `/astack-retro`.
+Here, those skills are `/astack-mode`, `/astack-interrogate` and `/astack-reflect`.
 An agent reads each needed SKILL.md at the path from `astack skill-path <plugin>:<skill>`.
 Then it follows the skill.
 If the skill is unavailable, follow the plain description of its step.
@@ -128,10 +128,9 @@ Where a step says to ask or show the user, it reports to the root that spawned i
 9. After the `now` session PR merges, run `/astack-plan <slug>` once.
    It commits the boundary on the next session branch and asks for its grant.
    Build the next session only after that grant, or under a delegation grant.
-   After a merge or a session that needed corrections, the user runs `/astack-retro` in the same session.
-   Or the user runs `/astack-reflect` to turn its lessons into skill edits.
+   After a merge or a session that needed corrections, the user runs `/astack-reflect` in the same session.
 
-The `astack-mode` Opening a PR playbook runs steps 4 to 6 at the end of every playbook.
+`astack-mode` Create PR steps 1 to 8 run steps 4 to 6 after every playbook.
 Step 5 runs after `/astack-deslop` and before `gh pr create`.
 An Autopilot playbook opens the PR early.
 There, step 5 runs before the code-ready report.

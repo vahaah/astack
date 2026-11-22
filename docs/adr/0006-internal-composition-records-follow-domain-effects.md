@@ -59,9 +59,6 @@ The model run checks its finite encoding.
 
 #### Category composition
 
-`ciProofRecords` also maps a parsed ChangeProof to permitted paths or a refusal, with fixed base and committed file observations.
-It adds no composition operator.
-
 For this gate, `parseChangeProof` maps text into `R_E(ChangeProof)`.
 `admitChangeProof` with fixed AdmissionFacts maps ChangeProof into `R_E(Admitted)`.
 Their Kleisli composition keeps the first rejection.
@@ -82,15 +79,13 @@ They do not establish a law for an arbitrary uninspected function.
 
 #### Verification
 
-The [CI record contract](../../formal/ci-proof-records.md) defines the narrow metadata classification.
-`formal/CiProofRecords.tla` and `formal/CiProofRecords.cfg` check `CiRecordsSafe` and `CurrentProofRequired`.
-`.astack/ci-proof-records-coverage.json` binds its executable CLI controls.
-
 [The matrix](../../.astack/proof-coverage.json) names the applicable model laws and implementation controls.
 Pure or artifact composition must reject an unsupported monad claim.
 Result composition must reject a missing applicable law witness.
 Async composition must state both its observation and rejection policies.
 The admission control still requires its named negative model and a restored-positive run.
+
+> Amended 2026-11-22: Two blocks of Category composition and Verification repeated ADR 0005 D3 and went away. [The admission proof record](../../formal/ProofAdmission.md) holds them once.
 
 > Amended 2026-11-22: D2 said that the model checks `ResultLeftIdentity`, `ResultRightIdentity`, and `ResultAssociativity`. Those invariants never read `result.ts`, so they left ProofAdmission. The property control `result-monad-laws` now examines the three laws on the real `andThen` and `ok`. D2 said "This policy introduces no runtime map or bind helper." `result.ts` now exports `map`, `andThen` and `all`. The admission checks and the typed witness chain with them. The parser and `admitChangeProof` keep early return. The matrix links law controls, and a `model:` law witness is deprecated. [ADR 0017](0017-law-claims-run-on-code.md) D1, D4 and D5 hold these decisions.
 
