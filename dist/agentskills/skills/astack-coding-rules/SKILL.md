@@ -106,6 +106,7 @@ None of these is a fix. Each one hides the failure and leaves the cause in place
 - A retry, a sleep, or a longer timeout.
 - A skipped or deleted test, or an assertion made weaker until it passes.
 - A snapshot regenerated without reading the diff.
+- A baseline file or an ignore list that a new gate adds to hide current findings. Fix them to zero, or ask once with the count and offer an expand, migrate, contract plan.
 
 A guard is correct only when absence is legal and the type permits it.
 Then the guard parses a valid case.
@@ -233,7 +234,7 @@ Then take a seam from the ticket's Verification or acceptance criteria.
 Name it in the PR's Verification or in your report.
 If `astack-tdd` is unavailable, write that failing test yourself before the code.
 
-A bug fix starts with a check that fails for the reported reason, as "Fix the root cause" says. Write a test when a cheap, correct seam exists, as `astack-tdd` describes. Otherwise use a script or a saved transcript of the failing run, and never add a shallow test just to have one. The test or script goes in the same commit as the fix, as "Keep the change small and fenced" says. The PR's Verification shows the failing run first, then the passing run. Never commit a saved transcript.
+A bug fix starts with a check that fails for the reported reason, as "Fix the root cause" says. Write a test when a cheap, correct seam exists, as `astack-tdd` describes. Never add a shallow test just to have one. Commit the test or script with the fix, as "Keep the change small and fenced" says.
 
 Fake only what you cannot run or control locally.
 Examples are a paid third-party API, the clock and randomness.

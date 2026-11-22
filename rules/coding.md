@@ -1,8 +1,8 @@
 # Coding
 
-When the astack plugin is installed, load `astack:coding-rules` with the Skill tool before you write, change or review code. If you cannot load it, read the SKILL.md that `astack skill-path astack:coding-rules` prints. The session that owns the ticket also loads `astack:coding-guide` and runs its daily workflow in order, from `/astack:plan` to the merged PR.
+When the astack plugin is installed, load `astack:coding-rules` with the Skill tool before you write, change or review code. If you cannot load it, read the SKILL.md that `astack skill-path astack:coding-rules` prints. The session that owns the ticket also runs the daily workflow of `astack:coding-guide`.
 
-These rules hold in every repo, with or without the astack plugin. A stricter repo rule wins. Tickets follow `/astack:write-ticket`, and docs and PR bodies follow `/astack:write-docs`.
+These rules hold in every repo, with or without the astack plugin. Tickets follow `/astack:write-ticket`, and docs and PR bodies follow `/astack:write-docs`.
 
 ## Change
 
@@ -13,7 +13,7 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 ## Root cause
 
 - Reproduce the failure first, then fix its cause and every instance of the same pattern inside the scope fence.
-- These are not fixes: a guard where it crashed, a catch that swallows the error, `as any`, `!` and a suppression. A retry, a sleep, a longer timeout, a skipped test, a weaker assertion and a regenerated snapshot are not fixes either.
+- These are not fixes: a guard where it crashed, a catch that swallows the error, `as any`, `!` and a suppression. A retry, a sleep, a longer timeout, a skipped test, a weaker assertion and a regenerated snapshot are not fixes either. A new gate's baseline or ignore list of current findings is a suppression too. Fix them, or ask once with the count and an expand, migrate, contract plan.
 
 ## Types and edges
 
@@ -39,4 +39,4 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 ## Comments
 
 - The comments rule decides which comments stay. Never shorten a comment to pass the hook.
-- A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. The comment hook passes the license headers that the astack README names. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
+- A kept comment takes at most 2 lines, or 12 for a doc comment on a public API. A legal or license header keeps its full text and has no length limit. A public API is an export that other packages import from its package's entry point, or an HTTP or RPC route that clients call. Put a longer reason in a name, a type, a test or an ADR.
