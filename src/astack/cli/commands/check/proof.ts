@@ -282,7 +282,7 @@ async function prove(
 		java: java.value.java,
 		javaVersion: java.value.version,
 	};
-	const temporal = plan.value.config.properties.length > 0;
+	const { properties } = plan.value.config;
 
 	const positiveEnd = await modelRun(
 		io,
@@ -292,7 +292,7 @@ async function prove(
 		timeoutMs.value,
 	);
 	const positive = positiveEnd.ok
-		? judgePositive("positive", positiveEnd.value, temporal)
+		? judgePositive("positive", positiveEnd.value, properties)
 		: positiveEnd;
 	if (!positive.ok) return stopAt(io, "model", positive.error);
 	io.out(countsLine("positive", positive.value));
@@ -309,7 +309,7 @@ async function prove(
 		: negativeEnd;
 	if (!negative.ok) return stopAt(io, "countermodel", negative.error);
 	io.out(
-		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states\n`,
+		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states: ${negative.value.trace}\n`,
 	);
 
 	const restoredEnd = await modelRun(
@@ -320,7 +320,7 @@ async function prove(
 		timeoutMs.value,
 	);
 	const restored = restoredEnd.ok
-		? judgePositive("restored", restoredEnd.value, temporal)
+		? judgePositive("restored", restoredEnd.value, properties)
 		: restoredEnd;
 	if (!restored.ok) return stopAt(io, "model", restored.error);
 	io.out(countsLine("restored", restored.value));

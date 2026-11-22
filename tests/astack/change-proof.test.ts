@@ -107,9 +107,14 @@ const CHANGED = [...Object.keys(PROOF_FILES), ".astack/proof.json"].map(
 	(path) => ({ path, present: true }),
 );
 const COUNTS = { generated: 6, distinct: 4, queued: 0 };
+const VIOLATION = {
+	name: "AdmitFresh",
+	states: 3,
+	trace: "1: <Initial predicate>",
+};
 const EVIDENCE: ModelEvidence = {
 	positive: ok(COUNTS),
-	negative: ok({ name: "AdmitFresh", states: 3 }),
+	negative: ok(VIOLATION),
 	restored: ok(COUNTS),
 };
 const SNAPSHOT: Snapshot = {
@@ -183,7 +188,7 @@ describe("ADR format admission", () => {
 					digest: SNAPSHOT.digest,
 					files: 13,
 					positive: COUNTS,
-					negative: { name: "AdmitFresh", states: 3 },
+					negative: VIOLATION,
 					action: "Admit",
 					restored: COUNTS,
 				}),
@@ -246,7 +251,7 @@ describe("admitChangeProof", () => {
 				digest: SNAPSHOT.digest,
 				files: 13,
 				positive: COUNTS,
-				negative: { name: "AdmitFresh", states: 3 },
+				negative: VIOLATION,
 				action: "Admit",
 				restored: COUNTS,
 			}),
@@ -401,8 +406,13 @@ const exited = (code: number, stdout: string): RunEnd => ({
 });
 
 describe("TLC output judges, from parser fixtures only", () => {
-	test.each<[string, RunEnd, boolean, string | undefined]>([
-		["a complete temporal run", exited(0, POSITIVE_OUTPUT), true, undefined],
+	test.each<[string, RunEnd, readonly string[], string | undefined]>([
+		[
+			"a complete temporal run",
+			exited(0, POSITIVE_OUTPUT),
+			["Ends"],
+			undefined,
+		],
 		[
 			"a run with no success record",
 			exited(
@@ -412,7 +422,7 @@ describe("TLC output judges, from parser fixtures only", () => {
 					"",
 				),
 			),
-			false,
+			[],
 			"the positive run has no single success record 2193",
 		],
 		[
@@ -421,7 +431,7 @@ describe("TLC output judges, from parser fixtures only", () => {
 				0,
 				`${record(2401, 3, "use the parallel collector")}${POSITIVE_OUTPUT}`,
 			),
-			false,
+			[],
 			"the positive run printed warning 2401",
 		],
 		[
@@ -433,19 +443,19 @@ describe("TLC output judges, from parser fixtures only", () => {
 					"",
 				),
 			),
-			true,
+			["Ends"],
 			"the positive run has no single temporal check completion record 2267",
 		],
 		[
 			"a truncated record",
 			exited(0, POSITIVE_OUTPUT.slice(0, -25)),
-			false,
+			[],
 			"the positive run printed malformed output: record 2186 has no end",
 		],
 	])(
 		"[control:proof-output-protocol] judgePositive: %s",
-		(_name, end, temporal, problem) => {
-			expect(judgePositive("positive", end, temporal)).toEqual(
+		(_name, end, properties, problem) => {
+			expect(judgePositive("positive", end, properties)).toEqual(
 				problem === undefined
 					? ok({ generated: 6, distinct: 4, queued: 0 })
 					: { ok: false, error: problem },
@@ -463,7 +473,13 @@ describe("TLC output judges, from parser fixtures only", () => {
 		].join("");
 		expect(
 			judgeNegative(exited(13, output), { kind: "temporal", name: "Ends" }),
-		).toEqual(ok({ name: "Ends", states: 2 }));
+		).toEqual(
+			ok({
+				name: "Ends",
+				states: 2,
+				trace: "1: <Initial predicate>; 2: Stuttering",
+			}),
+		);
 	});
 });
 

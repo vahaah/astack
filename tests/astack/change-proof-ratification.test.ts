@@ -18,6 +18,7 @@ import {
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import {
 	BASE_FILES,
+	GATE_RUNS,
 	git,
 	PROOF_FILES,
 	scratchDir,
@@ -216,9 +217,7 @@ describe("integrated ADR ratification", () => {
 		const result = run(repo.root);
 		expect(result.code).toBe(0);
 		expect(result.err).toBe("");
-		expect(result.out).toStartWith(
-			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-		);
+		expect(result.out).toStartWith(`${GATE_RUNS}receipt:`);
 		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
 			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
 		);
@@ -507,9 +506,7 @@ describe("integrated ADR ratification", () => {
 		const result = run(repo.root);
 		expect(result.code).toBe(0);
 		expect(result.err).toBe("");
-		expect(result.out).toStartWith(
-			"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt:",
-		);
+		expect(result.out).toStartWith(`${GATE_RUNS}receipt:`);
 		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
 			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
 		);

@@ -16,6 +16,7 @@ import { pathToFileURL } from "node:url";
 import { isMap, isSeq, parseDocument } from "yaml";
 import { pinnedJar } from "../../src/astack/change-proof/runner.ts";
 import {
+	GATE_RUNS,
 	git,
 	PROOF_FILES,
 	type Proof,
@@ -80,7 +81,7 @@ describe("astack check proof", () => {
 			const run = proof(repo.root, args, {}, name.split(" "));
 			expect(run.err).toBe("");
 			expect(run.out).toStartWith(
-				"positive: 4 distinct states, 6 generated, 0 left on queue\nnegative: Admit violates AdmitFresh with a counterexample of 3 states\nrestored: 4 distinct states, 6 generated, 0 left on queue\nreceipt: change gate-admission base ",
+				`${GATE_RUNS}receipt: change gate-admission base `,
 			);
 			expect(lastLine(run.out)).toStartWith(
 				"ok: proof gate-admission admitted at ",

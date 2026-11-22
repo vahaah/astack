@@ -30,7 +30,11 @@ export type Counts = {
 	readonly queued: number;
 };
 
-export type Violation = { readonly name: string; readonly states: number };
+export type Violation = {
+	readonly name: string;
+	readonly states: number;
+	readonly trace: string;
+};
 
 export type RunLabel = "positive" | "negative" | "restored";
 
@@ -40,6 +44,7 @@ const CODE = {
 	behaviorHeader: 2121,
 	temporal: 2116,
 	temporalCounterexample: 2264,
+	backToState: 2122,
 	mode: 2187,
 	success: 2193,
 	stats: 2199,
@@ -50,6 +55,9 @@ const CODE = {
 } as const;
 
 const SEVERITY = { error: 1, bug: 2, warning: 3, state: 4 } as const;
+
+const TRACE_STEPS = 20;
+const STEP_CHARS = 200;
 
 export function parseTlcRecords(output: string): Result<TlcOutput, string> {
 	const records: TlcRecord[] = [];
@@ -115,6 +123,76 @@ function sanyNote(output: TlcOutput): string {
 		return "";
 	const location = sanyLocation(output.loose);
 	return location === undefined ? "" : `. ${location}`;
+}
+
+function step(record: TlcRecord): string {
+	const text = record.body
+		.split("\n")
+		.map((line) => line.trim())
+		.filter((line) => line !== "")
+		.join(" ");
+	const loop =
+		record.code === CODE.backToState
+			? /^(\d+): Back to state: ?(.*)$/.exec(text)
+			: null;
+	const shown = loop === null ? text : `back to state ${loop[1]}: ${loop[2]}`;
+	return shown.length > STEP_CHARS
+		? `${shown.slice(0, STEP_CHARS - 3)}...`
+		: shown;
+}
+
+function counterexample(records: readonly TlcRecord[]): {
+	readonly states: number;
+	readonly trace: string;
+} {
+	const steps = records.filter((record) => record.severity === SEVERITY.state);
+	const rest = steps.length - TRACE_STEPS;
+	return {
+		states: steps.filter((record) => record.code !== CODE.backToState).length,
+		trace: [
+			...steps.slice(0, TRACE_STEPS).map(step),
+			...(rest > 0 ? [`and ${rest} more steps`] : []),
+		].join("; "),
+	};
+}
+
+function invariantName(record: TlcRecord): string | undefined {
+	return /^Invariant ([A-Za-z_][A-Za-z0-9_]*) is violated/.exec(
+		record.body.trim(),
+	)?.[1];
+}
+
+function brokenClaim(
+	records: readonly TlcRecord[],
+	properties: readonly string[],
+): string | undefined {
+	const invariant = records.find(
+		(record) =>
+			record.code === CODE.invariantInitial ||
+			record.code === CODE.invariantBehavior,
+	);
+	if (invariant !== undefined)
+		return `invariant ${invariantName(invariant) ?? "with no name"}`;
+	if (!records.some((record) => record.code === CODE.temporal))
+		return undefined;
+	const [property] = properties;
+	if (properties.length === 1) return `the temporal property ${property}`;
+	return properties.length === 0
+		? "a temporal property"
+		: `one of the temporal properties ${properties.join(", ")}`;
+}
+
+function failureNotes(
+	output: TlcOutput,
+	properties: readonly string[],
+): string {
+	const { states, trace } = counterexample(output.records);
+	const claim = brokenClaim(output.records, properties);
+	const broke =
+		states === 0
+			? ""
+			: `. It ${claim === undefined ? "stopped" : `broke ${claim}`} with a trace of ${states} states: ${trace}`;
+	return `${broke}${sanyNote(output)}`;
 }
 
 function interrupted(label: RunLabel, end: RunEnd): string | undefined {
@@ -210,7 +288,7 @@ function noiseProblem(
 export function judgePositive(
 	label: RunLabel,
 	end: RunEnd,
-	temporal: boolean,
+	properties: readonly string[],
 ): Result<Counts, string> {
 	const exited = exitedRecords(label, end);
 	if (!exited.ok) return exited;
@@ -218,13 +296,13 @@ export function judgePositive(
 	const { records } = output;
 	if (run.code !== 0)
 		return err(
-			`the ${label} run exited ${run.code} with ${errorCodes(records)}${sanyNote(output)}`,
+			`the ${label} run exited ${run.code} with ${errorCodes(records)}${failureNotes(output, properties)}`,
 		);
 	const noise = noiseProblem(label, run, records);
 	if (noise !== undefined) return err(noise);
 	if (records.some((record) => record.severity === SEVERITY.error))
 		return err(
-			`the ${label} run reported ${errorCodes(records)}${sanyNote(output)}`,
+			`the ${label} run reported ${errorCodes(records)}${failureNotes(output, properties)}`,
 		);
 	const temporalRecords: readonly (readonly [number, string])[] = [
 		[CODE.temporalStart, "temporal check"],
@@ -233,7 +311,7 @@ export function judgePositive(
 	const required: readonly (readonly [number, string])[] = [
 		[CODE.mode, "model-check mode"],
 		[CODE.success, "success"],
-		...(temporal ? temporalRecords : []),
+		...(properties.length > 0 ? temporalRecords : []),
 	];
 	const missing = required.find(([code]) => only(records, code) === undefined);
 	if (missing !== undefined)
@@ -272,7 +350,7 @@ export function judgeNegative(
 		: "invariant violation";
 	if (run.code !== (temporal ? 13 : 12))
 		return err(
-			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}${sanyNote(output)}`,
+			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}${failureNotes(output, [])}`,
 		);
 	const noise = noiseProblem("negative", run, records);
 	if (noise !== undefined) return err(noise);
@@ -287,9 +365,7 @@ export function judgeNegative(
 		return err(
 			`the negative run reported the unrelated error ${unrelated.code}`,
 		);
-	const states = records.filter(
-		(record) => record.severity === SEVERITY.state,
-	).length;
+	const { states, trace } = counterexample(records);
 	if (states === 0)
 		return err("the negative run printed no counterexample state");
 	if (temporal) {
@@ -297,7 +373,7 @@ export function judgeNegative(
 			return err(
 				`the negative run has no single temporal violation record ${CODE.temporal}`,
 			);
-		return ok({ name: expect.name, states });
+		return ok({ name: expect.name, states, trace });
 	}
 	const violations = records.filter(
 		(record) =>
@@ -309,12 +385,10 @@ export function judgeNegative(
 		return err(
 			`the negative run has ${violations.length} invariant violation records, not 1`,
 		);
-	const name = /^Invariant ([A-Za-z_][A-Za-z0-9_]*) is violated/.exec(
-		violation.body.trim(),
-	)?.[1];
+	const name = invariantName(violation);
 	if (name !== expect.name)
 		return err(
 			`the negative run violated ${name ?? "an unnamed invariant"}, not the expected invariant ${expect.name}`,
 		);
-	return ok({ name, states });
+	return ok({ name, states, trace });
 }
