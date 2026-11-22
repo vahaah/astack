@@ -2,9 +2,6 @@
 
 A session is one PR and one integrator run.
 Its steps are commits.
-Parallel step workers build the steps in worktrees, in waves.
-The main thread lands their commits.
-This is the usual shape for a ticket and for a go-live push.
 
 ## Start
 

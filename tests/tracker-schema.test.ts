@@ -133,6 +133,7 @@ describe("plan recovery uses the recorded workflow state", () => {
 			"Select the mode from the request, plan, tracker, and Git with the existing route rules.",
 		);
 		expect(recovery).toContain("follow Resume in `references/upkeep.md`");
+		expect(recovery).toContain("Read the plan file and the last trail rows.");
 		expect(recovery).not.toContain(
 			"The plan frontmatter gives the tier and the mode",
 		);
