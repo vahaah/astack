@@ -9,6 +9,7 @@ import {
 } from "../../shell.ts";
 import { checkText, type LineRange, regionLines } from "../../ste/check.ts";
 import { commitMessage, commitProse, SUBJECT_LINES } from "../../ste/commit.ts";
+import { type Judged, judged, logRun } from "../../ste/events.ts";
 import {
 	hasHeaderFields,
 	isExcluded,
@@ -24,11 +25,11 @@ import {
 	ALLOW,
 	type Context,
 	defineHandler,
+	type EventOf,
 	projectDirOf,
-	type Verdict,
 } from "../events.ts";
 
-type Judged = { readonly target: Target; readonly settings: SteSettings };
+type Checked = { readonly target: Target; readonly settings: SteSettings };
 
 function settingsNear(dir: string, context: Context): SteSettings {
 	return loadSettings(settingsRootFrom(dir, projectDirOf(context)));
@@ -43,7 +44,7 @@ function docTarget(
 		readonly after: readonly LineRange[];
 		readonly before: readonly LineRange[];
 	},
-): Judged | undefined {
+): Checked | undefined {
 	if (!PROSE_FILE.test(path)) return undefined;
 	const projectDir = projectDirOf(context);
 	if (isScratchPath(projectDir, path)) return undefined;
@@ -66,16 +67,16 @@ function docTarget(
 	};
 }
 
-function writeTarget(write: FileWrite, context: Context): readonly Judged[] {
+function writeTarget(write: FileWrite, context: Context): readonly Checked[] {
 	if (write.target.dynamic) return [];
 	const absolute = resolve(write.step.dir, write.target.value);
 	const before = readOptional(absolute);
 	const after = write.append ? `${before ?? ""}${write.body}` : write.body;
-	const judged = docTarget(absolute, before, after, context);
-	return judged ? [judged] : [];
+	const checked = docTarget(absolute, before, after, context);
+	return checked ? [checked] : [];
 }
 
-function commitTargets(step: ShellStep, context: Context): readonly Judged[] {
+function commitTargets(step: ShellStep, context: Context): readonly Checked[] {
 	const git = gitInvocation(step.values, step.dir);
 	if (git?.sub !== "commit" || commitFlags(git.args).dryRun) return [];
 	const args = step.words.slice(step.words.length - git.args.length);
@@ -101,7 +102,7 @@ function shellTargets(
 	command: string,
 	cwd: string,
 	context: Context,
-): readonly Judged[] {
+): readonly Checked[] {
 	if (!/\b(?:gh|git|cat|tee|echo|printf)\b/.test(command)) return [];
 	const steps = shellSteps(command, cwd);
 	const tools = steps.flatMap((step) => {
@@ -123,12 +124,13 @@ function shellTargets(
 	];
 }
 
-function judgeTargets(judged: readonly Judged[], context: Context): Verdict {
-	if (judged.length === 0) return ALLOW;
+function judgeTargets(targets: readonly Checked[], context: Context): Judged {
+	if (targets.length === 0) return judged(ALLOW);
 	return withLedger(context, (skip) =>
-		judged.map(({ target, settings }) =>
+		targets.map(({ target, settings }) =>
 			outcomeOf(
 				target.subject,
+				target.surface,
 				checkText(target.text, {
 					surface: target.surface,
 					enforcement: target.enforcement,
@@ -145,56 +147,57 @@ function judgeTargets(judged: readonly Judged[], context: Context): Verdict {
 	);
 }
 
+function judgeEvent(
+	event: EventOf<"write" | "edit" | "shell" | "mcp">,
+	context: Context,
+): Judged {
+	switch (event.kind) {
+		case "write": {
+			const checked = docTarget(event.path, event.before, event.after, context);
+			return judgeTargets(checked ? [checked] : [], context);
+		}
+		case "edit": {
+			const shift = event.newText.length - event.oldText.length;
+			const checked = docTarget(
+				event.path,
+				event.before,
+				event.after,
+				context,
+				{
+					after: regionLines(event.after, event.regions),
+					before: regionLines(
+						event.before,
+						event.regions.map((region, index) => {
+							const start = region.start - index * shift;
+							return { start, end: start + event.oldText.length };
+						}),
+					),
+				},
+			);
+			return judgeTargets(checked ? [checked] : [], context);
+		}
+		case "shell":
+			return judgeTargets(
+				shellTargets(event.command, event.cwd, context),
+				context,
+			);
+		case "mcp": {
+			const settings = settingsNear(projectDirOf(context), context);
+			return judgeTargets(
+				mcpTargets(event.server, event.tool, event.input).map((target) => ({
+					target,
+					settings,
+				})),
+				context,
+			);
+		}
+	}
+}
+
 export const handler = defineHandler({
 	id: "ste-artifact",
 	quality: "ste",
 	on: ["write", "edit", "shell", "mcp"],
-	run: (event, context) => {
-		switch (event.kind) {
-			case "write": {
-				const judged = docTarget(
-					event.path,
-					event.before,
-					event.after,
-					context,
-				);
-				return judgeTargets(judged ? [judged] : [], context);
-			}
-			case "edit": {
-				const shift = event.newText.length - event.oldText.length;
-				const judged = docTarget(
-					event.path,
-					event.before,
-					event.after,
-					context,
-					{
-						after: regionLines(event.after, event.regions),
-						before: regionLines(
-							event.before,
-							event.regions.map((region, index) => {
-								const start = region.start - index * shift;
-								return { start, end: start + event.oldText.length };
-							}),
-						),
-					},
-				);
-				return judgeTargets(judged ? [judged] : [], context);
-			}
-			case "shell":
-				return judgeTargets(
-					shellTargets(event.command, event.cwd, context),
-					context,
-				);
-			case "mcp": {
-				const settings = settingsNear(projectDirOf(context), context);
-				return judgeTargets(
-					mcpTargets(event.server, event.tool, event.input).map((target) => ({
-						target,
-						settings,
-					})),
-					context,
-				);
-			}
-		}
-	},
+	run: (event, context) =>
+		logRun(context, "ste-artifact", event.kind, judgeEvent(event, context)),
 });
