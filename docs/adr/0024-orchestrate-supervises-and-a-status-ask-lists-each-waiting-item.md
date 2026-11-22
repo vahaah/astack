@@ -111,6 +111,7 @@ Each removed flag exits 64 with an unknown option error and makes no reader call
 The JSON lines of a single-PR watch stay byte for byte, because callers parse them.
 They keep `schemaVersion` 1, `mode` set to `single` and the `single` READY scope.
 Babysit watches the frontier with `--pr`, and moves to the next PR at READY.
+After the top PR, it watches each lower PR again, so a stale READY cannot end the babysit.
 Shipping waits for the checks with `--pr`, and reads back each merge with `gh pr view`, because a `READY` is not proof of a merge.
 
 ## Consequences

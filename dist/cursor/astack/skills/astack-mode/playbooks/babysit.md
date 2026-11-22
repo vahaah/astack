@@ -87,13 +87,13 @@ The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-
    This selects dynamic mode.
    Run the watcher as a background Bash command so its verdict wakes you.
    Rearm after each push wave and each verdict you act on.
-   Watcher output supplies the wakeups.
    Never add a second sleep loop.
 
    Watch one PR at a time with `astack watch-pr --pr <n>`.
    Start at the frontier.
-   At `READY`, watch the next PR of the stack.
-   Stop when each PR of the stack reports `READY`.
+   Move up at each `READY`.
+   After the top PR, watch each lower PR again.
+   Stop only when each one still reports `READY`.
    Shipping owns the wait for merges.
 
    Answer a question from the user during the loop, then continue.
