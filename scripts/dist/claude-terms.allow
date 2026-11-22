@@ -15,7 +15,6 @@
 **/skills/astack-{mode,recall,reflect,show-me-your-work}/**:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|`Skill` tool|claude plugin|claude -p:the skill reads the session transcripts and the skill folders of Claude Code
 **/skills/astack-setup-models/SKILL.md:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|\bAskUserQuestion\b:the skill writes the model rule of Claude Code and lists the Claude models
 **/skills/astack-arena/**:\bClaude\b:arena compares Claude models with the models of other families
-**/skills/astack-why/**:mcp__<server>__<tool>:the MCP tool names of Claude Code are an example of a tool name form
 **/skills/astack-no-comments/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool for the approval question, and other tools ask in plain text
 **/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
 **/skills/astack-plan/references/phase-boundaries.md:\bClaude\b:names Claude as one end of a harness hand-off example
