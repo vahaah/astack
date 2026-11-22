@@ -23,9 +23,11 @@ Each of these parts still cost review time, tests and words that an agent can lo
 A skill, agent, command or module goes when it has 0 use in 30 days and no live dependent.
 A live dependent is code, a route, a test or an accepted ADR that needs the part.
 Each count of 0 needs a positive control in the same window and the same history.
+
 Each route that named a cut part points to its successor.
-The duplicate-skill map of `scripts/lib/duplicate-skills.ts` names a shipped successor for each cut upstream skill.
-A test fails on an upstream name in that map with no shipped successor.
+The duplicate-skill map of `scripts/lib/duplicate-skills.ts` names the skill of that route for each cut upstream skill.
+When the route sends the work to the owner, the map keeps the cut name, and the report says that astack ships no successor.
+The report never calls a cut skill superseded, so it never prints a command that removes the copy of a user.
 
 ### D2. A word budget caps each skill and the total
 
@@ -124,7 +126,7 @@ The other parts of ADR 0004 D4 stay as they are.
 - Easier: astack ships only the parts that someone uses or that a live part needs.
 - Easier: skill text cannot grow without a cap change that a reviewer sees.
 - Harder: each PR that cuts skill text also lowers the caps in `scripts/lib/budget.json`.
-- Harder: a person who still has a flat copy of a cut upstream skill gets a successor that does less than the old skill.
+- Harder: a person who uses a cut upstream skill keeps a flat copy of it, because astack no longer ships it.
 - Follow-up: later blocks fold the wrapper skills and shrink the thinking skills under the same budget.
 
 ## Alternatives considered

@@ -10,8 +10,8 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	"grill-with-docs": ["grilling", "grill-with-docs"],
 	grilling: ["grilling"],
 	handoff: ["handoff"],
-	implement: ["tdd"],
-	"implement-spec": ["tdd"],
+	implement: ["mode"],
+	"implement-spec": ["plan"],
 	"improve-codebase-architecture": ["improve-codebase-architecture"],
 	prototype: ["prototype"],
 	research: ["research"],
@@ -19,13 +19,13 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	"setup-matt-pocock-skills": ["setup", "setup-matt-pocock-skills"],
 	tdd: ["tdd"],
 	teach: ["teach"],
-	"to-questionnaire": ["grilling"],
-	"to-spec": ["to-tickets"],
+	"to-questionnaire": ["to-questionnaire"],
+	"to-spec": ["write-ticket"],
 	"to-tickets": ["to-tickets"],
-	triage: ["to-tickets"],
-	"wait-what": ["domain-modeling"],
+	triage: ["write-ticket"],
+	"wait-what": ["wait-what"],
 	wayfinder: ["wayfinder"],
-	wizard: ["setup"],
+	wizard: ["wizard"],
 	"writing-for-agents": ["writing-for-agents"],
 };
 
@@ -176,7 +176,12 @@ export function duplicateReportLines(input: {
 			skill.kind === "symlink"
 				? `${shown(skill.path)} -> ${shown(skill.target ?? "?")}`
 				: `${shown(skill.path)} (a ${skill.kind}, not a link)`;
-		return `- ${where}, from ${skill.source ?? "an unknown source"}; astack ships /${skill.flowSkill}`;
+		const ships =
+			skill.verdict === "not-in-flow" &&
+			skill.flowSkill === `astack:${skill.name}`
+				? "astack ships no successor"
+				: `astack ships /${skill.flowSkill}`;
+		return `- ${where}, from ${skill.source ?? "an unknown source"}; ${ships}`;
 	};
 	const group = (
 		verdict: DuplicateVerdict,
