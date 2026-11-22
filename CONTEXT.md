@@ -83,6 +83,20 @@ A manifest cites it as the witness of the law.
 _Avoid_: Model law, sample loop
 _Code_: `tests/property/`
 
+### Conformance test
+
+A test that reads the tables of a model and drives the real guards with each row.
+It compares each verdict of the code with the verdict of the model, and each count both ways.
+_Avoid_: Trace replay, model copy
+_Code_: `tests/astack/session-guards-model.test.ts`
+
+### Restating invariant
+
+An invariant whose check only repeats one guard or one update of a model action.
+TLC cannot fail it on a code change, so the invariant audit of its record names an implementation control.
+_Avoid_: Proof of the code, vacuous invariant
+_Code_: `tests/astack/model-audit.test.ts`
+
 ### ReviewRun
 
 A bounded review whose ledger owns findings, recurrence, and iteration use.
@@ -162,7 +176,8 @@ _Code_: `unattendedReason`
 
 ### Scratch file
 
-A file outside the project with no `.git` or `.astack/profile.json` at or above it, or a file in the OS temp folder outside the project.
+A file outside the project with no `.git` or `.astack/profile.json` at or above it.
+A file in the OS temp folder follows the same rule, so a git clone there keeps each check.
 The write-time quality hooks skip it. A commit of it keeps every check.
 _Avoid_: Ignored file, temp file
 _Code_: `isScratchPath`
