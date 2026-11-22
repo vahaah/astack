@@ -365,7 +365,8 @@
 				"sg-unattended-denial",
 				"sg-scratch-write",
 				"sg-commit-staged",
-				"sg-work-loss-denied"
+				"sg-work-loss-denied",
+				"sg-repair-source"
 			]
 		},
 		{

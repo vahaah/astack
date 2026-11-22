@@ -1,6 +1,6 @@
 ---
 name: "astack-why"
-description: "Investigate code history and design reasons across available evidence categories. Use for why questions, regressions, postmortems, tradeoffs, or data-backed thresholds."
+description: "Find the reasons behind code in its written record. Use for why questions, design reasons, regressions, postmortems, tradeoffs, or data-backed thresholds. Use how for runtime behavior."
 disable-model-invocation: true
 metadata:
   astack-version: "0.3.0"
@@ -8,27 +8,16 @@ metadata:
 
 # Why
 
-Find the reasons and intent behind code.
-Use `how` to explain runtime behavior.
-Use `why` to explain the decisions and constraints that shaped it.
+Answer from the record, not from the code.
+Read the commits and the PR discussions that added the target and each later change.
+When that trail leaves the reason open, read the other sources of step 3.
+Cite what the authors wrote.
+Mark each inference as an inference.
+Say what the record does not answer.
 
-Read role values from `astack-models.md` for every spawn.
-Use the named default when the rule or role line is missing.
-For `auto` or `inherit-parent`, omit `model`.
-These roles need the session's MCP tools, so use subagents that have them.
-For an external value such as `codex`, or an unsupported Agent value, use the default.
-Report that fallback.
-Follow effort rules in `../astack-mode/SKILL.md`.
-
-Use `general-purpose` for each investigator and synthesizer.
-It inherits MCP tools needed for investigation and citation checks.
-Do not use `Explore`, which lacks those tools and skips project rules.
-Tell every investigator to work without writes.
-
-A nested run adds another subagent level.
-Claude Code permits three levels and gives no Agent tool to the third level.
-Without that tool, investigate each source and synthesize the results yourself, in order.
-Report that fallback.
+Do the whole investigation yourself, in one pass.
+Delegate no part of it.
+Do not write files, commit, or change external state.
 
 ## Current PR operations
 
@@ -44,12 +33,6 @@ If that read fails, report the error.
 Mark that metadata unavailable.
 Continue with other available evidence.
 
-## Work from evidence
-
-Be cautious and precise about facts and interpretations.
-Read `references/epistemics.md` in full.
-The synthesizer must preserve its confidence tiers and wording.
-
 ## 1. Define the target and question
 
 The target can be code, a pattern, a feature, or a named design decision.
@@ -61,114 +44,87 @@ The user can redirect the scope.
 
 ## 2. Collect the code anchor
 
-Before delegation, collect file paths, line ranges, key symbols, recent commits, PR numbers, and linked ticket IDs.
+Collect file paths, line ranges, key symbols, recent commits, PR numbers, and linked ticket IDs.
 Use these commands:
 
 - `git blame -L <start>,<end> <file>` for the last changes to the lines.
 - `git log --follow -p -- <file>` for patches through renames.
 - `git log --oneline -20 -- <file>` for recent commits and PR references.
 - `git log -1 --format=%B <commit>` for PR numbers in commit messages.
+- `git log -S '<literal>' -- <file>` for the commit that added a value or a name.
 
 Merge subjects can contain PR numbers in the form `(#1234)`.
 For a substantive commit, read its PR body and discussion:
 
 `gh pr view <number> --json title,body,author,createdAt,mergedAt,labels,closingIssuesReferences,comments,reviews`
 
-Give this anchor to every investigator and the synthesizer.
+Do not assume that the latest commit explains the whole design.
+Trace earlier decisions too.
 
-## 3. Investigate the evidence categories
+## 3. Read the other sources
 
-Default to full parallel coverage.
-Record empty searches instead of silently omitting a source.
+Read further when the commits and PRs leave the reason open.
+Read further also when the code looks defensive.
+Examples of defensive code are null checks, retries, timeouts, rate limits, feature flags, egress guards, and OOM handlers.
+Its reason often lives in an incident, an error, or a runtime signal.
 
-### Discover tools first
+First list the MCP tools of this session.
+Load a deferred tool before you call it.
+A server that offers only a sign-in tool is not signed in.
+Mark it unavailable.
+Tell the user how to sign in.
 
-List the MCP servers available to this session before delegation.
-Claude Code tools use `mcp__<server>__<tool>` names.
-Deferred tools may show only their names until ToolSearch loads them.
+| Source | Evidence that it can hold | Examples |
+|---|---|---|
+| Source control | Reasons in commits, PR reviews, comments, and tests | git, `gh` |
+| Tickets | Product or business needs behind the work | Linear, Jira, GitHub Issues |
+| Documents | Design reasons written before the code | Notion, Confluence, Google Docs |
+| Team chat | Discussion that never reached a document | Slack, Discord, Microsoft Teams |
+| Observability | Runtime signals behind timeouts, retries, and limits | Datadog, Grafana, Honeycomb |
+| Error tracking | Exceptions behind corrective or defensive code | Sentry, Rollbar, Bugsnag |
+| Analytics | Usage and experiment data behind thresholds and flags | Databricks, BigQuery, PostHog |
 
-Scan deferred names and load candidate servers with ToolSearch.
-Examples include `+linear`, `+sentry`, and `+slack`.
-Read their tool descriptions.
-`claude mcp list` shows configured servers and connection state.
+Always read source control.
+Search each other source with the ticket IDs, PR numbers, symbols, and literal values of the anchor.
+Limit each search to the dates of the commits.
+Record an empty search as a result.
 
-Connectors from claude.ai can appear as `mcp__claude_ai_<Name>__*`.
-A server exposing only `authenticate` and `complete_authentication` is not signed in.
-Mark it unavailable and report that `/mcp` provides login.
+Skip a source only for one of these reasons:
 
-Map each MCP to one category using its name, instructions, tools, and resource descriptions.
-For an ambiguous server, choose the category of its primary evidence.
-Record that ambiguity in the coverage map.
+- No matching tool is available in this session. Report that as a coverage gap.
+- The source is provably irrelevant. For example, a build script with no runtime path has no error history.
 
-| Category | Evidence most likely to answer the question |
-|---|---|
-| Source control history | Implementation reasons recorded in commits, PR review, comments, and tests. |
-| Issue / ticket tracker | Product or business needs that required the work. |
-| Long-form documents | Design reasons written before implementation. |
-| Real-time team chat | Discussion that never reached a doc, especially when other records are sparse. |
-| Infrastructure observability | Runtime signals behind timeouts, retries, rate limits, or circuit breakers. |
-| Error / exception tracking | Exceptions and their history behind corrective or defensive code. |
-| Product analytics warehouse | Usage, experiments, migrations, and data behind thresholds or flag-controlled releases. |
+A guess that a source is probably irrelevant is not a reason.
 
-Always search source control through git and `gh`.
-Other categories need an available matching MCP.
-Examples include these sources:
+## 4. Weigh the evidence
 
-- Tickets: Linear, Jira, GitHub Issues, Plane, or Shortcut.
-- Documents: Notion, Confluence, Google Docs, or Coda.
-- Chat: Slack, Discord, Microsoft Teams, or Mattermost.
-- Infrastructure: Datadog, New Relic, Honeycomb, Grafana, Splunk, or Vercel.
-- Errors: Sentry, Rollbar, Bugsnag, or Airbrake.
-- Analytics: Databricks, Snowflake, BigQuery, ClickHouse, dbt, Redshift, or PostHog.
+Code shows behavior, but it does not prove why that behavior exists.
+Give each claim one of these five tiers.
+Match its section and its words to that tier.
 
-### Assign investigators
+1. Direct. One written source states the reason. Write "This exists because X", with the citation beside it.
+2. Supported. Several indirect items point to one conclusion. Name each item and what it adds.
+3. Inferred. Context makes a reading reasonable, but no source supports it. Write "Given A and B, C seems likely because D".
+4. Speculative. Weak evidence fits, and other hypotheses fit equally well. Write "One possibility is X, but we have no direct evidence". Put it under `Competing Hypotheses`.
+5. Unknown. You searched and found no reason. Name the sources, the queries, and the coverage.
 
-Use one investigator per available evidence category.
-Each owns exactly one source tool or MCP.
-Do not give one investigator several MCPs.
-Spawn them in one message for parallel work.
-Use `why investigators`, with `sonnet` as the default model.
+Use a word that asserts intent or success only for a Direct or Supported claim with its citation.
+Such words include `because`, `the reason is`, `was designed to`, `fixes`, and `the team decided`.
+Qualify an inference with words such as `appears to`, `likely`, `suggests`, or `is consistent with`.
+Do not write `obviously`, `clearly`, `of course`, a dismissive `just`, `I think`, or `I believe`.
 
-Fill `references/investigator-prompt.md` and include these inputs:
+Obey these rules too:
 
-- The selected playbook from `references/sources/<source>.md`.
-  Adapt an example from `references/source-playbook.md` for a different MCP.
-- `references/sources/incident-postmortem.md` when the code looks defensive.
-- The code anchor and original user question.
-- The MCP server name and a reminder to load tools with ToolSearch before use.
-
-Defensive code includes null checks, retries, timeouts, rate limits, feature flags, egress guards, and OOM handlers.
-
-### Justify skipped categories
-
-Write the reason for each skip in the final `Sources Consulted` section.
-Only these reasons qualify:
-
-- No matching MCP is available.
-  Report the missing access as a coverage gap.
-- The category is provably irrelevant.
-  For example, a build-time script with no runtime path can exclude error tracking.
-
-A guess that a source is probably irrelevant is insufficient.
-
-For a trivial one-commit target, an inline answer is possible only after checking all seven category searches for redundancy.
-Confirm that the PR already supplies the complete answer.
-Explain why further searches add no evidence.
-This exception must remain rare.
-
-## 4. Synthesize
-
-Start one synthesizer with `why synthesizer`, default `opus`.
-Give it all investigator results, including empty searches and justified skips.
-Include the code anchor, original question, `references/epistemics.md`, and `references/synthesizer-prompt.md`.
+- Never use code as evidence of its own intent.
+- Do not defend a design from its current use. Its first reason can be old or wrong.
+- A repeated pattern can come from copied code, not from a decision.
+- Test a reason that the user suggests as one candidate. Do not accept it by default.
+- When two sources disagree, show both, with their citations. Let the user judge them.
+- For each gap, name the question, the sources, the queries, and the result. Do not fill a gap with a guess.
 
 ## 5. Present
 
-Present the synthesizer's answer.
-Make light edits for clarity or conversation context only.
-Do not rewrite its confidence language.
-
-Use the template's structure:
+Use these headings:
 
 - `The Question`
 - `The Code in Question`
@@ -179,11 +135,13 @@ Use the template's structure:
 - `Sources Consulted`
 - `Confidence Summary`
 
-Adapt optional sections while preserving the separation between evidence and interpretation.
-`Sources Consulted` has one line per investigator, including empty results and skipped categories with reasons.
+Omit `What We Can Reasonably Infer` or `Competing Hypotheses` when it has no content.
+Keep evidence and interpretation in separate sections.
+`Sources Consulted` has one line for each source of step 3.
+Each line gives the search and its result, or the reason for the skip.
 
 If the question precedes a code change, add a `Preserve / Change / Avoid / Risk` constraint set after `Sources Consulted`.
 Use the history findings to support those constraints.
 
-Do not assume that the latest commit explains the whole design.
-Trace earlier decisions too.
+Before you reply, check each claim in `What We Found` and `What We Can Reasonably Infer`.
+Give it a citation, or move it to inference or hypotheses.

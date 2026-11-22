@@ -69,7 +69,7 @@ describe("the notice test", () => {
 		});
 		expect(originFindings(pluginItems(root), runs)).toEqual({
 			gaps: ["skills/copied: pstack", "agents/copied.md: pstack"],
-			notes: ["skills/reflect: pstack"],
+			notes: ["skills/reflect: pstack", "skills/reflect: mattpocock-skills"],
 		});
 	});
 

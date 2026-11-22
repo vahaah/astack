@@ -5177,3 +5177,28 @@ describe("each sentence of the run has a counterpart in the stub fallback", () =
 		},
 	);
 });
+
+describe("an accepted skill edit lands in the source checkout of the skill", () => {
+	const repairRule = "never in a project copy or an installed copy";
+	const backlogRule = "With no source checkout, the edit goes to Backlog.";
+	const checkoutTest =
+		"A source checkout is a git work tree that tracks the skill, outside `dist/`, a plugin cache and an install folder.";
+	const reflect = "marketplace/plugins/astack/skills/reflect/SKILL.md";
+	const repairTexts = [
+		"marketplace/plugins/astack/skills/mode/references/card.md",
+		"rules/astack.md",
+		"docs/design.md",
+		reflect,
+	];
+
+	test("[control:sg-repair-source] the card, its rules copy, the design and reflect forbid an edit in an installed copy, and reflect sends an edit with no source checkout to Backlog", () => {
+		expect(
+			repairTexts.filter((path) => !read(path).includes(repairRule)),
+		).toEqual([]);
+		expect(read(reflect)).toContain(backlogRule);
+	});
+
+	test("reflect tells a source checkout from an install folder or a tracked dist copy", () => {
+		expect(read(reflect)).toContain(checkoutTest);
+	});
+});
