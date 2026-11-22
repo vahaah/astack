@@ -612,6 +612,7 @@
 				"rl-registry",
 				"rl-registry-stops",
 				"rl-registry-json",
+				"rl-registry-line",
 				"rl-registry-negatives",
 				"rl-records"
 			]
