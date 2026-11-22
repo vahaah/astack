@@ -101,6 +101,6 @@ Load a plugin with `claude -p --plugin-dir <dir> --no-session-persistence` from 
 
 Run `bun run check:drift` before a rebuild. It compares fresh expected artifacts without changing generated files.
 
-Run `bun run check`. It builds, bundles, validates, builds and checks `dist/`, runs the neutrality lint, the STE gates and the tests, and then runs `biome ci .` and `tsc -p .`. It also runs the secrets scan of `bun run secrets`. The secrets scan puts the pinned gitleaks into the astack cache folder, so its first run needs network access. To fix formatting, run `bunx biome check --write .`.
+Run `bun run check`. It builds, bundles, validates, builds and checks `dist/`, runs the neutrality lint, the STE gates and the tests, and then runs `biome ci .` and `tsc -p .`. It also runs the skill word budget of `bun run budget`. It also runs the secrets scan of `bun run secrets`. The secrets scan puts the pinned gitleaks into the astack cache folder, so its first run needs network access. To fix formatting, run `bunx biome check --write .`.
 
 The owner's clone also runs the scan as its git pre-push hook, with `bun scripts/pre-push.ts --companion <companion> "$@"` in `.git/hooks/pre-push`. The flag names the companion also when git runs the hook without the shell profile. The hook acts only on a push to the `publicRemote` of `machine.json` in the companion. It then scans each file of each new commit. It exits 1 on a finding or on an empty deny list. It also refuses the example companion, because the example holds no owner value.
