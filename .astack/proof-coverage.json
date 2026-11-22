@@ -98,6 +98,14 @@
 			"controls": ["proof-migration-stop"]
 		},
 		{
+			"criterion": "CP-13",
+			"controls": [
+				"proof-base-ancestor",
+				"proof-base-not-ancestor",
+				"proof-base-replace"
+			]
+		},
+		{
 			"criterion": "proof-ratification",
 			"controls": [
 				"proof-ratification",

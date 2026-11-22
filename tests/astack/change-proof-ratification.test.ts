@@ -337,7 +337,7 @@ describe("integrated ADR ratification", () => {
 				const message =
 					mode === "cli-base"
 						? `the base ${missing} is not a commit in this repository`
-						: `--base ${missing} resolves to no commit, not the manifest base ${repo.base}`;
+						: `git finds no merge base of ${missing} and HEAD`;
 				expect(result.stdout).toBe(`stop: proof stale: ${message}\n`);
 			} else {
 				expect(result.status).toBe(0);

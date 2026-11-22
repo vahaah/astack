@@ -26,7 +26,13 @@ export type FileRead =
 
 export type ChangedPath = { readonly path: string; readonly present: boolean };
 
+export type ProofBase = {
+	readonly manifest: string;
+	readonly diff: string;
+};
+
 export type RepoView = {
+	readonly base: ProofBase;
 	readonly files: ReadonlyMap<string, FileRead>;
 	readonly modelFiles: ReadonlyMap<string, FileRead>;
 	readonly changed: readonly ChangedPath[];
@@ -65,6 +71,7 @@ export type AdmissionFacts = {
 export type Admitted = {
 	readonly change: string;
 	readonly base: string;
+	readonly diffBase: string;
 	readonly head: string;
 	readonly digest: string;
 	readonly files: number;
@@ -468,13 +475,11 @@ function categoryCheck(
 	]);
 }
 
-function scopeCheck(
-	proof: ChangeProof,
-	changed: readonly ChangedPath[],
-): Check {
+function scopeCheck(proof: ChangeProof, view: RepoView): Check {
+	const { changed } = view;
 	const patterns = proof.scope.map((row) => row.path);
 	if (changed.length === 0)
-		return fail(`the candidate has no change from base ${proof.base}`);
+		return fail(`the candidate has no change from base ${view.base.diff}`);
 	const problems = [
 		...changed
 			.filter((entry) => !anyGlob(patterns, entry.path))
@@ -552,7 +557,7 @@ export function checkReferences(
 	if (!category.ok) return category;
 	const controls = stageOf("controls", linked);
 	if (!controls.ok) return controls;
-	const scope = stageOf("controls", scopeCheck(proof, view.changed));
+	const scope = stageOf("controls", scopeCheck(proof, view));
 	if (!scope.ok) return scope;
 	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
@@ -589,6 +594,7 @@ export function admitChangeProof(
 	return ok({
 		change: proof.change,
 		base: proof.base,
+		diffBase: facts.view.base.diff,
 		head: after.head,
 		digest: after.digest,
 		files: after.files,

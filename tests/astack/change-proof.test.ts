@@ -26,6 +26,7 @@ import {
 } from "./change-proof-fixture.ts";
 
 const BASE = "a".repeat(40);
+const DIFF_BASE = "e".repeat(40);
 
 function parsed(edit: (proof: Proof) => void = () => {}) {
 	const proof = validProof(BASE);
@@ -122,7 +123,12 @@ function facts(
 	evidence: ModelEvidence = EVIDENCE,
 ): AdmissionFacts {
 	return {
-		view: { files: VIEW_FILES, modelFiles: VIEW_FILES, changed: CHANGED },
+		view: {
+			base: { manifest: BASE, diff: DIFF_BASE },
+			files: VIEW_FILES,
+			modelFiles: VIEW_FILES,
+			changed: CHANGED,
+		},
 		before: SNAPSHOT,
 		after,
 		evidence,
@@ -157,6 +163,7 @@ describe("ADR format admission", () => {
 				ok({
 					change: "gate-admission",
 					base: BASE,
+					diffBase: DIFF_BASE,
 					head: SNAPSHOT.head,
 					digest: SNAPSHOT.digest,
 					files: 13,
@@ -219,6 +226,7 @@ describe("admitChangeProof", () => {
 			ok({
 				change: "gate-admission",
 				base: BASE,
+				diffBase: DIFF_BASE,
 				head: SNAPSHOT.head,
 				digest: SNAPSHOT.digest,
 				files: 13,
