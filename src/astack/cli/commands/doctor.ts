@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import {
 	accessSync,
+	appendFileSync,
 	constants,
 	existsSync,
 	mkdirSync,
@@ -11,7 +12,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { unattendedReason } from "../../attended.ts";
 import { readCodexHooks } from "../../codex-hooks.ts";
 import {
@@ -75,6 +76,16 @@ function executable(path: string | undefined): path is string {
 
 export function savedRuntimePath(home: string): string {
 	return join(home, ".local", "state", "astack", "runtime");
+}
+
+export function skipFilePath(home: string): string {
+	return join(dirname(savedRuntimePath(home)), "skip-profiles");
+}
+
+function skippedProfiles(home: string): string[] {
+	return (readText(skipFilePath(home)) ?? "")
+		.split("\n")
+		.filter((line) => line !== "");
 }
 
 export const NODE_FLOOR = 22;
@@ -198,13 +209,13 @@ function claudeDirs(env: Io["env"], home: string): string[] {
 			.filter((name) => name.startsWith(".claude-"))
 			.map((name) => join(home, name)),
 	].filter((dir): dir is string => Boolean(dir));
-	return [...new Set(dirs)].filter((dir) =>
+	return [...new Set(dirs.map((dir) => resolve(dir)))].filter((dir) =>
 		existsSync(join(dir, "plugins", "installed_plugins.json")),
 	);
 }
 
-function claudeProfiles(env: Io["env"], home: string): ClaudeProfile[] {
-	return claudeDirs(env, home).map((dir) => ({
+function claudeProfiles(dirs: readonly string[]): ClaudeProfile[] {
+	return dirs.map((dir) => ({
 		dir,
 		installs: installsOf(dir),
 		enabled: enabledPlugins(dir),
@@ -354,8 +365,16 @@ function claudeSkillFolders(
 
 export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
-	const claude = claudeProfiles(io.env, home);
+	const listed = claudeDirs(io.env, home);
+	const skipList = skippedProfiles(home);
+	const claude = claudeProfiles(
+		listed.filter((dir) => !skipList.includes(dir)),
+	);
 	return {
+		skipped: {
+			file: skipFilePath(home),
+			dirs: listed.filter((dir) => skipList.includes(dir)),
+		},
 		runtime: { current: currentRuntime(), ...guiRuntime(io.env, home) },
 		claude,
 		codex: await codex(io, home),
@@ -383,7 +402,41 @@ function saveRuntime(io: Io): number {
 	return 0;
 }
 
+function skipProfile(io: Io, value: string): number {
+	const home = io.env.HOME || homedir();
+	const dir = resolve(io.cwd, value);
+	const listed = claudeDirs(io.env, home);
+	if (!listed.includes(dir)) {
+		io.err(
+			`astack doctor: ${dir} is not a Claude config folder that doctor checks: ${listed.join(", ")}\n`,
+		);
+		return 1;
+	}
+	const file = skipFilePath(home);
+	if (skippedProfiles(home).includes(dir)) {
+		io.out(`${file} already lists ${dir}\n`);
+		return 0;
+	}
+	try {
+		mkdirSync(dirname(file), { recursive: true });
+		appendFileSync(file, `${dir}\n`);
+	} catch (error) {
+		io.err(
+			`astack doctor: cannot write ${file}: ${error instanceof Error ? error.message : String(error)}\n`,
+		);
+		return 1;
+	}
+	io.out(`doctor skips ${dir}, because ${file} lists it\n`);
+	return 0;
+}
+
 async function run(args: readonly string[], io: Io): Promise<number> {
+	if (args[0] === "--skip-profile") {
+		const [, value, ...rest] = args;
+		if (value === undefined || rest.length > 0)
+			return usageError(io, "astack doctor: give --skip-profile <dir>");
+		return skipProfile(io, value);
+	}
 	const unknown = args.filter(
 		(arg) => arg !== "--save-runtime" && arg !== "--json",
 	);
@@ -405,7 +458,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins and the repo profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher.",
-	usage: "doctor [--json]\ndoctor --save-runtime",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins and the repo profile. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
+	usage: "doctor [--json]\ndoctor --save-runtime\ndoctor --skip-profile <dir>",
 	run,
 };

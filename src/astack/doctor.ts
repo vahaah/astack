@@ -75,6 +75,10 @@ export type Snapshot = {
 	readonly claudeSkills?: readonly SkillFolder[];
 	readonly profile: ProfileState;
 	readonly unattendedReason: string | undefined;
+	readonly skipped: {
+		readonly file: string;
+		readonly dirs: readonly string[];
+	};
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -630,6 +634,13 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 	return [
 		...runtimeFindings(snapshot),
 		...snapshot.claude.flatMap(claudeFindings),
+		...snapshot.skipped.dirs.map((dir) =>
+			finding(
+				`claude-code ${dir}`,
+				"note",
+				`doctor skips this folder, because ${snapshot.skipped.file} lists it. Remove that line to check the folder again.`,
+			),
+		),
 		...(snapshot.codex === undefined ? [] : codexFindings(snapshot.codex)),
 		...(snapshot.cursor === undefined ? [] : cursorFindings(snapshot.cursor)),
 		finding(

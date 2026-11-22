@@ -2,6 +2,7 @@ import { afterAll, describe, expect, test } from "bun:test";
 import {
 	mkdirSync,
 	mkdtempSync,
+	readFileSync,
 	rmSync,
 	symlinkSync,
 	unlinkSync,
@@ -77,6 +78,7 @@ function snapshot(extra: Partial<Snapshot> = {}): Snapshot {
 		agentsSkills: [],
 		profile: { kind: "present", repo: "/repo", keys: ["ste", "tracker"] },
 		unattendedReason: undefined,
+		skipped: { file: "/state/skip-profiles", dirs: [] },
 		...extra,
 	};
 }
@@ -352,6 +354,102 @@ describe("astack doctor", () => {
 					"NOTE ~/.codex/AGENTS.md holds no astack fragment",
 				],
 			});
+		});
+	});
+
+	describe("doctor --skip-profile", () => {
+		const homes: string[] = [];
+		afterAll(() => {
+			for (const home of homes) rmSync(home, { recursive: true, force: true });
+		});
+		const twoProfiles = () => {
+			const home = mkdtempSync(join(tmpdir(), "astack-doctor-skip-"));
+			homes.push(home);
+			for (const [name, plugins] of [
+				[".claude", {}],
+				[
+					".claude-extra",
+					{ "astack@astack": [{ installPath: join(home, "p") }] },
+				],
+			] as const) {
+				mkdirSync(join(home, name, "plugins"), { recursive: true });
+				writeFileSync(
+					join(home, name, "plugins", "installed_plugins.json"),
+					JSON.stringify({ plugins }),
+				);
+			}
+			return home;
+		};
+		const doctor = async (home: string, args: readonly string[] = []) => {
+			let out = "";
+			let err = "";
+			const status = await command.run(args, {
+				out: (text) => {
+					out += text;
+				},
+				err: (text) => {
+					err += text;
+				},
+				cwd: home,
+				env: { HOME: home, ASTACK_RUNTIME: process.execPath },
+				today: "2026-01-01",
+				now: new Date("2026-01-01T00:00:00Z"),
+				scriptPath: undefined,
+			});
+			return { status, out, err };
+		};
+		const extraLines = (home: string, out: string) =>
+			out
+				.split("\n")
+				.filter((line) => line.includes(` ${join(home, ".claude-extra")}`));
+
+		test("[control:dt-skip] a skipped folder gives one NOTE with the skip file, and its failures no longer fail doctor", async () => {
+			const home = twoProfiles();
+			const extra = join(home, ".claude-extra");
+			const file = join(home, ".local", "state", "astack", "skip-profiles");
+			expect((await doctor(home)).status).toBe(1);
+			expect(await doctor(home, ["--skip-profile", extra])).toEqual({
+				status: 0,
+				out: `doctor skips ${extra}, because ${file} lists it\n`,
+				err: "",
+			});
+			expect(await doctor(home, ["--skip-profile", extra])).toEqual({
+				status: 0,
+				out: `${file} already lists ${extra}\n`,
+				err: "",
+			});
+			expect(readFileSync(file, "utf8")).toBe(`${extra}\n`);
+			const after = await doctor(home);
+			expect(after.status).toBe(0);
+			expect(extraLines(home, after.out)).toEqual([
+				`NOTE claude-code ${extra}: doctor skips this folder, because ${file} lists it. Remove that line to check the folder again.`,
+			]);
+		});
+
+		test("[control:dt-skip-unlisted] a folder that doctor does not check exits 1 with the path", async () => {
+			const home = twoProfiles();
+			const other = join(home, "elsewhere");
+			const result = await doctor(home, ["--skip-profile", other]);
+			expect(result.status).toBe(1);
+			expect(result.err).toBe(
+				`astack doctor: ${other} is not a Claude config folder that doctor checks: ${join(home, ".claude")}, ${join(home, ".claude-extra")}\n`,
+			);
+		});
+
+		test("[control:dt-skip-write] a failed write exits 1 with the skip file path", async () => {
+			const home = twoProfiles();
+			mkdirSync(join(home, ".local", "state"), { recursive: true });
+			writeFileSync(join(home, ".local", "state", "astack"), "not a folder\n");
+			const result = await doctor(home, [
+				"--skip-profile",
+				join(home, ".claude-extra"),
+			]);
+			expect(result.status).toBe(1);
+			expect(
+				result.err.startsWith(
+					`astack doctor: cannot write ${join(home, ".local", "state", "astack", "skip-profiles")}: `,
+				),
+			).toBe(true);
 		});
 	});
 
