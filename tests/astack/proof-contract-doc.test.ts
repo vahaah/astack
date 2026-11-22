@@ -109,7 +109,7 @@ describe("the proof contract reference", () => {
 		const kinds = unknownKind.ok
 			? []
 			: [...unknownKind.error.message.matchAll(/"([a-z-]+)"/g)].map(
-					([, kind]) => kind,
+					([, kind = ""]) => kind,
 				);
 		expect(forms.map((form) => form.kind)).toEqual(kinds);
 		expect(
