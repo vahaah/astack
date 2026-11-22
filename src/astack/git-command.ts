@@ -18,7 +18,19 @@ type GitWords = {
 	readonly dynamicPlace: boolean;
 };
 
-const PLACE_FLAGS = ["-c", "--git-dir", "--work-tree", "--namespace"];
+const CONFIG_ENV = "--config-env";
+const PLACE_FLAGS = [
+	"-c",
+	CONFIG_ENV,
+	"--git-dir",
+	"--work-tree",
+	"--namespace",
+];
+
+function configKey(spec: string): string {
+	const at = spec.indexOf("=");
+	return at < 0 ? spec : spec.slice(0, at);
+}
 
 function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 	const [program, ...rest] = words;
@@ -35,7 +47,11 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 			dynamicPlace ||= word.dynamic || next?.dynamic === true;
 			if (word.value === "-C") cwd = resolve(cwd, next?.value ?? "");
 			if (word.value === "-c") config.push(next?.value ?? "");
+			if (word.value === CONFIG_ENV) config.push(configKey(next?.value ?? ""));
 			i++;
+		} else if (word.value.startsWith(`${CONFIG_ENV}=`)) {
+			dynamicPlace ||= word.dynamic;
+			config.push(configKey(word.value.slice(CONFIG_ENV.length + 1)));
 		} else if (word.value.startsWith("-")) {
 			dynamicPlace ||= word.dynamic;
 		} else {
@@ -229,7 +245,7 @@ export function readGit(step: ShellStep): GitRead {
 	if (git.dynamicPlace)
 		return unreadable(
 			verb,
-			"a variable or a command substitution gives the -C, -c, --git-dir or --work-tree value",
+			"a variable or a command substitution gives the -C, -c, --config-env, --git-dir or --work-tree value",
 			undefined,
 		);
 	if (hasDynamicWord(verb, git.args))

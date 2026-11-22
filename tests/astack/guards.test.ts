@@ -265,7 +265,7 @@ describe("the plain form of a git step", () => {
 		],
 		[
 			'D=../dirty; git -C "$D" reset --hard',
-			"astack cannot read git -C $D reset --hard, because a variable or a command substitution gives the -C, -c, --git-dir or --work-tree value.",
+			"astack cannot read git -C $D reset --hard, because a variable or a command substitution gives the -C, -c, --config-env, --git-dir or --work-tree value.",
 		],
 	])(
 		"%s is denied from a clean folder, because astack cannot read the folder it runs in",
@@ -466,6 +466,14 @@ describe("a hook skip", () => {
 		],
 		["git config core.hooksPath src", "git config core.hooksPath src"],
 		["git config core.hooksPath .", "git config core.hooksPath ."],
+		[
+			"git --config-env=core.hooksPath=HP push",
+			"git --config-env=core.hooksPath=HP push",
+		],
+		[
+			"git --config-env core.hooksPath=HP push",
+			"git --config-env core.hooksPath=HP push",
+		],
 	])(
 		"%s skips the hooks, because its folder holds no tracked hook",
 		(command, form) => {
