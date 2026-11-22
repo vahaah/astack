@@ -33,7 +33,9 @@ const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH_IN_INPUT =
 	/\b(?:pulls|merge_requests)\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
-const WRITE_METHOD_IN_INPUT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/i;
+const WRITE_METHOD_IN_TEXT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/;
+const WRITE_METHOD_VALUE =
+	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
@@ -203,11 +205,7 @@ function shellVerdict(
 
 const MERGE_STEM = "merg";
 const MERGE_STATE = /merge(?:d|able|ability)$/;
-const READ_ONLY_TOOLS = new Set([
-	"get_merge_request",
-	"list_merge_requests",
-	"list_merge_request_comments",
-]);
+const MERGE_REQUEST = /^requests?$/;
 const READ_VERBS = new Set([
 	"check",
 	"find",
@@ -272,7 +270,8 @@ function nameTokens(name: string): readonly string[] {
 		.map((token) => token.toLowerCase());
 }
 
-function isMergeWord(token: string): boolean {
+function isMergeWord(token: string, next: string | undefined): boolean {
+	if (token === "merge" && MERGE_REQUEST.test(next ?? "")) return false;
 	return token.includes(MERGE_STEM) && !MERGE_STATE.test(token);
 }
 
@@ -280,12 +279,11 @@ function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
 	const tokens = [server, tool].flatMap(nameTokens);
 	const onlyReads =
 		tokens.some((token) => READ_VERBS.has(token)) &&
-		!tokens.some((token) => WRITE_VERBS.has(token) || isMergeWord(token));
-	return (
-		tokens.some((token) => token.includes(MERGE_STEM)) &&
-		!READ_ONLY_TOOLS.has(tool) &&
-		!onlyReads
-	);
+		!tokens.some(
+			(token, index) =>
+				WRITE_VERBS.has(token) || isMergeWord(token, tokens[index + 1]),
+		);
+	return tokens.some((token) => token.includes(MERGE_STEM)) && !onlyReads;
 }
 
 function inputStrings(value: unknown): readonly string[] {
@@ -318,7 +316,9 @@ function holdsMerge(input: unknown): boolean {
 	return (
 		values.some(runsGhMerge) ||
 		MERGE_MUTATION_IN_INPUT.test(text) ||
-		(MERGE_PATH_IN_INPUT.test(text) && WRITE_METHOD_IN_INPUT.test(text))
+		(MERGE_PATH_IN_INPUT.test(text) &&
+			(WRITE_METHOD_IN_TEXT.test(text) ||
+				values.some((value) => WRITE_METHOD_VALUE.test(value.trim()))))
 	);
 }
 

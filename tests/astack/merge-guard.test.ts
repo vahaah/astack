@@ -755,6 +755,9 @@ describe("MCP merge tools", () => {
 		["mcp__forge__mark_merged", true],
 		["mcp__forge__ensure_merged", true],
 		["mcp__forge__check_mergeability", false],
+		["mcp__gitlab__get_merge_request_diffs", false],
+		["mcp__gitlab__list_merge_request_diffs", false],
+		["mcp__gitlab__merge_merge_request", true],
 		["mcp__gateway__merge__pull_request", true],
 		["mcp__automerge__enable", true],
 	])(
@@ -897,6 +900,16 @@ describe("MCP merge tools", () => {
 			"mcp__forge__call_api",
 			false,
 			{ method: "GET", path: "/repos/o/r/pulls/12/merge" },
+		],
+		[
+			"a GET on the REST merge path with the word post in a note",
+			"mcp__forge__call_api",
+			false,
+			{
+				method: "GET",
+				path: "/repos/o/r/pulls/12/merge",
+				note: "check before we post",
+			},
 		],
 		[
 			"a PUT on another PR path",

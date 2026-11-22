@@ -113,19 +113,25 @@ A merge token that ends in `merged`, `mergeable` or `mergeability` names a state
 A name with a merge token gets a deny on each server, also with a grant.
 It passes only when it holds a read verb, such as `get`, `show` or `check`, and no write verb and no merge word.
 So `get_and_merge_pr`, `mark_merged` and `ensure_merged` get a deny, and `show_merged_prs` passes.
-A read tool on an exact list, such as `list_merge_requests` and `get_merge_request`, passes.
 The rule also denies a merge that is not a PR merge, such as a database branch merge. Such a merge is an owner gate.
+
+The token `merge` before `request` or `requests` names a thing, not an action.
+So a read tool on a merge request, such as `list_merge_requests` and `get_merge_request_diffs`, passes.
 
 The guard also reads each key and each value of the input of an MCP call, because a generic API tool can post a merge.
 It reads the decoded values, not the JSON text, so a tab or a line break before a mutation name does not hide it.
 It also decodes each JSON escape in a value, because the body of a raw request can hold escapes that the forge decodes.
+An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
+
 An input that holds `mergePullRequest`, `enablePullRequestAutoMerge`, `enqueuePullRequest` or `mergeBranch` gets a deny.
 A merge queue entry merges the PR later, and a branch merge goes into the base with no PR.
+
 An input with a `pulls/<n>/merge` or `merge_requests/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
+A `repos/<owner>/<repo>/merges` path with a write method gets a deny for the same reason as `mergeBranch`.
 The `<n>` part can be any path segment, such as the route template `{pull_number}`.
 The guard also reads the items of each array as one path, and a method after `-X` or `_`, such as `HTTP_PUT`.
-A `repos/<owner>/<repo>/merges` path with a write method gets a deny for the same reason as `mergeBranch`.
-An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
+A method in a longer text counts only in upper case, so the word post in a note is not a method.
+A value that is only a method counts in each case.
 
 ### D5. An error of the merge guard on a merge gives a deny
 
