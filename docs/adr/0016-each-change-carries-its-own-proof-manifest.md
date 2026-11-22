@@ -26,10 +26,11 @@ The file name is the `change` field of the manifest.
 Two open PRs add two files, so they never edit one proof file.
 A merge of main brings in the manifest of each merged change.
 
-### D2. With `--base`, the run reads the one manifest that the diff from the merge base changes
+### D2. With `--base`, the run reads the one manifest that the diff from the merge base adds
 
 The run keeps each present `*.json` file directly under `.astack/proof/` that the diff from the merge base names.
 It stops at schema on two or none, and it names the files or the merge base.
+The merge base must not hold the chosen manifest, so a change never edits a merged manifest. Otherwise the run stops at schema and names the path and the merge base.
 
 ### D3. With no `--base`, the run reads the one manifest in the folder
 

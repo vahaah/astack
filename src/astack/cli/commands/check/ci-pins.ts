@@ -15,7 +15,7 @@ import {
 	PROOF_MANIFEST_FOLDER,
 	parseChangeProof,
 } from "../../../change-proof/contract.ts";
-import { chooseManifest } from "../../../change-proof/manifest.ts";
+import { chooseManifest, manifestsAt } from "../../../change-proof/manifest.ts";
 import {
 	type Blob,
 	changesTool,
@@ -98,12 +98,14 @@ function proofRecordsAt(
 ): Result<readonly string[], string> {
 	const atHead = manifestsAtHead(root);
 	if (!atHead.ok) return atHead;
+	const atMergeBase = manifestsAt(root, target.commit);
+	if (!atMergeBase.ok) return atMergeBase;
 	const choice = chooseManifest({
 		kind: "search",
 		present: atHead.value
 			.filter((entry) => entry.regular && isFolderManifest(entry.path))
 			.map((entry) => entry.path),
-		search: { ...target, changed },
+		search: { ...target, changed, atMergeBase: atMergeBase.value },
 		legacy: atHead.value.some((entry) => entry.path === LEGACY_PROOF_MANIFEST),
 	});
 	if (!choice.ok) return choice;

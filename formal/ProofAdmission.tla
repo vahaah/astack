@@ -49,7 +49,7 @@ AuthorityEligible(a) == /\ a.regular
                                /\ a.processAccepted /\ a.processWholeEqual))
 AuthorityAllowed(a) == AuthorityEligible(a) /\ LandingAllowed(a)
 
-Manifests == {"one", "fallback", "several", "none", "held", "beside"}
+Manifests == {"one", "fallback", "several", "none", "merged", "held", "beside"}
 BaseRecords == [relation : {"equal", "ancestor", "descendant", "unrelated"},
                 ref : BOOLEAN,
                 diffFrom : {"merge", "manifest"},
@@ -57,12 +57,12 @@ BaseRecords == [relation : {"equal", "ancestor", "descendant", "unrelated"},
                 moved : BOOLEAN,
                 manifest : Manifests]
 BaseCases == {b \in BaseRecords : /\ ~b.ref => ~b.moved
-                                  /\ b.manifest = "none" => b.ref}
+                                  /\ b.manifest \in {"none", "merged"} => b.ref}
 BaseRelationAllowed(b) == b.relation \in {"equal", "ancestor"}
 BaseViewsAllowed(b) == /\ b.diffFrom = IF b.ref THEN "merge" ELSE "manifest"
                        /\ b.historyAt = "manifest"
 MoveAllowed(a, b) == ~(a.optIn /\ b.moved)
-ManifestAllowed(s, b) == /\ (s = "schema" => b.manifest \notin {"several", "none"})
+ManifestAllowed(s, b) == /\ (s = "schema" => b.manifest \notin {"several", "none", "merged"})
                          /\ (s = "base" => b.manifest \notin {"held", "beside"})
 
 VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority, base,

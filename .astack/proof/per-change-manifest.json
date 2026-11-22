@@ -469,7 +469,7 @@
 		"bounds": [
 			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 			"Each failure kind maps to one section of the proof contract.",
-			"Six manifest observations: one, fallback, several, none, held and beside. Only a run with --base can find none.",
+			"Seven manifest observations: one, fallback, several, none, merged, held and beside. Only a run with --base can find none or merged.",
 			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
 			"Finite Result laws use two values, two errors and all total functions between them."
 		],
@@ -501,7 +501,7 @@
 		"action": "ValidationPass",
 		"original": "/\\ ManifestAllowed(Stages[stage], base)",
 		"replacement": "",
-		"defect": "A validation pass that drops the manifest guard admits a proof with two manifests, none, a held base manifest or .astack/proof.json beside a folder manifest.",
+		"defect": "A validation pass that drops the manifest guard admits a proof with two manifests, none, an edited manifest of the merge base, a held base manifest or .astack/proof.json beside a folder manifest.",
 		"expect": {
 			"kind": "invariant",
 			"name": "OneManifestPerChange"

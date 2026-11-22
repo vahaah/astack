@@ -234,6 +234,33 @@ describe("the manifest of the change", () => {
 		});
 	});
 
+	test("[control:cp-manifest-merged] with --base, a change that edits a manifest of the merge base stops with its path", () => {
+		const main = mainRepo();
+		change(main, {
+			name: "first",
+			manifests: [".astack/proof/first.json"],
+			remove: [M0],
+		});
+		const trunk = head(main.root);
+		git(main.root, "checkout", "-q", "-b", "edit");
+		writeFiles(main.root, {
+			"docs/edit.md": "# edit\n",
+			".astack/proof/first.json": manifest(main.base, "edit", [
+				".astack/proof/first.json",
+				"docs/edit.md",
+			]),
+		});
+		git(main.root, "add", "-A");
+		git(main.root, "commit", "-q", "-m", "edit");
+		expect(proof(main.root, ["--base", "main"])).toEqual({
+			code: 1,
+			lines: [
+				`stop: proof schema: the merge base ${trunk} of main holds .astack/proof/first.json. Add a new manifest under .astack/proof/`,
+			],
+			err: rule("Required records"),
+		});
+	});
+
 	test.each<[string, Files, Change, readonly string[], readonly string[]]>([
 		[
 			"a tree that keeps the base manifest beside its own",

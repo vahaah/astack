@@ -20,7 +20,8 @@
 				"ci-proof-record-tool-pin",
 				"ci-proof-committed-inputs",
 				"ci-proof-per-change",
-				"ci-proof-two-manifests"
+				"ci-proof-two-manifests",
+				"ci-proof-merged-manifest"
 			]
 		}
 	]

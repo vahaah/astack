@@ -670,7 +670,11 @@
 		},
 		{
 			"criterion": "CP-manifest-base",
-			"controls": ["cp-manifest-base", "cp-manifest-base-none"]
+			"controls": [
+				"cp-manifest-base",
+				"cp-manifest-base-none",
+				"cp-manifest-merged"
+			]
 		},
 		{
 			"criterion": "CP-manifest-held",

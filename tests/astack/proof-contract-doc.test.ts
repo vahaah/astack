@@ -130,7 +130,11 @@ describe("the proof contract reference", () => {
 
 	test("[control:proof-stop-heading] the section of each stop stage holds the rule of each cause of that stage", () => {
 		const causes: Readonly<Record<Stage, readonly string[]>> = {
-			schema: ["Unknown fields", "More than one manifest stops"],
+			schema: [
+				"Unknown fields",
+				"More than one manifest stops",
+				"the diff from the merge base adds",
+			],
 			domain: ["glossary", "integratedAt"],
 			category: ["must compose"],
 			controls: ["no row is idle", "spec-links.md"],

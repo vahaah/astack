@@ -21,6 +21,7 @@ export type ManifestSearch =
 			readonly ref: string;
 			readonly commit: string;
 			readonly changed: readonly string[];
+			readonly atMergeBase: readonly string[];
 	  };
 
 export type ManifestView =
@@ -75,6 +76,8 @@ export function manifestCandidates(
 		return ok({ kind: "search", present, search: target, legacy });
 	const changed = changedPaths(root, target.commit);
 	if (!changed.ok) return changed;
+	const atMergeBase = manifestsAt(root, target.commit);
+	if (!atMergeBase.ok) return atMergeBase;
 	return ok({
 		kind: "search",
 		present,
@@ -83,6 +86,7 @@ export function manifestCandidates(
 			ref: target.ref,
 			commit: target.commit,
 			changed: changed.value.map((entry) => entry.path),
+			atMergeBase: atMergeBase.value,
 		},
 		legacy,
 	});
@@ -102,7 +106,11 @@ export function chooseManifest(
 			: view.present.filter((path) => search.changed.includes(path));
 	const [path, ...others] = candidates;
 	if (path !== undefined && others.length === 0)
-		return ok({ route: "found", path, legacy: view.legacy });
+		return search.kind === "merge-base" && search.atMergeBase.includes(path)
+			? err(
+					`the merge base ${search.commit} of ${search.ref} holds ${path}. Add a new manifest under ${PROOF_MANIFEST_FOLDER}`,
+				)
+			: ok({ route: "found", path, legacy: view.legacy });
 	const where =
 		search.kind === "manifest-base"
 			? "the tree holds"
@@ -118,27 +126,33 @@ export function chooseManifest(
 	);
 }
 
-export function manifestsHeldAt(
+export function manifestsAt(
 	root: string,
-	base: ProofBase,
-): Result<HeldManifests, string> {
+	commit: string,
+): Result<readonly string[], string> {
 	const listed = gitLines(root, [
 		"ls-tree",
 		"-r",
 		"-z",
 		"--name-only",
-		base.manifest,
+		commit,
 		"--",
 		PROOF_MANIFEST_FOLDER,
 		LEGACY_PROOF_MANIFEST,
 	]);
+	return listed.ok ? ok(listed.value.filter(isManifestPath)) : listed;
+}
+
+export function manifestsHeldAt(
+	root: string,
+	base: ProofBase,
+): Result<HeldManifests, string> {
+	const listed = manifestsAt(root, base.manifest);
 	if (!listed.ok) return listed;
 	return ok({
 		at: base.manifest,
 		paths: listed.value.filter(
-			(path) =>
-				isManifestPath(path) &&
-				lstatOrUndefined(join(root, path)) !== undefined,
+			(path) => lstatOrUndefined(join(root, path)) !== undefined,
 		),
 	});
 }

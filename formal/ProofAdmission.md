@@ -22,11 +22,11 @@ TLC also examines progress under weak fairness of `Next` with the [configuration
 The finite model has six validation stages and bounded evidence outcome classes.
 It abstracts validator internals and treats judged tool evidence as inputs.
 
-The base observation holds one of six manifest observations: one, fallback, several, none, held and beside.
+The base observation holds one of seven manifest observations: one, fallback, several, none, merged, held and beside.
 `OneManifestPerChange` states that an admitted proof read one manifest.
 
-Several and none stop at schema. Held and beside stop at base.
-Only a run with `--base` can observe none.
+Several, none and merged stop at schema. Held and beside stop at base.
+Only a run with `--base` can observe none or merged.
 An ordinary governing reference needs no proof record. A ratified reference needs its proof record.
 
 ### Category composition
@@ -58,7 +58,7 @@ The notation does not add a runtime monad wrapper.
 | Model concept | Concrete contract |
 |---|---|
 | Validation stages | `parseChangeProof` and `checkReferences` reject missing domain, category, and control evidence |
-| `manifest` | `chooseManifest` gives one, fallback, several or none, and `staleManifests` gives held or beside |
+| `manifest` | `chooseManifest` gives one, fallback, several, none or merged, and `staleManifests` gives held or beside |
 | `RunPositive` | `judgePositive` requires complete checked-state evidence |
 | `RunNegative` | `judgeNegative` requires the named violation and a counterexample |
 | `RunRestored` | `admitChangeProof` requires the restored run and matching state counts |

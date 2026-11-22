@@ -28,7 +28,7 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 
 Each change adds the manifest `.astack/proof/<change>.json`.
 With no path, `astack check proof` reads the one manifest there.
-With `--base`, only a manifest that the diff from the merge base changes counts.
+With `--base`, only a manifest that the diff from the merge base adds counts.
 More than one manifest stops, and with `--base` none stops.
 With none there, it reads `.astack/proof.json`.
 
