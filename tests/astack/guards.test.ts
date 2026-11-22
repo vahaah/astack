@@ -270,6 +270,18 @@ describe("the plain form of a git step", () => {
 			'"$GIT" reset --hard',
 			"astack cannot read $GIT reset --hard, because a variable gives the program.",
 		],
+		[
+			"$(which git) reset --hard",
+			"astack cannot read $(...) reset --hard, because a variable gives the program.",
+		],
+		[
+			"`command -v git` reset --hard",
+			"astack cannot read $(...) reset --hard, because a variable gives the program.",
+		],
+		[
+			"$(command -v git) push --no-verify",
+			"astack cannot read $(...) push --no-verify, because a variable gives the program.",
+		],
 	])(
 		"[control:sg-dynamic-word] %s is denied with its cause",
 		(command, text) => {

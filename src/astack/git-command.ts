@@ -158,13 +158,16 @@ function hiddenVerb(step: ShellStep): string | undefined {
 		.flatMap((value) => value.split(/\s+/))
 		.filter(Boolean);
 	const git = tokens.findIndex((token) => basename(token) === "git");
-	if (git < 0 && step.unreadable !== "program") return undefined;
+	const searched =
+		step.unreadable === "program"
+			? tokens
+			: git < 0
+				? []
+				: tokens.slice(git + 1);
 	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
-	return tokens
-		.slice(git + 1)
-		.find(
-			(token) => GUARDED_VERBS.has(token) || (token === "config" && hooksPath),
-		);
+	return searched.find(
+		(token) => GUARDED_VERBS.has(token) || (token === "config" && hooksPath),
+	);
 }
 
 function attachedValue(text: string, flag: string): boolean {
