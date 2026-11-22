@@ -89,11 +89,7 @@ Never commit it.
 ## Milestone exit
 
 After all sessions of the `now` milestone merge, run the milestone exit of `upkeep.md`.
-It runs the gates on a fresh stack, the journeys for each persona and the demo.
-It posts one tracker update.
-Then collapse the milestone line to `State. exited`.
-Hold one re-grill round of 7 questions or fewer.
 
 ## Close
 
-A programme closes when its last milestone exits. Delete `<plan dir>/<slug>/` in the closing PR. Keep the ADRs and the glossary. Mark the tracker container complete.
+A programme closes when its last milestone exits. The last session PR deletes `<plan dir>/<slug>/`. Keep the ADRs and the glossary. Mark the tracker container complete.

@@ -174,6 +174,6 @@ The drafts file is `drafts.md` in the same directory. `astack plan draft <plan> 
 ## The life of a plan
 
 - One writer edits the plan. During planning that is the planning session. After it, that is the integrator of the `now` session.
-- Plan edits go into one docs commit for each session, or into the session PR.
-- The last PR of the plan deletes it. Before that, durable decisions move to ADRs and terms move to the glossary.
+- Plan edits ride in a session PR. The boundary edits are the first commit of the next session branch, so no PR holds only plan edits.
+- The last session PR deletes the plan. Before that, durable decisions move to ADRs and terms move to the glossary.
 - A replacement plan sets `supersedes:` and deletes the old file in the same PR.

@@ -110,11 +110,11 @@ astack session resume <plan> [<session>] [--tracker <file|->]
   Pass that JSON with `--tracker`.
   Resume reads the done steps from the commit subjects and the checkpoint comments.
   It reads the PR number and ultracode from the PR.
-- "pause" is a hard stop. Make a `wip:` commit, run the hand-off, give the resume prompt and stop.
+- For "pause", follow Pause and close in `upkeep.md`.
 
 ## Finish
 
 1. Run the whole-work proof from `## Proof` on the session branch.
 2. Move durable facts to ADRs or tests.
 3. Mark the PR ready. The merge needs the grant of the profile or of this turn.
-4. After the merge, run `/astack-plan <slug>` for the session boundary in `upkeep.md`.
+4. After the merge, run `/astack-plan <slug>` once for the session boundary in `upkeep.md`.
