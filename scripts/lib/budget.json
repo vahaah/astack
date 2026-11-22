@@ -1,5 +1,5 @@
 {
-	"total": 117440,
+	"total": 117428,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -14,7 +14,7 @@
 		"council": 841,
 		"deslop": 373,
 		"diagnosing-bugs": 1286,
-		"domain-modeling": 1256,
+		"domain-modeling": 1253,
 		"figure-it-out": 646,
 		"file-pr": 541,
 		"full-send": 1212,
@@ -27,8 +27,8 @@
 		"mode": 24220,
 		"modernize": 1013,
 		"no-comments": 492,
-		"plan": 14697,
-		"pr-review-hardening": 22790,
+		"plan": 14690,
+		"pr-review-hardening": 22788,
 		"principles": 3755,
 		"recall": 764,
 		"reflect": 587,
