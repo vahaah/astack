@@ -49,6 +49,8 @@ That PR must also make the total fall by more than the rise.
 The total cap never rises.
 The gate cannot see a PR, so the reviewer of the `scripts/lib/budget.json` diff enforces this rule.
 
+> Amended 2026-11-22: `scripts/lib/budget.json` also holds `lines`, a cap on the longest line of each file that it names. `AGENTS.md` is the only such file, and its cap is 879 characters. `lineCounts : (RepoRoot, Budget) -> LineCounts` reads each named file, with the effect fs-read. `budgetReport` and `lowerBudget` also take the line counts, and they stay pure. A line over its cap fails the gate and names the file. The lower step lowers a line cap to its count and never raises it. The model takes each line count as a true observation, as it takes each word count.
+
 #### Formal claim
 
 A pass of the gate means that each skill and the total are at or under their caps.
@@ -68,23 +70,25 @@ The model takes the word count of each skill tree as a true observation.
 #### Category composition
 
 ```text
-skillWords   : SkillTrees -> WordCounts   effects: fs-read
-budgetReport : WordCounts -> BudgetReport effects: none
-lowerBudget  : WordCounts -> Budget       effects: none
+skillWords   : SkillTrees -> WordCounts                         effects: fs-read
+lineCounts   : (RepoRoot, Budget) -> LineCounts                 effects: fs-read
+budgetReport : (WordCounts, LineCounts, Budget) -> BudgetReport effects: none
+lowerBudget  : (WordCounts, LineCounts, Budget) -> Budget       effects: none
 ```
 
 `skillWords` reads each skill tree once and returns the word count of each skill.
-`budgetReport` is pure. It takes the counts and a fixed `Budget`, and returns the problems and the notes.
-`lowerBudget` is pure. It takes the counts and a fixed `Budget`, and returns the lowered `Budget`.
+`lineCounts` reads each file that `lines` names once and returns the length of its longest line.
+`budgetReport` is pure. It takes the counts, the line counts and a fixed `Budget`, and returns the problems and the notes.
+`lowerBudget` is pure. It takes the counts, the line counts and a fixed `Budget`, and returns the lowered `Budget`.
 
-The `main` function of `scripts/budget.ts` reads the files, calls the three arrows and prints the result.
+The `main` function of `scripts/budget.ts` reads the files, calls the four arrows in order and prints the result.
 The record uses the `artifact` carrier and declares no composite arrow, so no composition, functor or monad law applies.
 
 #### Implementation correspondence
 
 `budgetReport` maps to the `Check` action of the model, and an empty problem list maps to the verdict `pass`.
 `lowerBudget` maps to the `Lower` action.
-`skillWords` is the observation that the `Edit` action changes.
+`skillWords` and `lineCounts` are the observations that the `Edit` action changes.
 The notes of `budgetReport` and the cap of a gone skill have no model state, and the unit tests examine them.
 
 D1, D3 and D4 delete parts and repoint text.

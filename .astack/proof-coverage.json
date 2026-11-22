@@ -12,7 +12,8 @@
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
 		"docs/reference/pr-head-check.md",
-		"docs/reference/law-controls.md"
+		"docs/reference/law-controls.md",
+		"docs/reference/pr-recipes.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -70,7 +71,9 @@
 		"tests/old-names.test.ts",
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
-		"tests/property/verdict-monoid.test.ts"
+		"tests/property/verdict-monoid.test.ts",
+		"tests/doc-facts.test.ts",
+		"tests/apply/flow-config.test.ts"
 	],
 	"links": [
 		{
@@ -371,6 +374,14 @@
 		{
 			"criterion": "WB-ratchet",
 			"controls": ["wb-slack-note", "wb-lower"]
+		},
+		{
+			"criterion": "WB-line",
+			"controls": ["wb-line-over", "wb-line-lower"]
+		},
+		{
+			"criterion": "WB-facts",
+			"controls": ["wb-facts-counts", "wb-facts-names", "wb-facts-playbooks"]
 		},
 		{
 			"criterion": "WB-cut",
@@ -707,6 +718,14 @@
 		{
 			"criterion": "ADMIT-ORDER",
 			"controls": ["proof-stage-order"]
+		},
+		{
+			"criterion": "GH-READ",
+			"controls": ["gh-read"]
+		},
+		{
+			"criterion": "FORK-LINK",
+			"controls": ["fork-link"]
 		}
 	]
 }
