@@ -2417,13 +2417,13 @@ describe("the ready report names what the merge starts", () => {
 	const holdDeploy =
 		"Land a deployment only when the owner's words in this turn name that release or deployment.";
 
-	test("the ready report reads the started workflows before it asks for the merge, names each deploy job, and a deploy still needs the owner's words", () => {
+	test("the ready report reads the started workflows before it asks for the merge, names each publish or deploy job, and a deploy still needs the owner's words", () => {
 		expect(readyRow.indexOf(readStarted)).toBeGreaterThan(-1);
 		expect(readyRow.indexOf(readStarted)).toBeLessThan(
 			readyRow.indexOf("Report it as ready to merge"),
 		);
 		expect(readyRow).toContain(
-			"name each deploy job, or say that there is none",
+			"name each publish or deploy job, or say that there is none",
 		);
 		const section = shipping.indexOf("\n## What the merge starts\n");
 		expect(section).toBeGreaterThan(-1);
