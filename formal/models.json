@@ -275,6 +275,7 @@
 					"FailClosedStops",
 					"FloorOnlyRaises",
 					"OneTriplePerModel",
+					"ManifestFirst",
 					"RegistryRunsAll",
 					"DeletedRegistryStops"
 				],

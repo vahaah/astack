@@ -206,6 +206,10 @@
 				"modelRef": "OneTriplePerModel"
 			},
 			{
+				"name": "A selected model starts only after the manifest model passed",
+				"modelRef": "ManifestFirst"
+			},
+			{
 				"name": "A registry diff runs each model of both sides",
 				"modelRef": "RegistryRunsAll"
 			},
@@ -485,6 +489,7 @@
 			"FailClosedStops",
 			"FloorOnlyRaises",
 			"OneTriplePerModel",
+			"ManifestFirst",
 			"RegistryRunsAll",
 			"DeletedRegistryStops"
 		],

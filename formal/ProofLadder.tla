@@ -112,6 +112,8 @@ FloorOnlyRaises == status \in {"derived", "admitted"} /\ ~Legacy =>
                      /\ rung >= treeFloor
                      /\ rung \in {PathRung, baseFloor, treeFloor}
 OneTriplePerModel == \A m \in Models : triples[m] <= 1
+ManifestFirst == \A m \in Models \ {Manifest} :
+                   triples[m] > 0 => result[Manifest] = "pass"
 RegistryRunsAll == status = "admitted" /\ Edited =>
                      \A m \in treeModels \cup baseModels : result[m] = "pass"
 DeletedRegistryStops == Lost => status \in {"start", "stopped"}

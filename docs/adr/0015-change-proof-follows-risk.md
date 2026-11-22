@@ -36,6 +36,7 @@ AdmitNeedsEachTriple == an admission at R4 needs one passed triple for each sele
 FailClosedStops      == an uncovered fail-closed path stops before a rung
 FloorOnlyRaises      == the rung is the highest of the path rung and both floors
 OneTriplePerModel    == each model starts at most one triple
+ManifestFirst        == a selected model starts only after the manifest model passed
 RegistryRunsAll      == a registry diff runs each model of both sides
 DeletedRegistryStops == a registry at the diff base with none in the tree stops
 ```
@@ -68,11 +69,14 @@ It gives a rung, its cause and the selected runs, or a stop text.
 | `Rank` | the path rung of `deriveLadder`, with the globs that [registry.ts](../../src/astack/change-proof/registry.ts) parses |
 | `baseFloor` and `treeFloor` | `proofFloor` in [profile.ts](../../src/astack/profile.ts) reads `proof.minRung` on each side |
 | `Start` and `Judge` | `runTriple` in `proof.ts` starts one triple and judges it positive, negative, restored |
-| `CanStart` | `prove` runs the manifest model first and stops before a later triple |
+| `CanStart` | `prove` runs the manifest model first, and `ManifestFirst` checks that order |
 | `Admit` | `admitChangeProof` needs one passed triple for each run |
 
 These links describe the abstraction relation.
 They do not establish refinement of all TypeScript behavior.
+`prove` also returns at the first stop, so no later triple starts.
+With two models, the model has no later triple after a stop of the second model, so the model does not check this rule.
+The CLI control `rl-stop-order` examines a stop of the manifest model.
 
 #### Verification
 
