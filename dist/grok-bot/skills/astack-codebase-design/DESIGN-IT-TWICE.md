@@ -7,7 +7,7 @@ Use Module, Interface, Seam, Adapter and Leverage from [SKILL.md](SKILL.md).
 
 When `astack-architect` is available, the user can run it to compare models and screen design red flags.
 For work about to enter implementation, suggest that skill or `/astack-plan` when available.
-This pattern supports the survey in `/astack-improve-codebase-architecture`.
+This pattern supports the Survey of [SKILL.md](SKILL.md).
 
 ## Process
 

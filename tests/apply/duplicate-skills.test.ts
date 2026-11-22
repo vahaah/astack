@@ -32,7 +32,7 @@ const lock = {
 	skills: {
 		grilling: { source: "mattpocock/skills" },
 		tdd: { source: "mattpocock/skills" },
-		prototype: { source: "someone/skills" },
+		"domain-modeling": { source: "someone/skills" },
 		"setup-matt-pocock-skills": { source: "mattpocock/skills" },
 	},
 };
@@ -43,7 +43,7 @@ const skillsTxt = [
 	"mattpocock/skills setup-matt-pocock-skills",
 	"mattpocock/skills tdd",
 	"other/skills tdd",
-	"someone/skills#v2 prototype",
+	"someone/skills#v2 domain-modeling",
 	"anthropics/claude-code Agent Development",
 	"",
 ].join("\n");
@@ -58,38 +58,63 @@ describe("flowSupersedes", () => {
 		}
 	});
 
-	test("[control:wb-successor] maps each cut upstream skill to the skill of its route, and a flat copy of it is never superseded", () => {
-		const flow = builtFlowSkills(join(root, "marketplace"));
-		if (!flow.ok) throw new Error(flow.error);
-		const cut = [
-			"implement",
-			"implement-spec",
-			"to-questionnaire",
-			"to-spec",
-			"triage",
-			"wait-what",
-			"wizard",
-		];
-		const found = findDuplicateSkills({
-			entries: cut.map(link),
+	const cut = [
+		"implement",
+		"implement-spec",
+		"improve-codebase-architecture",
+		"prototype",
+		"research",
+		"to-questionnaire",
+		"to-spec",
+		"triage",
+		"wait-what",
+		"wizard",
+		"writing-for-agents",
+	];
+
+	test.each([
+		{
+			from: "from mattpocock/skills",
 			lock: {
 				skills: Object.fromEntries(
 					cut.map((name) => [name, { source: "mattpocock/skills" }]),
 				),
 			},
-			flowSkills: flow.value,
-		});
-		expect(
-			found.map(({ name, flowSkill, verdict }) => [name, flowSkill, verdict]),
-		).toEqual([
-			["implement", "astack:mode", "not-in-flow"],
-			["implement-spec", "astack:plan", "not-in-flow"],
-			["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
-			["to-spec", "astack:write-ticket", "not-in-flow"],
-			["triage", "astack:write-ticket", "not-in-flow"],
-			["wait-what", "astack:wait-what", "not-in-flow"],
-			["wizard", "astack:wizard", "not-in-flow"],
-		]);
+		},
+		{ from: "with no lock entry", lock: {} },
+	])(
+		"[control:wb-successor] maps each cut upstream skill $from to the skill of its route, and a flat copy of it is never superseded",
+		({ lock }) => {
+			const flow = builtFlowSkills(join(root, "marketplace"));
+			if (!flow.ok) throw new Error(flow.error);
+			const found = findDuplicateSkills({
+				entries: cut.map(link),
+				lock,
+				flowSkills: flow.value,
+			});
+			expect(
+				found.map(({ name, flowSkill, verdict }) => [name, flowSkill, verdict]),
+			).toEqual([
+				["implement", "astack:mode", "not-in-flow"],
+				["implement-spec", "astack:plan", "not-in-flow"],
+				[
+					"improve-codebase-architecture",
+					"astack:codebase-design",
+					"not-in-flow",
+				],
+				["prototype", "astack:mode", "not-in-flow"],
+				["research", "astack:plan", "not-in-flow"],
+				["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
+				["to-spec", "astack:write-ticket", "not-in-flow"],
+				["triage", "astack:write-ticket", "not-in-flow"],
+				["wait-what", "astack:wait-what", "not-in-flow"],
+				["wizard", "astack:wizard", "not-in-flow"],
+				["writing-for-agents", "astack:mode", "not-in-flow"],
+			]);
+		},
+	);
+
+	test("names only the upstream skills whose successor the marketplace does not ship", () => {
 		const shipped = new Set(
 			readdirSync(join(root, "marketplace/plugins/astack/skills")),
 		);
@@ -136,9 +161,9 @@ describe("parseSkillsTxt", () => {
 			},
 			{
 				line: 6,
-				text: "someone/skills#v2 prototype",
+				text: "someone/skills#v2 domain-modeling",
 				source: "someone/skills",
-				name: "prototype",
+				name: "domain-modeling",
 			},
 			{
 				line: 7,
@@ -177,26 +202,30 @@ describe("findDuplicateSkills", () => {
 	});
 
 	test("marks a different skill with an astack name as a name collision only", () => {
-		const [prototype] = findDuplicateSkills({
-			entries: [link("prototype")],
+		const [collision] = findDuplicateSkills({
+			entries: [link("domain-modeling")],
 			lock,
 			skillsTxt,
 		});
-		expect(prototype?.verdict).toBe("name-only");
-		expect(prototype?.skillsTxt).toEqual([
-			{ line: 6, text: "someone/skills#v2 prototype" },
+		expect(collision?.verdict).toBe("name-only");
+		expect(collision?.skillsTxt).toEqual([
+			{ line: 6, text: "someone/skills#v2 domain-modeling" },
 		]);
 	});
 
 	test("a skill with no lock entry is never called superseded", () => {
-		const [research] = findDuplicateSkills({
+		const [unmanaged] = findDuplicateSkills({
 			entries: [
-				{ name: "research", path: `${skills}/research`, kind: "directory" },
+				{
+					name: "diagnosing-bugs",
+					path: `${skills}/diagnosing-bugs`,
+					kind: "directory",
+				},
 			],
 			lock,
 		});
-		expect(research?.verdict).toBe("name-only");
-		expect(research?.source).toBeUndefined();
+		expect(unmanaged?.verdict).toBe("name-only");
+		expect(unmanaged?.source).toBeUndefined();
 	});
 
 	test("maps setup-matt-pocock-skills to the name the built astack plugin ships", () => {
@@ -276,7 +305,7 @@ describe("removalCommands quoting", () => {
 describe("duplicateReportLines", () => {
 	test("says it removes nothing, groups by verdict and lists skills.txt lines", () => {
 		const found = findDuplicateSkills({
-			entries: [link("grilling"), link("prototype")],
+			entries: [link("grilling"), link("domain-modeling")],
 			lock,
 			skillsTxt,
 		});
@@ -293,12 +322,14 @@ describe("duplicateReportLines", () => {
 			"- ~/.claude/skills/grilling -> ~/.agents/skills/grilling, from mattpocock/skills; astack ships /astack:grilling",
 		);
 		expect(text).toContain("  $ npx skills remove --global -y grilling\n");
-		expect(text).toContain("  $ npx skills remove --global -y prototype\n");
+		expect(text).toContain(
+			"  $ npx skills remove --global -y domain-modeling\n",
+		);
 		expect(text).toContain(
 			"Either way, delete these lines from ~/config/claude/skills.txt, or its bootstrap installs them again:",
 		);
 		expect(text).toContain("  2: mattpocock/skills grilling");
-		expect(text).toContain("  6: someone/skills#v2 prototype");
+		expect(text).toContain("  6: someone/skills#v2 domain-modeling");
 		expect(text.indexOf("grilling")).toBeLessThan(
 			text.indexOf("from another or an unknown source"),
 		);

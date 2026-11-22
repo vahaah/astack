@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "owner-catch-up",
-	"base": "605610cc26c0b65ca9a5b3451d2ab01477a5c573",
+	"base": "a4a8bec3d5775a6f36e1e3afd5ad9cf198cf260d",
 	"scope": [
 		{
 			"path": "src/astack/watch-pr/cli.ts",

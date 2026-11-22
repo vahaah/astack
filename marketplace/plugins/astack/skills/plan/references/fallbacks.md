@@ -14,8 +14,6 @@ Install or update astack to restore missing skills for the full stage.
 |---|---|
 | `astack:grilling` | Work the design tree in rounds. The frontier contains every decision whose prerequisites are settled. Ask the whole frontier each round. Give one recommended answer per question. Wait for the answers. Look up facts yourself. Stop when the frontier is empty and the owner confirms a shared understanding |
 | `astack:domain-modeling` | Challenge each fuzzy or overloaded term. Write each resolved term to the glossary at once. Use `**Term**:`, a one- or two-sentence definition, and an `_Avoid_:` line with the rejected words. Offer an ADR only when the three tests hold |
-| `astack:research` | A background `general-purpose` subagent answers from primary sources. It writes one cited file on a `research/<slug>-<topic>` branch |
-| `astack:prototype` | Run `astack skill-path astack:mode playbooks/prototype.md`. Read the path it prints. Follow that playbook. Show the result to the owner in the main thread |
 | `astack:codebase-design` | Use the design vocabulary in `astack:coding-rules`. It defines module, interface, public API, depth and the deletion test |
 | `astack:explorer` | Use a `general-purpose` subagent told to read only and change nothing |
 | `astack:to-tickets` rules | Use vertical slices that cross every layer and can be checked alone. Put prefactoring first. Use expand, migrate, contract for a wide refactor |

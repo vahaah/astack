@@ -41,10 +41,7 @@ From mattpocock/skills, https://github.com/mattpocock/skills, commit 49dd158d107
 - skills/diagnosing-bugs
 - skills/domain-modeling
 - skills/grilling
-- skills/improve-codebase-architecture
 - skills/plan
-- skills/prototype
-- skills/research
 - skills/retro
 - skills/setup
 - skills/tdd
@@ -52,7 +49,6 @@ From mattpocock/skills, https://github.com/mattpocock/skills, commit 49dd158d107
 - skills/wayfinder
 - skills/write-docs
 - skills/write-ticket
-- skills/writing-for-agents
 
 From cursor-team-kit, https://github.com/cursor/plugins, path cursor-team-kit, commit 1e5c90a4b6f249917bd21fe361b3a2a7deb741b8, MIT License, Copyright (c) 2026 Cursor:
 

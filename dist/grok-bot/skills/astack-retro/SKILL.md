@@ -13,7 +13,7 @@ Present evidence for each proposed improvement.
 
 ## Read the session
 
-Load `astack-writing-for-agents` for its writing rules.
+Read `astack-mode playbooks/authoring-a-skill.md` by path for writing rules.
 Read primary sources for the session that the user names.
 If no session is named, use the current one.
 
@@ -95,4 +95,4 @@ Give the reviewer responsibility for enforcing coding standards.
   Find existing docs before you create another one.
 - Skills hold discoverable docs or user-invoked commands.
   Their descriptions enter the agent's context.
-  Follow `astack-writing-for-agents`.
+  Follow those writing rules.
