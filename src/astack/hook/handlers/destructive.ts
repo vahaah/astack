@@ -6,6 +6,10 @@ import {
 	type GitInvocation,
 	type GitRead,
 	HOOKS_PATH_KEY,
+	isLongForm,
+	isPlaceVariable,
+	madeRepoTarget,
+	movesPlace,
 	readGit,
 } from "../../git-command.ts";
 import {
@@ -14,6 +18,12 @@ import {
 	readOptional,
 	toPosix,
 } from "../../paths.ts";
+import {
+	isSessionRepo,
+	rememberRepos,
+	type SessionRepos,
+	settledRepos,
+} from "../../session-repos.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
@@ -164,13 +174,6 @@ function operands(
 		}
 	}
 	return { flags, plain, dashed: undefined };
-}
-
-function isLongForm(flag: string, long: string): boolean {
-	return (
-		flag === long ||
-		(long.startsWith("--") && flag.length >= 4 && long.startsWith(flag))
-	);
 }
 
 function hasFlag(
@@ -482,7 +485,15 @@ function overwrittenPaths(dir: string, target: string): readonly string[] {
 		.filter((path) => untracked.has(path));
 }
 
-function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
+type SessionRepoTest = (root: string) => boolean;
+
+const NO_SESSION_REPO: SessionRepoTest = () => false;
+
+function lostPaths(
+	loss: WorkLoss,
+	dir: string,
+	sessionRepo: SessionRepoTest,
+): readonly string[] {
 	const root = repoRoot(dir);
 	if (root === undefined) return [];
 	const namedFiles = loss.pathspecs
@@ -491,19 +502,26 @@ function lostPaths(loss: WorkLoss, dir: string): readonly string[] {
 	const excluded = excludedPaths(dir, loss);
 	const overwritten =
 		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
-	return [...changedPaths(dir, loss), ...overwritten].filter(
+	const lost = [...changedPaths(dir, loss), ...overwritten].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
+	return lost.length > 0 && sessionRepo(root)
+		? lost.filter(
+				(path) =>
+					path.endsWith("/") && !sessionRepo(join(root, path.slice(0, -1))),
+			)
+		: lost;
 }
 
 function workLossReasons(
 	step: ShellStep,
 	git: GitInvocation,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	const loss = workLoss(git);
 	return loss === undefined
 		? []
-		: lossReasons(step.values.join(" "), loss, git.dir);
+		: lossReasons(step.values.join(" "), loss, git.dir, sessionRepo);
 }
 
 const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
@@ -525,6 +543,16 @@ function tarExtracts(step: ShellStep): boolean {
 	);
 }
 
+const TAR_HERE =
+	/^(?:-|-?[fkmopvx]+|--(?:extract|get|verbose|keep-old-files|file(?:=-)?))$/;
+
+function extractsHere(step: ShellStep): boolean {
+	return (
+		step.env.length === 0 &&
+		step.words.slice(1).every((word) => TAR_HERE.test(word.value))
+	);
+}
+
 function statusFails(dir: string): boolean {
 	return (
 		repoRoot(dir) !== undefined &&
@@ -535,6 +563,7 @@ function statusFails(dir: string): boolean {
 function extractReasons(
 	step: ShellStep,
 	previous: ShellStep | undefined,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	if (step.simple.piped !== true || previous === undefined) return [];
 	const source = readGit(previous);
@@ -553,6 +582,7 @@ function extractReasons(
 		command,
 		{ lost: "tracked", pathspecs: WHOLE_TREE },
 		step.dir,
+		extractsHere(step) ? sessionRepo : NO_SESSION_REPO,
 	);
 }
 
@@ -560,8 +590,9 @@ function lossReasons(
 	command: string,
 	loss: WorkLoss,
 	dir: string,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
-	const lost = lostPaths(loss, dir);
+	const lost = lostPaths(loss, dir, sessionRepo);
 	if (lost.length === 0) return [];
 	const effect =
 		loss.lost === "untracked"
@@ -586,6 +617,7 @@ const PUSH_VALUE_FLAGS = [
 type ShellState = {
 	readonly exported: readonly Word[];
 	readonly env: Env;
+	readonly sessionRepo: SessionRepoTest;
 };
 
 function isSkipVariable(word: Word): boolean {
@@ -856,13 +888,15 @@ function shown(words: readonly Word[]): string {
 function unreadableReasons(
 	step: ShellStep,
 	read: Extract<GitRead, { kind: "unreadable" }>,
+	sessionRepo: SessionRepoTest,
 ): readonly string[] {
 	const lost =
 		read.verb === undefined ? undefined : LOST_BY_VERB.get(read.verb);
 	if (
 		lost !== undefined &&
 		read.dir !== undefined &&
-		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir).length === 0
+		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir, sessionRepo).length ===
+			0
 	)
 		return [];
 	return [
@@ -878,14 +912,20 @@ function stepReasons(
 	const read = readGit(step);
 	switch (read.kind) {
 		case "none":
-			return [...supabaseReasons(step), ...extractReasons(step, previous)];
+			return [
+				...supabaseReasons(step),
+				...extractReasons(step, previous, shell.sessionRepo),
+			];
 		case "unreadable":
-			return [...supabaseReasons(step), ...unreadableReasons(step, read)];
+			return [
+				...supabaseReasons(step),
+				...unreadableReasons(step, read, shell.sessionRepo),
+			];
 		case "plain":
 			return [
 				...supabaseReasons(step),
 				...gitReasons(step, read.git, shell),
-				...workLossReasons(step, read.git),
+				...workLossReasons(step, read.git, shell.sessionRepo),
 			];
 	}
 }
@@ -897,21 +937,50 @@ function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
 		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
 }
 
+function placedLine(steps: readonly ShellStep[], env: Env): boolean {
+	return (
+		Object.entries(env).some(
+			([key, value]) =>
+				value !== undefined && isPlaceVariable({ value: key, dynamic: false }),
+		) || steps.some(movesPlace)
+	);
+}
+
+function sessionRepoTest(
+	repos: SessionRepos,
+	placed: boolean,
+): SessionRepoTest {
+	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root);
+}
+
 export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell"],
 	run: (event, context) => {
+		const repos = settledRepos(context.env, context.session);
 		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
-		return combineAll(
-			shellSteps(event.command, event.cwd).map((step, index, steps) =>
+		const steps = shellSteps(event.command, event.cwd);
+		const placed = placedLine(steps, context.env);
+		const sessionRepo = sessionRepoTest(repos, placed);
+		const verdict = combineAll(
+			steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
 						exported: exportedSkips(steps, index),
 						env: context.env,
+						sessionRepo,
 					}),
 				),
 			),
 		);
+		if (verdict.kind !== "deny" && !placed)
+			rememberRepos(
+				context.env,
+				context.session,
+				repos,
+				steps.flatMap((step) => madeRepoTarget(step) ?? []),
+			);
+		return verdict;
 	},
 });

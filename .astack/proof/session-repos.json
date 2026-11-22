@@ -1,0 +1,535 @@
+{
+	"version": 1,
+	"change": "session-repos",
+	"base": "2a629c3c2ea4215b779df477dba91e2f6d2d8df4",
+	"scope": [
+		{
+			"path": "src/astack/session-repos.ts",
+			"obligation": "SG-session-repo-closed",
+			"modelRefs": ["Shell", "RunGit", "BroadLossDenied", "SessionRepoPasses"]
+		},
+		{
+			"path": "src/astack/git-command.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["MakeRepo", "RunGit", "BroadLossDenied"]
+		},
+		{
+			"path": "src/astack/hook/handlers/destructive.ts",
+			"obligation": "SG-session-repo",
+			"modelRefs": [
+				"MakeRepo",
+				"Shell",
+				"RunGit",
+				"Push",
+				"BroadLossDenied",
+				"SessionRepoPasses",
+				"DenialNeedsLoss",
+				"HookSkipNeedsGates"
+			]
+		},
+		{
+			"path": "src/astack/paths.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["MakeRepo"]
+		},
+		{
+			"path": "tests/astack/git-command.test.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["MakeRepo"]
+		},
+		{
+			"path": "tests/astack/session-repos.test.ts",
+			"obligation": "SG-session-repo-total",
+			"modelRefs": ["Shell", "RunGit", "BroadLossDenied"]
+		},
+		{
+			"path": "tests/astack/guards.test.ts",
+			"obligation": "SG-session-repo",
+			"modelRefs": [
+				"MakeRepo",
+				"Shell",
+				"RunGit",
+				"Push",
+				"BroadLossDenied",
+				"SessionRepoPasses"
+			]
+		},
+		{
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["MakeRepo", "RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "tests/astack/guard-composition.ts",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["MakeRepo", "Shell", "RunGit"]
+		},
+		{
+			"path": "formal/SessionGuards.*",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": [
+				"MakeRepo",
+				"Shell",
+				"Appear",
+				"RunGit",
+				"TypeOK",
+				"BroadLossDenied",
+				"SessionRepoPasses",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["SessionRepoPasses", "BroadLossDenied"]
+		},
+		{
+			"path": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": [
+				"MakeRepo",
+				"Shell",
+				"Appear",
+				"RunGit",
+				"TypeOK",
+				"BroadLossDenied",
+				"SessionRepoPasses",
+				"DenialNeedsLoss"
+			]
+		},
+		{
+			"path": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+			"obligation": "SG-work-loss",
+			"modelRefs": ["RunGit", "BroadLossDenied"]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["MakeRepo", "Shell", "RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "README.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "SG-session-repo",
+			"modelRefs": ["RunGit", "SessionRepoPasses"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["MakeRepo", "Shell", "RunGit"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["MakeRepo", "Shell", "RunGit"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/astack/session-repos.ts",
+			"symbol": "SessionRepos"
+		},
+		"terms": [
+			"Session guard",
+			"Work-loss command",
+			"Session repo",
+			"Plain form",
+			"Hook skip"
+		],
+		"invariants": [
+			{
+				"name": "No broad discard passes in a repo that this session did not make",
+				"modelRef": "BroadLossDenied"
+			},
+			{
+				"name": "No broad discard gets a deny in a bound session repo",
+				"modelRef": "SessionRepoPasses"
+			},
+			{
+				"name": "Each work-loss denial names a change that git discards",
+				"modelRef": "DenialNeedsLoss"
+			},
+			{
+				"name": "A hook skip goes ahead only on a head whose gates pass",
+				"modelRef": "HookSkipNeedsGates"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D3"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"SG-session-repo",
+				"SG-session-repo-identity",
+				"SG-session-repo-closed",
+				"SG-session-repo-total",
+				"SG-work-loss",
+				"SG-hook-skip",
+				"SG-plain-form",
+				"SG-generated",
+				"SG-preserve"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "artifact",
+			"contract": "Each guard maps one decoded hook call to one Verdict. The destructive guard settles the session repo record of the call first. A broad discard passes only in a root whose identity equals a bound record, and each other gate keeps its verdict. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+		},
+		"objects": [
+			{
+				"name": "HookCall",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
+				}
+			},
+			{
+				"name": "Verdict",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "Verdict"
+				}
+			},
+			{
+				"name": "ShellStep",
+				"link": {
+					"path": "src/astack/shell.ts",
+					"symbol": "ShellStep"
+				}
+			},
+			{
+				"name": "GitRead",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "GitRead"
+				}
+			},
+			{
+				"name": "MadeTarget",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "madeRepoTarget"
+				}
+			},
+			{
+				"name": "SessionRepos",
+				"link": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "SessionRepos"
+				}
+			},
+			{
+				"name": "RepoIdentity",
+				"link": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "RepoIdentity"
+				}
+			},
+			{
+				"name": "SessionRepoMatch",
+				"link": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "sessionRepoAt"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "destructive",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "fs-write", "spawn", "env"]
+			},
+			{
+				"name": "readGit",
+				"from": "ShellStep",
+				"to": "GitRead",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "readGit"
+				},
+				"effects": []
+			},
+			{
+				"name": "madeRepoTarget",
+				"from": "ShellStep",
+				"to": "MadeTarget",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "madeRepoTarget"
+				},
+				"effects": []
+			},
+			{
+				"name": "settleRepos",
+				"from": "SessionRepos",
+				"to": "SessionRepos",
+				"link": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "settleRepos"
+				},
+				"effects": []
+			},
+			{
+				"name": "sessionRepoAt",
+				"from": "RepoIdentity",
+				"to": "SessionRepoMatch",
+				"link": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "sessionRepoAt"
+				},
+				"effects": []
+			}
+		],
+		"composites": [],
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two targets are equal when both are undefined or their paths are equal. Two session repo records are equal when their entries are equal in order, with the same kind, path and identity fields. Two matches are equal booleans.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "id-right",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "assoc",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-left",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-right",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-assoc",
+				"status": "not_applicable",
+				"reason": "The destructive handler chains the target read, the settle, the session repo test and the save by early returns. The record declares no composite arrow, and this change adds no composition operator, map, functor or monad."
+			}
+		],
+		"typedWitness": "tests/astack/guard-composition.ts"
+	},
+	"abstraction": {
+		"hides": "The record file and its JSON form, the temp file and rename of a save, the settle rule, the identity fields and the git rev-parse probe.",
+		"callersKnow": [
+			"settledRepos gives the settled record of a session, and it saves the record only when the settle changed it.",
+			"isSessionRepo says whether a root is a bound session repo with the same identity.",
+			"rememberRepos adds a pending entry for each target that does not exist or is an empty folder.",
+			"A record fault gives no exemption, and no function of the module throws."
+		],
+		"deletionTest": "Without session-repos.ts, destructive.ts holds file writes, the record parser and the identity compare beside its git readers.",
+		"alternatives": [
+			{
+				"name": "A temp folder exemption",
+				"rejectedBecause": "Worktrees of other sessions live in the temp folder."
+			},
+			{
+				"name": "A match on the path only",
+				"rejectedBecause": "A new repo at the path of a session repo then passes, and the model breaks."
+			},
+			{
+				"name": "A PostToolUse entry that records the result of the call",
+				"rejectedBecause": "It changes hooks.json and its Codex trust pins."
+			},
+			{
+				"name": "A failed function that denies each throw of the handler",
+				"rejectedBecause": "It changes each other verdict of the handler."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "madeRepoTarget"
+				},
+				"modelAction": "MakeRepo"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "rememberRepos"
+				},
+				"modelAction": "MakeRepo"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "settledRepos"
+				},
+				"modelAction": "Shell"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "settleRepos"
+				},
+				"modelAction": "Shell"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/session-repos.ts",
+					"symbol": "sessionRepoAt"
+				},
+				"modelAction": "RunGit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "RunGit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "Push"
+			}
+		],
+		"omitted": [
+			"Appear stands for a repo that another process makes. No function of astack maps to it.",
+			"The model takes the identity of a repo as one value. The code compares the root, the git dir, the device, the inode and the birth time.",
+			"The model holds one path and one record. The code holds a list of entries for each session.",
+			"The three premises of the formal claim are outside the model."
+		]
+	},
+	"model": {
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
+		"dependencies": [],
+		"invariants": [
+			"TypeOK",
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"McpMergeDenied",
+			"GuardErrorDenies",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss",
+			"HookSkipNeedsGates",
+			"SessionRepoPasses"
+		],
+		"properties": [],
+		"bounds": [
+			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+			"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
+			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+		],
+		"fairness": []
+	},
+	"negative": {
+		"file": "formal/SessionGuards.tla",
+		"action": "RunGit",
+		"original": "~Exempt(r) /\\ CodeLost",
+		"replacement": "~(r \\in Ids) /\\ CodeLost",
+		"defect": "The destructive guard passes a broad discard in each repo at the path of a bound record, with no compare of its identity, so a repo of another process loses its work.",
+		"expect": {
+			"kind": "invariant",
+			"name": "BroadLossDenied"
+		}
+	},
+	"limits": [
+		"The finite model takes the plain form of each step, the git status entries and the identity of a repo as true observations.",
+		"The model does not show that the TypeScript code refines it. The linked controls, the probe and review examine that relation.",
+		"An agent can write the session repo record in the state folder, so the record guards against a mistake, not against a hostile agent.",
+		"The rule needs the three premises of the formal claim. A repo that another process makes at a pending path before the next Bash call binds.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

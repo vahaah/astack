@@ -35,6 +35,8 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/astack/git-command.test.ts",
+		"tests/astack/session-repos.test.ts",
 		"tests/property/shell-wrapper-law.test.ts",
 		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
@@ -328,6 +330,45 @@
 				"sg-clean-tree-passes",
 				"sg-whole-tree"
 			]
+		},
+		{
+			"criterion": "SG-session-repo",
+			"controls": [
+				"sg-session-repo",
+				"sg-session-repo-clone",
+				"sg-session-repo-worktree",
+				"sg-session-repo-gates",
+				"sg-session-repo-nested",
+				"sg-session-repo-bundle",
+				"sg-session-repo-target",
+				"sg-session-repo-clone-name"
+			]
+		},
+		{
+			"criterion": "SG-session-repo-identity",
+			"controls": [
+				"sg-session-repo-identity",
+				"sg-session-repo-moved",
+				"sg-session-repo-replaced",
+				"sg-session-repo-separate",
+				"sg-session-repo-place",
+				"sg-session-repo-hook-env",
+				"sg-session-repo-place-target",
+				"sg-session-repo-store",
+				"sg-session-repo-match"
+			]
+		},
+		{
+			"criterion": "SG-session-repo-closed",
+			"controls": [
+				"sg-session-repo-closed",
+				"sg-session-repo-save-fails",
+				"sg-session-repo-edge"
+			]
+		},
+		{
+			"criterion": "SG-session-repo-total",
+			"controls": ["sg-session-repo-total", "sg-session-repo-edge"]
 		},
 		{
 			"criterion": "SG-plain-form",

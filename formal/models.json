@@ -443,6 +443,7 @@
 					"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
 					"Each combination of four path facts for one write and an optional commit.",
 					"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+					"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
 					"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
 				],
 				"fairness": [],
@@ -459,7 +460,8 @@
 					"CommitSurfaceChecked",
 					"BroadLossDenied",
 					"DenialNeedsLoss",
-					"HookSkipNeedsGates"
+					"HookSkipNeedsGates",
+					"SessionRepoPasses"
 				],
 				"properties": []
 			},
@@ -488,6 +490,7 @@
 				"src/astack/ste/session.ts",
 				"src/astack/shell.ts",
 				"src/astack/git-command.ts",
+				"src/astack/session-repos.ts",
 				"src/astack/gates.ts",
 				"src/astack/paths.ts",
 				"src/astack/hook/handlers/comments.ts",

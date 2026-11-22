@@ -36,7 +36,7 @@ export function canonical(dir: string): string {
 	}
 }
 
-function canonicalFile(path: string): string {
+export function canonicalFile(path: string): string {
 	const dir = dirname(path);
 	if (dir === path) return path;
 	try {

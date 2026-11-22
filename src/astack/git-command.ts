@@ -16,16 +16,41 @@ type GitWords = {
 	readonly dir: string;
 	readonly config: readonly string[];
 	readonly dynamicPlace: boolean;
+	readonly movesRepo: boolean;
 };
 
 const CONFIG_ENV = "--config-env";
-const PLACE_FLAGS = [
-	"-c",
-	CONFIG_ENV,
-	"--git-dir",
-	"--work-tree",
-	"--namespace",
-];
+const REPO_FLAGS = ["--git-dir", "--work-tree"];
+const PLACE_FLAGS = ["-c", CONFIG_ENV, ...REPO_FLAGS, "--namespace"];
+const WORK_TREE_KEY = /core\.worktree/i;
+const PLACE_NAME =
+	"(?:GIT_(?:DIR|WORK_TREE|INDEX_FILE|COMMON_DIR|CONFIG_PARAMETERS|CONFIG_COUNT)|TAR_OPTIONS)";
+const PLACE_VARIABLE = new RegExp(`^${PLACE_NAME}(?:=|$)`);
+const PLACE_MENTION = new RegExp(`(?:^|\\W)${PLACE_NAME}(?:\\W|$)`);
+const SHELL_STATE = new Set([
+	".",
+	"alias",
+	"declare",
+	"emulate",
+	"eval",
+	"float",
+	"integer",
+	"local",
+	"readonly",
+	"set",
+	"setopt",
+	"source",
+	"trap",
+	"typeset",
+	"unsetopt",
+]);
+
+export function isLongForm(flag: string, long: string): boolean {
+	return (
+		flag === long ||
+		(long.startsWith("--") && flag.length >= 4 && long.startsWith(flag))
+	);
+}
 
 function configKey(spec: string): string {
 	const at = spec.indexOf("=");
@@ -38,6 +63,7 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 		return undefined;
 	let cwd = dir;
 	let dynamicPlace = false;
+	let repoFlag = false;
 	const config: string[] = [];
 	for (let i = 0; i < rest.length; i++) {
 		const word = rest[i];
@@ -45,6 +71,7 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 		const next = rest[i + 1];
 		if (word.value === "-C" || PLACE_FLAGS.includes(word.value)) {
 			dynamicPlace ||= word.dynamic || next?.dynamic === true;
+			repoFlag ||= REPO_FLAGS.includes(word.value);
 			if (word.value === "-C") cwd = resolve(cwd, next?.value ?? "");
 			if (word.value === "-c") config.push(next?.value ?? "");
 			if (word.value === CONFIG_ENV) config.push(configKey(next?.value ?? ""));
@@ -54,6 +81,7 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 			config.push(configKey(word.value.slice(CONFIG_ENV.length + 1)));
 		} else if (word.value.startsWith("-")) {
 			dynamicPlace ||= word.dynamic;
+			repoFlag ||= REPO_FLAGS.some((flag) => word.value.startsWith(`${flag}=`));
 		} else {
 			return {
 				sub: word,
@@ -61,10 +89,149 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 				dir: cwd,
 				config,
 				dynamicPlace,
+				movesRepo: repoFlag,
 			};
 		}
 	}
 	return undefined;
+}
+
+export function isPlaceVariable(word: Word): boolean {
+	return PLACE_VARIABLE.test(word.value);
+}
+
+export function hasPlaceForm(step: ShellStep): boolean {
+	const git = gitWords(step.words, step.dir);
+	return (
+		step.env.some(isPlaceVariable) ||
+		step.words.some((word) => WORK_TREE_KEY.test(word.value)) ||
+		git?.movesRepo === true ||
+		git?.dynamicPlace === true
+	);
+}
+
+function unreadWord(word: Word): boolean {
+	return word.dynamic || word.expands === true || word.value.includes("\\");
+}
+
+export function movesPlace(step: ShellStep): boolean {
+	const program = step.words[0];
+	return (
+		hasPlaceForm(step) ||
+		(program !== undefined && SHELL_STATE.has(program.value)) ||
+		[...step.env, ...step.words].some(
+			(word) => unreadWord(word) || PLACE_MENTION.test(word.value),
+		)
+	);
+}
+
+const NO_OWN_GIT_DIR = ["--bare", "--mirror", "--separate-git-dir"];
+const INIT_VALUE_FLAGS = [
+	"-b",
+	"--initial-branch",
+	"--object-format",
+	"--ref-format",
+	"--separate-git-dir",
+	"--template",
+];
+const CLONE_VALUE_FLAGS = [
+	"-b",
+	"-c",
+	"-j",
+	"-o",
+	"-u",
+	"--branch",
+	"--bundle-uri",
+	"--config",
+	"--depth",
+	"--filter",
+	"--jobs",
+	"--origin",
+	"--ref-format",
+	"--reference",
+	"--reference-if-able",
+	"--revision",
+	"--separate-git-dir",
+	"--server-option",
+	"--shallow-exclude",
+	"--shallow-since",
+	"--template",
+	"--upload-pack",
+];
+const WORKTREE_ADD_VALUE_FLAGS = ["-b", "-B", "--reason"];
+
+function takesValue(text: string, valued: readonly string[]): boolean {
+	return (
+		valued.some((flag) => flag.startsWith("--") && isLongForm(text, flag)) ||
+		takesNextWord(text, valued)
+	);
+}
+
+function targetOperands(
+	args: readonly Word[],
+	valued: readonly string[],
+): readonly string[] | undefined {
+	if (args.some((word) => word.dynamic)) return undefined;
+	const plain: string[] = [];
+	for (let i = 0; i < args.length; i++) {
+		const text = args[i]?.value ?? "";
+		if (text === "--")
+			return [...plain, ...args.slice(i + 1).map((word) => word.value)];
+		if (!text.startsWith("-")) plain.push(text);
+		else if (NO_OWN_GIT_DIR.some((flag) => isLongForm(configKey(text), flag)))
+			return undefined;
+		else if (!text.includes("=") && takesValue(text, valued)) i++;
+	}
+	return plain;
+}
+
+function cloneFolder(url: string): string | undefined {
+	const scheme = url.indexOf("://");
+	const from = scheme < 0 ? 0 : scheme + 3;
+	const slash = url.indexOf("/", from);
+	const user = url.lastIndexOf("@", slash < 0 ? url.length : slash);
+	let rest = url.slice(Math.max(from, user + 1)).replace(/[\s/]+$/, "");
+	if (rest.length > 5 && rest.endsWith("/.git"))
+		rest = rest.slice(0, -5).replace(/\/+$/, "");
+	if (!rest.includes("/")) rest = rest.replace(/:\d*$/, "");
+	const name = rest
+		.slice(Math.max(rest.lastIndexOf("/"), rest.lastIndexOf(":")) + 1)
+		.replace(/\.git$/, "");
+	return name === "" ? undefined : name;
+}
+
+function madeFolder(verb: string, args: readonly Word[]): string | undefined {
+	switch (verb) {
+		case "init": {
+			const plain = targetOperands(args, INIT_VALUE_FLAGS);
+			return plain === undefined ? undefined : (plain[0] ?? ".");
+		}
+		case "clone": {
+			const [url, folder] = targetOperands(args, CLONE_VALUE_FLAGS) ?? [];
+			return folder ?? (url === undefined ? undefined : cloneFolder(url));
+		}
+		case "worktree": {
+			const [add, ...rest] = args;
+			return add?.value === "add" && !add.dynamic
+				? targetOperands(rest, WORKTREE_ADD_VALUE_FLAGS)?.[0]
+				: undefined;
+		}
+		default:
+			return undefined;
+	}
+}
+
+export function madeRepoTarget(step: ShellStep): string | undefined {
+	const git = gitWords(step.words, step.dir);
+	if (
+		git === undefined ||
+		git.sub.dynamic ||
+		step.unreadable !== undefined ||
+		hasPlaceForm(step)
+	)
+		return undefined;
+	const folder = madeFolder(git.sub.value, git.args);
+	return folder === undefined ? undefined : resolve(git.dir, folder);
 }
 
 function invocationOf(git: GitWords): GitInvocation {
