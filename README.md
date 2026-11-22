@@ -11,7 +11,7 @@
 
 <p align="center"><a href="#quickstart">Install</a> · <a href="#how-it-works">Workflow</a> · <a href="marketplace/plugins/astack/skills/mode/references/card.md">Rule card</a></p>
 
-astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, proves and reviews the change, and asks you before each merge or other owner decision. To start, follow the [Quickstart](#quickstart).
+astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you before each merge or other owner decision. To start, follow the [Quickstart](#quickstart).
 
 - 50 skills for plans, builds, reviews, pull requests, tickets, documents and tool control.
 - 5 agents: 2 read-only language reviewers and 3 helpers that the skills start.
