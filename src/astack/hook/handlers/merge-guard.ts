@@ -271,8 +271,19 @@ function isMcpMergeTool(tool: string): boolean {
 	);
 }
 
+function inputStrings(value: unknown): readonly string[] {
+	if (typeof value === "string") return [value];
+	if (Array.isArray(value)) return value.flatMap(inputStrings);
+	if (typeof value === "object" && value !== null)
+		return Object.entries(value).flatMap(([key, item]) => [
+			key,
+			...inputStrings(item),
+		]);
+	return value === undefined || value === null ? [] : [String(value)];
+}
+
 function holdsApiMerge(input: unknown): boolean {
-	const text = JSON.stringify(input ?? null);
+	const text = inputStrings(input).join("\n");
 	return (
 		PR_MERGE_MUTATION.test(text) ||
 		AUTO_MERGE_MUTATION.test(text) ||

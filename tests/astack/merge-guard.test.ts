@@ -765,6 +765,7 @@ describe("MCP merge tools", () => {
 	test.each([
 		[
 			"a GraphQL merge",
+			"mcp__forge__call_api",
 			true,
 			{
 				query:
@@ -773,6 +774,7 @@ describe("MCP merge tools", () => {
 		],
 		[
 			"a GraphQL auto-merge",
+			"mcp__forge__call_api",
 			true,
 			{
 				query:
@@ -780,24 +782,45 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"a GraphQL merge after a tab",
+			"mcp__forge__graphql",
+			true,
+			{
+				query:
+					'mutation {\n\tmergePullRequest(input: {pullRequestId: "x"}) { clientMutationId }\n}',
+			},
+		],
+		[
+			"a GraphQL auto-merge after a bare newline",
+			"mcp__forge__graphql",
+			true,
+			{
+				query:
+					'mutation {\nenablePullRequestAutoMerge(input: {pullRequestId: "x"}) { clientMutationId }\n}',
+			},
+		],
+		[
 			"a PUT on the REST merge path",
+			"mcp__forge__call_api",
 			true,
 			{ method: "PUT", path: "/repos/o/r/pulls/12/merge" },
 		],
 		[
 			"a GET on the REST merge path",
+			"mcp__forge__call_api",
 			false,
 			{ method: "GET", path: "/repos/o/r/pulls/12/merge" },
 		],
 		[
 			"a PUT on another PR path",
+			"mcp__forge__call_api",
 			false,
 			{ method: "PUT", path: "/repos/o/r/pulls/12/requested_reviewers" },
 		],
 	] as const)(
-		"[control:sg-mcp-input] a generic API tool with %s in its input is denied: %p",
-		(_, denied, input) => {
-			expect(mcpVerdict("mcp__forge__call_api", input)).toEqual(
+		"[control:sg-mcp-input] %s in the input of %s is denied: %p",
+		(_, tool, denied, input) => {
+			expect(mcpVerdict(tool, input)).toEqual(
 				denied ? MCP_DENY : { kind: "allow" },
 			);
 		},
