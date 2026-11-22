@@ -5,6 +5,7 @@
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
 		"docs/reference/word-budget.md",
+		"docs/reference/plan-boundary.md",
 		"docs/reference/doctor.md",
 		"docs/reference/finding-telemetry.md"
 	],
@@ -31,6 +32,13 @@
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
 		"tests/validate.test.ts",
+		"tests/astack/adr.test.ts",
+		"tests/astack/plan-cli.test.ts",
+		"tests/astack/plan-session.test.ts",
+		"tests/astack/plan-check.test.ts",
+		"tests/tracker-schema.test.ts",
+		"tests/astack/pr-links.test.ts",
+		"tests/astack/classify.test.ts",
 		"tests/astack/codex-hooks.test.ts",
 		"tests/astack/version.test.ts",
 		"tests/astack/hardening-profile.test.ts",
@@ -300,6 +308,35 @@
 		{
 			"criterion": "WB-validate",
 			"controls": ["wb-validate-skip"]
+		},
+		{
+			"criterion": "ADR-HEADING",
+			"controls": ["adr-heading", "proof-adr-format", "proof-adr-examples"]
+		},
+		{
+			"criterion": "TRAIL-BATCH",
+			"controls": ["trail-batch"]
+		},
+		{
+			"criterion": "CWD-FREE",
+			"controls": ["cwd-free", "cwd-free-plan", "cwd-free-slug"]
+		},
+		{
+			"criterion": "GRAD-ONCE",
+			"controls": ["grad-once"]
+		},
+		{
+			"criterion": "BOUNDARY-ONCE",
+			"controls": ["boundary-once"]
+		},
+		{
+			"criterion": "SPAN-RUN",
+			"controls": [
+				"span-run",
+				"span-run-links",
+				"span-run-mask",
+				"span-run-classify"
+			]
 		},
 		{
 			"criterion": "DT-TRUST",

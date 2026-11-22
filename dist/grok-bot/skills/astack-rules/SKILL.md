@@ -57,7 +57,7 @@ These rules hold in every repo, with or without the astack plugin. A stricter re
 
 ### Change
 
-- Plan work that needs a decision before code with `/astack-plan`, and build its `now` session with `astack session start <plan>`. When that PR merges, run `/astack-plan <slug>` before you build the next session.
+- Plan work that needs a decision before code with `/astack-plan`, and build its `now` session with `astack session start <plan>`. When that PR merges, run `/astack-plan <slug>` once, on the next session branch.
 - Make the smallest change that meets the acceptance criteria. Put what you find outside the scope fence, the files the change must edit, in a ticket.
 - Match the repo's code patterns, but never copy its comments. Finish someone else's migration only on lines you already change. When you replace an internal API, move every caller and delete the old one in the same PR. When that is too wide for one PR, plan it with `/astack-plan` as expand, migrate, contract.
 

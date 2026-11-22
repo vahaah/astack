@@ -116,6 +116,14 @@ export type BlockLine = {
 
 export type Milestone = Unit & { readonly blocks: readonly BlockLine[] };
 
+export type Retirement =
+	| { readonly kind: "superseded"; readonly by: string }
+	| {
+			readonly kind: "graduated";
+			readonly adr: string;
+			readonly decision: string;
+	  };
+
 export type DecisionRow = {
 	readonly line: number;
 	readonly handle: string;
@@ -126,7 +134,7 @@ export type DecisionRow = {
 	readonly door: string;
 	readonly settled: string;
 	readonly record: string;
-	readonly supersededBy: string | undefined;
+	readonly retired: Retirement | undefined;
 };
 
 export type DecisionTable = {

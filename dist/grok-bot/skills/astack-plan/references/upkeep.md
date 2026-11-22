@@ -14,7 +14,8 @@ Never ask a settled question again.
 4. For an exported plan, run `astack plan drift <plan>` with that tracker JSON.
 5. Read the trail since the last `start` row with `astack plan trail <slug>`. Then log the `start` row of this run. An unattended resume stops here.
 6. Read `git log --since=<reviewed>` on the plan and on the Files of the `now` session.
-7. Take the first branch that applies:
+7. After `git fetch`, take the first branch that applies:
+   - The `now` PR merged, and a next session branch exists. Continue that branch, with no second boundary.
    - Default rows exist. Hold a ratification round.
    - The PR of the `now` session merged. Run the session boundary.
    - A divergence trigger fired. Run Diverge.
@@ -25,7 +26,7 @@ Set `reviewed` to today when a resume changes the plan.
 
 ## Session boundary
 
-Run it when the PR of the `now` session merged.
+Run it once when the PR of the `now` session merged.
 
 1. Run the whole-work proof of the session on the real artifact. Log a `boundary` trail row.
 2. Compare what merged with the steps and with the Exit.
@@ -33,11 +34,13 @@ Run it when the PR of the `now` session merged.
    Follow it over what merged.
 3. Collapse the session to `State. done` and its `Ticket.`.
    Check each decision row that constrains only merged code against the three ADR tests of `astack-write-docs`.
-   Move a row that passes to an ADR.
+   Move a row that passes to an ADR, and graduate the row as `template.md` says.
    Otherwise delete it, because a test or a type now holds it.
 4. Hold one round of 7 questions or fewer. Ask about the premises whose ground moved and the risks whose trigger fired. Also ask the fog that is now a question, and the grant for the next session.
 5. Promote the `next` session of the lane to `now`, and run S5 for the new `next`.
-6. Set `reviewed`, run `astack check-plan --base <last plan commit> <file>`, and commit under the one-writer rule.
+6. Set `reviewed` and run `astack check-plan --base <last plan commit> <file>`.
+   Commit the edits first on the next session branch, with the plan file in its proof scope.
+   On a declined grant, push that branch with no PR.
 7. Send each mechanical lesson to a checker rule or a repo lint. Send each judgment lesson to one line in the rules of the repo.
 
 A boundary is the only place to clear, hand off or compact. Pick the move with `references/phase-boundaries.md`.
@@ -51,7 +54,7 @@ Run it when each session of the `now` milestone merged.
 3. Show the demo on the real system with the Proof command of the milestone.
 4. For an exported plan, run `astack plan drift`.
 5. Post one tracker update with its health. That is a project update in Linear, or a comment on the map issue in GitHub.
-6. Collapse the milestone to `State. exited`. Promote the next milestone.
+6. Collapse the milestone to `State. exited`. Promote the next milestone. Commit on the next session branch, and push it with no PR.
 7. Hold one re-grill round of 7 questions or fewer.
 
 ## Diverge
@@ -88,6 +91,6 @@ Never add it quietly to an Exit.
 
 ## Pause and close
 
-"pause" is a hard stop. Make a `wip:` commit and run `astack session handoff <plan>`. Give the resume prompt it prints, and stop. Set `status: paused` only when the owner stops the work for longer than a session.
+"pause" is a hard stop. Make a `wip:` commit on the current or next session branch, push it with no PR, and run `astack session handoff <plan>`. Give the resume prompt it prints, and stop. Set `status: paused` only when the owner stops the work for longer than a session.
 
-At close, compare the planned sessions with the merged ones. Count the superseded rows and the risks that fired. Send each lesson to its home. Ask the user to run `/astack-retro` and `/astack-reflect`. The closing PR deletes the plan.
+The last session PR carries the close. Compare the planned sessions with the merged ones. Count the superseded rows and the risks that fired. Send each lesson to its home, and delete the plan. Ask the user to run `/astack-retro` and `/astack-reflect`.

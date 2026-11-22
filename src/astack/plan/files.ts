@@ -1,11 +1,18 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import {
+	existsSync,
+	readdirSync,
+	readFileSync,
+	realpathSync,
+	statSync,
+} from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 import { repoRoot } from "../git.ts";
 import { loadProfile, type PlanProfile } from "../profile.ts";
+import { err, ok, type Result } from "../result.ts";
 import { defaultSkillPathEnv, principleSkills } from "../skill-path.ts";
 import { parseGlossary, planSlug } from "./check.ts";
 import { hasPlanFrontmatter } from "./parse.ts";
-import { readTrail, trailPath } from "./trail.ts";
+import { draftsPath, readTrail, SLUG, trailPath } from "./trail.ts";
 import type { CheckEnv, Glossary } from "./types.ts";
 
 export function todayIso(at = new Date()): string {
@@ -114,6 +121,69 @@ export function trailSlug(file: string, text: string | undefined): string {
 		head,
 	)?.[1];
 	return (programme ?? planSlug(file)).toLowerCase();
+}
+
+export type PlanState = {
+	readonly root: string;
+	readonly slug: string;
+	readonly trail: string;
+	readonly drafts: string;
+};
+
+function stateIn(
+	root: string | undefined,
+	slug: string,
+	where: string,
+): Result<PlanState, string> {
+	const trail = root === undefined ? undefined : trailPath(root, slug);
+	const drafts = root === undefined ? undefined : draftsPath(root, slug);
+	return root === undefined || trail === undefined || drafts === undefined
+		? err(`${where} is not inside a git repository`)
+		: ok({ root, slug, trail, drafts });
+}
+
+export type PlanFileState = PlanState & {
+	readonly path: string;
+	readonly text: string;
+};
+
+function realFile(path: string): string | undefined {
+	try {
+		return realpathSync(path);
+	} catch {
+		return undefined;
+	}
+}
+
+export function planFileState(
+	target: string,
+	cwd: string,
+): Result<PlanFileState, string> {
+	const file = realFile(resolve(cwd, target));
+	const text = file === undefined ? undefined : readText(file);
+	if (file === undefined || text === undefined)
+		return err(`cannot read ${target}`);
+	const slug = trailSlug(file, text);
+	if (!SLUG.test(slug))
+		return err(
+			`${target} gives the slug ${JSON.stringify(slug)}. A slug has lower case letters, digits and "-", such as member-export`,
+		);
+	const state = stateIn(repoRoot(dirname(file)), slug, target);
+	return state.ok
+		? ok({ ...state.value, path: relative(state.value.root, file), text })
+		: state;
+}
+
+export function planStateFor(
+	target: string,
+	cwd: string,
+): Result<PlanState, string> {
+	if (target.endsWith(".md")) return planFileState(target, cwd);
+	return SLUG.test(target)
+		? stateIn(repoRoot(cwd), target, cwd)
+		: err(
+				`give the plan file or its slug, such as member-export, not ${JSON.stringify(target)}`,
+			);
 }
 
 export function envForFile(

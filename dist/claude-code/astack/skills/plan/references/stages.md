@@ -69,7 +69,7 @@ Never end the turn to wait for a subagent.
    Apply both to the request.
 7. Write `Goal.`, `Decision.` and `Done when.`. Show that `Done when.` is false today when that costs one command.
 8. Propose a tier with its signals, and a slug of two to four kebab-case words.
-9. When the slug exists and writes are allowed, log the run with `astack plan trail <slug> start "<what this run does>" "<why now>" "<session pointer>" open`.
+9. When the slug exists and writes are allowed, log the run with `astack plan trail <plan> start "<what this run does>" "<why now>" "<session pointer>" open`.
 
 Exit. The goal is one sentence, the decision is named, and the done check is false today.
 

@@ -152,6 +152,27 @@ A skill, agent, command or module with no measured use in 30 days and no live de
 A live dependent is code, a route, a test or an accepted ADR that needs the part.
 _Avoid_: Unused code, dead skill
 
+### Session boundary
+
+The plan edits that follow the merge of a `now` session PR. They run once and commit first on the next session branch.
+The last session PR carries the close and deletes the plan.
+_Avoid_: Plan sync, plan-only PR
+_Code_: `marketplace/plugins/astack/skills/plan/references/upkeep.md`
+
+### Graduated row
+
+A decision row that shrinks to `Graduated to ADR NNNN Dm` when that ADR heading resolves.
+It leaves the live rows, and its handle never becomes live again.
+_Avoid_: Deleted row
+_Code_: `Retirement`
+
+### Plan state folder
+
+The folder `astack/plans/<slug>/` in the git common dir of a plan. It holds the trail, the drafts and the session records.
+A plan path finds it from any folder.
+_Avoid_: Plan cache
+_Code_: `planStateFor`
+
 ### Codex hook trust
 
 The trust status that Codex reports for one hook in its `hooks/list` reply: `trusted`, `managed`, `modified` or `untrusted`.

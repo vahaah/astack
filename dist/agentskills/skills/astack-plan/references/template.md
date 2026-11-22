@@ -59,11 +59,12 @@ No other H2 is legal. A Progress, Log, Status, Defects or Findings section is a 
 | D3 | | Superseded by D4 | | | | |
 ```
 
-- One `D<n>` family holds each settled answer. `Kind` is `goal`, `decision`, `rule` or `tech`. The old typed IDs G, R, Q and T become kinds.
+- One `D<n>` family holds each settled answer. `Kind` is `goal`, `decision`, `rule` or `tech`.
 - `Door` is `one-way` or `two-way`. A one-way row names its rejected option, and it cites an ADR or an unresolved question that says `Settles. D<n>.`.
 - `Settled` is `user R<n>` for the round where the owner decided, and `delegated` for a call under a grant. It is `evidence` when Record points at a prototype, an arena result or a research branch. It is `default` for an agent call, and each `default` row has a question that settles it.
 - Never reuse a handle. To change a `user` row, add a new row and shrink the old one to `| D3 | | Superseded by D4 | | | | |`. A `delegated`, `evidence` or `default` row can change its words in place.
-- Keep a row near 300 characters. Move detail to an ADR or to the step. A standard plan has no row limit. A programme index warns past 15 live rows.
+- A row that moves to an ADR shrinks to `Graduated to ADR 0021 D2` when that heading resolves, and never comes back.
+- Keep a row near 300 characters. Move detail to an ADR or to the step. A standard plan has no row limit.
 
 ## Sessions and steps
 
@@ -115,8 +116,7 @@ Number each question, and word it so that "yes" accepts the recommendation. Writ
 | session | over 12 steps | none |
 | hand-off comment | over 5 lines | none |
 
-The caps fit the owner's real plans.
-A 27 KB ticket plan gets a warning and no deny.
+An index gets a note at 90% of its deny cap.
 Over a deny cap, move durable decisions to ADRs, collapse done sessions or move a block into a brief.
 A cap never goes up.
 
@@ -161,21 +161,21 @@ The trail is `$(git rev-parse --git-common-dir)/astack/plans/<slug>/trail.tsv`.
 Each worktree shares it.
 Never commit it.
 Only `astack plan trail` writes it.
-A raw shell write under `.git` asks for approval.
-Use these forms:
+`<plan>` is the plan file, or its slug from a folder of the repo.
 
 ```sh
-astack plan trail <slug> <phase> "<decision>" "<why>" "<evidence>" "<result>"
-astack plan trail <slug>
+astack plan trail <plan> <phase> "<decision>" "<why>" "<evidence>" "<result>"
+printf 'gate\tprove it works\tthe proof ran\tS1 log\tpass\n' | astack plan trail <plan> -
+astack plan trail <plan>
 ```
 
-The phase is `start`, `tier`, `answer`, `default`, `delegated`, `gate`, `diverge`, `boundary`, `checkpoint` or `handoff`. The second form prints the rows since the last `start`.
+The phase is `start`, `tier`, `answer`, `default`, `delegated`, `gate`, `diverge`, `boundary`, `checkpoint` or `handoff`. `-` reads one row from each stdin line, with 5 cells split by tabs, and writes all or none. The last form prints the rows since the last `start`.
 
-The drafts file is `drafts.md` in the same directory. `astack plan draft <slug> "<title>" "<why>"` adds a finding, and `astack plan draft <slug>` prints them.
+The drafts file is `drafts.md` in the same directory. `astack plan draft <plan> "<title>" "<why>"` adds a finding, and `astack plan draft <plan>` prints them.
 
 ## The life of a plan
 
 - One writer edits the plan. During planning that is the planning session. After it, that is the integrator of the `now` session.
-- Plan edits go into one docs commit for each session, or into the session PR.
-- The last PR of the plan deletes it. Before that, durable decisions move to ADRs and terms move to the glossary.
+- Plan edits ride in a session PR. The boundary edits are the first commit of the next session branch, so no PR holds only plan edits.
+- The last session PR deletes the plan. Before that, durable decisions move to ADRs and terms move to the glossary.
 - A replacement plan sets `supersedes:` and deletes the old file in the same PR.
