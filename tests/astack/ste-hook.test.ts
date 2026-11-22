@@ -942,6 +942,37 @@ describe("the strict Stop hook", () => {
 		expect(await parallel(chained(failing, "p2", after))).toBe(0);
 	});
 
+	test("[control:tel-reply] a claimed rewrite writes one rewrite line for each finding, a parallel copy writes none, and a rewrite that still fails writes pending lines", async () => {
+		hook("UserPromptSubmit", prompt("tel-reply", "go"));
+		expect(await parallel(stop("tel-reply", failing))).toBe(1);
+		expect(hook("Stop", stop("tel-reply", rewrite, after)).blocked).toBe(false);
+		expect(
+			events("tel-reply").map((line) => [
+				line.handler,
+				line.check,
+				line.event,
+				line.surface,
+				line.rule,
+				line.outcome,
+			]),
+		).toEqual([
+			["ste-reply", "ste", "reply", "reply", "contraction", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "contraction", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "semicolon", "rewrite"],
+			["ste-reply", "ste", "reply", "reply", "contraction", "pending"],
+		]);
+	});
+
+	test("[control:tel-reply-safe] an event log that refuses a line keeps the rewrite of the reply hook", () => {
+		mkdirSync(join(state, "ste", "tel-reply-safe", "events.jsonl"), {
+			recursive: true,
+		});
+		hook("UserPromptSubmit", prompt("tel-reply-safe", "go"));
+		const run = hook("Stop", stop("tel-reply-safe", failing));
+		expect(run.blocked).toBe(true);
+		expect(run.reason).toContain("astack STE: the reply has 3 findings");
+	});
+
 	test("no state dir fails open", () => {
 		const run = hook("Stop", stop("e9", failing), {
 			ASTACK_STATE_DIR: "",

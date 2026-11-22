@@ -192,10 +192,12 @@ function judgeEvent(
 	}
 }
 
+const ID = "comments";
+
 export const handler = defineHandler({
-	id: "comments",
+	id: ID,
 	quality: "comments",
 	on: ["write", "edit", "shell"],
 	run: (event, context) =>
-		logRun(context, "comments", event.kind, judgeEvent(event, context)),
+		logRun(context, ID, event.kind, judgeEvent(event, context)),
 });

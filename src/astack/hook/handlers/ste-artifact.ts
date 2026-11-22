@@ -194,10 +194,12 @@ function judgeEvent(
 	}
 }
 
+const ID = "ste-artifact";
+
 export const handler = defineHandler({
-	id: "ste-artifact",
+	id: ID,
 	quality: "ste",
 	on: ["write", "edit", "shell", "mcp"],
 	run: (event, context) =>
-		logRun(context, "ste-artifact", event.kind, judgeEvent(event, context)),
+		logRun(context, ID, event.kind, judgeEvent(event, context)),
 });
