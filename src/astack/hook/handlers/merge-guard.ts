@@ -206,6 +206,7 @@ function shellVerdict(
 const MERGE_STEM = "merg";
 const MERGE_STATE = /merge(?:d|able|ability)$/;
 const MERGE_REQUEST = /^requests?$/;
+const CLICK_VERBS = new Set(["click", "press", "tap"]);
 const READ_VERBS = new Set([
 	"check",
 	"find",
@@ -275,14 +276,16 @@ function isMergeWord(token: string, next: string | undefined): boolean {
 	return token.includes(MERGE_STEM) && !MERGE_STATE.test(token);
 }
 
+function hasMergeWord(tokens: readonly string[]): boolean {
+	return tokens.some((token, index) => isMergeWord(token, tokens[index + 1]));
+}
+
 function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
 	const tokens = [server, tool].flatMap(nameTokens);
 	const onlyReads =
 		tokens.some((token) => READ_VERBS.has(token)) &&
-		!tokens.some(
-			(token, index) =>
-				WRITE_VERBS.has(token) || isMergeWord(token, tokens[index + 1]),
-		);
+		!tokens.some((token) => WRITE_VERBS.has(token)) &&
+		!hasMergeWord(tokens);
 	return tokens.some((token) => token.includes(MERGE_STEM)) && !onlyReads;
 }
 
@@ -322,8 +325,17 @@ function holdsMerge(input: unknown): boolean {
 	);
 }
 
+function clicksMerge({ server, tool, input }: EventOf<"mcp">): boolean {
+	return (
+		[server, tool]
+			.flatMap(nameTokens)
+			.some((token) => CLICK_VERBS.has(token)) &&
+		inputStrings(input).some((value) => hasMergeWord(nameTokens(value)))
+	);
+}
+
 function isMcpMerge(event: EventOf<"mcp">): boolean {
-	return isMcpMergeTool(event) || holdsMerge(event.input);
+	return isMcpMergeTool(event) || holdsMerge(event.input) || clicksMerge(event);
 }
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {

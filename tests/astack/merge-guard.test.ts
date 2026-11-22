@@ -912,6 +912,18 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"a click on the merge button",
+			"mcp__plugin_playwright_playwright__browser_click",
+			true,
+			{ element: "Squash and merge button", ref: "e42" },
+		],
+		[
+			"a click on another button",
+			"mcp__plugin_playwright_playwright__browser_click",
+			false,
+			{ element: "Files changed tab", ref: "e7" },
+		],
+		[
 			"a PUT on another PR path",
 			"mcp__forge__call_api",
 			false,
