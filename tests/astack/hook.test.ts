@@ -157,21 +157,36 @@ describe("captured payload shapes", () => {
 });
 
 describe("comment enforcement on Edit and Write", () => {
-	test("a narration comment is denied with the quote, the keep list and the skill", () => {
-		const run = runHook(
-			tool("Write", {
-				file_path: join(project, "src/cache.ts"),
-				content: "// now uses the new cache\nexport const c = 1;\n",
-			}),
-		);
-		expect(decision(run)).toBe("deny");
-		expect(reason(run)).toContain(
-			"src/cache.ts:1 narrates a change or an earlier version: // now uses the new cache",
-		);
-		expect(reason(run)).toContain("a license or SPDX header");
-		expect(reason(run)).toContain("/astack:no-comments");
-		expect(reason(run)).toContain(".astack/profile.json");
-	});
+	test.each<[string, () => Record<string, string>]>([
+		["the launcher runtime", () => ({})],
+		[
+			"node in ASTACK_RUNTIME",
+			() => {
+				const node = Bun.which("node");
+				if (node === null) throw new Error("this test needs node on PATH");
+				return { ASTACK_RUNTIME: node };
+			},
+		],
+	])(
+		"a narration comment is denied with the quote, the keep list and the skill on %s",
+		(_name, env) => {
+			const run = runHook(
+				tool("Write", {
+					file_path: join(project, "src/cache.ts"),
+					content: "// now uses the new cache\nexport const c = 1;\n",
+				}),
+				undefined,
+				env(),
+			);
+			expect(decision(run)).toBe("deny");
+			expect(reason(run)).toContain(
+				"src/cache.ts:1 narrates a change or an earlier version: // now uses the new cache",
+			);
+			expect(reason(run)).toContain("a license or SPDX header");
+			expect(reason(run)).toContain("/astack:no-comments");
+			expect(reason(run)).toContain(".astack/profile.json");
+		},
+	);
 
 	test("a license header passes silently", () => {
 		const run = runHook(

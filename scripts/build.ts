@@ -1,5 +1,5 @@
 import { dirname, relative, resolve } from "node:path";
-import { NODE_FLOOR } from "../src/astack/cli/commands/doctor.ts";
+import { NODE_FLOOR } from "../src/astack/cli/floor.ts";
 import { parseMarketplace } from "../src/astack/marketplace.ts";
 import { err, ok, type Result } from "../src/astack/result.ts";
 import {
