@@ -29,6 +29,7 @@
 			"records": ["formal/ci-proof-records.md"],
 			"covers": [
 				"src/astack/ci-pins.ts",
+				"src/astack/change-proof/candidate.ts",
 				"src/astack/change-proof/ci-records.ts",
 				"src/astack/cli/commands/check/ci-pins.ts"
 			],

@@ -29,8 +29,8 @@ function loadRegistry(): ModelRegistry {
 }
 const REGISTRY = loadRegistry();
 
-function formalClaim(text: string): string {
-	const heading = /^#{3,6} Formal claim[ \t]*$/m.exec(text);
+function section(text: string, title: string): string {
+	const heading = new RegExp(`^#{3,6} ${title}[ \\t]*$`, "m").exec(text);
 	if (heading === null) return "";
 	const rest = text.slice(heading.index + heading[0].length);
 	const next = rest.search(/^#{1,6}[ \t]+/m);
@@ -40,6 +40,60 @@ function formalClaim(text: string): string {
 const PROOF_RECORDS = TRACKED.filter((path) =>
 	/^(?:docs\/adr|formal)\/[^/]+\.md$/.test(path),
 );
+
+const SOURCES = TRACKED.filter(
+	(path) => path.startsWith("src/") && path.endsWith(".ts"),
+);
+const SKILL_ROOT = "marketplace/plugins/astack/skills/";
+const SKILL_FILES = TRACKED.filter((path) => path.startsWith(SKILL_ROOT));
+const SKILLS = new Set(
+	SKILL_FILES.map((path) => path.slice(SKILL_ROOT.length).split("/")[0]),
+);
+const NAME_COLLISIONS = new Set([
+	"writeEvents src/astack/hook/decode/claude-code.ts",
+	"sumSteEvents src/astack/doctor.ts",
+	"changedPaths src/astack/hook/handlers/destructive.ts",
+	"stop src/astack/cli/bin.ts",
+	"stop src/astack/hook/encode/cursor.ts",
+	"failed src/astack/doctor.ts",
+]);
+
+function declares(path: string, name: string): boolean {
+	return new RegExp(
+		`^(?:export\\s+)?(?:async\\s+)?(?:function\\*?|const|let|class|type|interface|enum)\\s+${name}\\b`,
+		"m",
+	).test(read(path));
+}
+
+function mappedFiles(module: string, record: string): readonly string[] {
+	const text = section(read(record), "Implementation correspondence");
+	const model = read(module);
+	const ticked = [...text.matchAll(/`[^`\n]+`/g)].map((match) =>
+		match[0].slice(1, -1),
+	);
+	const symbols = ticked
+		.filter((name) => /^[A-Za-z_]\w*$/.test(name))
+		.filter((name) => !new RegExp(`\\b${name}\\b`).test(model))
+		.flatMap((name) =>
+			SOURCES.filter((path) => declares(path, name)).map(
+				(path) => `${name} ${path}`,
+			),
+		);
+	const files = ticked
+		.filter((name) => /^[\w./-]+\.\w+$/.test(name))
+		.flatMap((name) =>
+			[...SOURCES, ...SKILL_FILES]
+				.filter((path) => path === name || path.endsWith(`/${name}`))
+				.map((path) => `${name} ${path}`),
+		);
+	const skills = [
+		...text.matchAll(/\b[a-z][a-z-]*(?: and [a-z][a-z-]*)?(?= skills?\b)/g),
+	]
+		.flatMap((match) => match[0].split(" and "))
+		.filter((name) => SKILLS.has(name))
+		.map((name) => `${name} ${SKILL_ROOT}${name}/SKILL.md`);
+	return [...symbols, ...files, ...skills];
+}
 
 describe("the model registry of astack", () => {
 	test("[control:rl-registry-negatives] each registry negative passes the static model plan", () => {
@@ -60,7 +114,8 @@ describe("the model registry of astack", () => {
 
 	test("[control:rl-records] records lists each file whose Formal claim names the model, and only those files", () => {
 		const names = (path: string, module: string): boolean =>
-			PROOF_RECORDS.includes(path) && formalClaim(read(path)).includes(module);
+			PROOF_RECORDS.includes(path) &&
+			section(read(path), "Formal claim").includes(module);
 		expect(
 			REGISTRY.models.flatMap((entry) => [
 				...PROOF_RECORDS.filter(
@@ -74,9 +129,18 @@ describe("the model registry of astack", () => {
 		).toEqual([]);
 	});
 
-	test("[control:rl-covers] each src path of a record matches a covers glob of its model", () => {
-		expect(
-			REGISTRY.models.flatMap((entry) =>
+	test("[control:rl-covers] each src path of a record, and each src file or skill that its correspondence maps, matches a covers or text glob of its model", () => {
+		const mapped = REGISTRY.models.flatMap((entry) =>
+			entry.records.flatMap((path) =>
+				mappedFiles(entry.model.module, path).map((pair) => ({
+					entry,
+					path,
+					pair,
+				})),
+			),
+		);
+		expect({
+			cited: REGISTRY.models.flatMap((entry) =>
 				entry.records.flatMap((path) =>
 					[...read(path).matchAll(/\bsrc\/[\w./-]*\w/g)]
 						.map((match) => match[0])
@@ -84,7 +148,20 @@ describe("the model registry of astack", () => {
 						.map((cited) => `${entry.name}: ${path} cites ${cited}`),
 				),
 			),
-		).toEqual([]);
+			mapped: mapped
+				.filter(
+					({ entry, pair }) =>
+						!NAME_COLLISIONS.has(pair) &&
+						!anyGlob(
+							[...entry.covers, ...entry.text],
+							pair.slice(pair.indexOf(" ") + 1),
+						),
+				)
+				.map(({ entry, path, pair }) => `${entry.name}: ${path} maps ${pair}`),
+			staleCollisions: [...NAME_COLLISIONS].filter(
+				(pair) => !mapped.some((row) => row.pair === pair),
+			),
+		}).toEqual({ cited: [], mapped: [], staleCollisions: [] });
 	});
 
 	test.each(["src/astack/hook/handlers/merge-guard.ts", "src/astack/paths.ts"])(
@@ -106,39 +183,6 @@ describe("the model registry of astack", () => {
 					? [ladder.value.rung, ...ladder.value.runs.map((run) => run.name)]
 					: ladder,
 			).toEqual(["R4", "PlanBoundary", "SessionGuards"]);
-		},
-	);
-
-	test.each<[string, readonly string[]]>([
-		["marketplace/plugins/astack/skills/full-send/SKILL.md", ["SessionGuards"]],
-		["src/astack/ste/events.ts", ["FindingTelemetry"]],
-		["src/astack/hook/handlers/ste-reply.ts", ["FindingTelemetry"]],
-		["src/astack/plan/check.ts", ["PlanBoundary"]],
-		[
-			"marketplace/plugins/astack/skills/plan/references/upkeep.md",
-			["PlanBoundary"],
-		],
-		["src/astack/profile.ts", ["ProofLadder"]],
-		["src/astack/change-proof/admission.ts", ["ProofAdmission", "ProofLadder"]],
-	])(
-		"[control:rl-covers-mapped] a diff of %s, which a record maps to a model, runs %p at R4",
-		(path, models) => {
-			const manifest = REGISTRY.models.find(
-				(entry) => entry.name === "WordBudget",
-			);
-			if (manifest === undefined) throw new Error("no WordBudget model");
-			const ladder = deriveLadder({
-				changed: [{ path, present: true }],
-				registry: { base: REGISTRY, tree: REGISTRY },
-				floor: { base: "R0", tree: "R0" },
-				manifest,
-				inTree: (file) => TRACKED_SET.has(file),
-			});
-			expect(
-				ladder.ok && ladder.value.kind === "ladder"
-					? [ladder.value.rung, ...ladder.value.runs.map((run) => run.name)]
-					: ladder,
-			).toEqual(["R4", "WordBudget", ...models]);
 		},
 	);
 

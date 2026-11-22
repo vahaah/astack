@@ -24,6 +24,10 @@ Each entry of `formal/models.json` has `name`, `model`, `negative`, `records`, `
 The `name` is the module name, and `model` and `negative` use the manifest shape.
 `records` lists each file whose Formal claim names the model.
 `covers` lists the code globs of the model, and `text` lists its skill text globs.
+Together they must match each `src/` path that a record cites.
+They must also match each file that the Implementation correspondence of a record maps to the model.
+That section maps a file through a symbol or a file name in backticks, or through a skill name.
+A name that also names an unrelated declaration goes in the collision list of `tests/formal-registry.test.ts`.
 `failClosed` lists the globs where each file needs a model or an `unmodelled` entry.
 Each `unmodelled` entry gives its path, its reason and a control.
 `contractOnly` lists the globs that give R0.

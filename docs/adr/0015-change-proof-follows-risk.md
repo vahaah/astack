@@ -66,6 +66,7 @@ It gives a rung, its cause and the selected runs, or a stop text.
 |---|---|
 | `Derive` and `DeriveStop` | `deriveLadder` in [rung.ts](../../src/astack/change-proof/rung.ts) gives a ladder or a stop |
 | `Rank` | the path rung of `deriveLadder`, with the globs that [registry.ts](../../src/astack/change-proof/registry.ts) parses |
+| `baseFloor` and `treeFloor` | `proofFloor` in [profile.ts](../../src/astack/profile.ts) reads `proof.minRung` on each side |
 | `Start` and `Judge` | `runTriple` in `proof.ts` starts one triple and judges it positive, negative, restored |
 | `CanStart` | `prove` runs the manifest model first and stops before a later triple |
 | `Admit` | `admitChangeProof` needs one passed triple for each run |

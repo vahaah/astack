@@ -545,7 +545,7 @@
 		},
 		{
 			"criterion": "RL-COVERS",
-			"controls": ["rl-covers-guard", "rl-covers", "rl-covers-mapped"]
+			"controls": ["rl-covers-guard", "rl-covers"]
 		},
 		{
 			"criterion": "RL-FAIL-CLOSED",
