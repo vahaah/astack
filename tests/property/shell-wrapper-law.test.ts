@@ -70,14 +70,10 @@ merge.run(
 	context("UserPromptSubmit"),
 );
 
-const GUARDS: readonly (readonly [string, Handler])[] = [
-	["destructive", destructive],
-	["merge-guard", merge],
-];
-
-function verdicts(command: string): readonly Verdict[] {
-	return GUARDS.map(([, guard]) =>
-		guard.run({ kind: "shell", command, cwd: repo }, context("PreToolUse")),
+function verdict(guard: Handler, command: string): Verdict {
+	return guard.run(
+		{ kind: "shell", command, cwd: repo },
+		context("PreToolUse"),
 	);
 }
 
@@ -117,34 +113,40 @@ const WRAPPERS = [
 	"stdbuf -o0",
 ] as const;
 
-const wrappers = fc.array(fc.constantFrom(...WRAPPERS), {
-	minLength: 1,
-	maxLength: 3,
-});
+const KEEPS_ENV = WRAPPERS.filter((wrapper) => wrapper !== "env -i");
+
+const GUARDS: readonly (readonly [string, Handler, readonly string[]])[] = [
+	["destructive", destructive, WRAPPERS],
+	["merge-guard", merge, KEEPS_ENV],
+];
+
+function chains(list: readonly string[]) {
+	return fc.array(fc.constantFrom(...list), { minLength: 1, maxLength: 3 });
+}
 const command = fc.constantFrom(...COMMANDS);
 
 describe("the wrapper law of the guards", () => {
 	test("[control:sg-wrapper-law] a wrapper keeps the verdict and the reason of its plain form in both guards", () => {
-		fc.assert(
-			fc.property(wrappers, command, (chain, plain) => {
-				expect(verdicts(`${chain.join(" ")} ${plain}`)).toEqual(
-					verdicts(plain),
-				);
-			}),
-			{ numRuns: 150 },
-		);
+		for (const [, guard, list] of GUARDS)
+			fc.assert(
+				fc.property(chains(list), command, (chain, plain) => {
+					expect(verdict(guard, `${chain.join(" ")} ${plain}`)).toEqual(
+						verdict(guard, plain),
+					);
+				}),
+				{ numRuns: 150 },
+			);
 	});
 
 	test("xargs adds words, so it keeps only the deny or allow of its plain form", () => {
-		const kinds = (text: string) =>
-			verdicts(text).map((verdict) => verdict.kind);
-		fc.assert(
-			fc.property(wrappers, command, (chain, plain) => {
-				expect(kinds(`xargs ${chain.join(" ")} ${plain}`)).toEqual(
-					kinds(plain),
-				);
-			}),
-			{ numRuns: 100 },
-		);
+		for (const [, guard, list] of GUARDS)
+			fc.assert(
+				fc.property(chains(list), command, (chain, plain) => {
+					expect(verdict(guard, `xargs ${chain.join(" ")} ${plain}`).kind).toBe(
+						verdict(guard, plain).kind,
+					);
+				}),
+				{ numRuns: 100 },
+			);
 	});
 });

@@ -278,6 +278,7 @@ export type Unreadable = "folder" | "depth" | "body" | "wrapper" | "program";
 export interface ShellStep {
 	simple: SimpleCommand;
 	env: Word[];
+	unsetsEnv: boolean;
 	words: Word[];
 	values: string[];
 	dir: string;
@@ -289,6 +290,7 @@ type Wrapper = {
 	readonly values?: readonly string[];
 	readonly replace?: string;
 	readonly assigns?: boolean;
+	readonly unsets?: readonly string[];
 	readonly operands?: number;
 	readonly feeds?: boolean;
 	readonly numeric?: boolean;
@@ -301,6 +303,7 @@ const WRAPPERS: ReadonlyMap<string, Wrapper> = new Map([
 			flags: ["-", "-0", "-i", "--ignore-environment", "--null"],
 			values: ["-u", "--unset"],
 			assigns: true,
+			unsets: ["-", "-i", "--ignore-environment", "-u", "--unset"],
 		},
 	],
 	["command", { flags: ["-p"] }],
@@ -447,9 +450,19 @@ function readOption(
 
 type Plain = {
 	readonly env: Word[];
+	readonly unsetsEnv: boolean;
 	readonly words: Word[];
 	readonly unreadable: Unreadable | undefined;
 };
+
+function unsetsEnv(wrapper: Wrapper, name: string): boolean {
+	const unsets = wrapper.unsets ?? [];
+	return (
+		unsets.includes(name) ||
+		(/^-[A-Za-z0-9]{2,}$/.test(name) &&
+			[...name.slice(1)].some((letter) => unsets.includes(`-${letter}`)))
+	);
+}
 
 function fedWords(words: Word[], replace: string | undefined): Word[] {
 	if (words.length === 0) return words;
@@ -461,6 +474,7 @@ function fedWords(words: Word[], replace: string | undefined): Word[] {
 
 function plainForm(raw: readonly Word[]): Plain {
 	const env: Word[] = [];
+	let unsets = false;
 	let at = 0;
 	let assigns = true;
 	let feeds = false;
@@ -469,7 +483,8 @@ function plainForm(raw: readonly Word[]): Plain {
 		const word = raw[at];
 		if (word === undefined) break;
 		const name = word.dynamic ? "" : word.value;
-		if (HEADERS.has(name)) return { env, words: [], unreadable: undefined };
+		if (HEADERS.has(name))
+			return { env, unsetsEnv: unsets, words: [], unreadable: undefined };
 		if (RESERVED.has(name) || name === "function") {
 			at += name === "function" ? 2 : 1;
 			continue;
@@ -497,8 +512,14 @@ function plainForm(raw: readonly Word[]): Plain {
 				read === undefined ||
 				(read.name === wrapper.replace && read.value?.dynamic)
 			)
-				return { env, words: raw.slice(start), unreadable: "wrapper" };
+				return {
+					env,
+					unsetsEnv: unsets,
+					words: raw.slice(start),
+					unreadable: "wrapper",
+				};
 			if (read.name === wrapper.replace) replace = read.value?.value;
+			unsets ||= unsetsEnv(wrapper, read.name);
 			at += read.width;
 		}
 		at += wrapper.operands ?? 0;
@@ -507,7 +528,12 @@ function plainForm(raw: readonly Word[]): Plain {
 	}
 	const rest = raw.slice(at);
 	const words = feeds ? fedWords(rest, replace) : rest;
-	return { env, words, unreadable: words[0]?.dynamic ? "program" : undefined };
+	return {
+		env,
+		unsetsEnv: unsets,
+		words,
+		unreadable: words[0]?.dynamic ? "program" : undefined,
+	};
 }
 
 function scriptBody(words: readonly Word[]): Word | undefined {
@@ -568,11 +594,13 @@ function bodyMark(
 	return body.dynamic ? "body" : "depth";
 }
 
+type Inherited = { readonly env: readonly Word[]; readonly unsetsEnv: boolean };
+
 function scriptSteps(
 	src: string,
 	start: Folder,
 	depth: number,
-	inherited: readonly Word[],
+	inherited: Inherited,
 ): ShellStep[] {
 	let folder = start;
 	let pipeline = 0;
@@ -590,7 +618,8 @@ function scriptSteps(
 				),
 			);
 		const plain = plainForm(simple.words);
-		const env = [...inherited, ...plain.env];
+		const env = [...inherited.env, ...plain.env];
+		const unsetsEnv = inherited.unsetsEnv || plain.unsetsEnv;
 		const move: Move = plain.unreadable
 			? { kind: "none" }
 			: folderMove(folder.dir, plain.words);
@@ -600,13 +629,16 @@ function scriptSteps(
 		}
 		const body = plain.unreadable ? undefined : scriptBody(plain.words);
 		if (body !== undefined && !body.dynamic && nested) {
-			steps.push(...scriptSteps(body.value, folder, depth + 1, env));
+			steps.push(
+				...scriptSteps(body.value, folder, depth + 1, { env, unsetsEnv }),
+			);
 			continue;
 		}
 		if (plain.env.length > 0 || plain.words.length > 0)
 			steps.push({
 				simple: { ...simple, words: [...env, ...plain.words] },
 				env,
+				unsetsEnv,
 				words: plain.words,
 				values: plain.words.map((word) => word.value),
 				dir: folder.dir,
@@ -620,7 +652,10 @@ function scriptSteps(
 }
 
 export function shellSteps(command: string, cwd: string): ShellStep[] {
-	return scriptSteps(command, { dir: cwd, known: true }, 0, []);
+	return scriptSteps(command, { dir: cwd, known: true }, 0, {
+		env: [],
+		unsetsEnv: false,
+	});
 }
 
 export interface ShellWrite {

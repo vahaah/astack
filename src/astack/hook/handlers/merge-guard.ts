@@ -200,7 +200,7 @@ function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
 	const [program, ...args] = step.words;
 	if (program === undefined || !GH.test(program.value)) return NONE;
 	if (isApiMerge(step, args, readFile)) return { kind: "api" };
-	return prMerge(args, step.env.length > 0);
+	return prMerge(args, step.env.length > 0 || step.unsetsEnv);
 }
 
 function mergeVerdict(
