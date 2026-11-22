@@ -224,12 +224,47 @@ export function codexProbe(
 	}
 }
 
+function releaseVersion(distRoot: string): string | undefined {
+	try {
+		const parsed: unknown = JSON.parse(
+			readFileSync(join(distRoot, "package.json"), "utf8"),
+		);
+		const version: unknown =
+			typeof parsed === "object" && parsed !== null
+				? Reflect.get(parsed, "version")
+				: undefined;
+		return typeof version === "string" ? version : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function versionFindings(distRoot: string): string[] {
+	const release = releaseVersion(distRoot);
+	if (release === undefined) return ["dist/package.json holds no version"];
+	return [
+		CLI_PATH,
+		`${CLAUDE_ROOT}/astack/bin/astack.js`,
+		`${CURSOR_ROOT}/bin/astack.js`,
+	].flatMap((script) => {
+		const result = run(["node", join(distRoot, script), "--version"], distRoot);
+		const printed = result.stdout.trim();
+		return result.exitCode === 0 &&
+			(printed === release || printed.startsWith(`${release}+`))
+			? []
+			: [
+					`node ${script} --version gave exit ${result.exitCode} and ${JSON.stringify(printed)}, not the release version ${release}`,
+				];
+	});
+}
+
 export function cliSmoke(distRoot: string): CheckReport {
 	const errors: string[] = [];
 	if (onPath("node")) {
 		const help = run(["node", join(distRoot, CLI_PATH), "--help"], distRoot);
 		if (help.exitCode !== 0 || !help.stdout.includes("astack hook"))
 			errors.push(`node ${CLI_PATH} --help failed: ${help.stderr.trim()}`);
+		errors.push(...versionFindings(distRoot));
 	}
 	const launcher = join(distRoot, CURSOR_ROOT, "bin", "astack");
 	const bare = mkdtempSync(join(tmpdir(), "astack-launcher-"));
@@ -297,6 +332,6 @@ export function cliSmoke(distRoot: string): CheckReport {
 		id: "cli",
 		errors,
 		summary:
-			"node runs the package CLI, a copy of bin/ outside the repository loads, and the Cursor launcher prints valid JSON with no PATH and allows a plain command",
+			"node runs the package CLI, each of the 3 bundles prints the release version, a copy of bin/ outside the repository loads, and the Cursor launcher prints valid JSON with no PATH and allows a plain command",
 	};
 }
