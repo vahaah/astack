@@ -16,8 +16,6 @@ Install or update astack to restore missing skills for the full stage.
 | `astack:domain-modeling` | Challenge each fuzzy or overloaded term. Write each resolved term to the glossary at once. Use `**Term**:`, a one- or two-sentence definition, and an `_Avoid_:` line with the rejected words. Offer an ADR only when the three tests hold |
 | `astack:codebase-design` | Use the design vocabulary in `astack:coding-rules`. It defines module, interface, public API, depth and the deletion test |
 | `astack:explorer` | Use a `general-purpose` subagent told to read only and change nothing |
-| `astack:to-tickets` rules | Use vertical slices that cross every layer and can be checked alone. Put prefactoring first. Use expand, migrate, contract for a wide refactor |
-| `astack:wayfinder` rules | Use `programme.md`. It holds every charting rule that this skill needs |
 
 ## Missing analysis and principle skills
 

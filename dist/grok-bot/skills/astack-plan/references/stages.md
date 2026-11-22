@@ -152,7 +152,17 @@ Exit. A sketch that compiles, a rationale, and its open questions sorted.
 
 Read `astack-principles` by path.
 Follow its index to each principle that applies.
-Read the slicing rules of `astack-to-tickets` by path.
+
+Cut the work into vertical slices.
+
+- Each slice is a narrow path through each layer, such as schema, API, UI and tests.
+- A person can examine each slice alone, and one fresh context can hold it.
+- Put each prefactor first, so that the slices land on the new shape.
+- Use expand, migrate, contract for a wide refactor that cannot give green slices, such as a column rename.
+  First add the new form next to the old form.
+  Then move the callers in batches, one package or folder in each step, with green gates after each batch.
+  Last, delete the old form in a step that depends on each batch.
+- When a batch cannot pass the gates alone, build the batches on one shared branch. Expect green gates only at the last step.
 
 1. Cut the work into sessions.
    The standard tier usually has one session and one PR.

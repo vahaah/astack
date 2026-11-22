@@ -1,220 +1,50 @@
 {
 	"version": 1,
-	"change": "pr-head-check",
-	"base": "b9a1546a7be8503c7fe3fd32628a9c9fa88ee454",
+	"change": "plan-holds-slice-and-map-rules",
+	"base": "0c409b8be7212a1ee3dee1c1a91d197c729c1a87",
 	"scope": [
 		{
-			"path": "marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/file-pr/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+			"path": "scripts/lib/duplicate-skills.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/full-send/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+			"path": "tests/apply/duplicate-skills.test.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/full-stop/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/modernize/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/why/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/sol-loop/SKILL.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/create-pr.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
-			"obligation": "PH-LATER",
-			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
-			"obligation": "PH-PAIR",
-			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
-			"obligation": "PH-PAIR",
-			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
-		},
-		{
-			"path": "tests/hardening-consistency.test.ts",
-			"obligation": "PH-LINE",
-			"modelRefs": [
-				"Check",
-				"Decide",
-				"Pull",
-				"ActOnlyOnHeldHead",
-				"OtherResultStops"
-			]
-		},
-		{
-			"path": "tests/astack/pr-head.test.ts",
-			"obligation": "PH-NOPR",
-			"modelRefs": ["Check", "NoPrOnlyOnMessage"]
-		},
-		{
-			"path": "docs/review-lessons.md",
-			"obligation": "PH-LINE",
-			"modelRefs": ["ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "formal/PrHeadCheck.*",
-			"obligation": "PH-LINE",
-			"modelRefs": [
-				"Check",
-				"Decide",
-				"Pull",
-				"TypeOK",
-				"ActOnlyOnHeldHead",
-				"NoPrOnlyOnMessage",
-				"OtherResultStops"
-			]
-		},
-		{
-			"path": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
-			"obligation": "PH-LINE",
-			"modelRefs": [
-				"Check",
-				"Decide",
-				"Pull",
-				"TypeOK",
-				"ActOnlyOnHeldHead",
-				"NoPrOnlyOnMessage",
-				"OtherResultStops"
-			]
-		},
-		{
-			"path": "formal/models.json",
-			"obligation": "PH-LINE",
-			"modelRefs": ["ActOnlyOnHeldHead"]
-		},
-		{
-			"path": "docs/reference/pr-head-check.md",
-			"obligation": "PH-LINE",
-			"modelRefs": [
-				"Check",
-				"Decide",
-				"Pull",
-				"TypeOK",
-				"ActOnlyOnHeldHead",
-				"NoPrOnlyOnMessage",
-				"OtherResultStops"
-			]
-		},
-		{
-			"path": "CONTEXT.md",
-			"obligation": "PH-PAIR",
-			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/arena/SKILL.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/arena/references/external-seats.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/subagents.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/coding-rules/SKILL.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "rules/coding.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/types/SKILL.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/types/references/hook.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/external-seats.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
+			"path": "scripts/lib/upstreams.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
 		},
 		{
 			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["Lower", "CapsNeverRise"]
+		},
+		{
+			"path": "README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
+			"path": "docs/charts/checked-path.mmd",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/adr/README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": ".astack/**",
+			"path": "docs/adr/0013-*.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
@@ -224,12 +54,17 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "rules/astack.md",
+			"path": "marketplace/plugins/astack/NOTICE",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "NOTICE",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
@@ -243,49 +78,49 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/cli/commands/check/pr-head.ts",
-			"symbol": "PullRequest"
+			"path": "scripts/budget.ts",
+			"symbol": "Budget"
 		},
 		"terms": [
-			"Head check",
-			"ChangeProof",
-			"Model control",
+			"Skill word budget",
+			"Zero-use part",
 			"Session guard",
-			"Skill word budget"
+			"ChangeProof"
 		],
 		"invariants": [
 			{
-				"name": "A text acts on a PR only when gh read that PR and HEAD holds its head",
-				"modelRef": "ActOnlyOnHeldHead"
+				"name": "A pass has each skill and the total at or under their caps",
+				"modelRef": "PassWithinCaps"
 			},
 			{
-				"name": "A text takes no PR only after the no-PR message of gh with no --pr",
-				"modelRef": "NoPrOnlyOnMessage"
+				"name": "A fail names a skill or a total over its cap",
+				"modelRef": "FailNamesOverrun"
 			},
 			{
-				"name": "Each other result stops the text, except one pull after a head stop",
-				"modelRef": "OtherResultStops"
+				"name": "The lower step never raises a cap",
+				"modelRef": "CapsNeverRise"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
 				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"decision": "D3"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"PH-LINE",
-				"PH-LATER",
-				"PH-PAIR",
-				"PH-LIST",
-				"PH-NOPR",
+				"WB-cap",
 				"WB-ratchet",
+				"WB-cut",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -294,221 +129,201 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow maps the arguments of one head check to one exit code and one last line. A text goes on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line."
+			"contract": "The gate maps the word counts of the skill trees and one budget to one report. A count over its cap is a problem that names the skill, and a count under its cap is a note."
 		},
 		"objects": [
 			{
-				"name": "Args",
+				"name": "SkillTrees",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "args"
+					"path": "scripts/budget.ts",
+					"symbol": "SKILLS_DIR"
 				}
 			},
 			{
-				"name": "Selector",
+				"name": "WordCounts",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "explicit"
+					"path": "scripts/budget.ts",
+					"symbol": "WordCounts"
 				}
 			},
 			{
-				"name": "ViewText",
+				"name": "Budget",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "view"
+					"path": "scripts/budget.ts",
+					"symbol": "Budget"
 				}
 			},
 			{
-				"name": "PullRequest",
+				"name": "BudgetReport",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "PullRequest"
-				}
-			},
-			{
-				"name": "ExitCode",
-				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "stopped"
+					"path": "scripts/budget.ts",
+					"symbol": "BudgetReport"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "selectorOf",
-				"from": "Args",
-				"to": "Selector",
+				"name": "skillWords",
+				"from": "SkillTrees",
+				"to": "WordCounts",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "selectorOf"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
+				},
+				"effects": ["fs-read"]
+			},
+			{
+				"name": "budgetReport",
+				"from": "WordCounts",
+				"to": "BudgetReport",
+				"link": {
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
 				"effects": []
 			},
 			{
-				"name": "parsePullRequest",
-				"from": "ViewText",
-				"to": "PullRequest",
+				"name": "lowerBudget",
+				"from": "WordCounts",
+				"to": "Budget",
 				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "parsePullRequest"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
 				"effects": []
-			},
-			{
-				"name": "run",
-				"from": "Args",
-				"to": "ExitCode",
-				"link": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "run"
-				},
-				"effects": ["spawn", "fs-write"]
 			}
 		],
 		"composites": [],
-		"equality": "Two head checks are equal when their exit codes and their standard output are equal byte for byte.",
+		"equality": "Two reports are equal when their problem lists and their note lists are equal in order. Two budgets are equal when their total caps and their skill caps are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "src/astack/cli/commands/check/pr-head.ts"
+		"typedWitness": "tests/budget.test.ts"
 	},
 	"abstraction": {
-		"hides": "The no-PR message of gh, the fetch of the PR head, the ancestry check and the unpushed list.",
+		"hides": "The walk of each skill tree, the word split of each Markdown file and the format of the cap file.",
 		"callersKnow": [
-			"Run astack check pr-head before you act on a PR, with --pr <n> for a named PR.",
-			"Go on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line.",
-			"After stop: HEAD does not hold PR_HEAD, pull the PR branch and run the command again.",
-			"A failure of gh pr view is an error, not a missing PR."
+			"A skill or the total over its cap fails the gate, and the failure names it.",
+			"A skill with no cap fails the gate.",
+			"A cap above its count passes with a note, and the lower step sets it to the count.",
+			"A cap rises only in a PR that moves text into that skill while the total falls by more, and review enforces that rule."
 		],
-		"deletionTest": "Without the command, 15 texts hold the manual head check and the no-PR rule again.",
+		"deletionTest": "Deleting budgetReport puts the cap comparison and the problem text in main and in each test. Deleting lowerBudget makes each cut PR edit the cap file by hand.",
 		"alternatives": [
 			{
-				"name": "A link to the engine section",
-				"rejectedBecause": "The agent then reads another file for each PR text."
+				"name": "A lint warning for skill size",
+				"rejectedBecause": "A warning does not stop growth."
 			},
 			{
-				"name": "A line that reads only the exit code",
-				"rejectedBecause": "It drops the last line, which the caller contract of the command needs."
+				"name": "A total cap only",
+				"rejectedBecause": "One skill can then grow while another shrinks."
 			},
 			{
-				"name": "Give the setup seed the head line",
-				"rejectedBecause": "A product repo can run the seed with no astack."
+				"name": "Fail a cap above its count",
+				"rejectedBecause": "Each commit of a cut PR then needs a cap edit."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/cli/commands/check/pr-head.ts",
-					"symbol": "run"
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
 				"modelAction": "Check"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
-					"symbol": "no_pr"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
-				"modelAction": "Decide"
+				"modelAction": "Lower"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
-					"symbol": "no_pr"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
 				},
-				"modelAction": "Decide"
-			},
-			{
-				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
-					"symbol": "PR_HEAD"
-				},
-				"modelAction": "Pull"
-			},
-			{
-				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
-					"symbol": "PR_HEAD"
-				},
-				"modelAction": "Pull"
+				"modelAction": "Edit"
 			}
 		],
 		"omitted": [
-			"Done stands for the end of a text run after its decision.",
-			"The six rule fixes of review D7, D8, H8, H5, C4 and J6 change no head check, so they have no model state. Their tests, rg checks and the budget gate examine them.",
-			"The model takes the result of the command as a true observation of gh and git."
+			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
+			"The model takes the word count of each skill tree as a true observation.",
+			"The duplicate map and its cut rule are outside the model. The wb-successor control examines each cut name, also to-tickets and wayfinder, from mattpocock/skills and with no lock entry."
 		]
 	},
 	"model": {
-		"module": "formal/PrHeadCheck.tla",
-		"config": "formal/PrHeadCheck.cfg",
+		"module": "formal/WordBudget.tla",
+		"config": "formal/WordBudget.cfg",
 		"dependencies": [],
-		"bounds": [
-			"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
-			"One check, one decision and at most one pull after a head stop."
-		],
-		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"ActOnlyOnHeldHead",
-			"NoPrOnlyOnMessage",
-			"OtherResultStops"
+			"PassWithinCaps",
+			"FailNamesOverrun",
+			"CapsNeverRise"
 		],
-		"properties": []
+		"properties": [],
+		"bounds": [
+			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+			"Each order of the edit, check and lower steps."
+		],
+		"fairness": []
 	},
 	"negative": {
-		"file": "formal/PrHeadCheck.tla",
-		"action": "Decide",
-		"original": "acted' = (result = \"ok\")",
-		"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
-		"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
+		"file": "formal/WordBudget.tla",
+		"action": "Check",
+		"original": "\\A s \\in Skills : counts[s] <= caps[s]",
+		"replacement": "TRUE",
+		"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
 		"expect": {
 			"kind": "invariant",
-			"name": "ActOnlyOnHeldHead"
+			"name": "PassWithinCaps"
 		}
 	},
 	"limits": [
-		"The finite model takes the result of the command as a true observation of gh and git. The pr-head tests examine the command with a fake gh and a real git repository.",
-		"The model does not read the words of the texts. The ph-line, ph-later, ph-pair and ph-list controls examine them.",
-		"The model does not check the six rule fixes, the docs, the ADR and the plan. Their tests, review and the STE gates examine them.",
-		"Exact-head CI, review and every ordinary gate stay required."
+		"The finite model takes the word counts as true observations and covers two skills only.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The plan cap rise from 14,278 to 14,701 words is a hand edit outside the model, because the gate cannot see a PR. Review compares it with the fall of the total from 133,781 to 131,412 words.",
+		"The model does not check the moved slice and map rules, the repointed routes or the ADR note. Review and the STE, budget, validate and drift gates examine them.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }
