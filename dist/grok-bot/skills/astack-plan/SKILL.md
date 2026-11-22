@@ -126,6 +126,7 @@ When the argument is a ticket key, read the tracker.
 | diverge | A divergence trigger fired | `references/upkeep.md`, Diverge |
 | pause | The owner says "pause" | `references/upkeep.md`, Pause and close |
 | tracker | The owner asks to export or check drift | `references/tracker.md` |
+| map | The argument is a `wayfinder:map` issue that no plan holds | `references/programme.md`, Work through a map |
 
 ## Pick the tier
 
