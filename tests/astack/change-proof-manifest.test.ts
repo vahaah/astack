@@ -293,6 +293,15 @@ describe("the manifest of the change", () => {
 			],
 		],
 		[
+			"a named folder manifest beside the base manifest",
+			{ [M0]: OLDER },
+			{ name: "named", manifests: [".astack/proof/named.json"] },
+			[".astack/proof/named.json"],
+			[
+				"stop: proof stale: delete .astack/proof/m0.json, which the manifest base BASE holds",
+			],
+		],
+		[
 			"a new .astack/proof.json beside a new manifest",
 			{ [M0]: OLDER },
 			{
