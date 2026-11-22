@@ -211,7 +211,7 @@
 		},
 		{
 			"criterion": "SG-mcp-merge",
-			"controls": ["sg-mcp-merge"]
+			"controls": ["sg-mcp-merge", "sg-mcp-input"]
 		},
 		{
 			"criterion": "SG-guard-error",

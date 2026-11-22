@@ -795,7 +795,7 @@ describe("MCP merge tools", () => {
 			{ method: "PUT", path: "/repos/o/r/pulls/12/requested_reviewers" },
 		],
 	] as const)(
-		"[control:sg-mcp-merge] a generic API tool with %s in its input is denied: %p",
+		"[control:sg-mcp-input] a generic API tool with %s in its input is denied: %p",
 		(_, denied, input) => {
 			expect(mcpVerdict("mcp__forge__call_api", input)).toEqual(
 				denied ? MCP_DENY : { kind: "allow" },
