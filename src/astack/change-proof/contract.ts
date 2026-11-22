@@ -57,6 +57,7 @@ export const EFFECTS = [
 	"network",
 	"clock",
 	"env",
+	"random",
 ] as const;
 export type Effect = (typeof EFFECTS)[number];
 

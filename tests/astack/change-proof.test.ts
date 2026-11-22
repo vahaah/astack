@@ -97,6 +97,16 @@ describe("parseChangeProof", () => {
 			});
 		},
 	);
+
+	test("an arrow that draws a random value declares the effect random", () => {
+		const text = JSON.stringify(validProof(BASE)).replace(
+			'"effects":[]',
+			'"effects":["random"]',
+		);
+		expect(
+			map(parseChangeProof(text), (proof) => proof.category.arrows[0]?.effects),
+		).toEqual(ok(["random"]));
+	});
 });
 
 const lawNames = (edit: (proof: Proof) => void) =>
