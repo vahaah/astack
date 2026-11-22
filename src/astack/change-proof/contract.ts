@@ -52,12 +52,17 @@ export const LAWS = [
 	"monad-left",
 	"monad-right",
 	"monad-assoc",
+	"monoid-id",
+	"monoid-assoc",
 ] as const;
 export type Law = (typeof LAWS)[number];
 
 const CATEGORY_LAWS: readonly Law[] = ["id-left", "id-right", "assoc"];
-const FUNCTOR_LAWS: readonly Law[] = ["functor-id", "functor-comp"];
 const MONAD_LAWS: readonly Law[] = ["monad-left", "monad-right", "monad-assoc"];
+const PAIRED_LAWS: readonly (readonly [string, readonly Law[]])[] = [
+	["functor", ["functor-id", "functor-comp"]],
+	["monoid", ["monoid-id", "monoid-assoc"]],
+];
 
 export type FileLink = { readonly path: string; readonly symbol: string };
 
@@ -792,11 +797,8 @@ function domainProblem(proof: ChangeProof): string | undefined {
 }
 
 function lawProblem(record: CompositionRecord): string | undefined {
-	const entry = (law: Law): LawEntry | undefined =>
-		record.laws.find((row) => row.law === law);
-	const witnessed = (law: Law): boolean => entry(law)?.status === "witnessed";
-	const missing = LAWS.find((law) => entry(law) === undefined);
-	if (missing !== undefined) return `category.laws has no entry for ${missing}`;
+	const witnessed = (law: Law): boolean =>
+		record.laws.some((row) => row.law === law && row.status === "witnessed");
 	const { kind } = record.carrier;
 	const monadic = kind === "result" || kind === "promise-result";
 	return firstOf([
@@ -819,10 +821,13 @@ function lawProblem(record: CompositionRecord): string | undefined {
 				: MONAD_LAWS.filter(witnessed).map(
 						(law) => `carrier ${kind} cannot claim ${law}`,
 					)[0],
-		() =>
-			FUNCTOR_LAWS.some(witnessed) && !FUNCTOR_LAWS.every(witnessed)
-				? "a functor claim needs witnesses for both functor-id and functor-comp"
-				: undefined,
+		...PAIRED_LAWS.map(
+			([claim, pair]) =>
+				() =>
+					pair.some(witnessed) && !pair.every(witnessed)
+						? `a ${claim} claim needs witnesses for both ${pair.join(" and ")}`
+						: undefined,
+		),
 	]);
 }
 

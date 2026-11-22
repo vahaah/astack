@@ -17,7 +17,7 @@ import {
 	judgePositive,
 	type RunEnd,
 } from "../../src/astack/change-proof/tlc.ts";
-import { ok } from "../../src/astack/result.ts";
+import { andThen, err, map, ok } from "../../src/astack/result.ts";
 import {
 	marker,
 	PROOF_FILES,
@@ -95,6 +95,122 @@ describe("parseChangeProof", () => {
 			});
 		},
 	);
+});
+
+const lawNames = (edit: (proof: Proof) => void) =>
+	map(parsed(edit), (proof) =>
+		proof.category.laws.map((row): string => row.law),
+	);
+
+const dropLaws =
+	(...laws: readonly string[]) =>
+	(proof: Proof) => {
+		proof.category.laws = proof.category.laws.filter(
+			(row) => !laws.includes(row.law ?? ""),
+		);
+	};
+
+describe("law claims", () => {
+	test("[control:proof-law-claimed] a manifest lists the laws that it claims or needs, and the eight-row form still parses", () => {
+		const needed = [
+			"id-left",
+			"id-right",
+			"assoc",
+			"monad-left",
+			"monad-right",
+			"monad-assoc",
+		];
+		expect(lawNames(dropLaws("functor-id", "functor-comp"))).toEqual(
+			ok(needed),
+		);
+		expect(lawNames(() => {})).toEqual(
+			ok([
+				"id-left",
+				"id-right",
+				"assoc",
+				"functor-id",
+				"functor-comp",
+				"monad-left",
+				"monad-right",
+				"monad-assoc",
+			]),
+		);
+		expect(lawNames(dropLaws("monad-assoc"))).toEqual(
+			err({
+				stage: "category",
+				message: "carrier result needs a witness for monad-assoc",
+			}),
+		);
+		expect(lawNames(dropLaws("assoc"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"category law assoc applies to the declared composites, so it needs a witness",
+			}),
+		);
+		const modelWitnessed = parsed((proof) => {
+			dropLaws("functor-id", "functor-comp")(proof);
+			proof.category.laws = proof.category.laws.map((row) => ({
+				law: row.law ?? "",
+				status: "witnessed",
+				witness: "model:AdmitFresh",
+			}));
+		});
+		expect(
+			map(
+				andThen(modelWitnessed, (proof) =>
+					admitChangeProof(proof, facts(SNAPSHOT)),
+				),
+				(admitted) => admitted.change,
+			),
+		).toEqual(ok("gate-admission"));
+	});
+
+	test("[control:proof-monoid-pair] a monoid claim needs both of its witnesses", () => {
+		const claim =
+			(...laws: readonly string[]) =>
+			(proof: Proof) => {
+				proof.category.laws.push(
+					...laws.map((law) => ({
+						law,
+						status: "witnessed",
+						witness: "control:C1",
+					})),
+				);
+			};
+		expect(lawNames(claim("monoid-id"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"a monoid claim needs witnesses for both monoid-id and monoid-assoc",
+			}),
+		);
+		expect(lawNames(claim("monoid-assoc"))).toEqual(
+			err({
+				stage: "category",
+				message:
+					"a monoid claim needs witnesses for both monoid-id and monoid-assoc",
+			}),
+		);
+		expect(
+			map(parsed(claim("monoid-id", "monoid-assoc")), (proof) =>
+				proof.category.laws.slice(-2),
+			),
+		).toEqual(
+			ok([
+				{
+					law: "monoid-id",
+					status: "witnessed",
+					witness: { kind: "control", id: "C1" },
+				},
+				{
+					law: "monoid-assoc",
+					status: "witnessed",
+					witness: { kind: "control", id: "C1" },
+				},
+			]),
+		);
+	});
 });
 
 const VIEW_FILES = new Map<string, FileRead>(
