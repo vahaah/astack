@@ -280,6 +280,70 @@ describe("the plain form of a git step", () => {
 	);
 });
 
+describe("the whole-tree discard forms", () => {
+	const forms: readonly { readonly group: string; readonly command: string }[] =
+		JSON.parse(
+			readFileSync(
+				join(import.meta.dir, "../fixtures/guard-bypass.json"),
+				"utf8",
+			),
+		).forms;
+	const wholeTree = forms
+		.filter((form) => form.group === "whole-tree")
+		.map((form) => form.command);
+
+	test.each([
+		[
+			"git diff | git apply -R",
+			"- git apply -R discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+		],
+		[
+			"git apply -R <(git diff)",
+			"- astack cannot read git apply -R $(...), because a variable or a command substitution gives a flag or an operand of git apply.",
+		],
+		[
+			"git read-tree -u --reset HEAD",
+			"- git read-tree -u --reset HEAD discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+		],
+		[
+			"git checkout-index -a -f",
+			"- git checkout-index -a -f discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+		],
+		[
+			"git archive HEAD | tar -x",
+			"- git archive HEAD | tar -x discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+		],
+	])(
+		"[control:sg-whole-tree] %s is denied on a dirty tree",
+		(command, text) => {
+			expect(wholeTree).toContain(command);
+			const said = reason(
+				destructive.run(shell(command, dirty), context(dirty)),
+			);
+			expect(said).toContain(text);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each(wholeTree)("%s passes on a clean tree", (command) => {
+		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
+	});
+
+	test.each([
+		"git show HEAD:notes.txt > notes.txt",
+		"git checkout-index -f -- notes.txt",
+		"git apply -R fix.patch",
+		"git apply <(git diff HEAD)",
+		"git archive -o out.tar HEAD",
+		"git archive HEAD | tar -t",
+		"git read-tree HEAD",
+	])("the named-file or read form %s passes on a dirty tree", (command) => {
+		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
+			"allow",
+		);
+	});
+});
+
 describe("the clean selection of the work-loss guard", () => {
 	let count = 0;
 	function untrackedRepo(): string {

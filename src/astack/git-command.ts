@@ -61,14 +61,25 @@ export function gitInvocation(
 }
 
 const GUARDED_VERBS = new Set([
+	"apply",
 	"checkout",
+	"checkout-index",
 	"clean",
 	"commit",
 	"push",
+	"read-tree",
 	"reset",
 	"restore",
 	"switch",
 ]);
+
+const REVERSE = /^(?:--reverse|-[A-Za-z]*R[A-Za-z]*)$/;
+
+function guarded(verb: string, args: readonly Word[]): boolean {
+	if (verb === "apply")
+		return args.some((word) => !word.dynamic && REVERSE.test(word.value));
+	return GUARDED_VERBS.has(verb);
+}
 
 const COMMIT_VALUE_FLAGS = new Set([
 	"-m",
@@ -90,10 +101,13 @@ const COMMIT_VALUE_FLAGS = new Set([
 ]);
 
 const VERB_VALUE_FLAGS: ReadonlyMap<string, readonly string[]> = new Map([
+	["apply", ["-p", "-C", "--directory", "--exclude", "--include"]],
 	["checkout", ["-b", "-B", "--orphan"]],
+	["checkout-index", ["--prefix", "--stage"]],
 	["clean", ["-e", "--exclude"]],
 	["commit", [...COMMIT_VALUE_FLAGS]],
 	["push", ["-o", "--push-option"]],
+	["read-tree", ["--prefix", "--index-output"]],
 	["restore", ["-s", "--source"]],
 	["switch", ["-c", "-C", "--orphan", "--create", "--force-create"]],
 ]);
@@ -170,7 +184,7 @@ export function readGit(step: ShellStep): GitRead {
 			git.dir,
 		);
 	const verb = git.sub.value;
-	if (!GUARDED_VERBS.has(verb))
+	if (!guarded(verb, git.args))
 		return { kind: "plain", git: invocationOf(git) };
 	if (step.unreadable === "folder")
 		return unreadable(verb, CAUSES.folder, undefined);

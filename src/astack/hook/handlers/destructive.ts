@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { repoRoot, runGit } from "../../git.ts";
 import {
 	type GitInvocation,
@@ -327,8 +327,41 @@ function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
 	};
 }
 
+function applyLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags, plain, dashed } = operands(args, ["-p", "-C", "--directory"]);
+	const long = (name: string) => flags.some((flag) => isLongForm(flag, name));
+	const indexOnly = long("--cached") && !long("--index");
+	return hasFlag(flags, "--reverse", "R") &&
+		!indexOnly &&
+		plain.length === 0 &&
+		(dashed ?? []).length === 0
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function readTreeLoss(args: readonly string[]): WorkLoss | undefined {
+	return args.includes("-u") && args.includes("--reset")
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
+function checkoutIndexLoss(args: readonly string[]): WorkLoss | undefined {
+	const { flags } = operands(args, ["--stage"]);
+	return hasFlag(flags, "--force", "f") &&
+		hasFlag(flags, "--all", "a") &&
+		!flags.some((flag) => isLongForm(flag.split("=")[0] ?? "", "--prefix"))
+		? { lost: "tracked", pathspecs: WHOLE_TREE }
+		: undefined;
+}
+
 function workLoss(git: GitInvocation): WorkLoss | undefined {
 	switch (git.sub) {
+		case "apply":
+			return applyLoss(git.args);
+		case "read-tree":
+			return readTreeLoss(git.args);
+		case "checkout-index":
+			return checkoutIndexLoss(git.args);
 		case "reset":
 			return resetLoss(git.args, git.dir);
 		case "checkout":
@@ -457,8 +490,51 @@ function workLossReasons(
 	git: GitInvocation,
 ): readonly string[] {
 	const loss = workLoss(git);
-	if (loss === undefined) return [];
-	const lost = lostPaths(loss, git.dir);
+	return loss === undefined
+		? []
+		: lossReasons(step.values.join(" "), loss, git.dir);
+}
+
+const EXTRACT = /^(?:--extract|--get|-[A-Za-z]*x[A-Za-z]*)$/;
+
+function extractDir(step: ShellStep): string | undefined {
+	const [program, ...args] = step.words;
+	if (program === undefined || basename(program.value) !== "tar")
+		return undefined;
+	const bundled = /^[A-Za-z]*x[A-Za-z]*$/.test(args[0]?.value ?? "");
+	if (!bundled && !args.some((arg) => EXTRACT.test(arg.value)))
+		return undefined;
+	const at = args.findIndex(
+		(arg) => arg.value === "-C" || arg.value === "--directory",
+	);
+	const target = at < 0 ? undefined : args[at + 1];
+	return target === undefined || target.dynamic
+		? step.dir
+		: resolve(step.dir, target.value);
+}
+
+function extractReasons(
+	step: ShellStep,
+	previous: ShellStep | undefined,
+): readonly string[] {
+	if (step.simple.piped !== true || previous === undefined) return [];
+	const source = readGit(previous);
+	const dir = extractDir(step);
+	if (source.kind !== "plain" || source.git.sub !== "archive" || !dir)
+		return [];
+	return lossReasons(
+		`${previous.values.join(" ")} | ${step.values.join(" ")}`,
+		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		dir,
+	);
+}
+
+function lossReasons(
+	command: string,
+	loss: WorkLoss,
+	dir: string,
+): readonly string[] {
+	const lost = lostPaths(loss, dir);
 	if (lost.length === 0) return [];
 	const effect =
 		loss.lost === "untracked"
@@ -466,7 +542,7 @@ function workLossReasons(
 			: "discards the uncommitted changes in";
 	const more = lost.length > 3 ? ` and ${lost.length - 3} more` : "";
 	return [
-		`${step.values.join(" ")} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
+		`${command} ${effect} ${lost.slice(0, 3).join(", ")}${more}. ${OWNER_GATE}`,
 	];
 }
 
@@ -510,8 +586,11 @@ function gitReasons(git: GitInvocation): readonly string[] {
 }
 
 const LOST_BY_VERB: ReadonlyMap<string, LostChange> = new Map([
+	["apply", "tracked"],
 	["checkout", "tracked"],
+	["checkout-index", "tracked"],
 	["clean", "untracked"],
+	["read-tree", "tracked"],
 	["reset", "tracked"],
 	["restore", "tracked"],
 	["switch", "tracked"],
@@ -543,11 +622,14 @@ function unreadableReasons(
 	];
 }
 
-function stepReasons(step: ShellStep): readonly string[] {
+function stepReasons(
+	step: ShellStep,
+	previous: ShellStep | undefined,
+): readonly string[] {
 	const read = readGit(step);
 	switch (read.kind) {
 		case "none":
-			return supabaseReasons(step);
+			return [...supabaseReasons(step), ...extractReasons(step, previous)];
 		case "unreadable":
 			return [...supabaseReasons(step), ...unreadableReasons(step, read)];
 		case "plain":
@@ -566,8 +648,8 @@ export const handler = defineHandler({
 		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
 		return combineAll(
-			shellSteps(event.command, event.cwd).map((step) =>
-				denial(stepReasons(step)),
+			shellSteps(event.command, event.cwd).map((step, index, steps) =>
+				denial(stepReasons(step, steps[index - 1])),
 			),
 		);
 	},
