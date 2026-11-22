@@ -129,6 +129,11 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
+			"path": "src/astack/cli/io.ts",
+			"obligation": "CLI-VERSION",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": "src/astack/cli/commands/managed.ts",
 			"obligation": "CLI-MANAGED",
 			"modelRefs": ["TypeOK"]
@@ -160,6 +165,11 @@
 		},
 		{
 			"path": "tests/astack/hardening-profile.test.ts",
+			"obligation": "HP-RULES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/pr-review-profile.test.ts",
 			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
@@ -481,7 +491,7 @@
 		"omitted": [
 			"The model has one hook. The code applies the same rule to each of the 4 astack hooks, and the tests examine that rule.",
 			"The model takes the status that Codex reports as a true observation of the trust that Codex enforces.",
-			"The review profile rules, the base note, the skip file, the version, the managed exit codes and the watch-pr clamp have no model state. Their tests examine them."
+			"The review profile rules and their YAML parse, the base note, the skip file, the version, the managed exit codes and the watch-pr clamp have no model state. Their tests examine them."
 		]
 	},
 	"model": {
