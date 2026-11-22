@@ -307,13 +307,30 @@ function floorAt(read: FileRead, where: string): Result<Rung, string> {
 const AT_BASE = "at the diff base";
 const IN_TREE = "in the tree";
 
+const LADDER_FILES = [REGISTRY_PATH, PROFILE_PATH] as const;
+type LadderReads = Readonly<Record<(typeof LADDER_FILES)[number], FileRead>>;
+
+function ladderReads(root: string): LadderReads {
+	return {
+		[REGISTRY_PATH]: readRepoFile(root, REGISTRY_PATH),
+		[PROFILE_PATH]: readRepoFile(root, PROFILE_PATH),
+	};
+}
+
+function sameRead(read: FileRead, again: FileRead): boolean {
+	if (read.kind === "text")
+		return again.kind === "text" && read.text === again.text;
+	return again.kind === "problem" && read.problem === again.problem;
+}
+
 function readLadder(
 	root: string,
 	diffBase: string,
 	changed: readonly ChangedPath[],
 	proof: ChangeProof,
+	reads: LadderReads,
 ): Result<Ladder, string> {
-	const tree = registryAt(readRepoFile(root, REGISTRY_PATH), IN_TREE);
+	const tree = registryAt(reads[REGISTRY_PATH], IN_TREE);
 	if (!tree.ok) return tree;
 	const base = registryAt(
 		readCommittedFile(root, diffBase, REGISTRY_PATH),
@@ -327,7 +344,7 @@ function readLadder(
 		AT_BASE,
 	);
 	if (!baseFloor.ok) return baseFloor;
-	const treeFloor = floorAt(readRepoFile(root, PROFILE_PATH), IN_TREE);
+	const treeFloor = floorAt(reads[PROFILE_PATH], IN_TREE);
 	if (!treeFloor.ok) return treeFloor;
 	return deriveLadder({
 		changed,
@@ -419,7 +436,8 @@ async function prove(
 	if (!base.ok) return stopAt(io, "stale", base.error);
 	const changed = changedPaths(root, base.value.diff);
 	if (!changed.ok) return stopAt(io, "controls", changed.error);
-	const ladder = readLadder(root, base.value.diff, changed.value, proof);
+	const reads = ladderReads(root);
+	const ladder = readLadder(root, base.value.diff, changed.value, proof, reads);
 	const runs = ladder.ok ? modelRuns(proof, ladder.value) : [];
 	const matrix = readRepoFile(root, proof.domain.controls.matrix);
 	const inputs = [
@@ -495,6 +513,16 @@ async function prove(
 	const currentManifest = readRepoFile(root, manifest.path);
 	if (currentManifest.kind !== "text" || currentManifest.text !== manifest.text)
 		return stopAt(io, "stale", "the manifest changed during the proof");
+	const current = ladderReads(root);
+	const moved = LADDER_FILES.filter(
+		(path) => !sameRead(reads[path], current[path]),
+	);
+	if (moved.length > 0)
+		return stopAt(
+			io,
+			"stale",
+			`the candidate inputs changed during the proof: ${moved.join(", ")}`,
+		);
 	const facts: AdmissionFacts = {
 		view,
 		ladder,

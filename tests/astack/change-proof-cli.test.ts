@@ -992,6 +992,57 @@ describe("astack check proof", () => {
 			heavyTestTimeout,
 		);
 
+		test.each<[string, Parameters<typeof ladderRepo>[1], string]>([
+			[
+				"formal/models.json",
+				{ change: { "docs/notes.md": "# Notes\n" } },
+				LADDER_FILES["formal/models.json"]?.replace('"**/*.md",', "") ?? "",
+			],
+			[
+				".astack/profile.json",
+				{
+					base: { ".astack/profile.json": '{"proof":{"minRung":"R0"}}\n' },
+					change: { "docs/notes.md": "# Notes\n" },
+				},
+				'{"proof":{"minRung":"R4"}}\n',
+			],
+		])(
+			"[control:rl-ladder-window] a hidden edit of %s after the rung reads it and before the first snapshot makes the proof stale",
+			(path, plan, edited) => {
+				const repo = ladderRepo(scratch, plan);
+				git(repo.root, "update-index", "--skip-worktree", path);
+				const shim = join(scratch, `git-window-${path.length}`);
+				mkdirSync(shim, { recursive: true });
+				const replacement = join(shim, "replacement");
+				writeFileSync(replacement, edited);
+				const realGit = spawnSync("sh", ["-c", "command -v git"], {
+					encoding: "utf8",
+				}).stdout.trim();
+				writeFileSync(
+					join(shim, "git"),
+					[
+						"#!/bin/sh",
+						`case "$*" in *"ls-tree"*" .astack/profile.json") : > '${shim}/armed' ;; esac`,
+						`case "$*" in *"rev-parse --verify HEAD") if [ -f '${shim}/armed' ] && [ ! -f '${shim}/done' ]; then cp '${replacement}' '${join(repo.root, path)}'; : > '${shim}/done'; fi ;; esac`,
+						`exec '${realGit}' "$@"`,
+						"",
+					].join("\n"),
+				);
+				chmodSync(join(shim, "git"), 0o755);
+				const java = loggingJava(`java-window-${path.length}`);
+				const run = proof(repo.root, [], {
+					PATH: `${shim}:${process.env.PATH ?? ""}`,
+					JAVA_HOME: java,
+				});
+				expect(readFileSync(join(repo.root, path), "utf8")).toBe(edited);
+				expect(git(repo.root, "status", "--porcelain")).toBe("");
+				expect({ last: lastLine(run.out), code: run.code }).toEqual({
+					last: `stop: proof stale: the candidate inputs changed during the proof: ${path}`,
+					code: 1,
+				});
+			},
+		);
+
 		test(
 			"[control:rl-stale] an edit of formal/models.json during the runs makes the proof stale and names the file",
 			async () => {

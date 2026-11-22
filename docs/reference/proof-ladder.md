@@ -16,7 +16,7 @@ The [model](../../formal/ProofLadder.tla) examines two models, seven path kinds,
 - [criterion:RL-ONE-RUN] A manifest model that a path also selects runs one triple with the manifest negative.
 - [criterion:RL-STOP-ORDER] A failed positive run of the first model stops at `model` and starts no triple of a later model.
 - [criterion:RL-ADMIT-R4] At R4 each selected model needs a full triple. A failed restored run of the second model stops at `model`. Below R4 the admission needs no triple.
-- [criterion:RL-STALE] An edit of `formal/models.json` during the runs stops at `stale` and names the file.
+- [criterion:RL-STALE] An edit of `formal/models.json` during the runs stops at `stale` and names the file. An edit of the registry or the profile after the rung reads it also stops at `stale`.
 - [criterion:RL-SCHEMA] A scope row can omit `modelRefs`, and a `modelRefs` name that no model defines still admits.
 - [criterion:RL-RUNG] Docs give R0, an unlisted path gives R1, and a covered path, a model file or a text glob gives R4. A deleted path takes its rung from the base registry.
 - [criterion:RL-REGISTRY] The registry parser names the key path of each bad entry. Each registry negative of astack passes the static model plan, and `records` lists each file whose Formal claim names the model.

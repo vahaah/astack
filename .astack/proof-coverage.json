@@ -573,7 +573,7 @@
 		},
 		{
 			"criterion": "RL-STALE",
-			"controls": ["rl-stale"]
+			"controls": ["rl-stale", "rl-ladder-window"]
 		},
 		{
 			"criterion": "RL-SCHEMA",
