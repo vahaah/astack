@@ -1,0 +1,30 @@
+{
+	"models": [
+		{
+			"name": "Desk",
+			"model": {
+				"module": "formal/Desk.tla",
+				"config": "formal/Desk.cfg",
+				"dependencies": [],
+				"bounds": ["one grant"],
+				"fairness": [],
+				"invariants": ["TypeOK", "OnePush"],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/Desk.tla",
+				"action": "Push",
+				"original": "pushed = 0",
+				"replacement": "TRUE",
+				"defect": "a second push of one grant",
+				"expect": { "kind": "invariant", "name": "OnePush" }
+			},
+			"records": ["docs/adr/0001-desk.md"],
+			"covers": ["src/desk/model.ts"],
+			"text": []
+		}
+	],
+	"failClosed": ["src/guard/**"],
+	"contractOnly": ["**/*.md"],
+	"unmodelled": []
+}

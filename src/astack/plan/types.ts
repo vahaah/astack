@@ -1,3 +1,7 @@
+import type { ModelRegistry } from "../change-proof/rung.ts";
+import type { BlockProblems, Card } from "../domain/notation.ts";
+import type { Result } from "../result.ts";
+
 export const TIERS = ["standard", "programme", "brief"] as const;
 export type Tier = (typeof TIERS)[number];
 
@@ -194,6 +198,7 @@ export type Group =
 	| "ste"
 	| "links"
 	| "milestones"
+	| "domain"
 	| "base";
 
 export type PlanFinding = {
@@ -219,6 +224,12 @@ export type Glossary = {
 	readonly avoid: ReadonlyMap<string, string>;
 };
 
+export type DomainEnv = {
+	readonly card: Result<Card, BlockProblems>;
+	readonly registry: Result<ModelRegistry | undefined, string>;
+	readonly codeRoots: readonly string[];
+};
+
 export type CheckEnv = {
 	readonly root: string;
 	readonly today: string;
@@ -226,6 +237,7 @@ export type CheckEnv = {
 	readonly glossary: Glossary | undefined;
 	readonly trail: readonly TrailRow[] | undefined;
 	readonly principles?: ReadonlySet<string>;
+	readonly domain?: DomainEnv;
 	readonly exists: (path: string) => boolean;
 	readonly listDir: (path: string) => readonly string[];
 	readonly readFile: (path: string) => string | undefined;

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
+import { DOMAIN_GRAMMAR } from "../../../domain/notation.ts";
 import { repoRoot, runGit } from "../../../git.ts";
 import { briefLines, daysOld, readPlan } from "../../../plan/brief.ts";
 import {
@@ -8,6 +9,11 @@ import {
 	isStale,
 	readyToDelete,
 } from "../../../plan/check.ts";
+import {
+	type DomainSummary,
+	domainSummary,
+	planDomain,
+} from "../../../plan/domain.ts";
 import {
 	envForFile,
 	listPlanFiles,
@@ -70,10 +76,14 @@ function run(args: readonly string[], io: Io): number {
 	const template = args.find((arg) => arg.startsWith("--template"));
 	if (template) {
 		const tier = template.split("=")[1] ?? "standard";
+		if (tier === "domain") {
+			io.out(DOMAIN_GRAMMAR);
+			return 0;
+		}
 		if (tier !== "standard" && tier !== "programme" && tier !== "brief")
 			return usageError(
 				io,
-				"astack check-plan: --template takes standard, programme or brief",
+				"astack check-plan: --template takes standard, programme, brief or domain",
 			);
 		io.out(TEMPLATES[tier]);
 		return 0;
@@ -106,6 +116,7 @@ function run(args: readonly string[], io: Io): number {
 		);
 	const findings: PlanFinding[] = [];
 	const housekeeping: string[] = [];
+	const domains: { file: string; domain: DomainSummary }[] = [];
 	for (const file of files) {
 		const absolute = resolve(io.cwd, file);
 		const plan = readPlan(absolute);
@@ -116,6 +127,8 @@ function run(args: readonly string[], io: Io): number {
 			fallbackRoot: repoRoot(io.cwd),
 		});
 		const found = checkPlan(plan, env);
+		const domain = domainSummary(planDomain(plan, env));
+		if (domain !== undefined) domains.push({ file, domain });
 		if (base) {
 			const fromBase = baseFindings(io, file, plan, base, env.root, env);
 			if (fromBase === "bad-ref")
@@ -132,7 +145,7 @@ function run(args: readonly string[], io: Io): number {
 				`${file}: every session is done or every milestone exited, so delete it in the closing PR`,
 			);
 	}
-	return report(io, args, findings, housekeeping, files.length);
+	return report(io, args, findings, housekeeping, files.length, domains);
 }
 
 function report(
@@ -141,6 +154,7 @@ function report(
 	findings: readonly PlanFinding[],
 	housekeeping: readonly string[],
 	plans: number,
+	domains: readonly { file: string; domain: DomainSummary }[] = [],
 ): number {
 	const count = (severity: PlanFinding["severity"]): number =>
 		findings.filter((finding) => finding.severity === severity).length;
@@ -149,7 +163,7 @@ function report(
 	const notes = count("note");
 	if (args.includes("--json")) {
 		io.out(
-			`${JSON.stringify({ findings, housekeeping, errors, warnings, notes }, null, 2)}\n`,
+			`${JSON.stringify({ findings, housekeeping, errors, warnings, notes, domains }, null, 2)}\n`,
 		);
 	} else {
 		for (const finding of findings) io.out(`${formatFinding(finding)}\n`);
@@ -208,7 +222,7 @@ export const command: Command = {
 	usage: [
 		"check plan <file...> [--base <ref>] [--all] [--brief] [--json] [--strict] [--no-trail]",
 		"check plan --as docs/plans/<slug>.md <file|-> [--strict] [--no-trail]",
-		"check plan --template[=programme|brief]",
+		"check plan --template[=programme|brief|domain]",
 	].join("\n"),
 	run,
 };
