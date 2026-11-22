@@ -22,6 +22,31 @@ import { fakeReader, passingCheck } from "./fakes.ts";
 const ROOT = join(import.meta.dir, "../../..");
 const SKILLS = "marketplace/plugins/astack/skills";
 
+const argvOf = (args: string): string[] =>
+	args
+		.replace(/[[\]]/g, " ")
+		.replace(/<[^>]+>/g, "12")
+		.split(/\s+/)
+		.filter((arg) => arg !== "");
+
+const INLINE_WATCH = /`(?:astack )?watch-pr(?=[\s`])([^`]*)`/g;
+const FENCED_WATCH = /(?:^|[\s;&|(])(?:astack\s+)?watch-pr(?=\s|$)([^;&|#)]*)/g;
+const FENCE = /^\s*(```|~~~)/;
+
+function watchCommands(
+	text: string,
+): readonly { readonly line: number; readonly argv: string[] }[] {
+	const commands: { readonly line: number; readonly argv: string[] }[] = [];
+	let fenced = false;
+	for (const [at, line] of text.split("\n").entries()) {
+		if (FENCE.test(line)) fenced = !fenced;
+		else
+			for (const match of line.matchAll(fenced ? FENCED_WATCH : INLINE_WATCH))
+				commands.push({ line: at + 1, argv: argvOf(match[1] ?? "") });
+	}
+	return commands;
+}
+
 function testRuntime(reader: GitHubReader): {
 	readonly runtime: CliRuntime;
 	readonly stdout: string[];
@@ -150,6 +175,23 @@ describe("parseWatchArgs", () => {
 		expect(parsed.ok ? "" : parsed.error).toContain(quoted);
 	});
 
+	test("the command scan finds an inline or fenced watch-pr command, with or without the astack prefix", () => {
+		const text = [
+			"Run `astack watch-pr --pr <n>` first.",
+			"Then `watch-pr --stack` once.",
+			"```sh",
+			"astack watch-pr --queued-stack --stack-prs 3,4",
+			"```",
+			"Its tests are in `tests/astack/watch-pr/render.test.ts`, and `watch-pr` calls gh.",
+		].join("\n");
+		expect(watchCommands(text)).toEqual([
+			{ line: 1, argv: ["--pr", "12"] },
+			{ line: 2, argv: ["--stack"] },
+			{ line: 4, argv: ["--queued-stack", "--stack-prs", "3,4"] },
+			{ line: 6, argv: [] },
+		]);
+	});
+
 	test("[control:wp-text-commands] each astack watch-pr command of the skill texts and the README parses, with a number for each placeholder", () => {
 		const commands = [
 			"README.md",
@@ -157,18 +199,9 @@ describe("parseWatchArgs", () => {
 				.filter((path) => path.endsWith(".md"))
 				.map((path) => join(SKILLS, path)),
 		].flatMap((file) =>
-			readFileSync(join(ROOT, file), "utf8")
-				.split("\n")
-				.flatMap((line, at) =>
-					[...line.matchAll(/`astack watch-pr([^`]*)`/g)].map((match) => ({
-						where: `${file}:${at + 1}`,
-						argv: (match[1] ?? "")
-							.replace(/[[\]]/g, " ")
-							.replace(/<[^>]+>/g, "12")
-							.split(/\s+/)
-							.filter((arg) => arg !== ""),
-					})),
-				),
+			watchCommands(readFileSync(join(ROOT, file), "utf8")).map(
+				({ line, argv }) => ({ where: `${file}:${line}`, argv }),
+			),
 		);
 		expect(commands.some(({ argv }) => argv.includes("--pr"))).toBe(true);
 		expect(
