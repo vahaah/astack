@@ -163,7 +163,12 @@ export function planFileState(
 	const text = file === undefined ? undefined : readText(file);
 	if (file === undefined || text === undefined)
 		return err(`cannot read ${target}`);
-	const state = stateIn(repoRoot(dirname(file)), trailSlug(file, text), target);
+	const slug = trailSlug(file, text);
+	if (!SLUG.test(slug))
+		return err(
+			`${target} gives the slug ${JSON.stringify(slug)}. A slug has lower case letters, digits and "-", such as member-export`,
+		);
+	const state = stateIn(repoRoot(dirname(file)), slug, target);
 	return state.ok
 		? ok({ ...state.value, path: relative(state.value.root, file), text })
 		: state;

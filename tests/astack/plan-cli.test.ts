@@ -410,6 +410,30 @@ describe("astack plan attended, trail, draft and delegate", () => {
 		}
 	});
 
+	test("a programme value that is not a slug writes no state outside the state folder", () => {
+		const brief = join(repo, BRIEF);
+		const original = readFileSync(brief, "utf8");
+		writeFileSync(
+			brief,
+			original.replace(
+				"programme: data-platform",
+				"programme: ../../../escape",
+			),
+		);
+		try {
+			expect(
+				run(plan.run, ["trail", brief, "gate", "a", "b", "c", "pass"], repo),
+			).toEqual({
+				code: 2,
+				out: "",
+				err: `astack plan trail: ${brief} gives the slug "../../../escape". A slug has lower case letters, digits and "-", such as member-export\n`,
+			});
+			expect(existsSync(join(repo, "escape"))).toBe(false);
+		} finally {
+			writeFileSync(brief, original);
+		}
+	});
+
 	test("delegate on writes the grant and report mode, and logs it", () => {
 		withPlan(
 			"grant",
