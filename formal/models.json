@@ -280,7 +280,7 @@
 				}
 			},
 			"records": [
-				"docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+				"formal/ProofAdmission.md",
 				"docs/adr/0006-internal-composition-records-follow-domain-effects.md",
 				"docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
 				"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
@@ -382,8 +382,7 @@
 				}
 			},
 			"records": [
-				"docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
-				"docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"formal/SessionGuards.md",
 				"docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md"
 			],
 			"covers": [
@@ -523,6 +522,16 @@
 			"path": "formal/ci-proof-records.md",
 			"reason": "The proof record of CiProofRecords. A text change gives no other TLC verdict",
 			"control": "ci-proof-records"
+		},
+		{
+			"path": "formal/ProofAdmission.md",
+			"reason": "The proof record of ProofAdmission. A text change gives no other TLC verdict",
+			"control": "rl-records"
+		},
+		{
+			"path": "formal/SessionGuards.md",
+			"reason": "The proof record of SessionGuards. A text change gives no other TLC verdict",
+			"control": "rl-records"
 		}
 	]
 }
