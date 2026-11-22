@@ -23,8 +23,8 @@ This command finds this session:
 ls ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/*/${CLAUDE_SESSION_ID}.jsonl
 ```
 
-Look for a named session only in `projects/<slug>/` of this workspace.
-`pwd | sed 's/[^A-Za-z0-9]/-/g'` prints the slug.
+Look for a named session only in `projects/<slug>/`.
+`pwd -P | sed 's/[^A-Za-z0-9]/-/g'` prints the slug.
 Never read the transcripts of other projects, because they can hold private chats.
 For lessons about delegation, also read `<session-id>/subagents/`.
 With no transcript, use the conversation in your context.

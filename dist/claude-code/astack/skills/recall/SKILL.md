@@ -21,8 +21,8 @@ Read `${CLAUDE_SKILL_DIR}/../why/SKILL.md` for the code anchor and the sources o
 
 Claude Code stores transcripts at `${CLAUDE_CONFIG_DIR:-~/.claude}/projects/<slug>/<session-id>.jsonl`.
 The workspace `<slug>` replaces each non-alphanumeric path character with `-`.
-For example, `/Users/you/proj` becomes `-Users-you-proj`.
-`pwd | sed 's/[^A-Za-z0-9]/-/g'` prints the slug.
+`/Users/you/proj` becomes `-Users-you-proj`.
+`pwd -P | sed 's/[^A-Za-z0-9]/-/g'` prints the slug.
 Include same-repo worktree sessions under `<slug>--claude-worktrees-<name>`.
 Subagent transcripts live in `<slug>/<session-id>/subagents/`.
 
