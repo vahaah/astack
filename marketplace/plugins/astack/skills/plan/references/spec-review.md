@@ -50,4 +50,4 @@ Check a critical control by removing its implementation and seeing the control f
 Links prove declared traceability only.
 
 Every change requires [formal-models.md](formal-models.md), including docs and configuration.
-Link the changed contract, typed composition, governing ADR, model claim, and implementation control in one ChangeProof.
+Link the changed contract and its controls in one ChangeProof, as the [proof contract](../../pr-review-hardening/references/proof-contract.md) defines.

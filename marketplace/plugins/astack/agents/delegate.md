@@ -11,7 +11,8 @@ You use the full agent style of `astack:mode`.
 The chat that receives `/astack:mode` owns the playbook, task list, and every Agent spawn.
 You are one of its delegates.
 
-Your brief must name its ChangeProof, domain context, aggregate, typed composition, effects, laws, abstraction, and governing ADRs.
+Your brief must cite its ChangeProof record.
+Run `astack skill-path astack:pr-review-hardening references/proof-contract.md` for the fields of that record.
 Read the referenced contract before implementation.
 Keep domain language in production names.
 Return current gate evidence and unfinished obligations with the same record.

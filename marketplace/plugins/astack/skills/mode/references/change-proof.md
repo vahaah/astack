@@ -24,14 +24,8 @@ Use a change-specific model or an explicit preservation relation.
 For docs, model the changed procedure or selected contract data.
 An unrelated example never satisfies the requirement.
 
-Before implementation, state these facts in the internal brief:
-
-- Domain context, aggregate, terms, and invariants.
-- Objects and typed arrows that model the actual contract.
-- Identity, composition, effects, equality, applicable laws, and witnesses.
-- The hidden rule, caller facts, abstraction relation, alternatives, and deletion test.
-- Governing ADR decisions with their formal and category explanations.
-- TLA+ obligations, bounds, assumptions, fairness, negative control, and implementation controls.
+Before implementation, state each record of the contract in the internal brief.
+[Category and abstraction](../../pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the composition rules.
 
 This is an inspectable contract, not a private reasoning transcript.
 Keep production names in the domain language.
