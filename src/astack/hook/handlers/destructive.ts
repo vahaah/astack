@@ -330,14 +330,16 @@ function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
 	};
 }
 
+const STDIN_FILE = /^\/(?:dev\/stdin|dev\/fd\/\d+|proc\/self\/fd\/\d+)$/;
+
 function applyLoss(args: readonly string[]): WorkLoss | undefined {
 	const { flags, plain, dashed } = operands(args, ["-p", "-C", "--directory"]);
 	const long = (name: string) => flags.some((flag) => isLongForm(flag, name));
 	const indexOnly = long("--cached") && !long("--index");
-	return hasFlag(flags, "--reverse", "R") &&
-		!indexOnly &&
-		plain.length === 0 &&
-		(dashed ?? []).length === 0
+	const patches = [...plain, ...(dashed ?? [])].filter(
+		(patch) => !STDIN_FILE.test(patch),
+	);
+	return hasFlag(flags, "--reverse", "R") && !indexOnly && patches.length === 0
 		? { lost: "tracked", pathspecs: WHOLE_TREE }
 		: undefined;
 }
@@ -516,6 +518,25 @@ function extractDir(step: ShellStep): string | undefined {
 		: resolve(step.dir, target.value);
 }
 
+const ARCHIVE_VALUE_FLAGS = [
+	"-o",
+	"--add-file",
+	"--exec",
+	"--format",
+	"--output",
+	"--prefix",
+	"--remote",
+];
+
+function archivePathspecs(git: GitInvocation, dir: string): readonly string[] {
+	const { flags, plain } = operands(git.args, ARCHIVE_VALUE_FLAGS);
+	const paths = plain.slice(1);
+	const prefixed = flags.some((flag) =>
+		isLongForm(flag.split("=")[0] ?? "", "--prefix"),
+	);
+	return paths.length === 0 || prefixed || git.dir !== dir ? WHOLE_TREE : paths;
+}
+
 function extractReasons(
 	step: ShellStep,
 	previous: ShellStep | undefined,
@@ -527,7 +548,7 @@ function extractReasons(
 		return [];
 	return lossReasons(
 		`${previous.values.join(" ")} | ${step.values.join(" ")}`,
-		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		{ lost: "tracked", pathspecs: archivePathspecs(source.git, dir) },
 		dir,
 	);
 }

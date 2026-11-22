@@ -388,6 +388,17 @@ describe("the whole-tree discard forms", () => {
 		},
 	);
 
+	test.each(["git diff | git apply -R /dev/stdin", "git apply -R /dev/fd/0"])(
+		"%s reads the patch from stdin, so it is denied on a dirty tree",
+		(command) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain(
+				"discards the uncommitted changes in notes.txt, src/app.ts, staged.txt.",
+			);
+		},
+	);
+
 	test.each(wholeTree)("%s passes on a clean tree", (command) => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 	});
@@ -399,6 +410,7 @@ describe("the whole-tree discard forms", () => {
 		"git apply <(git diff HEAD)",
 		"git archive -o out.tar HEAD",
 		"git archive HEAD | tar -t",
+		"git archive HEAD docs | tar -x",
 		"git read-tree HEAD",
 	])("the named-file or read form %s passes on a dirty tree", (command) => {
 		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
