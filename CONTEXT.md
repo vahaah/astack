@@ -208,3 +208,11 @@ A git repo, or a folder of repos, that a heavy test file builds once and copies 
 Each copy points its git config at itself, so a write in a copy never reaches the template or another copy.
 _Avoid_: Shared repo, golden repo
 _Code_: `buildTemplate`
+
+### Waiting item
+
+A call that only the owner can take.
+Examples are a green PR with no merge grant, an open question, a draft finding and an owner gate.
+A status ask lists each waiting item on its own line. A checkpoint reply names up to 3 and gives their count past 3.
+_Avoid_: Pending call, owner todo
+_Code_: `marketplace/plugins/astack/skills/mode/references/resume.md`

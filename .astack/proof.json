@@ -1,27 +1,195 @@
 {
 	"version": 1,
-	"change": "fixture-isolation",
-	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
+	"change": "owner-catch-up",
+	"base": "605610cc26c0b65ca9a5b3451d2ab01477a5c573",
 	"scope": [
 		{
-			"path": ".astack/**",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
+			"path": "src/astack/watch-pr/cli.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/watch-pr/github.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/watch-pr/policy.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/watch-pr/render.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/watch-pr/types.ts",
+			"obligation": "WP-SINGLE-JSON",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/cli/commands/watch-pr.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/watch-pr/cli.test.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/watch-pr/fakes.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/watch-pr/github.test.ts",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/watch-pr/policy.test.ts",
+			"obligation": "WP-DEADLINE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "README.md",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/review-lessons.md",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md",
+			"obligation": "WP-ONE-PR",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/plan/check.ts",
+			"obligation": "AN-NAMES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/plan-check.test.ts",
+			"obligation": "AN-NAMES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/old-names.test.ts",
+			"obligation": "AN-NAMES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
+			"obligation": "AN-NAMES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
+			"obligation": "OR-NO-STORE",
+			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/paths-and-wakeups.md",
+			"obligation": "OR-NO-STORE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/playbooks.md",
+			"obligation": "OR-NO-STORE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
+			"obligation": "CU-LIST",
+			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "rules/astack.md",
+			"obligation": "CU-LIST",
+			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/routes.md",
+			"obligation": "CU-LIST",
+			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
+			"obligation": "CU-LIST",
+			"modelRefs": ["Raise", "CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+			"obligation": "CU-CHECKPOINT",
+			"modelRefs": ["Checkpoint", "CheckpointHidesNothing"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "CU-LIST",
+			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+		},
+		{
+			"path": "tests/supervision-text.test.ts",
+			"obligation": "CU-LIST",
+			"modelRefs": [
+				"CatchUp",
+				"Checkpoint",
+				"CatchUpListsEach",
+				"CheckpointHidesNothing"
+			]
+		},
+		{
+			"path": "formal/OwnerCatchUp.*",
+			"obligation": "CU-LIST",
+			"modelRefs": [
+				"Raise",
+				"Settle",
+				"CatchUp",
+				"Checkpoint",
+				"TypeOK",
+				"CatchUpListsEach",
+				"CheckpointHidesNothing"
+			]
+		},
+		{
+			"path": "docs/adr/0024-*.md",
+			"obligation": "CU-LIST",
+			"modelRefs": [
+				"CatchUp",
+				"Checkpoint",
+				"CatchUpListsEach",
+				"CheckpointHidesNothing"
+			]
+		},
+		{
+			"path": "docs/reference/programme-supervision.md",
+			"obligation": "CU-LIST",
+			"modelRefs": [
+				"CatchUp",
+				"Checkpoint",
+				"CatchUpListsEach",
+				"CheckpointHidesNothing"
+			]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
-		},
-		{
-			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"obligation": "CU-LIST",
+			"modelRefs": ["Raise", "Settle", "CatchUpListsEach"]
 		},
 		{
 			"path": "docs/adr/README.md",
@@ -29,14 +197,14 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/reference/test-fixtures.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "docs/plans/review-roadmap/**",
@@ -44,140 +212,13 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/adr-numbers.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/review-lessons.md",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "formal/FixtureIsolation.tla",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
-		},
-		{
-			"path": "formal/FixtureIsolation.cfg",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
-		},
-		{
-			"path": "package.json",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-companion.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-fast.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/git-template.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"RewriteConfig",
-				"RefreshIndex",
-				"FinishBuild"
-			]
-		},
-		{
-			"path": "tests/git-template.test.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate",
-				"Push"
-			]
-		},
-		{
-			"path": "tests/astack/ci-pins.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
-		},
-		{
-			"path": "tests/astack/ci-pins-adversarial.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
-		},
-		{
-			"path": "tests/astack/pr-head-harness.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged", "Push"]
-		},
-		{
-			"path": "tests/apply/worktree.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
-		},
-		{
-			"path": "tests/apply/ci-parity-apply.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
-		},
-		{
-			"path": "tests/check-companion.test.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/heavy-test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/neutral.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/validate.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/check-fast.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/drift.test.ts",
+			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/change-proof-cli.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/change-proof-ratification.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/check-proof-script.test.ts",
-			"obligation": "CP-02",
+			"path": "dist/**",
+			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		}
 	],
@@ -185,57 +226,49 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "tests/git-template.ts",
-			"symbol": "Template"
+			"path": "src/astack/plan/board.ts",
+			"symbol": "Board"
 		},
-		"terms": [
-			"Fixture template",
-			"ChangeProof",
-			"Model control",
-			"Session guard"
-		],
+		"terms": ["Waiting item", "ChangeProof", "Model control", "Session guard"],
 		"invariants": [
 			{
-				"name": "A write or a push in a copy never changes the template or its origin",
-				"modelRef": "TemplateUnchanged"
+				"name": "A catch-up lists each item that waited at that reply",
+				"modelRef": "CatchUpListsEach"
 			},
 			{
-				"name": "A write or a push in a copy never changes another copy",
-				"modelRef": "CopiesDisjoint"
-			},
-			{
-				"name": "Each ready copy has a clean index",
-				"modelRef": "CopyIndexClean"
-			},
-			{
-				"name": "A template at its final path is a complete build",
-				"modelRef": "NoPartialTemplate"
+				"name": "A checkpoint lists up to 3 waiting items, and past 3 gives their count and the status pointer",
+				"modelRef": "CheckpointHidesNothing"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
+				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"FX-ISOLATE",
-				"FX-INDEX",
-				"FX-TREE",
-				"FX-ATOMIC",
-				"FX-OWN-DIR",
-				"FX-REAL-SCAN",
-				"CP-02",
+				"WP-ONE-PR",
+				"WP-SINGLE-JSON",
+				"OR-NO-STORE",
+				"CU-LIST",
+				"CU-CHECKPOINT",
+				"AN-NAMES",
+				"WP-DEADLINE",
+				"WB-ratchet",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -244,254 +277,213 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow maps a fixture folder to a fixture folder. A ready copy is a new repo with the template commits, its own origin and a clean index, and no write in it reaches the template or another copy."
+			"contract": "Each arrow maps the argv of one watch to one terminal verdict of one PR, and the JSON line of that verdict keeps schemaVersion 1, mode single and the single READY scope. A status ask maps the plan, the board and the gh reads to one reply that lists each waiting item and changes nothing."
 		},
 		"objects": [
 			{
-				"name": "FixtureSpec",
+				"name": "Argv",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "FixtureSpec"
+					"path": "src/astack/watch-pr/cli.ts",
+					"symbol": "argv"
 				}
 			},
 			{
-				"name": "Template",
+				"name": "WatchArgs",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "Template"
+					"path": "src/astack/watch-pr/cli.ts",
+					"symbol": "WatchArgs"
 				}
 			},
 			{
-				"name": "RepoCopy",
+				"name": "PrContext",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "RepoCopy"
+					"path": "src/astack/watch-pr/types.ts",
+					"symbol": "PrContext"
 				}
 			},
 			{
-				"name": "BranchSpec",
+				"name": "TerminalVerdict",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "BranchSpec"
+					"path": "src/astack/watch-pr/types.ts",
+					"symbol": "TerminalVerdict"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "buildTemplate",
-				"from": "FixtureSpec",
-				"to": "Template",
+				"name": "parseWatchArgs",
+				"from": "Argv",
+				"to": "WatchArgs",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "src/astack/watch-pr/cli.ts",
+					"symbol": "parseWatchArgs"
 				},
-				"effects": ["fs-read", "fs-write", "spawn", "env"]
+				"effects": []
 			},
 			{
-				"name": "copyTemplate",
-				"from": "Template",
-				"to": "RepoCopy",
+				"name": "resolveContext",
+				"from": "WatchArgs",
+				"to": "PrContext",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "src/astack/watch-pr/github.ts",
+					"symbol": "resolveContext"
 				},
-				"effects": ["fs-read", "fs-write"]
+				"effects": ["spawn"]
 			},
 			{
-				"name": "rewriteConfig",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
+				"name": "runSimple",
+				"from": "PrContext",
+				"to": "TerminalVerdict",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
+					"path": "src/astack/watch-pr/policy.ts",
+					"symbol": "runSimple"
 				},
-				"effects": ["fs-read", "fs-write"]
-			},
-			{
-				"name": "refreshIndex",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
-				},
-				"effects": ["fs-read", "spawn", "env"]
-			},
-			{
-				"name": "commitTree",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"effects": ["fs-write", "spawn", "env"]
+				"effects": ["spawn", "clock"]
 			}
 		],
 		"composites": [],
-		"equality": "Two templates are equal when their folders hold the same refs, objects and git config. Two copies are equal when their refs, their remote URLs and the state of their index are equal.",
+		"equality": "Two verdicts are equal when their JSON lines are equal byte for byte. Two catch-up replies are equal when they list the same waiting items and the same failed reads.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/git-template.ts"
+		"typedWitness": "src/astack/watch-pr/cli.ts"
 	},
 	"abstraction": {
-		"hides": "The git object layout, the fast-import stream, the config path rewrite and the index refresh of each copied repo.",
+		"hides": "The board query, the plan reads and the gh reads of a status ask, and the gh reads and the poll loop of one watch.",
 		"callersKnow": [
-			"A copy is a new folder with the template commits, and each copied repo has its own origin.",
-			"A write or a push in a copy never reaches the template or another copy.",
-			"A new copy passes git diff-index --quiet HEAD.",
-			"commitTree writes each branch at fixed past dates, so two copies of one template get the same commit ids.",
-			"A build that throws leaves no folder, and removeTemplate removes the folder of a template."
+			"Each waiting item gets one line in a catch-up, and a failed read gets its own line.",
+			"A status ask only reads and starts no work.",
+			"A checkpoint names up to 3 waiting items, and past 3 gives their count and says that status lists them.",
+			"astack watch-pr watches one PR, and a removed stack flag exits 64 with no reader call.",
+			"The JSON lines of a watch keep schemaVersion 1, mode single and the single READY scope."
 		],
-		"deletionTest": "Without the helper, each of the 5 files keeps its own chain of init, add, commit and push calls for each test.",
+		"deletionTest": "Without the Catch up part, each status ask builds the waiting list from the plan, the board and gh in its own words, and the card resume row starts work.",
 		"alternatives": [
 			{
-				"name": "git clone --shared or --reference",
-				"rejectedBecause": "The copies then share objects with the template."
+				"name": "A new card row for the status words",
+				"rejectedBecause": "The card holds 40 of 40 lines."
 			},
 			{
-				"name": "One repo for each file",
-				"rejectedBecause": "The tests then share commits."
+				"name": "A new catch-up skill",
+				"rejectedBecause": "The resume reads already give each fact."
 			},
 			{
-				"name": "An add and a commit for each branch",
-				"rejectedBecause": "A repo then costs 53 to 71 ms, from 17 to 24 ms with one fast-import stream."
+				"name": "A link to a PR comment in place of the list",
+				"rejectedBecause": "The owner then opens another page for each call."
 			},
 			{
-				"name": "Object writes in process",
-				"rejectedBecause": "They need a git library."
+				"name": "Keep the watch-pr stack runners",
+				"rejectedBecause": "They have 0 runs in all history."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
+					"symbol": "Catch"
 				},
-				"modelAction": "FinishBuild"
+				"modelAction": "CatchUp"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "src/astack/plan/board.ts",
+					"symbol": "boardText"
 				},
-				"modelAction": "StopBuild"
+				"modelAction": "CatchUp"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
+					"symbol": "Catch"
 				},
-				"modelAction": "CopyTemplate"
+				"modelAction": "CatchUp"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
+					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+					"symbol": "waiting"
 				},
-				"modelAction": "RewriteConfig"
+				"modelAction": "Checkpoint"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
+					"path": "src/astack/cli/commands/plan.ts",
+					"symbol": "appendDraft"
 				},
-				"modelAction": "RefreshIndex"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"modelAction": "Commit"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.test.ts",
-					"symbol": "commitAndPush"
-				},
-				"modelAction": "Push"
+				"modelAction": "Raise"
 			}
 		],
 		"omitted": [
-			"The git objects, the files and the index are abstracted to one commit count for each repo and one clean flag for each copy.",
-			"removeTemplate and the template cache of each file are not in the model. The fx-own-dir control and the pr-head order runs examine them.",
-			"The scan runner of check:companion and the timeout budget are not in the model. The fx-real-scan control and the timed runs examine them."
+			"Settle stands for an owner answer, a merge or a closed draft, which happen outside astack code.",
+			"The watch-pr cut, the names and the caps change no reply rule, so they have no model state. The wp-one-pr, wp-single-json, wp-text-commands, an-names and an-models-header controls and the budget gate examine them.",
+			"The model takes the reads of the plan, the board and gh as true observations."
 		]
 	},
 	"model": {
-		"module": "formal/FixtureIsolation.tla",
-		"config": "formal/FixtureIsolation.cfg",
+		"module": "formal/OwnerCatchUp.tla",
+		"config": "formal/OwnerCatchUp.cfg",
 		"dependencies": [],
 		"bounds": [
-			"One template, two copies and at most 2 commits in each copy.",
-			"A build of 2 steps that can stop before its end and start again.",
-			"Each order of the copy, rewrite, refresh, commit and push steps of each copy."
+			"4 waiting items, so a reply over 3 items and a reply over 4 items are both reachable.",
+			"One reply at a time, after each raise or settle of an item."
 		],
 		"fairness": [],
-		"invariants": [
-			"TypeOK",
-			"TemplateUnchanged",
-			"CopiesDisjoint",
-			"CopyIndexClean",
-			"NoPartialTemplate"
-		],
+		"invariants": ["TypeOK", "CatchUpListsEach", "CheckpointHidesNothing"],
 		"properties": []
 	},
 	"negative": {
-		"file": "formal/FixtureIsolation.tla",
-		"action": "RewriteConfig",
-		"original": "/\\ remote' = [remote EXCEPT ![c] = c]",
-		"replacement": "/\\ remote' = remote",
-		"defect": "A copy that keeps the origin URL of the template pushes into the origin of the template, as a copy with no config rewrite does.",
+		"file": "formal/OwnerCatchUp.tla",
+		"action": "CatchUp",
+		"original": "listed |-> waiting,",
+		"replacement": "listed |-> IF Cardinality(waiting) > FoldAt THEN {} ELSE waiting,",
+		"defect": "A catch-up that folds 4 waiting items into a count, as the old checkpoint did with the open questions, hides each item from the owner.",
 		"expect": {
 			"kind": "invariant",
-			"name": "TemplateUnchanged"
+			"name": "CatchUpListsEach"
 		}
 	},
 	"limits": [
-		"The finite model takes git, the file copy and the index refresh as true observations. The fx-isolate, fx-index, fx-tree and fx-atomic controls examine them.",
-		"The model does not check the git spawn counts, the timeout budget or the suite times. The timed runs in the PR Verification give them.",
+		"The finite model takes the reads of the plan, the board and gh as true observations. The cu-list and cu-checkpoint controls examine the texts.",
+		"The model does not check the watch-pr cut, the names or the caps. Their controls and the budget gate examine them.",
 		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
