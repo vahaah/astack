@@ -17,7 +17,7 @@ Preserve superseded decisions and their reasons.
 
 ## One contract
 
-Create `.astack/proof.json` with the [proof contract](../../astack-pr-review-hardening/references/proof-contract.md).
+Create `.astack/proof/<change>.json` with the [proof contract](../../astack-pr-review-hardening/references/proof-contract.md).
 It links changed paths, criteria, domain references, composition, abstraction, models, and controls.
 Every changed path needs an obligation. The registry selects the models of each path.
 With no registry, the manifest model must model the change.
