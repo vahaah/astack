@@ -1,37 +1,22 @@
 {
 	"version": 1,
-	"change": "release-0.3.0-docs",
-	"base": "5dfee73ed4dedf18b5d04afc4f0a600f37fd78cf",
+	"change": "fast-gates",
+	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
 	"scope": [
 		{
-			"path": "README.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": ".astack/**",
+			"obligation": "CP-02",
+			"modelRefs": ["AdmitSafe"]
 		},
 		{
-			"path": "docs/design.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": ".github/workflows/check.yml",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/runbooks/formal-models.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
-		},
-		{
-			"path": "docs/runbooks/change-proof-migration.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/profile.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
-		},
-		{
-			"path": "examples/companion/projects/acme/**",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "AGENTS.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "CONTRIBUTING.md",
@@ -39,38 +24,143 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": ".astack/**",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase", "AdmitSafe"]
-		},
-		{
-			"path": "CHANGELOG.md",
+			"path": "README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/runbooks/install-*.md",
+			"path": "docs/design.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/runbooks/publish.md",
+			"path": "docs/plans/review-roadmap/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/.claude-plugin/plugin.json",
+			"path": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+			"obligation": "CP-02",
+			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
+		},
+		{
+			"path": "docs/reference/change-proof-contract.md",
+			"obligation": "CP-02",
+			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
+		},
+		{
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "package.json",
+			"path": "marketplace/plugins/astack/bin/astack",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "dist/**",
 			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "package.json",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/build.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/check-fast.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/check-fast.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/check-proof.ts",
+			"obligation": "CP-16",
+			"modelRefs": ["ScopeFromMergeBase", "BaseAncestry"]
+		},
+		{
+			"path": "tests/check-proof-script.test.ts",
+			"obligation": "CP-16",
+			"modelRefs": ["ScopeFromMergeBase", "BaseAncestry"]
+		},
+		{
+			"path": "src/astack/change-proof/runner.ts",
+			"obligation": "CP-10",
+			"modelRefs": [
+				"RunPositive",
+				"RunNegative",
+				"RunRestored",
+				"FailureIsTerminal"
+			]
+		},
+		{
+			"path": "src/astack/cli/commands/check/proof.ts",
+			"obligation": "CP-02",
+			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
+		},
+		{
+			"path": "tests/astack/change-proof-cli.test.ts",
+			"obligation": "CP-02",
+			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
+		},
+		{
+			"path": "src/astack/cli/bin.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/cli/floor.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/doctor.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/launcher.test.ts",
+			"obligation": "SG-runtime",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/ste-hook.test.ts",
+			"obligation": "SG-runtime",
 			"modelRefs": ["TypeOK"]
 		}
 	],
@@ -81,181 +171,228 @@
 			"path": "src/astack/change-proof/contract.ts",
 			"symbol": "ChangeProof"
 		},
-		"terms": ["ChangeProof", "Proof admission", "Manifest base", "Diff base"],
+		"terms": [
+			"ChangeProof",
+			"Proof admission",
+			"Model control",
+			"Diff base",
+			"Session guard"
+		],
 		"invariants": [
 			{
-				"name": "An admitted proof has a manifest base that is an ancestor of the diff target",
-				"modelRef": "BaseAncestry"
+				"name": "Admission requires a passed positive run, the expected negative run and a passed restored run",
+				"modelRef": "AdmitSafe"
+			},
+			{
+				"name": "A failed run stops the proof",
+				"modelRef": "FailureIsTerminal"
 			},
 			{
 				"name": "A proof with a base ref reads its diff from the merge base",
 				"modelRef": "ScopeFromMergeBase"
 			},
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "An admitted proof has a manifest base that is an ancestor of the diff target",
+				"modelRef": "BaseAncestry"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
-				"decision": "D1"
-			},
-			{
-				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
+				"file": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
 				"decision": "D3"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
-			"criteria": ["CP-13", "SG-preserve", "SG-generated"]
+			"criteria": [
+				"CP-02",
+				"CP-10",
+				"CP-16",
+				"SG-runtime",
+				"SG-preserve",
+				"SG-generated"
+			]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow reads Git through historyGit and returns a Result. A refusal names the commits, and no arrow writes a file."
+			"contract": "runModel writes only its own temp root and removes it when the run ends or a stop kills it. Each judge maps one RunEnd to a Result and writes nothing."
 		},
 		"objects": [
 			{
-				"name": "DiffTarget",
+				"name": "ModelFile",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "DiffTarget"
+					"path": "src/astack/change-proof/tla.ts",
+					"symbol": "ModelFile"
 				}
 			},
 			{
-				"name": "ProofBase",
+				"name": "ModelRun",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "ProofBase"
+					"path": "src/astack/change-proof/runner.ts",
+					"symbol": "ModelRun"
 				}
 			},
 			{
-				"name": "IntegrationHistory",
+				"name": "RunEnd",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "IntegrationHistory"
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "RunEnd"
+				}
+			},
+			{
+				"name": "Counts",
+				"link": {
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "Counts"
+				}
+			},
+			{
+				"name": "Violation",
+				"link": {
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "Violation"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "proofBase",
-				"from": "DiffTarget",
-				"to": "ProofBase",
+				"name": "runModel",
+				"from": "ModelFile",
+				"to": "ModelRun",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "proofBase"
+					"path": "src/astack/change-proof/runner.ts",
+					"symbol": "runModel"
 				},
-				"effects": ["spawn", "env"]
+				"effects": ["fs-write", "spawn", "env"]
 			},
 			{
-				"name": "readIntegrationHistory",
-				"from": "ProofBase",
-				"to": "IntegrationHistory",
+				"name": "ended",
+				"from": "ModelRun",
+				"to": "RunEnd",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "readIntegrationHistory"
+					"path": "src/astack/cli/commands/check/proof.ts",
+					"symbol": "ended"
 				},
-				"effects": ["spawn", "env"]
+				"effects": []
+			},
+			{
+				"name": "judgePositive",
+				"from": "RunEnd",
+				"to": "Counts",
+				"link": {
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "judgePositive"
+				},
+				"effects": []
+			},
+			{
+				"name": "judgeNegative",
+				"from": "RunEnd",
+				"to": "Violation",
+				"link": {
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "judgeNegative"
+				},
+				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two base pairs are equal when their manifest and diff commits are equal. Two refusals are equal when their text is equal.",
+		"equality": "Two run ends are equal when their kind and fields are equal. Two judged results are equal when their counts, violation or refusal text are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
 			}
 		],
 		"typedWitness": "src/astack/cli/commands/check/proof.ts"
 	},
 	"abstraction": {
-		"hides": "The Git reads of the merge base, the ancestry test that ignores replace objects and grafts, and the merge base view of each ratified record.",
+		"hides": "The start of three TLC processes at once, the kill of the live runs after a stop, and the wait for the cleanup of each temp root.",
 		"callersKnow": [
-			"The diff base is the merge base of the ref and HEAD, or the manifest base when no ref is given.",
-			"A manifest base that is not an ancestor of the diff target stops, and the stop names both commits.",
-			"Ratification history stays at the manifest base.",
-			"Each CI run of scripts/check-proof.ts passes a base."
+			"check proof judges the runs in the order positive, negative, restored, so its first stop is the same as in a run in sequence.",
+			"A stop kills the runs that are still live and removes each temp root before the command exits.",
+			"A local run of scripts/check-proof.ts reads origin/HEAD and passes HEAD^ or origin/<default> as its base.",
+			"With no origin/HEAD that resolves, or no HEAD^, the local run keeps the manifest base."
 		],
-		"deletionTest": "Deleting the base paragraphs leaves the README and the runbooks with the old rule that the manifest base must equal the base ref. Deleting proofBase puts the ancestor rule into check proof and check ci-pins, so the two commands can drift apart.",
+		"deletionTest": "Deleting stopRuns puts the abort and the cleanup wait at each stop of prove, so one stop can return while a run still owns a temp root.",
 		"alternatives": [
 			{
-				"name": "Keep the long opening of the README",
-				"rejectedBecause": "A newcomer cannot read six detailed bullets in 20 seconds, and each detail repeats a later section."
+				"name": "Runs in sequence",
+				"rejectedBecause": "Three runs in sequence took 8.0 s on this tree, and together they took 3.5 s."
 			},
 			{
-				"name": "Copy the full base rule into each doc",
-				"rejectedBecause": "The proof contract is the one home of the rule, so each other doc states the rule in short and links to it."
+				"name": "A wait for all three runs",
+				"rejectedBecause": "A fast positive failure waits for the slowest run, up to the 60 s deadline."
 			},
 			{
-				"name": "Keep the state counts of the repository proof in the README",
-				"rejectedBecause": "Each new manifest changes the model and its counts, so the README goes stale at the next PR."
+				"name": "A stop at the first run to end",
+				"rejectedBecause": "A wrong negative that ends first can hide the positive failure, so the first stop can change."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "proofBase"
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "judgePositive"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "RunPositive"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "readIntegrationHistory"
+					"path": "src/astack/change-proof/tlc.ts",
+					"symbol": "judgeNegative"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "RunNegative"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "authorityMoved"
+					"path": "src/astack/cli/commands/check/proof.ts",
+					"symbol": "stopRuns"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "RejectPositive"
 			},
 			{
 				"concrete": {
 					"path": "scripts/check-proof.ts",
-					"symbol": "baseRef"
+					"symbol": "localBase"
 				},
 				"modelAction": "ValidationPass"
 			},
@@ -268,9 +405,10 @@
 			}
 		],
 		"omitted": [
-			"Git itself, its object store and the merge base algorithm are abstracted to one base observation for each run.",
-			"The CI event payload and the remote refs of the checkout are taken as true.",
-			"The earlier authority, landing, evidence and Result law parts of the model stay as they were."
+			"The processes, their start order and the kill signal are abstracted to one judged result for each run.",
+			"The model sees the judged results in the order positive, negative, restored, and not the order in which the runs end.",
+			"Git, origin/HEAD and the merge base algorithm are abstracted to one base observation for each run.",
+			"The launcher, the node floor and check:fast are not in the model. Their tests and the gates examine them."
 		]
 	},
 	"model": {
@@ -304,19 +442,19 @@
 	},
 	"negative": {
 		"file": "formal/ProofAdmission.tla",
-		"action": "ValidationPass",
-		"original": "/\\ (Stages[stage] # \"base\" \\/ BaseRelationAllowed(base))",
+		"action": "Admit",
+		"original": "/\\ restored = \"passed\"",
 		"replacement": "/\\ TRUE",
-		"defect": "Dropping the base relation guard admits a manifest base that is not an ancestor of the merge base, so the scope check can miss paths of the PR.",
+		"defect": "Dropping the restored check admits a proof whose restored run did not pass, as a judge that stops after the first two runs would.",
 		"expect": {
 			"kind": "invariant",
-			"name": "BaseAncestry"
+			"name": "AdmitSafe"
 		}
 	},
 	"limits": [
-		"The finite model takes the Git ancestry, diff and history observations as true. It does not model Git.",
-		"The model does not check the words of the docs. Review and the STE, chart, budget and drift gates examine them.",
-		"The skill, agent, rules, handler and check counts in the README are observations of the tree at this commit.",
+		"The finite model takes each judged run result as true. It does not model processes, signals or temp roots. The CP-02 and CP-10 controls examine them.",
+		"The model does not check the launcher, the node floor, check:fast or the CI trigger. Their tests, check:drift and the CI step examine them.",
+		"The model does not check the words of the docs and the ADR notes. Review and the STE, chart, budget and drift gates examine them.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

@@ -22,6 +22,7 @@
 		"tests/astack/hook.test.ts",
 		"tests/astack/ste-hook.test.ts",
 		"tests/astack/guards.test.ts",
+		"tests/astack/launcher.test.ts",
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
@@ -217,6 +218,16 @@
 		{
 			"criterion": "SG-generated",
 			"controls": ["sg-stale-cli"]
+		},
+		{
+			"criterion": "SG-runtime",
+			"controls": [
+				"sg-runtime-no-probe",
+				"sg-runtime-bun-first",
+				"sg-runtime-floor",
+				"sg-runtime-none",
+				"sg-runtime-entry"
+			]
 		},
 		{
 			"criterion": "SG-preserve",

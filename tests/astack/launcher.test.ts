@@ -111,7 +111,7 @@ describe("bin/astack", () => {
 		expect(run.stdout).toStartWith("saved ");
 	});
 
-	test("a node from PATH runs the command with no --version call", () => {
+	test("[control:sg-runtime-no-probe] a node from PATH runs the command with no --version call", () => {
 		const home = scratch();
 		const bin = join(home, "bin");
 		mkdirSync(bin);
@@ -126,7 +126,7 @@ describe("bin/astack", () => {
 		);
 	});
 
-	test("bun on PATH comes before node on PATH", () => {
+	test("[control:sg-runtime-bun-first] bun on PATH comes before node on PATH", () => {
 		const home = scratch();
 		const nodeBin = join(home, "node-bin");
 		const bunBin = join(home, "bun-bin");
@@ -141,7 +141,7 @@ describe("bin/astack", () => {
 		expect(run.stdout).toStartWith("bun ");
 	});
 
-	test("a hook on a node that cannot load the bundle exits 0 with the floor message, and a Cursor event gets the allow JSON", () => {
+	test("[control:sg-runtime-floor] a hook on a node that cannot load the bundle exits 0 with the floor message, and a Cursor event gets the allow JSON", () => {
 		const home = scratch();
 		const bin = join(home, "bin");
 		mkdirSync(bin);
@@ -166,7 +166,7 @@ describe("bin/astack", () => {
 		expect(cursor.stderr).toBe(`SyntaxError: Unexpected token\n${message}`);
 	});
 
-	test("with no runtime, a command that is not a hook exits 1", () => {
+	test("[control:sg-runtime-none] with no runtime, a command that is not a hook exits 1", () => {
 		const home = scratch();
 		const tools = join(home, "tools");
 		mkdirSync(tools);
@@ -281,7 +281,7 @@ describe("the node floor", () => {
 			["check", "plan"],
 			undefined,
 		],
-	])("%s", (_name, versions, args, expected) => {
+	])("[control:sg-runtime-entry] %s", (_name, versions, args, expected) => {
 		expect(floorStop(versions, args)).toEqual(expected);
 	});
 });

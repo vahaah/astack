@@ -85,6 +85,8 @@ The [composition ADR](0006-internal-composition-records-follow-domain-effects.md
 Tool execution stays in the I/O edge and keeps its declared order.
 The notation does not add a runtime monad wrapper.
 
+> Amended 2026-11-22: D3 said "Tool execution stays in the I/O edge and keeps its declared order." The declared order is the judge order positive, negative, restored, as in `ProofAdmission`. `astack check proof` now starts the three TLC runs together with `runModel`. It reads each end with `ended` and judges the runs in that order with `judgePositive` and `judgeNegative`. A stop in that order kills the live runs and removes their temp roots. The evidence and the abstraction relation stay the same.
+
 #### Implementation correspondence
 
 | Model concept | Concrete contract |
@@ -131,6 +133,8 @@ Current results belong to CI and proof receipts, so this ADR does not copy a tra
 `bun run test` runs the repository proof before integration tests as a toolchain prerequisite.
 The integration suite starts after a complete successful toolchain check.
 `bun run check` repeats proof admission after the implementation gates.
+
+> Amended 2026-11-22: D3 said "`bun run test` runs the repository proof before integration tests as a toolchain prerequisite" and "`bun run check` repeats proof admission after the implementation gates". `bun run check` now runs the proof once, after the lint, type, build and scan gates and before the suite. `bun run test` runs only the suite. One baseline check printed the same receipt digest for both proof runs, so the second run added no evidence.
 
 ### D4. Adoption preserves review and CI authority
 
