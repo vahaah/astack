@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { mcpParts } from "../../src/astack/hook/decode/claude-code.ts";
@@ -481,6 +487,62 @@ describe("the captured prompt channels", () => {
 			});
 		},
 	);
+});
+
+describe("the attended note", () => {
+	const NOTE =
+		"astack: a person typed this prompt, so this turn is attended. CLAUDE_CODE_SESSION_ATTENDED=0 makes the other turns of the session unattended. At S0 of /astack:plan, treat this turn as attended, also when astack plan attended prints unattended.";
+
+	function promptNote(fields: Record<string, unknown>, env: Env): string {
+		const quiet = mkdtempSync(join(tmpdir(), "astack-attended-"));
+		try {
+			mkdirSync(join(quiet, ".astack"));
+			writeFileSync(
+				join(quiet, ".astack/profile.json"),
+				JSON.stringify({ hooks: { ste: false } }),
+			);
+			const output = runHook(
+				"claude-code",
+				"UserPromptSubmit",
+				JSON.stringify({
+					cwd: quiet,
+					session_id: "s1",
+					prompt: "go",
+					...fields,
+				}),
+				env,
+				{ ...deps(HANDLERS), cwd: quiet },
+			);
+			return output.stdout === ""
+				? ""
+				: JSON.parse(output.stdout).hookSpecificOutput.additionalContext;
+		} finally {
+			rmSync(quiet, { recursive: true, force: true });
+		}
+	}
+
+	test.each([
+		[
+			"a person's prompt in an unattended session gets the note, with hooks.ste off and no state folder",
+			{ source: "user" },
+			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
+			NOTE,
+		],
+		[
+			"a prompt with no source in an unattended session gets none",
+			{},
+			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
+			"",
+		],
+		[
+			"a person's prompt in an attended session gets none",
+			{ source: "user" },
+			{ CLAUDE_CODE_ENTRYPOINT: "cli" },
+			"",
+		],
+	])("%s", (_, fields, env, text) => {
+		expect(promptNote(fields, env)).toBe(text);
+	});
 });
 
 describe("tool and event names", () => {

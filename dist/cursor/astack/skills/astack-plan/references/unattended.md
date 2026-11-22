@@ -1,6 +1,6 @@
 # Unattended runs
 
-Run `astack plan attended` at S0, as its own Bash call. It prints `unattended` when Claude Code runs headless or through the SDK. It reads that from `CLAUDE_CODE_SESSION_ATTENDED=0` or from an `sdk` entrypoint. Else it prints `attended`. The SessionStart hook says the same at the start of such a session, and it names the variable. `astack doctor` names it too.
+Run `astack plan attended` at S0, as its own Bash call. It prints `unattended` for `CLAUDE_CODE_SESSION_ATTENDED=0` or an `sdk` entrypoint, which a headless or SDK run sets. Else it prints `attended`. The SessionStart hook and `astack doctor` name the variable. When the prompt hook notes that a person typed the prompt, treat that turn as attended.
 
 A host that relays the typed prompts of a person must not set `CLAUDE_CODE_SESSION_ATTENDED=0`, and must not use an `sdk` entrypoint. An unattended session takes a merge grant only from `merge.authority` or `merge.standingBases` in `.astack/profile.json` on the PR base branch.
 
