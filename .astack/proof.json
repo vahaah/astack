@@ -1,212 +1,55 @@
 {
 	"version": 1,
-	"change": "review-roadmap-b04-plain-form",
-	"base": "ef9a3f625423e0f683c0ff26dc74db1a26a3a63f",
+	"change": "plan-holds-slice-and-map-rules",
+	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
 	"scope": [
 		{
-			"path": "src/astack/shell.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "src/astack/git-command.ts",
-			"obligation": "SG-dynamic-word",
-			"modelRefs": ["RunGit", "BroadLossDenied", "DenialNeedsLoss"]
+			"path": "scripts/lib/duplicate-skills.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "src/astack/hook/handlers/destructive.ts",
-			"obligation": "SG-hook-skip",
-			"modelRefs": [
-				"Push",
-				"RunGit",
-				"HookSkipNeedsGates",
-				"BroadLossDenied",
-				"DenialNeedsLoss"
-			]
+			"path": "tests/apply/duplicate-skills.test.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "src/astack/hook/handlers/merge-guard.ts",
-			"obligation": "SG-api-merge",
-			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
+			"path": "scripts/lib/upstreams.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
 		},
 		{
-			"path": "src/astack/pr/merge.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "MergeNeedsAuthority"]
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
 		},
 		{
-			"path": "src/astack/hook/handlers/turn.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["Lower", "CapsNeverRise"]
 		},
 		{
-			"path": "src/astack/gates.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "src/astack/cli/commands/gates.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "src/astack/cli/commands/index.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "src/astack/pr-review-profile.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/shell.test.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push"]
-		},
-		{
-			"path": "tests/fixtures/guard-bypass.json",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "Push"]
-		},
-		{
-			"path": "tests/property/**",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "Push"]
-		},
-		{
-			"path": "tests/astack/guards.test.ts",
-			"obligation": "SG-work-loss",
-			"modelRefs": [
-				"RunGit",
-				"Push",
-				"BroadLossDenied",
-				"DenialNeedsLoss",
-				"HookSkipNeedsGates"
-			]
-		},
-		{
-			"path": "tests/astack/merge-guard.test.ts",
-			"obligation": "SG-api-merge",
-			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
-		},
-		{
-			"path": "tests/astack/gates.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/registry.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/apply/ci-parity.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/pr-review-profile.test.ts",
-			"obligation": "SG-gates-run",
-			"modelRefs": ["GatesRun"]
-		},
-		{
-			"path": "tests/astack/dispatch.test.ts",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "tests/astack/headings.test.ts",
+			"path": "README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/guard-composition.ts",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "formal/SessionGuards.*",
-			"obligation": "SG-hook-skip",
-			"modelRefs": [
-				"Prompt",
-				"Merge",
-				"RunGit",
-				"GatesRun",
-				"Push",
-				"TypeOK",
-				"GrantFromPerson",
-				"MergeNeedsAuthority",
-				"McpMergeDenied",
-				"BroadLossDenied",
-				"DenialNeedsLoss",
-				"HookSkipNeedsGates"
-			]
-		},
-		{
-			"path": "docs/adr/0010-*.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": [
-				"RunGit",
-				"GatesRun",
-				"Push",
-				"BroadLossDenied",
-				"HookSkipNeedsGates",
-				"GrantFromPerson"
-			]
-		},
-		{
-			"path": "docs/reference/session-guards.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "CONTEXT.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "GatesRun", "Push", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "SG-plain-form",
-			"modelRefs": ["RunGit", "Push", "BroadLossDenied", "HookSkipNeedsGates"]
-		},
-		{
-			"path": "README.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "SG-hook-skip",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
-			"obligation": "SG-unattended",
-			"modelRefs": ["Prompt", "GrantFromPerson"]
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
-			"obligation": "SG-generated",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "dist/**",
-			"obligation": "SG-generated",
-			"modelRefs": ["Merge", "RunGit", "GatesRun", "Push"]
-		},
-		{
-			"path": "package.json",
-			"obligation": "SG-plain-form",
+			"path": "docs/charts/checked-path.mmd",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "bun.lock",
-			"obligation": "SG-plain-form",
+			"path": "docs/adr/0013-*.md",
+			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/plans/**",
+			"path": "docs/plans/review-roadmap/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
@@ -214,375 +57,273 @@
 			"path": ".astack/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/NOTICE",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "NOTICE",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/hook/events.ts",
-			"symbol": "Handler"
+			"path": "scripts/budget.ts",
+			"symbol": "Budget"
 		},
 		"terms": [
+			"Skill word budget",
+			"Zero-use part",
 			"Session guard",
-			"Work-loss command",
-			"Unattended session",
-			"Plain form",
-			"Hook skip",
-			"Gate record"
+			"ChangeProof"
 		],
 		"invariants": [
 			{
-				"name": "A hook skip goes ahead only on a head whose gates pass",
-				"modelRef": "HookSkipNeedsGates"
+				"name": "A pass has each skill and the total at or under their caps",
+				"modelRef": "PassWithinCaps"
 			},
 			{
-				"name": "No command on the tree or a folder discards a change and passes",
-				"modelRef": "BroadLossDenied"
+				"name": "A fail names a skill or a total over its cap",
+				"modelRef": "FailNamesOverrun"
 			},
 			{
-				"name": "Each work-loss denial names a change that git discards",
-				"modelRef": "DenialNeedsLoss"
-			},
-			{
-				"name": "A merge needs a grant of the base branch profile or a covering prompt of a person",
-				"modelRef": "MergeNeedsAuthority"
-			},
-			{
-				"name": "Only a person's prompt sets a grant",
-				"modelRef": "GrantFromPerson"
+				"name": "The lower step never raises a cap",
+				"modelRef": "CapsNeverRise"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
-				"decision": "D3"
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
-				"decision": "D4"
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"decision": "D3"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"SG-plain-form",
-				"SG-dynamic-word",
-				"SG-api-merge",
-				"SG-hook-skip",
-				"SG-gates-run",
-				"SG-work-loss",
-				"SG-unattended",
-				"SG-generated",
-				"SG-preserve"
+				"WB-cap",
+				"WB-ratchet",
+				"WB-cut",
+				"SG-preserve",
+				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each guard maps one decoded hook call to one Verdict. shellSteps gives each guard the plain form of each shell step, and readGit reads a git step of it. A gate run maps the gates of the hardening profile to runs, and recordOf keeps a record only when each gate that applies passes. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+			"contract": "The gate maps the word counts of the skill trees and one budget to one report. A count over its cap is a problem that names the skill, and a count under its cap is a note."
 		},
 		"objects": [
 			{
-				"name": "HookCall",
+				"name": "SkillTrees",
 				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "HookEvent"
+					"path": "scripts/budget.ts",
+					"symbol": "SKILLS_DIR"
 				}
 			},
 			{
-				"name": "Verdict",
+				"name": "WordCounts",
 				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "Verdict"
+					"path": "scripts/budget.ts",
+					"symbol": "WordCounts"
 				}
 			},
 			{
-				"name": "ShellStep",
+				"name": "Budget",
 				"link": {
-					"path": "src/astack/shell.ts",
-					"symbol": "ShellStep"
+					"path": "scripts/budget.ts",
+					"symbol": "Budget"
 				}
 			},
 			{
-				"name": "GitRead",
+				"name": "BudgetReport",
 				"link": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "GitRead"
-				}
-			},
-			{
-				"name": "ProfileGate",
-				"link": {
-					"path": "src/astack/pr-review-profile.ts",
-					"symbol": "ProfileGate"
-				}
-			},
-			{
-				"name": "GateRun",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "GateRun"
-				}
-			},
-			{
-				"name": "GateRecord",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "GateRecord"
+					"path": "scripts/budget.ts",
+					"symbol": "BudgetReport"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "shellSteps",
-				"from": "HookCall",
-				"to": "ShellStep",
+				"name": "skillWords",
+				"from": "SkillTrees",
+				"to": "WordCounts",
 				"link": {
-					"path": "src/astack/shell.ts",
-					"symbol": "shellSteps"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
+				},
+				"effects": ["fs-read"]
+			},
+			{
+				"name": "budgetReport",
+				"from": "WordCounts",
+				"to": "BudgetReport",
+				"link": {
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
 				"effects": []
 			},
 			{
-				"name": "readGit",
-				"from": "ShellStep",
-				"to": "GitRead",
+				"name": "lowerBudget",
+				"from": "WordCounts",
+				"to": "Budget",
 				"link": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "readGit"
-				},
-				"effects": []
-			},
-			{
-				"name": "destructive",
-				"from": "HookCall",
-				"to": "Verdict",
-				"link": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
-				},
-				"effects": ["fs-read", "spawn", "env"]
-			},
-			{
-				"name": "mergeGuard",
-				"from": "HookCall",
-				"to": "Verdict",
-				"link": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
-				},
-				"effects": ["fs-read", "fs-write", "spawn", "network"]
-			},
-			{
-				"name": "runGates",
-				"from": "ProfileGate",
-				"to": "GateRun",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "runGates"
-				},
-				"effects": ["spawn", "fs-read", "fs-write", "env"]
-			},
-			{
-				"name": "recordOf",
-				"from": "GateRun",
-				"to": "GateRecord",
-				"link": {
-					"path": "src/astack/gates.ts",
-					"symbol": "recordOf"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
 				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their kind and their text are equal. Two plain steps are equal when their env words, their env unset mark, their words, their folder and their unreadable mark are equal. Two gate records are equal when their head, base, base commit and gate names are equal.",
+		"equality": "Two reports are equal when their problem lists and their note lists are equal in order. Two budgets are equal when their total caps and their skill caps are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The guards run side by side on one hook call under combineAll, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad. The wrapper law of the plain form is a control of the proof matrix."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/astack/guard-composition.ts"
+		"typedWitness": "tests/budget.test.ts"
 	},
 	"abstraction": {
-		"hides": "The shell grammar of reserved words, wrappers and bodies, the flag grammar of each guarded git verb, the GraphQL body reader of gh api, the hook-skip forms and the gate run of the hardening profile.",
+		"hides": "The walk of each skill tree, the word split of each Markdown file and the format of the cap file.",
 		"callersKnow": [
-			"Both guards judge the plain form of each shell step, so a known wrapper gives the verdict of the command that it runs.",
-			"A guarded verb that a variable hides gets a deny, and a work-loss verb gets it only on a changed tree in a folder that astack can read.",
-			"A hook skip on a push passes only for a source that astack gates run recorded as green. A hook skip on a commit or a config write is an owner gate.",
-			"A GraphQL merge body that astack cannot read gets a deny."
+			"A skill or the total over its cap fails the gate, and the failure names it.",
+			"A skill with no cap fails the gate.",
+			"A cap above its count passes with a note, and the lower step sets it to the count.",
+			"A cap rises only in a PR that moves text into that skill while the total falls by more, and review enforces that rule."
 		],
-		"deletionTest": "Deleting shellSteps puts a wrapper list back in each of 8 handlers, and the two guards drift apart again. Deleting readGit puts the dynamic-word rule in each git caller. Deleting recordOf lets a red gate run write a record.",
+		"deletionTest": "Deleting budgetReport puts the cap comparison and the problem text in main and in each test. Deleting lowerBudget makes each cut PR edit the cap file by hand.",
 		"alternatives": [
 			{
-				"name": "Fix each wrapper in each guard",
-				"rejectedBecause": "The two guards had two wrapper rules, and review E2 found wrappers that passed both."
+				"name": "A lint warning for skill size",
+				"rejectedBecause": "A warning does not stop growth."
 			},
 			{
-				"name": "Use a shell AST library",
-				"rejectedBecause": "It needs the same wrapper, body and folder rules, and it adds a runtime dependency to the bundle."
+				"name": "A total cap only",
+				"rejectedBecause": "One skill can then grow while another shrinks."
 			},
 			{
-				"name": "Deny each unreadable step",
-				"rejectedBecause": "It blocks cd \"$dir\" && git status, which reads nothing."
-			},
-			{
-				"name": "Pass a hook skip after a gate command in the same chain",
-				"rejectedBecause": "An agent can chain any command, and a red gate still lets the push run."
-			},
-			{
-				"name": "Deny only --no-verify",
-				"rejectedBecause": "HUSKY=0 and LEFTHOOK=0 skip the same hooks with no flag."
+				"name": "Fail a cap above its count",
+				"rejectedBecause": "Each commit of a cut PR then needs a cap edit."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/shell.ts",
-					"symbol": "shellSteps"
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
-				"modelAction": "RunGit"
+				"modelAction": "Check"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/git-command.ts",
-					"symbol": "readGit"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
-				"modelAction": "RunGit"
+				"modelAction": "Lower"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
 				},
-				"modelAction": "RunGit"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/handlers/destructive.ts",
-					"symbol": "handler"
-				},
-				"modelAction": "Push"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/gates.ts",
-					"symbol": "runGates"
-				},
-				"modelAction": "GatesRun"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/gates.ts",
-					"symbol": "recordOf"
-				},
-				"modelAction": "GatesRun"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/handlers/merge-guard.ts",
-					"symbol": "mergeGuard"
-				},
-				"modelAction": "Merge"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/handlers/turn.ts",
-					"symbol": "handler"
-				},
-				"modelAction": "Prompt"
+				"modelAction": "Edit"
 			}
 		],
 		"omitted": [
-			"The model takes the plain form of each shell step as given. The wrapper law and the shell table tests examine the parser.",
-			"A gate run is abstracted to one fact that the gates pass at HEAD, and a record that the run writes only for that fact.",
-			"A push target is abstracted to a recorded head, refs that a record cannot cover, or a new commit.",
-			"The REST and GraphQL forms of the merge guard are abstracted to the gh channel.",
-			"One repo and one HEAD are modeled for the push group."
+			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
+			"The model takes the word count of each skill tree as a true observation.",
+			"The duplicate map and its cut rule are outside the model. The wb-successor control examines each cut name, also to-tickets and wayfinder, from mattpocock/skills and with no lock entry."
 		]
 	},
 	"model": {
-		"module": "formal/SessionGuards.tla",
-		"config": "formal/SessionGuards.cfg",
+		"module": "formal/WordBudget.tla",
+		"config": "formal/WordBudget.cfg",
 		"dependencies": [],
 		"invariants": [
 			"TypeOK",
-			"GrantFromWords",
-			"GrantFromPerson",
-			"MergeNeedsAuthority",
-			"McpMergeDenied",
-			"GuardErrorDenies",
-			"FullStopNeverMerges",
-			"WriteChecksKept",
-			"ScratchSkipped",
-			"CommitSurfaceChecked",
-			"BroadLossDenied",
-			"DenialNeedsLoss",
-			"HookSkipNeedsGates"
+			"PassWithinCaps",
+			"FailNamesOverrun",
+			"CapsNeverRise"
 		],
 		"properties": [],
 		"bounds": [
-			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
-			"Each combination of four path facts for one write and an optional commit.",
-			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
-			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+			"Each order of the edit, check and lower steps."
 		],
 		"fairness": []
 	},
 	"negative": {
-		"file": "formal/SessionGuards.tla",
-		"action": "Push",
-		"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
-		"replacement": "/\\ ~skips \\/ target = \"head\"",
-		"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
+		"file": "formal/WordBudget.tla",
+		"action": "Check",
+		"original": "\\A s \\in Skills : counts[s] <= caps[s]",
+		"replacement": "TRUE",
+		"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
 		"expect": {
 			"kind": "invariant",
-			"name": "HookSkipNeedsGates"
+			"name": "PassWithinCaps"
 		}
 	},
 	"limits": [
-		"The finite model takes the plain form of each step, the gate result at HEAD and the push target as true observations.",
-		"The model does not show that the TypeScript code refines it. The wrapper law, the probe fixture, the linked controls and review examine that relation.",
-		"An agent can write a gate record in the state folder, so the record guards against a mistake, not against a hostile agent.",
-		"A guarded verb behind a fully dynamic program, such as $CMD, stays out of reach of the hook.",
+		"The finite model takes the word counts as true observations and covers two skills only.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The plan cap rise from 14,299 to 14,718 words is a hand edit outside the model, because the gate cannot see a PR. Review compares it with the fall of the total from 133,909 to 131,540 words.",
+		"The model does not check the moved slice and map rules, the repointed routes or the ADR note. Review and the STE, budget, validate and drift gates examine them.",
 		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

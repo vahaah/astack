@@ -1,5 +1,5 @@
 {
-	"total": 133913,
+	"total": 131540,
 	"skills": {
 		"architect": 2119,
 		"arena": 1056,
@@ -41,11 +41,9 @@
 		"swarm": 515,
 		"takeover": 667,
 		"tdd": 1007,
-		"to-tickets": 919,
 		"types": 4993,
-		"wayfinder": 1872,
 		"why": 6435,
 		"write-docs": 5825,
-		"write-ticket": 4055
+		"write-ticket": 4054
 	}
 }
