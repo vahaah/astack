@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { command as watchPrCommand } from "../../../src/astack/cli/commands/watch-pr.ts";
 import { err, ok } from "../../../src/astack/result.ts";
 import {
@@ -16,6 +18,9 @@ import {
 	type WatcherVerdict,
 } from "../../../src/astack/watch-pr/types.ts";
 import { fakeReader, passingCheck } from "./fakes.ts";
+
+const ROOT = join(import.meta.dir, "../../..");
+const SKILLS = "marketplace/plugins/astack/skills";
 
 function testRuntime(reader: GitHubReader): {
 	readonly runtime: CliRuntime;
@@ -143,6 +148,35 @@ describe("parseWatchArgs", () => {
 		expect(parsed.ok).toBe(false);
 		expect(parsed.ok ? "" : parsed.error).toStartWith("error: ");
 		expect(parsed.ok ? "" : parsed.error).toContain(quoted);
+	});
+
+	test("[control:wp-text-commands] each astack watch-pr command of the skill texts and the README parses, with a number for each placeholder", () => {
+		const commands = [
+			"README.md",
+			...readdirSync(join(ROOT, SKILLS), { recursive: true, encoding: "utf8" })
+				.filter((path) => path.endsWith(".md"))
+				.map((path) => join(SKILLS, path)),
+		].flatMap((file) =>
+			readFileSync(join(ROOT, file), "utf8")
+				.split("\n")
+				.flatMap((line, at) =>
+					[...line.matchAll(/`astack watch-pr([^`]*)`/g)].map((match) => ({
+						where: `${file}:${at + 1}`,
+						argv: (match[1] ?? "")
+							.replace(/[[\]]/g, " ")
+							.replace(/<[^>]+>/g, "12")
+							.split(/\s+/)
+							.filter((arg) => arg !== ""),
+					})),
+				),
+		);
+		expect(commands.some(({ argv }) => argv.includes("--pr"))).toBe(true);
+		expect(
+			commands.flatMap(({ where, argv }) => {
+				const parsed = parseWatchArgs(argv);
+				return parsed.ok ? [] : [`${where}: ${parsed.error}`];
+			}),
+		).toEqual([]);
 	});
 });
 
