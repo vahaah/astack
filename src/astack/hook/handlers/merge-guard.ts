@@ -102,23 +102,16 @@ type ApiParts = {
 	readonly endpoint: Word | undefined;
 	readonly inputs: readonly GraphqlInput[];
 	readonly method: Method | undefined;
-	readonly dynamicFlagAt: number | undefined;
 };
 
 function apiParts(args: readonly Word[]): ApiParts {
 	const inputs: GraphqlInput[] = [];
 	let endpoint: Word | undefined;
 	let method: Method | undefined;
-	let dynamicFlagAt: number | undefined;
 	for (let index = 1; index < args.length; index++) {
 		const word = args[index];
 		if (word === undefined) continue;
 		if (!word.value.startsWith("-")) {
-			if (
-				word.dynamic &&
-				(word.startsDynamic === true || endpoint !== undefined)
-			)
-				dynamicFlagAt = index;
 			endpoint ??= word;
 			continue;
 		}
@@ -151,15 +144,15 @@ function apiParts(args: readonly Word[]): ApiParts {
 			if (input) inputs.push(input);
 		}
 	}
-	return { endpoint, inputs, method, dynamicFlagAt };
+	return { endpoint, inputs, method };
 }
 
-function provablyGet({ method, dynamicFlagAt }: ApiParts): boolean {
+function provablyGet(method: Method | undefined, lastDynamic: number): boolean {
 	return (
 		method?.word !== undefined &&
 		!method.word.dynamic &&
 		method.word.value === "GET" &&
-		method.at > (dynamicFlagAt ?? 0)
+		method.at > lastDynamic
 	);
 }
 
@@ -202,9 +195,9 @@ function apiCall(
 			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
 		});
 	if (mergesThroughGraphql) return API;
-	if (writes && (endpoint?.dynamic === true || endpoint?.expands === true))
-		return ENDPOINT;
-	return parts.dynamicFlagAt !== undefined && !provablyGet(parts)
+	if (writes && endpoint?.expands === true) return ENDPOINT;
+	const lastDynamic = args.findLastIndex((word) => word.dynamic);
+	return lastDynamic > 0 && !provablyGet(parts.method, lastDynamic)
 		? ENDPOINT
 		: NONE;
 }
@@ -320,7 +313,7 @@ function stepVerdict(
 		case "endpoint":
 			return deny(
 				mergeDenial([
-					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. Merge a PR with gh pr merge.",
+					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. For a read, put -X GET after the last variable. Merge a PR with gh pr merge.",
 				]),
 			);
 		case "unreadable":

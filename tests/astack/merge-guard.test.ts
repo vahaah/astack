@@ -788,7 +788,7 @@ describe("the merge guard", () => {
 			expect(bash(guard(GREEN), command)).toEqual({
 				exit: 2,
 				stderr:
-					"astack blocked gh pr merge:\n- astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. Merge a PR with gh pr merge.",
+					"astack blocked gh pr merge:\n- astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. For a read, put -X GET after the last variable. Merge a PR with gh pr merge.",
 			});
 		},
 	);
@@ -835,9 +835,34 @@ describe("the merge guard", () => {
 		);
 	});
 
-	test("a read of an endpoint that a variable gives passes", () => {
-		expect(bash(guard(GREEN), 'gh api "repos/o/r/$TAIL"').exit).toBe(0);
-	});
+	test.each([
+		"gh api -H $H repos/o/r/pulls/12/merge",
+		"gh api -H$H repos/o/r/pulls/12/merge",
+		"gh api -q $Q repos/o/r/pulls/12/merge",
+		"gh api --jq $Q repos/o/r/pulls/12/merge",
+		'gh api -t "$T" -p $P repos/o/r/pulls/12/merge',
+		"gh api repos/o/r/$EP",
+		'gh api "repos/o/r/$TAIL"',
+	])(
+		"a variable can split into a method flag, so %s is denied with no later -X GET",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
+		"gh api repos/o/r/pulls/12/merge",
+		"gh api -H 'Accept: application/json' repos/o/r/pulls/12",
+		"gh api repos/o/r/$EP -X GET",
+		'gh api -H "$H" "repos/o/r/$TAIL" --method GET',
+	])(
+		"a GET with static words, or with a static -X GET after each variable, passes: %s",
+		(command) => {
+			expect(bash(guard(GREEN), command).exit).toBe(0);
+		},
+	);
 
 	test("other commands pass", () => {
 		expect(bash(guard(GREEN), "gh pr view 12 --json state").exit).toBe(0);

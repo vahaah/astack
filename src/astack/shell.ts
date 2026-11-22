@@ -3,7 +3,6 @@ import { basename, resolve } from "node:path";
 export interface Word {
 	value: string;
 	dynamic: boolean;
-	startsDynamic?: boolean;
 	expands?: boolean;
 }
 
@@ -75,7 +74,6 @@ export function parseShell(src: string): SimpleCommand[] {
 
 	const append = (text: string, dynamic = false): void => {
 		word ??= { value: "", dynamic: false };
-		if (dynamic && word.value === "") word.startsDynamic = true;
 		word.value += text;
 		if (dynamic) word.dynamic = true;
 	};
@@ -413,7 +411,7 @@ const HEADERS = new Set(["case", "for", "select"]);
 const SHELLS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
 const FOLDER_MOVES = new Set(["cd", "popd", "pushd"]);
 const MAX_DEPTH = 4;
-const FED: Word = { value: "", dynamic: true, startsDynamic: true };
+const FED: Word = { value: "", dynamic: true };
 
 type Option = {
 	readonly name: string;
@@ -481,9 +479,7 @@ function fedWords(words: Word[], replace: string | undefined): Word[] {
 	if (words.length === 0) return words;
 	if (replace === undefined) return [...words, FED];
 	return words.map((word) =>
-		word.value.includes(replace)
-			? { ...word, dynamic: true, startsDynamic: true }
-			: word,
+		word.value.includes(replace) ? { ...word, dynamic: true } : word,
 	);
 }
 
