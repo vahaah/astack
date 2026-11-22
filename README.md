@@ -332,7 +332,7 @@ What is only analogy:
 
 One source builds for Claude Code, Codex, Cursor, Grok Build, Grok Bot and other Agent Skills clients. All commands assume `ASTACK_RELEASE` points at your checkout (see [Quickstart](#quickstart)).
 
-### Claude Code and Grok Build
+### Claude Code
 
 Add the marketplace from the stable link `$ASTACK_CURRENT`, so that an [update](#update) only moves the link:
 
@@ -343,7 +343,19 @@ claude plugin marketplace add "$ASTACK_CURRENT"
 claude plugin install astack@astack
 ```
 
-The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root. Grok Build uses the Claude plugin build through its own marketplace install from the same link.
+The plugin carries its CLI and hooks. Link the shared rules as [`dist/README.md`](dist/README.md) describes, with `$ASTACK_CURRENT` as the repository root.
+
+### Grok Build
+
+Grok Build installs the Claude plugin build from its folder in the release:
+
+```sh
+ASTACK_CURRENT="$HOME/.local/share/astack/current"
+ln -sfn "$ASTACK_RELEASE" "$ASTACK_CURRENT"
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Grok keeps a copy of the plugin, so the link does not move it to a new release. Grok Build reads the shared rules that you linked for Claude Code.
 
 ### Codex
 
@@ -379,7 +391,16 @@ claude plugin marketplace update astack
 claude plugin update astack@astack
 ```
 
-Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link. For Grok Build, update its marketplace install from the same link. Then restart Grok Build.
+Then restart Claude Code. The shared rules that you linked through `$ASTACK_CURRENT` follow the link.
+
+Grok Build keeps a copy of the plugin, and `grok plugin update astack` keeps the old copy. These commands remove the copy and install the new release. `--keep-data` keeps the data of the plugin:
+
+```sh
+grok plugin uninstall astack --keep-data
+grok plugin install "$ASTACK_CURRENT/dist/claude-code/astack" --trust
+```
+
+Then restart Grok Build.
 
 An older install that added the marketplace from a release folder needs one move to the link. `claude plugin marketplace remove astack` also removes the plugin and its saved options. These commands add the marketplace from the link and install the plugin again:
 
