@@ -112,7 +112,7 @@ The rule also denies a merge that is not a PR merge, such as a database branch m
 ### D5. An error of the merge guard on a merge gives a deny
 
 A handler can name a failure verdict, and the dispatcher uses it when the handler throws.
-The merge guard denies a shell command with a merge word and an MCP merge tool when it throws, and the deny names the error.
+When the merge guard throws, it denies each MCP merge tool and each merge command that its shell parse finds. The deny names the error.
 Each other handler still fails open.
 
 ### D6. The merge guard guards against mistakes

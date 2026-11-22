@@ -134,6 +134,23 @@ function mergeVerdict(
 	return reasons.length > 0 ? deny(mergeDenial(reasons)) : ALLOW;
 }
 
+function holdsMergeWord(step: ShellStep): boolean {
+	return step.values.some((value) => value.includes("merge"));
+}
+
+function examinesMerge(step: ShellStep): boolean {
+	const merge = mergeCommand(step);
+	switch (merge.kind) {
+		case "none":
+			return false;
+		case "unreadable":
+			return holdsMergeWord(step);
+		case "api":
+		case "merge":
+			return true;
+	}
+}
+
 function stepVerdict(
 	step: ShellStep,
 	chained: boolean,
@@ -151,7 +168,7 @@ function stepVerdict(
 				]),
 			);
 		case "unreadable":
-			return step.values.some((value) => value.includes("merge"))
+			return holdsMergeWord(step)
 				? deny(
 						mergeDenial([
 							"astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
@@ -209,7 +226,8 @@ function failedVerdict(
 	error: unknown,
 ): Verdict | undefined {
 	const merges =
-		(event.kind === "shell" && event.command.includes("merge")) ||
+		(event.kind === "shell" &&
+			shellSteps(event.command, event.cwd).some(examinesMerge)) ||
 		(event.kind === "mcp" && isMcpMergeTool(event.tool));
 	if (!merges) return undefined;
 	const cause = error instanceof Error ? error.message : String(error);
