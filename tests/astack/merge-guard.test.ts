@@ -726,7 +726,7 @@ describe("MCP merge tools", () => {
 	const MCP_DENY: Verdict = {
 		kind: "deny",
 		reason:
-			"astack blocked gh pr merge:\n- astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
+			"astack blocked gh pr merge:\n- astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge in a Bash call, or ask the owner.",
 	};
 
 	function mcpVerdict(name: string, input: unknown): Verdict {
@@ -808,6 +808,18 @@ describe("MCP merge tools", () => {
 				url: "https://api.github.com/graphql",
 				body: String.raw`{"query":"mutation { \u006dergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }"}`,
 			},
+		],
+		[
+			"a gh pr merge command",
+			"mcp__desktop_commander__start_process",
+			true,
+			{ command: "gh pr merge 12 --squash" },
+		],
+		[
+			"a gh pr view command",
+			"mcp__desktop_commander__start_process",
+			false,
+			{ command: "gh pr view 12 --json mergeable" },
 		],
 		[
 			"a PUT on the REST merge path",

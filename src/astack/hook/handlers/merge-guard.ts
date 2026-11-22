@@ -35,6 +35,7 @@ const WRITE_METHOD_IN_INPUT = /\b(?:PUT|POST|PATCH|DELETE)\b/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
+const GH_WORD = /\bgh\b/;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -190,7 +191,7 @@ function shellVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	if (!/\bgh\b/.test(event.command)) return ALLOW;
+	if (!GH_WORD.test(event.command)) return ALLOW;
 	const steps = shellSteps(event.command, event.cwd);
 	const chained = steps.length > 1;
 	return combineAll(
@@ -289,9 +290,15 @@ function decodedEscapes(text: string): string {
 	);
 }
 
-function holdsApiMerge(input: unknown): boolean {
-	const text = decodedEscapes(inputStrings(input).join("\n"));
+function runsGhMerge(value: string): boolean {
+	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
+}
+
+function holdsMerge(input: unknown): boolean {
+	const values = inputStrings(input).map(decodedEscapes);
+	const text = values.join("\n");
 	return (
+		values.some(runsGhMerge) ||
 		PR_MERGE_MUTATION.test(text) ||
 		AUTO_MERGE_MUTATION.test(text) ||
 		(MERGE_PATH_IN_INPUT.test(text) && WRITE_METHOD_IN_INPUT.test(text))
@@ -299,14 +306,14 @@ function holdsApiMerge(input: unknown): boolean {
 }
 
 function isMcpMerge(event: EventOf<"mcp">): boolean {
-	return isMcpMergeTool(event.tool) || holdsApiMerge(event.input);
+	return isMcpMergeTool(event.tool) || holdsMerge(event.input);
 }
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {
 	if (!isMcpMerge(event)) return ALLOW;
 	return deny(
 		mergeDenial([
-			"astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
+			"astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge in a Bash call, or ask the owner.",
 		]),
 	);
 }
