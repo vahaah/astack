@@ -136,6 +136,24 @@ describe("law claims", () => {
 				"monad-assoc",
 			]),
 		);
+		const noComposites =
+			(carrier: Proof["category"]["carrier"]) => (proof: Proof) => {
+				proof.category.carrier = carrier;
+				proof.category.composites = [];
+				proof.category.laws = [];
+			};
+		expect(
+			lawNames(noComposites({ kind: "artifact", contract: "the gate text" })),
+		).toEqual(ok([]));
+		expect(lawNames(noComposites({ kind: "pure" }))).toEqual(ok([]));
+		expect(
+			lawNames(noComposites({ kind: "result", error: "Rejection" })),
+		).toEqual(
+			err({
+				stage: "category",
+				message: "carrier result needs a witness for monad-left",
+			}),
+		);
 		expect(lawNames(dropLaws("monad-assoc"))).toEqual(
 			err({
 				stage: "category",

@@ -668,7 +668,7 @@ function readProof(fields: Fields): ChangeProof {
 					}),
 				),
 				equality: category.text("equality"),
-				laws: category.items("laws", 1, (value, where) =>
+				laws: category.items("laws", 0, (value, where) =>
 					readLaw(category, value, where),
 				),
 				typedWitness: category.path("typedWitness"),
