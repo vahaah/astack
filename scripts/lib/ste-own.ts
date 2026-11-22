@@ -18,6 +18,7 @@ export const OWN_TEXT_ROOTS: readonly string[] = [
 	"marketplace/plugins/astack",
 	"rules",
 	"docs",
+	"formal",
 	"templates",
 	"examples",
 ];

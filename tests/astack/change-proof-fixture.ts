@@ -77,6 +77,12 @@ export const PROOF_FILES: Files = {
 	"formal/Gate.cfg": GATE_CFG,
 };
 
+type ScopeRow = {
+	path: string;
+	obligation: string;
+	modelRefs?: readonly string[];
+};
+
 export function validProof(base: string) {
 	const dependencies: string[] = [];
 	const carrier: Record<string, string> = {
@@ -93,19 +99,20 @@ export function validProof(base: string) {
 		{ law: "monad-right", status: "witnessed", witness: "model:TypeOK" },
 		{ law: "monad-assoc", status: "witnessed", witness: "control:C1" },
 	];
+	const scope: ScopeRow[] = [
+		{ path: ".astack/**", obligation: "P1" },
+		{ path: "CONTEXT.md", obligation: "P1" },
+		{ path: "docs/**", obligation: "P1" },
+		{ path: "spec/**", obligation: "P1" },
+		{ path: "tests/**", obligation: "P1" },
+		{ path: "src/**", obligation: "P1" },
+		{ path: "formal/*", obligation: "P1" },
+	];
 	return {
 		version: 1,
 		change: "gate-admission",
 		base,
-		scope: [
-			{ path: ".astack/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "CONTEXT.md", obligation: "P1", modelRefs: ["TypeOK"] },
-			{ path: "docs/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "spec/**", obligation: "P1", modelRefs: ["AdmitFresh"] },
-			{ path: "tests/**", obligation: "P1", modelRefs: ["Admit"] },
-			{ path: "src/**", obligation: "P1", modelRefs: ["Admit"] },
-			{ path: "formal/*", obligation: "P1", modelRefs: ["Ends"] },
-		],
+		scope,
 		domain: {
 			context: "Gate admission",
 			glossary: "CONTEXT.md",
@@ -232,5 +239,123 @@ export function proofRepo(
 	});
 	git(root, "add", "-A");
 	git(root, "commit", "-q", "-m", "proof");
+	return { root, base };
+}
+
+export const LOCK_TLA = `---- MODULE Lock ----
+EXTENDS Naturals
+VARIABLES held
+Init == held = 0
+Close == held = 0 /\\ held' = 1
+Open == held = 1 /\\ held' = 0
+Next == Close \\/ Open
+Spec == Init /\\ [][Next]_held
+TypeOK == held \\in 0..1
+====
+`;
+
+function ladderRegistry(): string {
+	const gate = validProof("0".repeat(40));
+	return `${JSON.stringify(
+		{
+			models: [
+				{
+					name: "Gate",
+					model: gate.model,
+					negative: {
+						...gate.negative,
+						action: "Expire",
+						original: "fresh' = FALSE",
+						replacement: "fresh' = TRUE",
+						defect: "a registry negative that the manifest negative replaces",
+					},
+					records: ["docs/adr/0001-gate.md"],
+					covers: ["src/gate.ts"],
+					text: [],
+				},
+				{
+					name: "Lock",
+					model: {
+						module: "formal/Lock.tla",
+						config: "formal/Lock.cfg",
+						dependencies: [],
+						bounds: ["one lock"],
+						fairness: [],
+						invariants: ["TypeOK"],
+						properties: [],
+					},
+					negative: {
+						file: "formal/Lock.tla",
+						action: "Close",
+						original: "held' = 1",
+						replacement: "held' = 2",
+						defect: "a close that sets a value out of range",
+						expect: { kind: "invariant", name: "TypeOK" },
+					},
+					records: ["docs/adr/0001-gate.md"],
+					covers: ["src/lock/**"],
+					text: [],
+				},
+			],
+			failClosed: ["src/lock/**", "src/guard/**", "formal/**"],
+			contractOnly: ["**/*.md", ".astack/proof*.json"],
+			unmodelled: [],
+		},
+		null,
+		2,
+	)}\n`;
+}
+
+export const LADDER_FILES: Files = {
+	"formal/Lock.tla": LOCK_TLA,
+	"formal/Lock.cfg": "SPECIFICATION Spec\nINVARIANT TypeOK\n",
+	"formal/models.json": ladderRegistry(),
+	"src/lock/lock.ts": "export const lock = 1;\n",
+};
+
+export type LadderChange = {
+	readonly base?: Files;
+	readonly omit?: readonly string[];
+	readonly change?: Files;
+	readonly remove?: readonly string[];
+	readonly edit?: (proof: Proof) => void;
+};
+
+export function ladderRepo(parent: string, plan: LadderChange): ProofRepo {
+	const root = mkdtempSync(join(parent, "ladder-"));
+	git(root, "init", "-q", "-b", "main");
+	writeFiles(
+		root,
+		Object.fromEntries(
+			Object.entries({
+				...BASE_FILES,
+				...PROOF_FILES,
+				...LADDER_FILES,
+				...plan.base,
+			}).filter(([path]) => !plan.omit?.includes(path)),
+		),
+	);
+	git(root, "add", "-A");
+	git(root, "commit", "-q", "-m", "base");
+	const base = git(root, "rev-parse", "HEAD");
+	const changed = [
+		...Object.keys(plan.change ?? {}),
+		...(plan.remove ?? []),
+	].filter((path) => !path.startsWith(".astack/"));
+	const proof = validProof(base);
+	proof.scope.splice(
+		0,
+		proof.scope.length,
+		{ path: ".astack/**", obligation: "P1" },
+		...changed.map((path) => ({ path, obligation: "P1" })),
+	);
+	plan.edit?.(proof);
+	writeFiles(root, {
+		...plan.change,
+		".astack/proof.json": `${JSON.stringify(proof, null, 2)}\n`,
+	});
+	for (const path of plan.remove ?? []) git(root, "rm", "-q", path);
+	git(root, "add", "-A");
+	git(root, "commit", "-q", "-m", "change");
 	return { root, base };
 }

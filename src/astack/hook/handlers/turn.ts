@@ -1,3 +1,4 @@
+import { unattendedReason } from "../../attended.ts";
 import { stateDir } from "../../state.ts";
 import { pendingNote } from "../../ste/format.ts";
 import { replyInteractive } from "../../ste/session.ts";
@@ -15,6 +16,11 @@ export const handler = defineHandler({
 	id: "turn",
 	on: ["prompt", "reply"],
 	run: (event, context) => {
+		const unattended = unattendedReason(context.env);
+		if (event.kind === "prompt" && event.human && unattended !== undefined)
+			return note(
+				`astack: a person typed this prompt, so this turn is attended. ${unattended} makes the other turns of the session unattended. At S0 of /astack:plan, treat this turn as attended, also when astack plan attended prints unattended.`,
+			);
 		const root = stateDir(context.env);
 		if (!root) return ALLOW;
 		const dir = sessionDir(root, event.session);

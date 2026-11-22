@@ -171,7 +171,7 @@ export function readRepoFile(root: string, path: string): FileRead {
 	}
 }
 
-function readCommittedFile(
+export function readCommittedFile(
 	root: string,
 	commit: string,
 	path: string,

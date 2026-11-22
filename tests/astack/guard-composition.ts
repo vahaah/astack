@@ -1,3 +1,10 @@
+import {
+	type GateRecord,
+	type GateRun,
+	recordOf,
+	runGates,
+} from "../../src/astack/gates.ts";
+import { type GitRead, readGit } from "../../src/astack/git-command.ts";
 import type {
 	Context,
 	Handler,
@@ -14,12 +21,29 @@ import {
 	readPullRequestWithGh,
 } from "../../src/astack/pr/github.ts";
 import { type MergeGrant, mergeGrantIn } from "../../src/astack/pr/grant.ts";
+import { type ShellStep, shellSteps } from "../../src/astack/shell.ts";
 
 export type GuardArrow = (event: HookEvent, context: Context) => Verdict;
 
 export const grantArrow: (prompt: string) => MergeGrant = mergeGrantIn;
 
 export const pullRequestArrow: ReadPullRequest = readPullRequestWithGh;
+
+export const plainFormArrow: (command: string, cwd: string) => ShellStep[] =
+	shellSteps;
+
+export const gitReadArrow: (step: ShellStep) => GitRead = readGit;
+
+export const gatesRunArrow: (
+	...args: Parameters<typeof runGates>
+) => readonly GateRun[] = runGates;
+
+export const gateRecordArrow: (
+	runs: readonly GateRun[],
+	head: string,
+	base: string,
+	baseSha: string,
+) => GateRecord | undefined = recordOf;
 
 export function guardArrows(read: ReadPullRequest) {
 	const merge: Handler = mergeGuard(read);

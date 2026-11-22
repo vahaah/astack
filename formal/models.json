@@ -1,0 +1,577 @@
+{
+	"models": [
+		{
+			"name": "CiProofRecords",
+			"model": {
+				"module": "formal/CiProofRecords.tla",
+				"config": "formal/CiProofRecords.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Four diff classes and eight record cases: valid or one of seven failed guards.",
+					"Tool equality, moved base, and independent proof validity are Boolean.",
+					"One classification followed by one independent proof decision."
+				],
+				"fairness": [],
+				"invariants": ["TypeOK", "CiRecordsSafe", "CurrentProofRequired"],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/CiProofRecords.tla",
+				"action": "Classify",
+				"original": "/\\ (input.kind = \"ci\" \\/ RecordAllowed(input.records))",
+				"replacement": "/\\ (input.kind = \"ci\" \\/ RecordAllowed([input.records EXCEPT !.roles = TRUE]))",
+				"defect": "Ignoring role separation admits a record that also supplies an implementation or authority input.",
+				"expect": {
+					"kind": "invariant",
+					"name": "CiRecordsSafe"
+				}
+			},
+			"records": ["formal/ci-proof-records.md"],
+			"covers": [
+				"src/astack/ci-pins.ts",
+				"src/astack/change-proof/candidate.ts",
+				"src/astack/change-proof/ci-records.ts",
+				"src/astack/cli/commands/check/ci-pins.ts"
+			],
+			"text": []
+		},
+		{
+			"name": "DoctorTrust",
+			"model": {
+				"module": "formal/DoctorTrust.tla",
+				"config": "formal/DoctorTrust.cfg",
+				"dependencies": [],
+				"bounds": [
+					"One hook, 3 releases with a new content hash each, and a managed flag that the start state picks.",
+					"Each order of the release, trust, toggle, read and report steps, with a read that can fail."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"OkMeansCodexTrusts",
+					"OkNeedsReply",
+					"ListedReportIsExact"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/DoctorTrust.tla",
+				"action": "Report",
+				"original": "enabled /\\ CodexStatus \\in {\"trusted\", \"managed\"}",
+				"replacement": "trustedHash = HookHash",
+				"defect": "A doctor that reads only the trusted hook hash prints ok after a release, when Codex marks the hook modified and skips it.",
+				"expect": {
+					"kind": "invariant",
+					"name": "OkMeansCodexTrusts"
+				}
+			},
+			"records": [
+				"docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md"
+			],
+			"covers": [
+				"src/astack/codex-hooks.ts",
+				"src/astack/codex-trust.ts",
+				"src/astack/doctor.ts",
+				"src/astack/pr-review-profile.ts"
+			],
+			"text": []
+		},
+		{
+			"name": "FindingTelemetry",
+			"model": {
+				"module": "formal/FindingTelemetry.tla",
+				"config": "formal/FindingTelemetry.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Two parallel runs of one handler, three rules with one rule of each tier, a refresh flag for each run and one log that can refuse writes.",
+					"Each order of the judge, write and return steps of the two runs, one line at a time."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"LogNeverChangesVerdict",
+					"NoTextInEvent",
+					"RefreshWritesNothing",
+					"OneLinePerFinding",
+					"MaskedOnlyUnderDeny"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/FindingTelemetry.tla",
+				"action": "Write",
+				"original": "/\\ verdict' = verdict",
+				"replacement": "/\\ verdict' = [verdict EXCEPT ![p] = IF broken THEN \"allow\" ELSE @]",
+				"defect": "A log error that escapes to the dispatcher turns the verdict of the run into an allow, so a deny is lost.",
+				"expect": {
+					"kind": "invariant",
+					"name": "LogNeverChangesVerdict"
+				}
+			},
+			"records": [
+				"docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md"
+			],
+			"covers": [
+				"src/astack/ste/events.ts",
+				"src/astack/ste/verdict.ts",
+				"src/astack/ste/state.ts",
+				"src/astack/hook/handlers/ste-reply.ts",
+				"src/astack/hook/handlers/comments.ts",
+				"src/astack/hook/handlers/ste-artifact.ts"
+			],
+			"text": []
+		},
+		{
+			"name": "FixtureIsolation",
+			"model": {
+				"module": "formal/FixtureIsolation.tla",
+				"config": "formal/FixtureIsolation.cfg",
+				"dependencies": [],
+				"bounds": [
+					"One template, two copies and at most 2 commits in each copy.",
+					"A build of 2 steps that can stop before its end and start again.",
+					"Each order of the copy, rewrite, refresh, commit and push steps of each copy."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"TemplateUnchanged",
+					"CopiesDisjoint",
+					"CopyIndexClean",
+					"NoPartialTemplate"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/FixtureIsolation.tla",
+				"action": "RewriteConfig",
+				"original": "/\\ remote' = [remote EXCEPT ![c] = c]",
+				"replacement": "/\\ remote' = remote",
+				"defect": "A copy that keeps the origin URL of the template pushes into the origin of the template, as a copy with no config rewrite does.",
+				"expect": {
+					"kind": "invariant",
+					"name": "TemplateUnchanged"
+				}
+			},
+			"records": ["docs/adr/0023-heavy-test-files-copy-one-template-repo.md"],
+			"covers": [],
+			"text": []
+		},
+		{
+			"name": "OwnerCatchUp",
+			"model": {
+				"module": "formal/OwnerCatchUp.tla",
+				"config": "formal/OwnerCatchUp.cfg",
+				"dependencies": [],
+				"bounds": [
+					"4 waiting items, so a reply over 3 items and a reply over 4 items are both reachable.",
+					"One reply at a time, after each raise or settle of an item."
+				],
+				"fairness": [],
+				"invariants": ["TypeOK", "CatchUpListsEach", "CheckpointHidesNothing"],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/OwnerCatchUp.tla",
+				"action": "CatchUp",
+				"original": "listed |-> waiting,",
+				"replacement": "listed |-> IF Cardinality(waiting) > FoldAt THEN {} ELSE waiting,",
+				"defect": "A catch-up that folds 4 waiting items into a count, as the old checkpoint did with the open questions, hides each item from the owner.",
+				"expect": {
+					"kind": "invariant",
+					"name": "CatchUpListsEach"
+				}
+			},
+			"records": [
+				"docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md"
+			],
+			"covers": [],
+			"text": [
+				"marketplace/plugins/astack/skills/mode/SKILL.md",
+				"marketplace/plugins/astack/skills/mode/references/resume.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md"
+			]
+		},
+		{
+			"name": "PlanBoundary",
+			"model": {
+				"module": "formal/PlanBoundary.tla",
+				"config": "formal/PlanBoundary.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Three sessions, two decision rows and four heading forms.",
+					"Each order of the merge, boundary, resume, ADR write and graduate steps."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"OneBoundaryPerMerge",
+					"NoBoundaryAfterLast",
+					"EachMergeCarriesItsBoundary",
+					"RowLeavesWithAuthority",
+					"LastPrDeletesPlan"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/PlanBoundary.tla",
+				"action": "Graduate",
+				"original": "Resolves(heading[r])",
+				"replacement": "TRUE",
+				"defect": "A check that drops the heading test lets a row leave the live rows with an ADR heading that does not resolve.",
+				"expect": {
+					"kind": "invariant",
+					"name": "RowLeavesWithAuthority"
+				}
+			},
+			"records": ["docs/adr/0020-plan-tools-share-one-adr-reader.md"],
+			"covers": ["src/astack/adr.ts", "src/astack/plan/check.ts"],
+			"text": [
+				"marketplace/plugins/astack/skills/plan/references/upkeep.md",
+				"marketplace/plugins/astack/skills/plan/references/sessions.md"
+			]
+		},
+		{
+			"name": "PrHeadCheck",
+			"model": {
+				"module": "formal/PrHeadCheck.tla",
+				"config": "formal/PrHeadCheck.cfg",
+				"dependencies": [],
+				"bounds": [
+					"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+					"One check, one decision and at most one pull after a head stop."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"ActOnlyOnHeldHead",
+					"NoPrOnlyOnMessage",
+					"OtherResultStops"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/PrHeadCheck.tla",
+				"action": "Decide",
+				"original": "acted' = (result = \"ok\")",
+				"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+				"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
+				"expect": {
+					"kind": "invariant",
+					"name": "ActOnlyOnHeldHead"
+				}
+			},
+			"records": [
+				"docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md"
+			],
+			"covers": ["src/astack/cli/commands/check/pr-head.ts"],
+			"text": [
+				"marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/file-pr/SKILL.md",
+				"marketplace/plugins/astack/skills/full-send/SKILL.md",
+				"marketplace/plugins/astack/skills/full-stop/SKILL.md",
+				"marketplace/plugins/astack/skills/modernize/SKILL.md",
+				"marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+				"marketplace/plugins/astack/skills/why/SKILL.md",
+				"marketplace/plugins/astack/skills/plan/references/sessions.md",
+				"marketplace/plugins/astack/skills/mode/SKILL.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
+				"marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
+				"marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+				"marketplace/plugins/astack/skills/mode/references/create-pr.md",
+				"marketplace/plugins/astack/skills/mode/references/resume.md"
+			]
+		},
+		{
+			"name": "ProofAdmission",
+			"model": {
+				"module": "formal/ProofAdmission.tla",
+				"config": "formal/ProofAdmission.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
+					"Each failure kind maps to one section of the proof contract.",
+					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
+					"Finite Result laws use two values, two errors and all total functions between them."
+				],
+				"fairness": ["WF_vars(Next)"],
+				"invariants": [
+					"TypeOK",
+					"AdmitSafe",
+					"FailureIsTerminal",
+					"StrictDefault",
+					"LandingAuthoritySafe",
+					"ProcessAuthoritySafe",
+					"HistoryBound",
+					"RatifiedAuthority",
+					"BaseAncestry",
+					"ScopeFromMergeBase",
+					"HistoryAtManifest",
+					"MovedAuthorityStops",
+					"StaleStopNamesPaths",
+					"StopNamesSection",
+					"ResultLeftIdentity",
+					"ResultRightIdentity",
+					"ResultAssociativity"
+				],
+				"properties": ["EventuallyTerminal"]
+			},
+			"negative": {
+				"file": "formal/ProofAdmission.tla",
+				"action": "RejectEvidence",
+				"original": "/\\ named' = IF firstFailure' = \"stale\" THEN changed ELSE {}",
+				"replacement": "/\\ named' = {}",
+				"defect": "Dropping the changed inputs from the stale stop hides which file changed during the runs, so the agent cannot repair the stop.",
+				"expect": {
+					"kind": "invariant",
+					"name": "StaleStopNamesPaths"
+				}
+			},
+			"records": [
+				"docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+				"docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
+				"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
+				"docs/adr/0012-change-proof-accepts-an-older-base.md",
+				"docs/adr/0014-each-proof-stop-names-its-cause.md"
+			],
+			"covers": [
+				"src/astack/change-proof/**",
+				"src/astack/cli/commands/check/proof.ts",
+				"scripts/check-proof.ts",
+				"src/astack/result.ts"
+			],
+			"text": []
+		},
+		{
+			"name": "ProofLadder",
+			"model": {
+				"module": "formal/ProofLadder.tla",
+				"config": "formal/ProofLadder.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Two models, seven path kinds, a base registry that can be absent, and the floors R0, R1 and R4 on each side.",
+					"A diff of one or two path kinds, and each order of the derive, start, judge and admit steps."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"TlcOnlyAtR4",
+					"AdmitNeedsEachTriple",
+					"FailClosedStops",
+					"FloorOnlyRaises",
+					"OneTriplePerModel",
+					"ManifestFirst",
+					"RegistryRunsAll",
+					"DeletedRegistryStops"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/ProofLadder.tla",
+				"action": "Derive",
+				"original": "/\\ \"failGap\" \\notin changed",
+				"replacement": "",
+				"defect": "A rung rule that drops the fail-closed guard gives a rung to a guard file that no model covers, so a guard change merges with no model run.",
+				"expect": {
+					"kind": "invariant",
+					"name": "FailClosedStops"
+				}
+			},
+			"records": ["docs/adr/0015-change-proof-follows-risk.md"],
+			"covers": [
+				"src/astack/change-proof/rung.ts",
+				"src/astack/change-proof/registry.ts",
+				"src/astack/change-proof/admission.ts",
+				"src/astack/cli/commands/check/proof.ts",
+				"src/astack/profile.ts"
+			],
+			"text": []
+		},
+		{
+			"name": "SessionGuards",
+			"model": {
+				"module": "formal/SessionGuards.tla",
+				"config": "formal/SessionGuards.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+					"Each combination of four path facts for one write and an optional commit.",
+					"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+					"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"GrantFromWords",
+					"GrantFromPerson",
+					"MergeNeedsAuthority",
+					"McpMergeDenied",
+					"GuardErrorDenies",
+					"FullStopNeverMerges",
+					"WriteChecksKept",
+					"ScratchSkipped",
+					"CommitSurfaceChecked",
+					"BroadLossDenied",
+					"DenialNeedsLoss",
+					"HookSkipNeedsGates"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/SessionGuards.tla",
+				"action": "Push",
+				"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+				"replacement": "/\\ ~skips \\/ target = \"head\"",
+				"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
+				"expect": {
+					"kind": "invariant",
+					"name": "HookSkipNeedsGates"
+				}
+			},
+			"records": [
+				"docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+				"docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md"
+			],
+			"covers": [
+				"src/astack/hook/handlers/merge-guard.ts",
+				"src/astack/hook/handlers/destructive.ts",
+				"src/astack/hook/dispatch.ts",
+				"src/astack/hook/decode/**",
+				"src/astack/pr/**",
+				"src/astack/attended.ts",
+				"src/astack/ste/session.ts",
+				"src/astack/shell.ts",
+				"src/astack/git-command.ts",
+				"src/astack/gates.ts",
+				"src/astack/paths.ts",
+				"src/astack/hook/handlers/comments.ts",
+				"src/astack/hook/handlers/types.ts",
+				"src/astack/hook/handlers/ste-artifact.ts",
+				"src/astack/hook/handlers/plan-file.ts"
+			],
+			"text": [
+				"marketplace/plugins/astack/skills/full-stop/**",
+				"marketplace/plugins/astack/skills/full-send/**"
+			]
+		},
+		{
+			"name": "WordBudget",
+			"model": {
+				"module": "formal/WordBudget.tla",
+				"config": "formal/WordBudget.cfg",
+				"dependencies": [],
+				"bounds": [
+					"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+					"Each order of the edit, check and lower steps."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"PassWithinCaps",
+					"FailNamesOverrun",
+					"CapsNeverRise"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/WordBudget.tla",
+				"action": "Check",
+				"original": "\\A s \\in Skills : counts[s] <= caps[s]",
+				"replacement": "TRUE",
+				"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
+				"expect": {
+					"kind": "invariant",
+					"name": "PassWithinCaps"
+				}
+			},
+			"records": ["docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md"],
+			"covers": [],
+			"text": []
+		}
+	],
+	"failClosed": [
+		"src/astack/hook/**",
+		"src/astack/pr/**",
+		"src/astack/change-proof/**",
+		"formal/**"
+	],
+	"contractOnly": [
+		"**/*.md",
+		".astack/proof*.json",
+		"dist/**",
+		"marketplace/plugins/astack/bin/astack.js",
+		"rules/**",
+		"NOTICE",
+		"LICENSE"
+	],
+	"unmodelled": [
+		{
+			"path": "src/astack/hook/cursor.ts",
+			"reason": "The Cursor adapter maps payloads and verdicts, and it decides no grant",
+			"control": "sg-cursor-attended"
+		},
+		{
+			"path": "src/astack/hook/encode/base.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/claude-code.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/cursor.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/index.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/events.ts",
+			"reason": "It defines the handler and verdict shapes, and it decides nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/handlers/index.ts",
+			"reason": "It lists the handlers, and SessionGuards covers each guard handler of the list",
+			"control": "hook-registry"
+		},
+		{
+			"path": "src/astack/hook/handlers/duplicate-pr.ts",
+			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
+			"control": "hook-fail-open"
+		},
+		{
+			"path": "src/astack/hook/handlers/plan-pointer.ts",
+			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
+			"control": "hook-fail-open"
+		},
+		{
+			"path": "src/astack/hook/handlers/pr-body.ts",
+			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
+			"control": "hook-fail-open"
+		},
+		{
+			"path": "src/astack/hook/handlers/ticket.ts",
+			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
+			"control": "hook-fail-open"
+		},
+		{
+			"path": "src/astack/hook/handlers/turn.ts",
+			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
+			"control": "hook-fail-open"
+		},
+		{
+			"path": "formal/ci-proof-records.md",
+			"reason": "The proof record of CiProofRecords. A text change gives no other TLC verdict",
+			"control": "ci-proof-records"
+		}
+	]
+}

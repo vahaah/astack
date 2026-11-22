@@ -35,7 +35,15 @@ import {
 	DEFAULT_MERGE_PROFILE,
 	type MergeProfile,
 } from "../../src/astack/pr/profile.ts";
-import { commandWords, parseShell } from "../../src/astack/shell.ts";
+import { shellSteps } from "../../src/astack/shell.ts";
+
+const BYPASS: readonly { readonly group: string; readonly command: string }[] =
+	JSON.parse(
+		readFileSync(
+			join(import.meta.dir, "../fixtures/guard-bypass.json"),
+			"utf8",
+		),
+	).forms;
 
 let root = "";
 let project = "";
@@ -66,6 +74,10 @@ const GREEN: PullRequestState = {
 	checkedHead: HEAD,
 	authority: committed({}),
 };
+
+const MUTATION =
+	'mutation { mergePullRequest(input: {pullRequestId: "x"}) { clientMutationId } }';
+const READ = "query { viewer { login } }";
 
 const NO_STANDING_GRANT =
 	".astack/profile.json on main at 9f3c1a2 gives no standing grant.";
@@ -327,11 +339,12 @@ describe("machine prompts never change the grant", () => {
 
 describe("the gh pr merge call", () => {
 	test("reads the selector, the repo and the commit text", () => {
-		const [simple] = parseShell(
+		const [step] = shellSteps(
 			"gh pr merge 12 -sd --repo o/r --subject 'feat: x (#12)' --body-file - <<'EOF'\nPart of ABC-1\nEOF",
+			project,
 		);
-		if (!simple) throw new Error("no command");
-		const call = parseMergeCall(simple, commandWords(simple).slice(3), project);
+		if (!step) throw new Error("no command");
+		const call = parseMergeCall(step.simple, step.words.slice(3), project);
 		expect(call).toEqual({
 			selector: "12",
 			repo: "o/r",
@@ -344,10 +357,10 @@ describe("the gh pr merge call", () => {
 	});
 
 	test("a selector from a variable is dynamic", () => {
-		const [simple] = parseShell('gh pr merge "$PR" --squash');
-		if (!simple) throw new Error("no command");
+		const [step] = shellSteps('gh pr merge "$PR" --squash', project);
+		if (!step) throw new Error("no command");
 		expect(
-			parseMergeCall(simple, commandWords(simple).slice(3), project).dynamic,
+			parseMergeCall(step.simple, step.words.slice(3), project).dynamic,
 		).toBe(true);
 	});
 });
@@ -528,6 +541,8 @@ describe("the merge guard", () => {
 		["gh --repo=other/repo pr merge 12", "other/repo"],
 		["env gh pr merge 12", undefined],
 		["command gh pr merge 12", undefined],
+		["sudo -E gh pr merge 12", undefined],
+		["sudo --preserve-env gh pr merge 12", undefined],
 		["/usr/local/bin/gh pr merge 12", undefined],
 	])(
 		"%p is a merge, so the guard reads #12 in the repo it names first",
@@ -541,6 +556,12 @@ describe("the merge guard", () => {
 	test.each([
 		"GH_REPO=other/repo gh pr merge 12",
 		"env GH_REPO=other/repo gh pr merge 12",
+		"env -u GH_REPO gh pr merge 12",
+		"env -i gh pr merge 12",
+		"sudo gh pr merge 12",
+		"sudo -u root gh pr merge 12",
+		"doas gh pr merge 12",
+		"exec -c gh pr merge 12",
 	])("%p is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -552,32 +573,109 @@ describe("the merge guard", () => {
 		expect(run).toEqual({
 			exit: 2,
 			stderr:
-				"astack blocked gh pr merge:\n- Do not put NAME=value words, such as GH_REPO, before gh pr merge. astack reads the PR without them, so it can read a different PR. Use --repo to name a different repo.",
+				"astack blocked gh pr merge:\n- Do not change the environment of gh pr merge with NAME=value words, such as GH_REPO, or with a wrapper that resets it, such as env -i, env -u, exec -c, doas, or sudo with no -E. astack reads the PR with the environment of the session, so it can read a different PR. Use --repo to name a different repo.",
 		});
 		expect(reads).toEqual([]);
 	});
 
-	test.each(["env -C ../other gh pr merge 12", "gh --subject x pr merge 12"])(
-		"%p cannot be read, so it is denied before the read",
+	test.each([
+		"env -C ../other gh pr merge 12",
+		"gh --subject x pr merge 12",
+		"sudo -X gh pr merge 12",
+		'bash -c "gh pr merge $PR"',
+		'"$GH" pr merge 12',
+		"echo $(echo $(echo $(echo $(echo $(gh pr merge 12)))))",
+		"echo pr merge 12 --admin | xargs gh",
+		"S='pr merge'; gh $S 12 --admin",
+		'"$GH" api -X PUT repos/o/r/pulls/12/merge',
+		"Y=merge; gh pr $Y 12",
+		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
+		'bash -c "gh pr view $N --json mergeable"',
+	])("%p cannot be read, so it is denied before the read", (command) => {
+		const reads: Reads = [];
+		const run = bash(
+			guard({ ...GREEN, base: "v2" }, reads),
+			command,
+			project,
+			"bases",
+		);
+		expect(run).toEqual({
+			exit: 2,
+			stderr:
+				"astack blocked gh pr merge:\n- astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
+		});
+		expect(reads).toEqual([]);
+	});
+
+	test.each(
+		BYPASS.filter((form) => form.group === "wrapped-merge").map(
+			(form) => form.command,
+		),
+	)("the wrapped merge %p is denied", (command) => {
+		const handler = guard(GREEN);
+		prompt(handler, "merge 12 when green");
+		expect(bash(handler, command).stderr).toContain(
+			"Do not merge with --admin",
+		);
+	});
+
+	test.each([
+		"gh pr merg* 12",
+		"gh p? merge 12",
+		"g? pr merge 12",
+		"gh pr merge 1?",
+		"gh p* m*rge 12",
+		"gh pr m*",
+		"g* pr m*rge 12",
+		"gh -R o/* pr m*",
+		"gh p? view 12",
+	])(
+		"%p has a glob or a brace at or before the subcommand, or after pr merge, so it is denied with no text check",
 		(command) => {
 			const reads: Reads = [];
-			const run = bash(
-				guard({ ...GREEN, base: "v2" }, reads),
-				command,
-				project,
-				"bases",
-			);
-			expect(run).toEqual({
+			expect(bash(guard(GREEN, reads), command)).toEqual({
 				exit: 2,
 				stderr:
-					"astack blocked gh pr merge:\n- astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
+					"astack blocked gh pr merge:\n- astack cannot read this gh command, because the shell can expand a glob or a brace in a word up to its subcommand or after pr merge. Quote that word.",
 			});
 			expect(reads).toEqual([]);
 		},
 	);
 
-	test("a command that astack cannot read and that names no merge passes", () => {
-		expect(bash(guard(GREEN), "env -C ../other gh pr view 12").exit).toBe(0);
+	test.each([
+		"{ echo 'gh pr merge 12'; echo x; } | sh",
+		"echo -e 'gh pr view 12' | sh",
+		"gh pr view 12 | bash",
+	])(
+		"%p feeds a shell a script that astack cannot read, so it is denied with no text check",
+		(command) => {
+			expect(bash(guard(GREEN), command)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
+			});
+		},
+	);
+
+	test.each(["gh pr view 1*", "gh issue list -l bug?"])(
+		"%p has a glob only after a static subcommand that is not merge, so it passes",
+		(command) => {
+			expect(bash(guard(GREEN), command).exit).toBe(0);
+		},
+	);
+
+	test.each(['cd "$dir" && git merge main', "$GIT merge main"])(
+		"%p is no PR merge, so it passes",
+		(command) => {
+			expect(bash(guard(GREEN), command).exit).toBe(0);
+		},
+	);
+
+	test.each([
+		"env -C ../other gh pr view 12",
+		'bash -c "gh pr view $N --json state"',
+	])("%p cannot be read but names no merge, so it passes", (command) => {
+		expect(bash(guard(GREEN), command).exit).toBe(0);
 	});
 
 	test("a closing word in the merge commit text is denied before the read", () => {
@@ -667,6 +765,195 @@ describe("the merge guard", () => {
 			expect(bash(guard(GREEN), command)).toEqual(run);
 		},
 	);
+
+	test.each(
+		BYPASS.filter(
+			(form) => form.group === "rest-merge" || form.group === "graphql-merge",
+		).map((form) => form.command),
+	)(
+		"[control:sg-api-merge] the API merge %s gets the gh api deny",
+		(command) => {
+			writeFileSync(join(project, "merge.graphql"), MUTATION);
+			writeFileSync(
+				join(project, "body.json"),
+				JSON.stringify({ query: MUTATION }),
+			);
+			expect(bash(guard(GREEN), command)).toEqual(API_DENY);
+		},
+	);
+
+	test.each([
+		["gh api graphql --input read.json", PASSES],
+		["gh api graphql -F query=@read.graphql", PASSES],
+		[
+			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: READ })}\nEOF`,
+			PASSES,
+		],
+		["gh api graphql --input merge.json", API_DENY],
+		[
+			`gh api graphql --input - <<'EOF' < merge.json\n${JSON.stringify({ query: READ })}\nEOF`,
+			API_DENY,
+		],
+		[
+			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: MUTATION })}\nEOF`,
+			API_DENY,
+		],
+		[
+			`gh api graphql --input - <<EOF\n${JSON.stringify({ query: READ })}\nEOF`,
+			PASSES,
+		],
+		[
+			'gh api graphql --input - <<EOF\n{"query":"$(cat merge.graphql)"}\nEOF',
+			API_DENY,
+		],
+		[
+			'gh api graphql --input - <<EOF\n{"query":"mutation { merge\\\nPullRequest(input: {}) { clientMutationId } }"}\nEOF',
+			API_DENY,
+		],
+		[
+			'gh api graphql -f query="$(cat <<EOF\nmutation { merge\\\nPullRequest(input: {}) { clientMutationId } }\nEOF\n)"',
+			API_DENY,
+		],
+		[`gh api graphql -f query='${READ}' -F owner="$OWNER"`, API_DENY],
+		["cat read.json | gh api graphql --input /dev/stdin", API_DENY],
+		["gh api graphql -F query=@/dev/stdin", API_DENY],
+		["gh api graphql --input read.fifo", API_DENY],
+		["gh api graphql --input escaped.json", API_DENY],
+	] as const)(
+		"a GraphQL body that astack reads passes only with no merge mutation: %s",
+		(command, run) => {
+			writeFileSync(
+				join(project, "read.json"),
+				JSON.stringify({ query: READ }),
+			);
+			writeFileSync(join(project, "read.graphql"), READ);
+			writeFileSync(
+				join(project, "merge.json"),
+				JSON.stringify({ query: MUTATION }),
+			);
+			writeFileSync(
+				join(project, "escaped.json"),
+				JSON.stringify({ query: MUTATION }).replace(
+					"mergePullRequest",
+					"merge\\u0050ullRequest",
+				),
+			);
+			rmSync(join(project, "read.fifo"), { force: true });
+			spawnSync("mkfifo", [join(project, "read.fifo")]);
+			expect(bash(guard(GREEN), command)).toEqual(run);
+		},
+	);
+
+	test.each([
+		'U=repos/o/r/pulls/12/merge; gh api -X PUT "$U"',
+		'gh api --method PUT "repos/o/r/$TAIL"',
+	])(
+		"a write call to an endpoint that a variable gives is denied: %s",
+		(command) => {
+			expect(bash(guard(GREEN), command)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. In a read, put each variable in double quotes. Merge a PR with gh pr merge.",
+			});
+		},
+	);
+
+	test.each([
+		"gh api -X PUT repos/o/r/pulls/12/mer{g..g}e",
+		"gh api -X PUT repos/o/r/pulls/12/mer{g,}e",
+		"gh api -X PUT repos/o/r/pulls/12/m[e]rge",
+		"gh api -X PUT repos/o/r/pulls/12/merg?",
+		"gh api repos/o/r/pulls/12/mer{g..g}e",
+		"gh api -H X-* repos/o/r/pulls/12/m[e]rge",
+	])(
+		"the shell expands a glob or a brace in a word after api, so %s is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
+		"gh api -X POST 'repos/o/r/issues?state=open'",
+		"gh api -X POST repos/{owner}/{repo}/issues",
+	])("a quoted glob and a gh placeholder pass: %s", (command) => {
+		expect(bash(guard(GREEN), command).exit).toBe(0);
+	});
+
+	test.each([
+		'gh api "$@"',
+		'gh api "$*"',
+		`gh api "\${a[@]}"`,
+		`gh api "\${@:2}"`,
+		`gh api "\${!name@}"`,
+		`gh api "\${(f)x}"`,
+		'gh api "$a[@]"',
+		'gh api "$=x"',
+		`gh api "\${a[(i)x]}"`,
+		`gh api "\${=x}"`,
+		`gh api "repos/o/r/\${x:-pulls}"`,
+		"echo x | xargs gh api",
+		"xargs -I{} gh api {}",
+	])(
+		"%s has a word after api that can become more than one argument, so it is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
+		"gh api repos/o/r/pulls/12/merge $M",
+		"gh api $ARGS",
+		"gh api repos/o/r/pulls/12/merge $(echo -XPUT)",
+		"gh api $F repos/o/r/pulls/12/merge",
+		"gh api $X -X GET repos/o/r/pulls/12",
+		"gh api repos/o/r/pulls/12 $M -X GET",
+		"gh api repos/$R/pulls/$N/merge -X PUT",
+		"gh api repos/o/r/$EP -X GET",
+		"gh api -H $H repos/o/r/pulls/12/merge",
+		"gh api -H$H repos/o/r/pulls/12/merge",
+		"gh api -q $Q repos/o/r/pulls/12/merge",
+		"gh api --jq $Q repos/o/r/pulls/12/merge",
+		'gh api -t "$T" -p $P repos/o/r/pulls/12/merge',
+	])(
+		"an unquoted variable after api can split into flags, so %s is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toMatch(
+				/astack cannot read the endpoint|Merge with gh pr merge/,
+			);
+		},
+	);
+
+	test.each([
+		'gh api "$F" repos/o/r/pulls/12/merge',
+		'gh api -f title="$T" "repos/$R/issues"',
+		'gh api --input body.json "repos/$R/pulls/$N"',
+		'gh api -X PATCH "repos/$R/issues/$N"',
+	])(
+		"a quoted variable passes only in a GET with one endpoint, so %s is denied",
+		(command) => {
+			const run = bash(guard(GREEN), command);
+			expect(run.exit).toBe(2);
+			expect(run.stderr).toContain("astack cannot read the endpoint");
+		},
+	);
+
+	test.each([
+		"gh api repos/o/r/pulls/12",
+		"gh api repos/o/r/pulls/12/merge",
+		"gh api -H 'Accept: application/json' repos/o/r/pulls/12",
+		'gh api "repos/$R/pulls/$N"',
+		'gh api -X GET "repos/$R/pulls/$N/merge"',
+		'gh api -H "$H" "repos/o/r/$TAIL" --method GET',
+		`gh api "repos/\${R}/pulls/\${n[0]}"`,
+	])("a GET with static words or quoted variables passes: %s", (command) => {
+		expect(bash(guard(GREEN), command).exit).toBe(0);
+	});
 
 	test("other commands pass", () => {
 		expect(bash(guard(GREEN), "gh pr view 12 --json state").exit).toBe(0);
@@ -865,6 +1152,22 @@ describe("MCP merge tools", () => {
 				path: "/repos/o/r/merges",
 				body: { base: "main", head: "feat" },
 			},
+		],
+		[
+			"an issue body with Markdown check boxes",
+			"mcp__plugin_linear_linear__save_issue",
+			false,
+			{
+				title: "Ship the export",
+				description:
+					"## Steps\n\n- [x] run gh pr view 12\n[x] ship the docs later",
+			},
+		],
+		[
+			"a shell command with a glob in a gh word",
+			"mcp__forge__run_command",
+			true,
+			{ command: "gh p* m*rge 12" },
 		],
 		[
 			"a GraphQL merge after a tab",

@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "pr-head-check",
-	"base": "ef9a3f625423e0f683c0ff26dc74db1a26a3a63f",
+	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
 	"scope": [
 		{
 			"path": "marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
@@ -124,6 +124,11 @@
 				"NoPrOnlyOnMessage",
 				"OtherResultStops"
 			]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "PH-LINE",
+			"modelRefs": ["ActOnlyOnHeldHead"]
 		},
 		{
 			"path": "docs/reference/pr-head-check.md",

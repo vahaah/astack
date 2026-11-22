@@ -1,5 +1,5 @@
 {
-	"total": 133789,
+	"total": 133781,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -24,11 +24,11 @@
 		"in-your-own-words": 40,
 		"interrogate": 429,
 		"leaving-pr-comments": 524,
-		"mode": 27587,
+		"mode": 27584,
 		"modernize": 1013,
 		"no-comments": 492,
-		"plan": 14282,
-		"pr-review-hardening": 22792,
+		"plan": 14278,
+		"pr-review-hardening": 22791,
 		"principles": 5217,
 		"recall": 765,
 		"reflect": 2645,

@@ -15,9 +15,30 @@ Record typed objects, arrows, effects, equality, applicable laws, and witnesses.
 The governing ADR explains the formal claim and category composition for that function group.
 Keep models, configs, and implementation controls as executable files linked from it.
 
-Use a change-specific model.
-An editorial change can establish a preservation relation for extracted contract data.
-A copied retry example does not establish that relation.
+The registry `formal/models.json` selects the models of each changed path.
+A copied retry example does not establish a model relation.
+
+## Register a model
+
+Each entry of `formal/models.json` has `name`, `model`, `negative`, `records`, `covers` and `text`.
+The `name` is the module name, and `model` and `negative` use the manifest shape.
+`records` lists each file whose Formal claim names the model.
+`covers` lists the code globs of the model, and `text` lists its skill text globs.
+Together they must match each `src/` path that a record cites.
+They must also match each file that the Implementation correspondence of a record maps to the model.
+That section maps a file through a symbol or a file name in backticks, or through a skill name.
+A name that also names an unrelated declaration goes in the collision list of `tests/formal-registry.test.ts`.
+`failClosed` lists the globs where each file needs a model or an `unmodelled` entry.
+Each `unmodelled` entry gives its path, its reason and a control.
+`contractOnly` lists the globs that give R0.
+
+A covered path, a model file or the registry gives R4.
+An uncovered path under a fail-closed glob stops.
+A contract-only path gives R0, and each other path gives R1.
+`proof.minRung` in `.astack/profile.json` sets a floor from R0 to R4.
+The higher floor of the diff base and the tree applies, so a change cannot lower its own floor.
+Remove a model in two PRs. The first removes its registry entry, and the second removes its files.
+A fail-closed glob also leaves in two PRs, because the globs of the diff base also apply.
 
 ## Run the gate
 
@@ -31,7 +52,10 @@ The pin comes from the official v1.7.4 asset after its published SHA-1 was check
 astack check proof
 ```
 
-The checker runs the positive model, exact named mutation, and unchanged positive model.
+The checker prints the rung and the path or floor that set it.
+Below R4 it starts no Java process.
+At R4 it runs the manifest model first, then each other selected model.
+Each model runs the positive model, exact named mutation, and unchanged positive model.
 It requires complete tool output and matching restored state counts.
 Syntax errors, wrong violations, warnings, incomplete states, stale inputs, and cleanup failures block admission.
 A success needs exit 0 and a final line that starts with `ok: proof `.

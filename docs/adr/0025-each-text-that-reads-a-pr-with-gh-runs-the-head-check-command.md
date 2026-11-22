@@ -78,7 +78,7 @@ The head line, the failure line and the repair sentence are text rules with no c
 
 #### Implementation correspondence
 
-`run` maps to the `Check` action.
+The command `astack check pr-head` maps to the `Check` action.
 The head line in each PR text maps to the `Decide` action.
 The repair sentence in mode `SKILL.md` and in `comments-triage.md` maps to the `Pull` action.
 In the model, a result is one model value, and HEAD holds the PR head after one pull.

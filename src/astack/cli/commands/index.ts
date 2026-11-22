@@ -3,6 +3,7 @@ import { command as board } from "./board.ts";
 import { CHECKS } from "./check/index.ts";
 import { command as check, checkAlias } from "./check.ts";
 import { command as doctor } from "./doctor.ts";
+import { command as gates } from "./gates.ts";
 import { command as hook } from "./hook.ts";
 import { command as init } from "./init.ts";
 import { command as managed } from "./managed.ts";
@@ -21,6 +22,7 @@ export const COMMANDS: readonly Command<number | Promise<number>>[] = [
 	planTicket,
 	session,
 	stack,
+	gates,
 	board,
 	skillPath,
 	managed,

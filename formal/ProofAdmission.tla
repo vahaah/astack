@@ -1,7 +1,7 @@
 ------------------------ MODULE ProofAdmission ------------------------
 EXTENDS Naturals, FiniteSets, Sequences
 
-Stages == <<"schema", "base", "domain", "category", "controls">>
+Stages == <<"schema", "base", "domain", "category", "controls", "rung">>
 Required == {Stages[i] : i \in 1..Len(Stages)}
 States == {"validating", "modeled", "checked", "restored", "admitted", "rejected"}
 PositiveResults == {"pending", "passed", "failed", "incomplete"}
@@ -10,7 +10,8 @@ Inputs == {"file", "index", "history"}
 Failures == {"model", "countermodel", "restore", "stale"} \cup Required
 Sections == [schema |-> "Required records", base |-> "Base",
              domain |-> "Domain and decisions", category |-> "Category and abstraction",
-             controls |-> "Required records", model |-> "TLC execution",
+             controls |-> "Required records", rung |-> "Rungs and models",
+             model |-> "TLC execution",
              countermodel |-> "TLC execution", restore |-> "TLC execution",
              stale |-> "Base"]
 
