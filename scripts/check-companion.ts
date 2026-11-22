@@ -21,7 +21,7 @@ import {
 import {
 	renderAstackProfile,
 	renderReviewCopies,
-	reviewSources,
+	reviewStubSource,
 } from "./lib/render.ts";
 import {
 	type OwnSource,
@@ -56,7 +56,7 @@ function checkProject(
 	const problems = [
 		...branches.flatMap(
 			(branch) =>
-				renderReviewCopies(project, dir, reviewSources, branch).problems,
+				renderReviewCopies(project, dir, reviewStubSource, branch).problems,
 		),
 		...profileProblems(JSON.parse(renderAstackProfile(project).content)).map(
 			(problem) => `.astack/profile.json: ${problem}`,

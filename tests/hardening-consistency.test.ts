@@ -9,17 +9,13 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, posix, relative } from "node:path";
+import { join, relative } from "node:path";
 import {
 	profileDirFor,
 	projectNames,
 	reviewProfileName,
 	validateProjectConfig,
 } from "../scripts/lib/projects.ts";
-import {
-	renderReviewCopies,
-	reviewFallbackSource,
-} from "../scripts/lib/render.ts";
 import { exemptPaths } from "../scripts/lib/ste-exempt.ts";
 import { marketplacePlugins, originItems } from "../scripts/validate.ts";
 import {
@@ -43,7 +39,6 @@ import {
 const root = join(import.meta.dir, "..");
 const read = (path: string) => readFileSync(join(root, path), "utf8");
 const engine = "marketplace/plugins/astack/skills/pr-review-hardening";
-const stub = readFileSync(reviewFallbackSource, "utf8");
 const headLine =
 	"Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.";
 const failureLine =
@@ -95,48 +90,6 @@ const markdownUnder = (dir: string): string[] =>
 	readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
 		.filter((path) => path.endsWith(".md"))
 		.map((path) => join(dir, path));
-
-describe("the fallback that the guards read is the file that the stub links to", () => {
-	const acme = validateProjectConfig(
-		JSON.parse(readFileSync(join(exampleProjects, "acme.json"), "utf8")),
-		"acme",
-	);
-	const rendered = renderReviewCopies(acme, join(exampleProjects, "acme"));
-
-	test("the rendered stub links to the text of the guards and holds no fallback sentence", () => {
-		const entry = rendered.artifacts.find((artifact) =>
-			artifact.path.endsWith("/SKILL.md"),
-		);
-		expect(rendered.problems).toEqual([]);
-		if (entry === undefined) throw new Error("no rendered stub");
-		const target = /\[FALLBACK\.md\]\(([^)]+)\)/.exec(entry.content)?.[1];
-		if (target === undefined) throw new Error("no fallback link");
-		const linked = posix.normalize(
-			posix.join(posix.dirname(entry.path), target),
-		);
-		expect(
-			rendered.artifacts.find((artifact) => artifact.path === linked)?.content,
-		).toBe(stub);
-		for (const sentence of [
-			"Each iteration:",
-			"Gate run:",
-			"Preflight:",
-			"Decide:",
-		])
-			expect(entry.content).not.toContain(sentence);
-	});
-
-	test("a stub that does not link to its fallback fails the render", () => {
-		expect(
-			renderReviewCopies(acme, join(exampleProjects, "acme"), {
-				stub: join(root, "README.md"),
-				fallback: reviewFallbackSource,
-			}).problems,
-		).toEqual([
-			`${join(root, "README.md")} has no link to FALLBACK.md, so a repo without the plugin cannot reach the fallback`,
-		]);
-	});
-});
 
 describe("the profile scans", () => {
 	const writtenBy = (projects: string): string[] =>

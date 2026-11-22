@@ -20,10 +20,6 @@ export const upstreamUses = {
 		upstream: "pstack",
 		use: "four sections that it quotes verbatim from agents/comment-sicko.md",
 	},
-	keepList: {
-		upstream: "pstack",
-		use: "the comment keep list of its fallback, adapted from agents/comment-sicko.md",
-	},
 	setup: {
 		upstream: "mattpocock-skills",
 		use: "text adapted from skills/engineering/setup-matt-pocock-skills",
