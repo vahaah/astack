@@ -26,7 +26,9 @@ export interface SimpleCommand {
 	background?: boolean;
 }
 
-const ONE_WORD = /^(?:[A-Za-z_]\w*|\{[A-Za-z_]\w*(?:\[[^\]@*]*\])?\})/;
+const ONE_WORD =
+	/^(?:[A-Za-z_]\w*(?![\w[])|\{[A-Za-z_]\w*(?:\[[^\]@*()]*\])?\})/;
+const EXPANSION_START = /[\w{@*#?$!=~^-]/;
 
 const EXPANDS_IN_HEREDOC = /[$`\\]/;
 const DEFINES_COMMAND =
@@ -196,7 +198,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					i += 2;
 				} else if (d === "$" && src[i + 1] === "(") {
 					substitution();
-				} else if (d === "$" && /[\w{@*#?$!-]/.test(src[i + 1] ?? "")) {
+				} else if (d === "$" && EXPANSION_START.test(src[i + 1] ?? "")) {
 					append("", true);
 					if (!ONE_WORD.test(src.slice(i + 1))) splits();
 					i++;
@@ -226,7 +228,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			i = close < 0 ? src.length : close + 1;
 			continue;
 		}
-		if (c === "$" && /[\w{@*#?$!-]/.test(src[i + 1] ?? "")) {
+		if (c === "$" && EXPANSION_START.test(src[i + 1] ?? "")) {
 			append("", true);
 			splits();
 			i++;
