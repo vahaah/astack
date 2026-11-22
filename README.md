@@ -432,7 +432,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
-| `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Read only |
+| `astack doctor` | Report the runtime, installed copies, duplicate skills and hook trust. Also count the STE and comment hook findings of the last 7 days by rule, surface and outcome. Read only |
 | `astack skill-path <plugin>:<skill> [file]` | Print the path of a skill file |
 
 Keep the plugin folder beside the launcher so reference discovery works. The standalone `dist/cli/astack.js` serves checks in CI and git hooks and carries no skill library.
