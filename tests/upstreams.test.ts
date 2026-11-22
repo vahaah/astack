@@ -95,7 +95,7 @@ describe("the upstream registry", () => {
 	test("the origin names the path of a subfolder upstream and its commit", () => {
 		const lock = frozenLock("pstack");
 		expect(upstreamOrigin("pstack")).toBe(
-			`${lock.repo}, path ${lock.path}, commit ${lock.commit}, adopted pstack/skills/interrogate from commit ab1f702ce8e8b6557edb56b09f52cde8bfb83f17`,
+			`${lock.repo}, path ${lock.path}, commit ${lock.commit}, adopted pstack/skills/interrogate from commit ab1f702ce8e8b6557edb56b09f52cde8bfb83f17, adopted pstack/skills/why from commit bf0c7cd80abdbf7fe47b634978a7d1b4071f71a7, adopted pstack/skills/how from commit bf0c7cd80abdbf7fe47b634978a7d1b4071f71a7, adopted pstack/skills/reflect from commit 2f87c854fe3e2fcda44ca86b46ede35aad3c46b7`,
 		);
 	});
 

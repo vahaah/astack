@@ -22,6 +22,18 @@ export const UPSTREAMS = {
 				path: "pstack/skills/interrogate",
 				commit: "ab1f702ce8e8b6557edb56b09f52cde8bfb83f17",
 			},
+			{
+				path: "pstack/skills/why",
+				commit: "bf0c7cd80abdbf7fe47b634978a7d1b4071f71a7",
+			},
+			{
+				path: "pstack/skills/how",
+				commit: "bf0c7cd80abdbf7fe47b634978a7d1b4071f71a7",
+			},
+			{
+				path: "pstack/skills/reflect",
+				commit: "2f87c854fe3e2fcda44ca86b46ede35aad3c46b7",
+			},
 		],
 	},
 	"mattpocock-skills": {
