@@ -21,17 +21,10 @@ export type Row = {
 	readonly files: { readonly before: number; readonly after: number };
 };
 
-export type FallbackParity = {
-	readonly identical: boolean;
-	readonly onlyInOld: readonly string[];
-	readonly onlyInNew: readonly string[];
-};
-
 const ROOT = resolve(import.meta.dir, "..");
 const PLUGIN = "marketplace/plugins/astack/skills";
 const DEFAULT_BASE = "dbed1c9";
 const STUB = "templates/pr-review-hardening.stub.SKILL.md";
-const FALLBACK = "templates/pr-review-hardening.stub.FALLBACK.md";
 const skill = (name: string) => `${PLUGIN}/${name}/SKILL.md`;
 const reference = (name: string, file: string) =>
 	`${PLUGIN}/${name}/references/${file}`;
@@ -84,30 +77,6 @@ export function revisionExists(root: string, revision: string): boolean {
 	);
 }
 
-export function fallbackSection(stub: string): string | undefined {
-	const at = stub.indexOf("## Fallback");
-	return at < 0 ? undefined : stub.slice(at);
-}
-
-function lines(text: string): string[] {
-	return text.split("\n").filter((line) => line.trim() !== "");
-}
-
-export function fallbackParity(
-	oldStub: string,
-	newFallback: string,
-): FallbackParity {
-	const oldText = fallbackSection(oldStub) ?? "";
-	const newText = fallbackSection(newFallback) ?? "";
-	const oldLines = lines(oldText);
-	const newLines = lines(newText);
-	return {
-		identical: oldText === newText && oldText !== "",
-		onlyInOld: oldLines.filter((line) => !newLines.includes(line)),
-		onlyInNew: newLines.filter((line) => !oldLines.includes(line)),
-	};
-}
-
 export function pointerProblems(
 	read: Reader,
 	scenario: Scenario,
@@ -119,9 +88,7 @@ export function pointerProblems(
 		if (read(path) === undefined) return [`${path} is missing`];
 		const pointer = path.endsWith("/SKILL.md")
 			? `astack:${path.split("/").slice(-2)[0] ?? ""}`
-			: path === FALLBACK
-				? "FALLBACK.md"
-				: path.slice(path.lastIndexOf("/") + 1);
+			: path.slice(path.lastIndexOf("/") + 1);
 		return entry.includes(pointer)
 			? []
 			: [`${scenario.entry} does not point to ${path} as "${pointer}"`];
@@ -165,7 +132,7 @@ export function scenarios(
 			name: "review stub, plugin absent",
 			entry: STUB,
 			before: [STUB],
-			after: [STUB, FALLBACK],
+			after: [STUB],
 		},
 		{
 			name: "plan, S0 against the broad old read list",
@@ -352,7 +319,6 @@ const LIMITS = [
 
 function format(
 	rows: readonly Row[],
-	parity: FallbackParity | undefined,
 	problems: readonly string[],
 	base: string,
 ): string {
@@ -373,9 +339,6 @@ function format(
 		"|---|---|---|---|",
 		...table,
 		"",
-		parity === undefined
-			? "Fallback parity: n/a (the base stub or the current fallback is unavailable)"
-			: `Fallback parity: ${parity.identical ? "identical" : "DIFFERENT"} (${parity.onlyInOld.length} lines only in the base inline fallback, ${parity.onlyInNew.length} only in the current fallback)`,
 		`Pointer problems: ${problems.length}`,
 		...problems.map((problem) => `- ${problem}`),
 		"",
@@ -401,20 +364,12 @@ export function main(args: readonly string[]): number {
 	const problems = list.flatMap((scenario) =>
 		pointerProblems(current, scenario),
 	);
-	const oldStub = baseRead?.(STUB);
-	const newFallback = current(FALLBACK);
-	const parity =
-		oldStub === undefined || newFallback === undefined
-			? undefined
-			: fallbackParity(oldStub, newFallback);
 	if (args.includes("--json"))
 		console.log(
-			JSON.stringify({ base, rows, parity, problems, limits: LIMITS }, null, 2),
+			JSON.stringify({ base, rows, problems, limits: LIMITS }, null, 2),
 		);
-	else console.log(format(rows, parity, problems, base));
-	return problems.length === 0 && (parity === undefined || parity.identical)
-		? 0
-		: 1;
+	else console.log(format(rows, problems, base));
+	return problems.length === 0 ? 0 : 1;
 }
 
 if (import.meta.main) process.exit(main(process.argv.slice(2)));

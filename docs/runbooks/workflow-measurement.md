@@ -8,7 +8,7 @@ It keeps three kinds of evidence apart, so no number claims more than it shows.
 | Kind | Source | Status |
 |---|---|---|
 | Process time | `scripts/bench-pr-head.ts` | Measured |
-| Source step counts | The head check text of the skill and the stub | Structural, not observed |
+| Source step counts | The head check text of the skill | Structural, not observed |
 | Model tool calls, tokens and complete PR time | A matched run with provider counters | Unavailable until a run records them |
 
 A shorter instruction or a shorter command path proves only that local reduction.
