@@ -48,7 +48,8 @@ const WRITE_METHOD_VALUE =
 	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const GH = /(?:^|\/)gh$/;
-const MAY_MERGE = /\bgh\b|\bpr\s+merge\b/;
+const NAMES_PR_MERGE = /\bpr\s+merge\b/;
+const MAY_MERGE = /\bgh\b|\bpr\s+merge\b/i;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -242,19 +243,26 @@ function mergeVerdict(
 	return reasons.length > 0 ? deny(mergeDenial(reasons)) : ALLOW;
 }
 
-function holdsMergeWord(step: ShellStep): boolean {
-	return [...step.values, ...(step.simple.substitutions ?? [])].some((value) =>
-		value.includes("merge"),
+function mayMerge(step: ShellStep, source: string): boolean {
+	return (
+		NAMES_PR_MERGE.test(source) ||
+		[...step.values, ...(step.simple.substitutions ?? [])].some((value) =>
+			hasMergeWord(nameTokens(value)),
+		)
 	);
 }
 
-function examinesMerge(step: ShellStep, readFile: ReadFile): boolean {
+function examinesMerge(
+	step: ShellStep,
+	source: string,
+	readFile: ReadFile,
+): boolean {
 	const merge = mergeCommand(step, readFile);
 	switch (merge.kind) {
 		case "none":
 			return false;
 		case "unreadable":
-			return holdsMergeWord(step);
+			return mayMerge(step, source);
 		case "api":
 		case "endpoint":
 		case "merge":
@@ -264,6 +272,7 @@ function examinesMerge(step: ShellStep, readFile: ReadFile): boolean {
 
 function stepVerdict(
 	step: ShellStep,
+	source: string,
 	chained: boolean,
 	context: Context,
 	read: ReadPullRequest,
@@ -285,7 +294,7 @@ function stepVerdict(
 				]),
 			);
 		case "unreadable":
-			return holdsMergeWord(step)
+			return mayMerge(step, source)
 				? deny(
 						mergeDenial([
 							"astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
@@ -306,7 +315,9 @@ function shellVerdict(
 	const steps = shellSteps(event.command, event.cwd);
 	const chained = steps.length > 1;
 	return combineAll(
-		steps.map((step) => stepVerdict(step, chained, context, read)),
+		steps.map((step) =>
+			stepVerdict(step, event.command, chained, context, read),
+		),
 	);
 }
 
@@ -419,7 +430,9 @@ function decodedEscapes(text: string): string {
 function runsGhMerge(value: string): boolean {
 	return (
 		MAY_MERGE.test(value) &&
-		shellSteps(value, "").some((step) => examinesMerge(step, READS_NO_FILE))
+		shellSteps(value, "").some((step) =>
+			examinesMerge(step, value, READS_NO_FILE),
+		)
 	);
 }
 
@@ -485,7 +498,7 @@ function failedVerdict(
 	const merges =
 		(event.kind === "shell" &&
 			shellSteps(event.command, event.cwd).some((step) =>
-				examinesMerge(step, fileReader(step)),
+				examinesMerge(step, event.command, fileReader(step)),
 			)) ||
 		(event.kind === "mcp" && isMcpMerge(event));
 	if (!merges) return undefined;

@@ -579,6 +579,9 @@ describe("the merge guard", () => {
 		'bash -c "gh pr merge $PR"',
 		'"$GH" pr merge 12',
 		"echo $(echo $(echo $(echo $(echo $(gh pr merge 12)))))",
+		"echo pr merge 12 --admin | xargs gh",
+		"S='pr merge'; gh $S 12 --admin",
+		'"$GH" api -X PUT repos/o/r/pulls/12/merge',
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -614,8 +617,11 @@ describe("the merge guard", () => {
 		},
 	);
 
-	test("a command that astack cannot read and that names no merge passes", () => {
-		expect(bash(guard(GREEN), "env -C ../other gh pr view 12").exit).toBe(0);
+	test.each([
+		"env -C ../other gh pr view 12",
+		'bash -c "gh pr view $N --json mergeable"',
+	])("%p cannot be read but names no merge, so it passes", (command) => {
+		expect(bash(guard(GREEN), command).exit).toBe(0);
 	});
 
 	test("a closing word in the merge commit text is denied before the read", () => {
