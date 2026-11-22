@@ -1,14 +1,16 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	realpathSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
+import {
+	buildTemplate,
+	commitTree,
+	copyRepo,
+	type Files,
+	git,
+	type Template,
+} from "../git-template.ts";
 
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
 const scratch = realpathSync(
@@ -17,46 +19,31 @@ const scratch = realpathSync(
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 let count = 0;
 
-type Files = Readonly<Record<string, string>>;
+let template: Template | undefined;
 
-function git(cwd: string, args: readonly string[]): string {
-	const result = spawnSync("git", args, {
-		cwd,
-		encoding: "utf8",
-		env: {
-			...process.env,
-			GIT_AUTHOR_NAME: "t",
-			GIT_AUTHOR_EMAIL: "t@example.com",
-			GIT_COMMITTER_NAME: "t",
-			GIT_COMMITTER_EMAIL: "t@example.com",
-		},
-	});
-	if (result.status !== 0)
-		throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
-	return result.stdout.trim();
-}
-
-function write(root: string, files: Files): void {
-	for (const [path, text] of Object.entries(files)) {
-		mkdirSync(dirname(join(root, path)), { recursive: true });
-		writeFileSync(join(root, path), text);
-	}
-}
-
-function pullRequest(base: Files, head: Files): string {
+function pullRequest(base: Files, head: Files, mainMoves?: Files): string {
 	count += 1;
-	const root = join(scratch, `repo-${count}`);
-	mkdirSync(root, { recursive: true });
-	git(root, ["init", "-q", "-b", "main"]);
-	git(root, ["config", "core.autocrlf", "false"]);
-	write(root, base);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "base"]);
-	git(root, ["checkout", "-q", "-b", "pr"]);
-	write(root, head);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "head"]);
-	return root;
+	template ??= buildTemplate(
+		{
+			name: "ci-pins-adversarial",
+			repos: ["."],
+			build: (root) => {
+				git(root, ["init", "-q", "-b", "main"]);
+				git(root, ["config", "core.autocrlf", "false"]);
+			},
+		},
+		scratch,
+	);
+	return commitTree(copyRepo(template, join(scratch, `repo-${count}`)), {
+		commits: [
+			{ branch: "main", files: base },
+			{ branch: "pr", from: "main", files: head },
+			...(mainMoves === undefined
+				? []
+				: [{ branch: "main", files: mainMoves }]),
+		],
+		checkout: "pr",
+	}).root;
 }
 
 function ciPins(root: string): {
@@ -1340,21 +1327,17 @@ describe("an action repo that GitHub redirects after a rename", () => {
 
 describe("a base branch that moves after the merge base", () => {
 	const ci = workflow("      - uses: oven-sh/setup-bun@v2");
-	const moved = (main: Files, head: Files = { "README.md": "x\n" }) => {
-		const root = pullRequest(
-			{
-				[CHECK]: ci,
-				"package.json": manifest({ packageManager: "bun@1.4.2" }),
-			},
-			head,
+	const moved = (main: Files, head: Files = { "README.md": "x\n" }) =>
+		ciPins(
+			pullRequest(
+				{
+					[CHECK]: ci,
+					"package.json": manifest({ packageManager: "bun@1.4.2" }),
+				},
+				head,
+				main,
+			),
 		);
-		git(root, ["checkout", "-q", "main"]);
-		write(root, main);
-		git(root, ["add", "-A"]);
-		git(root, ["commit", "-q", "-m", "main moves"]);
-		git(root, ["checkout", "-q", "pr"]);
-		return ciPins(root);
-	};
 	const unchanged = `package.json: bun 1.4.2 at the base, bun 1.4.2 at the head, from the package.json default of oven-sh/setup-bun at ${CHECK}:10. The PR does not change the file.`;
 
 	test("a packageManager bump on main after the merge base stops, because the merge commit that a pull_request run tests has another bun than HEAD", () => {
