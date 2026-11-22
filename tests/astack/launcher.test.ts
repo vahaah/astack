@@ -111,18 +111,25 @@ describe("bin/astack", () => {
 		expect(run.stdout).toStartWith("saved ");
 	});
 
-	test("[control:sg-runtime-no-probe] a node from PATH runs the command with no --version call", () => {
+	test("[control:sg-runtime-no-probe] a node from PATH runs a hook with no --version call", () => {
 		const home = scratch();
 		const bin = join(home, "bin");
 		mkdirSync(bin);
 		const log = join(home, "node.log");
 		loggingNode(bin, log);
-		const run = launch({ HOME: home, PATH: `${bin}:/usr/bin:/bin` });
-		expect(run.stdout).toBe(
-			`node ${resolve(LAUNCHER, "..")}/astack.js check plan`,
+		const run = launch(
+			{ HOME: home, PATH: `${bin}:/usr/bin:/bin` },
+			["hook", "claude-code", "Stop"],
+			LAUNCHER,
+			"{}",
 		);
+		expect(run).toEqual({
+			status: 0,
+			stdout: `node ${resolve(LAUNCHER, "..")}/astack.js hook claude-code Stop`,
+			stderr: "",
+		});
 		expect(readFileSync(log, "utf8")).toBe(
-			`${resolve(LAUNCHER, "..")}/astack.js check plan\n`,
+			`${resolve(LAUNCHER, "..")}/astack.js hook claude-code Stop\n`,
 		);
 	});
 
