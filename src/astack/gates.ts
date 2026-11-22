@@ -3,6 +3,7 @@ import {
 	chmodSync,
 	mkdirSync,
 	mkdtempSync,
+	readFileSync,
 	renameSync,
 	rmSync,
 	symlinkSync,
@@ -282,4 +283,36 @@ export function saveGateRecord(
 	writeFileSync(temporary, `${JSON.stringify(record, null, "\t")}\n`);
 	renameSync(temporary, path);
 	return path;
+}
+
+function names(value: unknown): readonly string[] | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const listed = value.filter(
+		(item): item is string => typeof item === "string",
+	);
+	return listed.length === value.length ? listed : undefined;
+}
+
+export function loadGateRecord(env: Env, head: string): GateRecord | undefined {
+	const path = recordFile(env, head);
+	if (path === undefined) return undefined;
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(readFileSync(path, "utf8"));
+	} catch {
+		return undefined;
+	}
+	if (typeof parsed !== "object" || parsed === null) return undefined;
+	const field = (key: string): unknown => Reflect.get(parsed, key);
+	const base = field("base");
+	const baseSha = field("baseSha");
+	const ran = names(field("ran"));
+	const skipped = names(field("skipped"));
+	return field("head") === head &&
+		typeof base === "string" &&
+		typeof baseSha === "string" &&
+		ran !== undefined &&
+		skipped !== undefined
+		? { head, base, baseSha, ran, skipped }
+		: undefined;
 }

@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { saveGateRecord } from "../../src/astack/gates.ts";
 import type {
 	Context,
 	HookEvent,
@@ -341,6 +342,102 @@ describe("the whole-tree discard forms", () => {
 		expect(destructive.run(shell(command, dirty), context(dirty)).kind).toBe(
 			"allow",
 		);
+	});
+});
+
+describe("a hook skip", () => {
+	const forms: readonly { readonly group: string; readonly command: string }[] =
+		JSON.parse(
+			readFileSync(
+				join(import.meta.dir, "../fixtures/guard-bypass.json"),
+				"utf8",
+			),
+		).forms;
+	let hooked = "";
+	let state = "";
+
+	beforeAll(() => {
+		hooked = join(root, "hooked");
+		state = join(root, "hooked-state");
+		mkdirSync(join(hooked, ".githooks"), { recursive: true });
+		initRepo(hooked);
+		write(hooked, { ".githooks/pre-push": "#!/bin/sh\nexit 0\n" });
+		git(hooked, "add", ".");
+		git(hooked, "commit", "-q", "-m", "base");
+		git(hooked, "checkout", "-q", "-b", "feature");
+	});
+
+	function run(command: string, recorded: boolean): Verdict {
+		const head = spawnSync("git", ["rev-parse", "HEAD"], {
+			cwd: hooked,
+			encoding: "utf8",
+		}).stdout.trim();
+		const env = { ASTACK_STATE_DIR: state };
+		rmSync(state, { recursive: true, force: true });
+		if (recorded)
+			saveGateRecord(env, {
+				head,
+				base: "main",
+				baseSha: head,
+				ran: ["lint"],
+				skipped: [],
+			});
+		return destructive.run(shell(command, hooked), {
+			...context(hooked),
+			env,
+		});
+	}
+
+	test.each(
+		forms
+			.filter((form) => form.group === "hook-skip")
+			.map((form) => form.command),
+	)("[control:sg-hook-skip] %s gets the --no-verify reason", (command) => {
+		const said = reason(run(command, false));
+		expect(said).toContain(`${command} skips the git hooks of the repo.`);
+		expect(said).toContain("owner gate");
+	});
+
+	test("an exported skip variable reaches the push after it", () => {
+		expect(reason(run("export HUSKY=0 && git push", false))).toContain(
+			"HUSKY=0 git push skips the git hooks of the repo.",
+		);
+	});
+
+	test.each([
+		"git config --get core.hooksPath",
+		"git config core.hooksPath .githooks",
+		"git -c core.hooksPath=.githooks push origin feature",
+	])("%s passes, because it reads the hooks or turns them on", (command) => {
+		expect(run(command, false).kind).toBe("allow");
+	});
+
+	test.each([
+		"git push --no-verify",
+		"LEFTHOOK=0 git push origin feature",
+		"HUSKY=0 git push origin HEAD:feature",
+		"export HUSKY=0 && git push",
+	])(
+		"[control:sg-gates-run] %s passes when astack gates run recorded HEAD",
+		(command) => {
+			expect(run(command, true).kind).toBe("allow");
+		},
+	);
+
+	test.each([
+		[
+			"git push --no-verify --tags",
+			"pushes refs that astack gates run cannot record",
+		],
+		["HUSKY=0 git push origin :old", "has no green record for :old"],
+		[
+			"LEFTHOOK=0 git commit -m x",
+			"LEFTHOOK=0 git commit -m x skips the git hooks",
+		],
+	])("%s stays an owner gate with a record of HEAD", (command, text) => {
+		const said = reason(run(command, true));
+		expect(said).toContain(text);
+		expect(said).toContain("owner gate");
 	});
 });
 

@@ -1,8 +1,10 @@
-import { basename, join, resolve } from "node:path";
+import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { loadGateRecord } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
 import {
 	type GitInvocation,
 	type GitRead,
+	HOOKS_PATH_KEY,
 	readGit,
 } from "../../git-command.ts";
 import { canonicalRelative, readOptional } from "../../paths.ts";
@@ -12,6 +14,7 @@ import {
 	combineAll,
 	defineHandler,
 	deny,
+	type Env,
 	type Verdict,
 } from "../events.ts";
 
@@ -546,26 +549,152 @@ function lossReasons(
 	];
 }
 
-function gitReasons(git: GitInvocation): readonly string[] {
+const SKIP_VARIABLE = /^(?:HUSKY|LEFTHOOK)=(?:0|false)$/i;
+const PUSHES_UNRECORDED = ["--all", "--branches", "--mirror", "--tags"];
+const PUSH_VALUE_FLAGS = [
+	"-o",
+	"--exec",
+	"--push-option",
+	"--receive-pack",
+	"--repo",
+];
+
+type ShellState = {
+	readonly exported: readonly Word[];
+	readonly env: Env;
+};
+
+function isSkipVariable(word: Word): boolean {
+	return !word.dynamic && SKIP_VARIABLE.test(word.value);
+}
+
+function gitText(dir: string, args: string[]): string | undefined {
+	const result = runGit(dir, args);
+	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
+}
+
+function tracksFolder(dir: string, folder: string): boolean {
+	const root = repoRoot(dir);
+	if (root === undefined) return false;
+	const path = isAbsolute(folder) ? relative(root, folder) : folder;
+	if (path === "" || path.startsWith("..")) return false;
+	return (
+		(gitText(root, [...READ_ONLY_GIT, "ls-files", "--", path]) ?? "") !== ""
+	);
+}
+
+function turnsHooksOff(setting: string, dir: string): boolean {
+	const at = setting.indexOf("=");
+	const key = at < 0 ? setting : setting.slice(0, at);
+	return (
+		HOOKS_PATH_KEY.test(key) &&
+		!tracksFolder(dir, at < 0 ? "" : setting.slice(at + 1))
+	);
+}
+
+function noVerify(git: GitInvocation, flags: readonly string[]): boolean {
+	return flags.some(
+		(flag) =>
+			flag === "--no-verify" ||
+			(git.sub === "commit" && /^-[A-Za-z]*n[A-Za-z]*$/.test(flag)),
+	);
+}
+
+function skipForm(
+	step: ShellStep,
+	git: GitInvocation,
+	flags: readonly string[],
+	shell: ShellState,
+): string | undefined {
+	if (noVerify(git, flags)) return `git ${git.sub} --no-verify`;
+	const variables = [...shell.exported, ...step.env]
+		.filter(isSkipVariable)
+		.map((word) => word.value);
+	return variables.length > 0 ||
+		git.config.some((setting) => turnsHooksOff(setting, git.dir))
+		? [...variables, ...step.values].join(" ")
+		: undefined;
+}
+
+function recorded(spec: string, dir: string, env: Env): boolean {
+	const source = spec.replace(/^\+/, "").split(":")[0] ?? "";
+	if (source === "") return false;
+	const sha = gitText(dir, [
+		"rev-parse",
+		"--verify",
+		"--quiet",
+		`${source}^{commit}`,
+	]);
+	return sha !== undefined && loadGateRecord(env, sha) !== undefined;
+}
+
+function skipPushReasons(
+	form: string,
+	git: GitInvocation,
+	refspecs: readonly string[],
+	shell: ShellState,
+): readonly string[] {
+	const skips = `${form} skips the git hooks of the repo`;
+	if (git.args.some((arg) => PUSHES_UNRECORDED.includes(arg)))
+		return [
+			`${skips}, and it pushes refs that astack gates run cannot record. ${OWNER_GATE}`,
+		];
+	const sources = refspecs.length === 0 ? ["HEAD"] : refspecs;
+	const missing = sources.filter((spec) => !recorded(spec, git.dir, shell.env));
+	return missing.length === 0
+		? []
+		: [
+				`${skips}. astack gates run has no green record for ${missing.join(", ")}, so this is an owner gate. Ask the owner, or run astack gates run --base <ref> on a clean tree, then push again.`,
+			];
+}
+
+function hooksPathReasons(
+	step: ShellStep,
+	git: GitInvocation,
+): readonly string[] {
+	const { flags, plain } = operands(git.args, [
+		"-f",
+		"--blob",
+		"--comment",
+		"--default",
+		"--file",
+		"--type",
+		"--value",
+	]);
+	const verbs = ["get", "list", "set", "unset"];
+	const action = verbs.includes(plain[0] ?? "") ? plain[0] : undefined;
+	const [key, value] = action === undefined ? plain : plain.slice(1);
+	if (key === undefined || !HOOKS_PATH_KEY.test(key)) return [];
+	const unsets =
+		action === "unset" || flags.some((flag) => /^--unset(?:-all)?$/.test(flag));
+	const reads =
+		action === "get" ||
+		action === "list" ||
+		flags.some((flag) => /^(?:--get|--list|-l)/.test(flag)) ||
+		(!unsets && value === undefined);
+	if (reads || (!unsets && value !== undefined && tracksFolder(git.dir, value)))
+		return [];
+	return [
+		`${step.values.join(" ")} skips the git hooks of the repo. ${OWNER_GATE}`,
+	];
+}
+
+function gitReasons(
+	step: ShellStep,
+	git: GitInvocation,
+	shell: ShellState,
+): readonly string[] {
+	if (git.sub === "config") return hooksPathReasons(step, git);
 	const flags = git.args.filter((arg) => arg.startsWith("-"));
-	if (git.sub === "commit") {
-		const noVerify = flags.some(
-			(flag) => flag === "--no-verify" || /^-[A-Za-z]*n[A-Za-z]*$/.test(flag),
-		);
-		return noVerify
-			? [
-					`git commit --no-verify skips the git hooks of the repo. ${OWNER_GATE}`,
-				]
-			: [];
-	}
+	const form = skipForm(step, git, flags, shell);
+	if (git.sub === "commit")
+		return form === undefined
+			? []
+			: [`${form} skips the git hooks of the repo. ${OWNER_GATE}`];
 	if (git.sub !== "push") return [];
-	const reasons: string[] = [];
-	if (flags.includes("--no-verify"))
-		reasons.push(
-			`git push --no-verify skips the git hooks of the repo. ${OWNER_GATE}`,
-		);
-	const plainArgs = git.args.filter((arg) => !arg.startsWith("-"));
-	const refspecs = plainArgs.slice(1);
+	const refspecs = operands(git.args, PUSH_VALUE_FLAGS).plain.slice(1);
+	const reasons: string[] =
+		form === undefined ? [] : [...skipPushReasons(form, git, refspecs, shell)];
 	const forced =
 		flags.some(
 			(flag) =>
@@ -625,6 +754,7 @@ function unreadableReasons(
 function stepReasons(
 	step: ShellStep,
 	previous: ShellStep | undefined,
+	shell: ShellState,
 ): readonly string[] {
 	const read = readGit(step);
 	switch (read.kind) {
@@ -635,21 +765,33 @@ function stepReasons(
 		case "plain":
 			return [
 				...supabaseReasons(step),
-				...gitReasons(read.git),
+				...gitReasons(step, read.git, shell),
 				...workLossReasons(step, read.git),
 			];
 	}
 }
 
+function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
+	return steps
+		.slice(0, index)
+		.filter((step) => step.values[0] === "export")
+		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
+}
+
 export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell"],
-	run: (event) => {
+	run: (event, context) => {
 		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
 			return ALLOW;
 		return combineAll(
 			shellSteps(event.command, event.cwd).map((step, index, steps) =>
-				denial(stepReasons(step, steps[index - 1])),
+				denial(
+					stepReasons(step, steps[index - 1], {
+						exported: exportedSkips(steps, index),
+						env: context.env,
+					}),
+				),
 			),
 		);
 	},

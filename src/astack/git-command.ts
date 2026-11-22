@@ -7,12 +7,14 @@ export interface GitInvocation {
 	sub: string;
 	args: string[];
 	dir: string;
+	config: string[];
 }
 
 type GitWords = {
 	readonly sub: Word;
 	readonly args: readonly Word[];
 	readonly dir: string;
+	readonly config: readonly string[];
 	readonly dynamicPlace: boolean;
 };
 
@@ -24,6 +26,7 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 		return undefined;
 	let cwd = dir;
 	let dynamicPlace = false;
+	const config: string[] = [];
 	for (let i = 0; i < rest.length; i++) {
 		const word = rest[i];
 		if (word === undefined) break;
@@ -31,11 +34,18 @@ function gitWords(words: readonly Word[], dir: string): GitWords | undefined {
 		if (word.value === "-C" || PLACE_FLAGS.includes(word.value)) {
 			dynamicPlace ||= word.dynamic || next?.dynamic === true;
 			if (word.value === "-C") cwd = resolve(cwd, next?.value ?? "");
+			if (word.value === "-c") config.push(next?.value ?? "");
 			i++;
 		} else if (word.value.startsWith("-")) {
 			dynamicPlace ||= word.dynamic;
 		} else {
-			return { sub: word, args: rest.slice(i + 1), dir: cwd, dynamicPlace };
+			return {
+				sub: word,
+				args: rest.slice(i + 1),
+				dir: cwd,
+				config,
+				dynamicPlace,
+			};
 		}
 	}
 	return undefined;
@@ -46,8 +56,11 @@ function invocationOf(git: GitWords): GitInvocation {
 		sub: git.sub.value,
 		args: git.args.map((word) => word.value),
 		dir: git.dir,
+		config: [...git.config],
 	};
 }
+
+export const HOOKS_PATH_KEY = /^core\.hookspath$/i;
 
 export function gitInvocation(
 	values: string[],
@@ -78,6 +91,10 @@ const REVERSE = /^(?:--reverse|-[A-Za-z]*R[A-Za-z]*)$/;
 function guarded(verb: string, args: readonly Word[]): boolean {
 	if (verb === "apply")
 		return args.some((word) => !word.dynamic && REVERSE.test(word.value));
+	if (verb === "config")
+		return args.some(
+			(word) => !word.dynamic && HOOKS_PATH_KEY.test(word.value),
+		);
 	return GUARDED_VERBS.has(verb);
 }
 
@@ -104,6 +121,10 @@ const VERB_VALUE_FLAGS: ReadonlyMap<string, readonly string[]> = new Map([
 	["apply", ["-p", "-C", "--directory", "--exclude", "--include"]],
 	["checkout", ["-b", "-B", "--orphan"]],
 	["checkout-index", ["--prefix", "--stage"]],
+	[
+		"config",
+		["-f", "--blob", "--comment", "--default", "--file", "--type", "--value"],
+	],
 	["clean", ["-e", "--exclude"]],
 	["commit", [...COMMIT_VALUE_FLAGS]],
 	["push", ["-o", "--push-option"]],
@@ -138,7 +159,12 @@ function hiddenVerb(step: ShellStep): string | undefined {
 		.filter(Boolean);
 	const git = tokens.findIndex((token) => basename(token) === "git");
 	if (git < 0 && step.unreadable !== "program") return undefined;
-	return tokens.slice(git + 1).find((token) => GUARDED_VERBS.has(token));
+	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
+	return tokens
+		.slice(git + 1)
+		.find(
+			(token) => GUARDED_VERBS.has(token) || (token === "config" && hooksPath),
+		);
 }
 
 function attachedValue(text: string, flag: string): boolean {
