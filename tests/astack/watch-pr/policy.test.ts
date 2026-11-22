@@ -437,14 +437,30 @@ describe("deadline clamp", () => {
 	});
 
 	test.each([
-		["[control:wp-deadline-simple] the simple runner", "simple", pendingReader],
-		["[control:wp-deadline-queued] the queued runner", "queued", pendingReader],
-		["[control:wp-deadline-retry] a retry backoff", "simple", retryableReader],
+		[
+			"[control:wp-deadline-simple] the simple runner",
+			"simple",
+			pendingReader,
+			[],
+		],
+		[
+			"[control:wp-deadline-queued] the queued runner",
+			"queued",
+			pendingReader,
+			[],
+		],
+		[
+			"[control:wp-deadline-retry] a retry backoff",
+			"simple",
+			retryableReader,
+			[5],
+		],
 	] as const)(
-		"%s sleeps only the 5 s left before the deadline and returns TIMEOUT",
-		async (_name, runner, reader) => {
+		"%s sleeps only the 5 s left before the deadline, says so in each RETRY and returns TIMEOUT",
+		async (_name, runner, reader, retries) => {
 			let now = 0;
 			const sleeps: number[] = [];
+			const retryInSeconds: number[] = [];
 			const dependencies = {
 				reader,
 				clock: {
@@ -455,7 +471,10 @@ describe("deadline clamp", () => {
 						now += seconds;
 					},
 				},
-				emit() {},
+				emit(verdict: ProgressVerdict) {
+					if (verdict.kind === "RETRY")
+						retryInSeconds.push(verdict.retryInSeconds);
+				},
 			};
 			const verdict =
 				runner === "simple"
@@ -472,6 +491,7 @@ describe("deadline clamp", () => {
 							options: deadline,
 						});
 			expect(sleeps).toEqual([5]);
+			expect(retryInSeconds).toEqual([...retries]);
 			expect(verdict).toMatchObject({ kind: "TIMEOUT", exitCode: 5 });
 		},
 	);
