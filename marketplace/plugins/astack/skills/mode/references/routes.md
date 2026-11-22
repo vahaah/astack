@@ -14,6 +14,7 @@ For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 | "go", "do your recommendation", "use best practices and our previous decisions" | `references/delegation.md` | Record the grant, decide, and continue |
 | "agree", "next", "approve", "accept all" | Continue | Take every recommendation of the last round, write the rows, and continue |
 | "resume" | `references/resume.md` | Read the plan, the tracker and git. Then continue from the next step |
+| "status", "where are we", "what waits on me" | The Catch up part of `references/resume.md` | List each item that waits on the owner, with one line for each. A status ask only reads and starts no work |
 | `/goal`, "continue the board", a queue of many tickets | Programme tier | `/astack:plan` with `--tier programme`, then the `astack:mode` Orchestrate playbook. Use `astack board` for the frontier. Run 5 sessions at most. Merge the open PRs before you start new sessions |
 | A hotfix, "I need it fast" | Quick tier | One grill round at most. Keep the steps together in one run. Push and open the PR at once |
 | A bug, an error report, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs` | Reproduce first. Write `Root cause: X because Y` before the fix. Read a tester report critically before you accept its scope |

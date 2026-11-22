@@ -79,7 +79,8 @@ Apply these rules:
 Write every reply in ASD-STE100 Simplified Technical English, as the card says, also short and simple replies. Give the result first. Mark each claim as measured, inferred or a guess. Do not repeat the items that the owner agreed.
 
 Keep a checkpoint reply to 6 lines or fewer.
-Give the commit or PR link, gate counts, next step, and count of open questions in that order.
+Give the commit or PR link, gate counts, next step and each waiting item, in that order.
+Past 3 waiting items, give their count and say that "status" lists them.
 
 Before a long written answer, run `astack check ste -` on the draft.
 Before a commit, a PR body, a PR comment, a ticket or a tracker comment, write the text to a file.

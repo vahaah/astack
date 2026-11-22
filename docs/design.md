@@ -174,7 +174,7 @@ Model evidence does not establish private reasoning or full implementation corre
 | `/plan` | plan mode, concise, unresolved questions last. With "I am building", `astack:plan` runs inside plan mode (section 5.3) |
 | `/grilling` | `astack:grilling` over the frontier. One recommendation and lettered options per question |
 | "go", "do your recommendation", "use best practices and our previous decisions" | a delegation grant, `delegate: on` (section 5.2). "agree", "next" and "approve" continue |
-| "resume" | session pickup from the plan, tracker and git |
+| "resume", "status", "where are we", "what waits on me" | session pickup from the plan, tracker and git. A status ask gets the Catch up part of mode `resume.md`, which only reads and starts no work |
 | `/goal`, "continue the board" | programme tier, `astack board`, the `astack:mode` Orchestrate playbook, 5 sessions at most. Drain open PRs first |
 | hotfix, "I need it fast" | quick tier, one grill round at most |
 | bug, a Sentry issue, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |

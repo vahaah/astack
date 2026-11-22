@@ -10,7 +10,6 @@ You write briefs, start sessions, drain completions and take the calls of the pr
 The plan, `astack board <index>`, the tracker and git hold the programme state.
 Keep no store file, no status file and no file of orders that each spawn pastes.
 Put a stable order in the brief template, the repo profile or an ADR.
-When you repeat a correction, encode it in a check or in the brief template.
 
 #### Steps
 
@@ -36,3 +35,8 @@ Escalate a product call that no experiment can settle, and a dead end that stays
 Escalate each owner gate of the plan.
 Route the work around a gate and continue.
 Do not escalate a rebase, a retry, a flaky CI run, a review thread or a format fix.
+
+#### Reply
+
+At each checkpoint, give the board counts and the link of each merged PR.
+List each waiting item as the Catch up part of `references/resume.md` says.

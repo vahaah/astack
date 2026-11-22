@@ -59,3 +59,60 @@ describe("Orchestrate supervises through the plan, the board and the tracker", (
 		expect(flat(orchestrate)).toMatch(rule);
 	});
 });
+
+const section = (text: string, heading: string) => {
+	const start = text.indexOf(`\n## ${heading}\n`);
+	if (start === -1) return "";
+	const end = text.indexOf("\n## ", start + 1);
+	return flat(text.slice(start, end === -1 ? undefined : end));
+};
+const rowFor = (text: string, words: string) =>
+	text
+		.split("\n")
+		.filter((line) => line.startsWith("|"))
+		.find((line) => (line.split("|")[1] ?? "").includes(words)) ?? "";
+const STATUS_WORDS = ["status", "what waits on me"];
+const STARTS_NO_WORK = /only reads?\b.*starts no work/i;
+
+describe("a status ask lists each waiting item and starts no work", () => {
+	test("[control:cu-list] the card row, the routes row and the Catch up part send the status words to Catch up, which only reads and starts no work", () => {
+		const card = rowFor(
+			readFileSync(join(import.meta.dir, "../rules/astack.md"), "utf8"),
+			"what waits on me",
+		);
+		const route = rowFor(read("references/routes.md"), "what waits on me");
+		for (const row of [card, route]) {
+			for (const words of STATUS_WORDS) expect(row).toContain(`"${words}"`);
+			expect(row).toMatch(/resume\.md/);
+			expect(row).toMatch(/Catch up/);
+			expect(row).toMatch(STARTS_NO_WORK);
+		}
+		const catchUp = section(read("references/resume.md"), "Catch up");
+		for (const words of [...STATUS_WORDS, "where are we"])
+			expect(catchUp).toContain(`"${words}"`);
+		expect(catchUp).toMatch(STARTS_NO_WORK);
+		expect(catchUp).toMatch(/astack board <index>/);
+		expect(catchUp).toMatch(/each waiting item one line/i);
+		expect(catchUp).toMatch(/failed read .* its own line/i);
+		expect(catchUp).toMatch(/\bunknown\b/);
+		expect(catchUp).toMatch(/nothing waits/i);
+	});
+
+	test("[control:cu-checkpoint] a checkpoint reply names each waiting item up to 3, and past 3 gives their count and the status pointer", () => {
+		const skill = read("SKILL.md");
+		const replies = skill.slice(skill.indexOf("\n## Replies\n"));
+		const checkpoint = flat(
+			replies.split(/\n\s*\n/).find((part) => /checkpoint/i.test(part)) ?? "",
+		);
+		expect(checkpoint).not.toMatch(/count of open questions/i);
+		expect(checkpoint).toMatch(/each waiting item/i);
+		expect(
+			sentences(checkpoint).some(
+				(sentence) =>
+					/past 3/i.test(sentence) &&
+					/count/i.test(sentence) &&
+					/"status"/.test(sentence),
+			),
+		).toBe(true);
+	});
+});
