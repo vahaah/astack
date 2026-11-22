@@ -193,7 +193,8 @@ function shellVerdict(
 	);
 }
 
-const MERGE_TOKEN = /^(?:auto)?merg(?:e|es|ing)$/;
+const MERGE_STEM = "merg";
+const MERGE_STATE = /merge(?:d|able|ability)$/;
 const READ_VERBS = new Set(["get", "list", "read", "search", "view", "find"]);
 
 function nameTokens(name: string): readonly string[] {
@@ -206,12 +207,13 @@ function nameTokens(name: string): readonly string[] {
 		.map((token) => token.toLowerCase());
 }
 
+function isMergeWord(token: string): boolean {
+	return token.includes(MERGE_STEM) && !MERGE_STATE.test(token);
+}
+
 function isMcpMergeTool(tool: string): boolean {
 	const tokens = nameTokens(tool);
-	return (
-		!READ_VERBS.has(tokens[0] ?? "") &&
-		tokens.some((token) => MERGE_TOKEN.test(token))
-	);
+	return !READ_VERBS.has(tokens[0] ?? "") && tokens.some(isMergeWord);
 }
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {

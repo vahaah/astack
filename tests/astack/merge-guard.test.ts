@@ -731,6 +731,8 @@ describe("MCP merge tools", () => {
 		["mcp__forge__mergePullRequest", true],
 		["mcp__forge__enable-automerge", true],
 		["mcp__forge__createPRMerge", true],
+		["mcp__forge__PRMerge", true],
+		["mcp__forge__prmerge", true],
 		["mcp__forge__merge2", true],
 		["mcp__forge__s3merge", true],
 		["mcp__forge__show_merged_prs", false],
