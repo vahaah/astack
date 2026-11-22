@@ -446,6 +446,7 @@
 				"src/astack/ste/session.ts",
 				"src/astack/shell.ts",
 				"src/astack/git-command.ts",
+				"src/astack/session-repos.ts",
 				"src/astack/gates.ts",
 				"src/astack/paths.ts",
 				"src/astack/hook/handlers/comments.ts",

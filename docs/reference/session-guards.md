@@ -3,6 +3,7 @@
 [ADR 0009](../adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md) D3 and D4 govern the tstack skills and the "full send" merge grant.
 [ADR 0010](../adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md) governs scratch writes, commit checks, work loss and attended detection.
 [ADR 0011](../adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md) governs base branch authority, harness frames, MCP merges and guard errors.
+[ADR 0028](../adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) governs the session repo exception to work loss.
 The [design](../design.md) gives the hook behavior in full.
 
 ## Acceptance criteria
@@ -16,7 +17,11 @@ The [design](../design.md) gives the hook behavior in full.
 - [criterion:SG-unattended] In an unattended session, a prompt with no source field gives no grant. The merge denial and `astack doctor` name the variable that makes the session unattended. A prompt with the source `user` gets the attended note.
 - [criterion:SG-scratch] The type, comment and doc STE hooks skip a write or an edit only when its file is a scratch file.
 - [criterion:SG-commit-surface] The comment and type hooks examine each path that a commit includes, also a scratch file.
-- [criterion:SG-work-loss] The destructive hook denies a git command that discards uncommitted work in the whole tree or in a folder. Each denial names work that git discards. `git apply -R` from stdin, `git read-tree -u --reset`, `git checkout-index -a -f` and `git archive` piped to `tar -x` are such commands.
+- [criterion:SG-work-loss] The destructive hook denies a git command that discards uncommitted work in the whole tree or in a folder. A bound session repo is the exception. Each denial names work that git discards. `git apply -R` from stdin, `git read-tree -u --reset`, `git checkout-index -a -f` and `git archive` piped to `tar -x` are such commands.
+- [criterion:SG-session-repo] A broad discard on the dirty tree of a repo that `git init`, `git clone <url>` or `git worktree add <path>` made in this session passes in a later call. A force-push to `main`, `supabase db reset` and a commit with `--no-verify` keep their denies there. A `git clean -ffd` that removes a nested repo with no bound record gets its deny.
+- [criterion:SG-session-repo-identity] A reset gets a deny in a dirty repo that another process made at a dropped pending path. A symlink or a new dirty repo at the path of a bound record gets a deny too. A repo that `--separate-git-dir` made gets no record. In a dirty session repo, a discard with `--git-dir`, `--work-tree` or a place variable gets the deny of ADR 0010 D3. An exported place variable counts too.
+- [criterion:SG-session-repo-closed] The discard after `git init` gets a deny with no usable record. That is no session id, an id with a slash or a state folder that refuses a write. A pending entry that binds in a call whose save fails passes the discard of that call.
+- [criterion:SG-session-repo-total] Four record faults throw nothing. Two are a record file that is a folder and a record of a wrong shape. The other two are a state path and an init target that are files. With each fault, a force-push to `main` and a discard in another dirty repo in one call get their denies.
 - [criterion:SG-plain-form] The merge guard and the destructive guard judge the plain form of each shell step. A known wrapper, a brace group, an `if` and a static `sh -c`, `eval` or substitution body give the verdict of the plain command.
 - [criterion:SG-dynamic-word] A guarded verb that a variable or a substitution hides is unreadable. An unreadable work-loss command gets a deny on a changed tree when astack can read its folder. Each other unreadable guarded verb gets a deny at once.
 - [criterion:SG-api-merge] Each `gh api` merge of a PR gets a deny. A GraphQL body with a merge mutation or a dynamic field gets a deny. So does a body from a pipe or a file that the hook cannot read. A write call to an endpoint that a variable gives gets a deny too. A word after `api` with an unquoted glob or brace expansion gets a deny too, also in a read. A glob or brace in the program gets a deny with no text check. So does one in a `gh` word up to the subcommand or after `pr merge`. An unquoted variable after `api` gets a deny too. A variable in double quotes passes only in a read with one endpoint and no write flag. Only `"$name"`, `"${name}"` and `"${name[index]}"` count as one argument.
@@ -32,5 +37,9 @@ The model covers a finite set of prompts, paths, changes and git commands.
 It takes the observations of the hooks as true.
 The implementation controls examine the clause grammar, the shell parser and the git status reader.
 The model takes the plain form of each shell step as given. A property test checks the wrapper law of the parser.
+The session repo rule holds under three premises.
+No other process makes a repo at a pending path before the next Bash call of the session.
+The host runs a Bash call to its end before the PreToolUse hook of the next Bash call.
+The host keeps one session id for the life of a session.
 The full-stop rule that a session never merges is a procedure in the skill text.
 The merge guard enforces only the grant part of that rule.
