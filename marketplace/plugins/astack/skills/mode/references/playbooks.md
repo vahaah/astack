@@ -18,8 +18,8 @@ This route takes priority even when a narrower playbook, such as Feature, fits.
 Use `figure-it-out` whenever no bundled playbook fits.
 It designs a rigorous playbook for one specific run.
 
-Use Orchestrate for a standing project with many days, stacked PRs, and a fleet of subagents under one coordinator.
-Orchestrate runs the programme, while `figure-it-out` designs one run.
+Use Orchestrate to run a programme board under one coordinator.
+Orchestrate runs the board, while `figure-it-out` designs one run.
 
 ## Planning
 
@@ -55,14 +55,14 @@ Without astack, run the matched playbook as written.
 - Trace forensics. Diagnose a captured profiling artifact supplied after the event. Examples include a cpuprofile, trace, spindump, or heap snapshot. Deliver a diagnosis, not a fix.
 - Feature. Build new or changed behavior from a named data shape.
 - Refactoring. Preserve behavior while you change structure or shape, such as a rename, extraction, inline, dedupe, or move.
-- Prototype. Make a throwaway sketch to settle a design or behavior decision cheaply. Use observation instead of a human question for an empirical fork. Typical requests are "prototype", "mock it up", "try this layout", or "sketch it to decide".
+- Prototype. Make a throwaway sketch to settle a design or behavior decision cheaply. Use observation instead of a human question for an empirical fork. Its "Person-judged prototype" section covers a result that a person must judge. Typical requests are "prototype", "mock it up", "try this layout", or "sketch it to decide".
 - Visual parity. Match the pixels of two implementations or migrate a styling system with exact UI equivalence.
-- Authoring or modifying a skill. Write or edit a SKILL.md. File: `playbooks/authoring-a-skill.md`.
+- Authoring or modifying a skill. Write or edit a SKILL.md, an AGENTS.md or a CLAUDE.md. File: `playbooks/authoring-a-skill.md`.
 - Eval. Test how a skill, structure, or prompt change affects agent behavior before you promote it.
 - Babysit. Bring a PR or stack to merge-ready state, including conflicts, review threads, and CI.
 - Shipping. Independently verify a green stack after Babysit. Land only the contiguous verified run from the root, bottom-up through `gh`.
 - Autonomous run. Drive one long task to completion without stopping. Typical requests are "run until done" or "/loop until X".
-- Orchestrate. Run a standing project through one coordinator chat over many days and stacked PRs. It can use dozens to hundreds of subagents with few human turns. Typical requests are "run this whole project" or "own this migration until it lands". Autonomous run drives one task to a predicate instead. Use Autonomous run when one agent can finish within the session budget, even if the wording resembles a programme.
+- Orchestrate. Run a programme board through one coordinator chat over many days and many PRs. Typical requests are "continue the board", "run this whole project" or "own this migration until it lands". Autonomous run drives one task to a predicate instead. Use Autonomous run when one agent can finish within the session budget, even if the wording resembles a programme.
 - Autopilot-full. Run a queue of independent PRs to merge with full autonomy. One owner for each PR carries it from build through merge. The root verifies each PR with `swarm` before its owner merges. Typical requests are "autopilot this queue", "full autopilot", or "one-owner-per-PR programs".
 - Autopilot-stack. Build and verify a queue with full autonomy. Deliver one linear reviewed stack on the base branch for the operator to land. Typical requests are "autopilot-stack", "stack them, don't ship", or "build the stack, I'll land it".
 - Fork sync. Bring the commits of an upstream repo into a fork. Give each commit a disposition. Show each exclusion to the owner before you integrate. Typical requests are "sync upstream", "check new upstream commits", or "update to the newest upstream version".

@@ -1585,7 +1585,7 @@ function checkProse(ctx: Ctx, emit: Emit): void {
 					"warning",
 					"prose",
 					question.line,
-					`principle ${match[1]} is not one of pstack's principle skills; cite a principle-* skill without the prefix`,
+					`principle ${match[1]} is not a reference of astack:principles; cite the name of one of its references`,
 				);
 }
 

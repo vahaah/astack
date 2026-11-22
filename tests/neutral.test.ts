@@ -45,6 +45,7 @@ import {
 } from "../scripts/lib/target-lint.ts";
 import { scanTree, type TreeReport } from "../scripts/neutral.ts";
 import { envWithoutCompanion } from "./child-env.ts";
+import { heavyTestTimeout } from "./heavy-test.ts";
 import { trackedTree } from "./tracked-tree.ts";
 
 const listed = new HashMatcher(
@@ -352,32 +353,36 @@ describe("the deny list of the companion", () => {
 		});
 	});
 
-	test("neutral fails on a word of the tree that only the list of the flag folder names", () => {
-		const canary = backwards("elfrans");
-		const root = companion({
-			"deny/names.sha256": `${sha256(canary)}\n${sha256("verbatim")}\n`,
-			"deny/canary": `${canary}\n`,
-			"machine.json": JSON.stringify({
-				home: `/srv/${canary}`,
-				profiles: [],
-				handles: [],
-				emails: [],
-				hosts: [],
-			}),
-		});
-		const result = run("neutral.ts", ["--companion", root]);
-		expect({
-			status: result.status,
-			deniedNames: [
-				...new Set(
-					result.stderr
-						.split("\n")
-						.map((line) => line.split(": ").slice(1).join(": "))
-						.filter((detail) => detail.startsWith("denied-name")),
-				),
-			],
-		}).toEqual({ status: 1, deniedNames: ["denied-name: hash b9113628"] });
-	});
+	test(
+		"neutral fails on a word of the tree that only the list of the flag folder names",
+		() => {
+			const canary = backwards("elfrans");
+			const root = companion({
+				"deny/names.sha256": `${sha256(canary)}\n${sha256("verbatim")}\n`,
+				"deny/canary": `${canary}\n`,
+				"machine.json": JSON.stringify({
+					home: `/srv/${canary}`,
+					profiles: [],
+					handles: [],
+					emails: [],
+					hosts: [],
+				}),
+			});
+			const result = run("neutral.ts", ["--companion", root]);
+			expect({
+				status: result.status,
+				deniedNames: [
+					...new Set(
+						result.stderr
+							.split("\n")
+							.map((line) => line.split(": ").slice(1).join(": "))
+							.filter((detail) => detail.startsWith("denied-name")),
+					),
+				],
+			}).toEqual({ status: 1, deniedNames: ["denied-name: hash b9113628"] });
+		},
+		heavyTestTimeout,
+	);
 });
 
 async function exampleLeakScan(): Promise<FileScan> {
@@ -485,33 +490,37 @@ describe("the tree scan", () => {
 		});
 	});
 
-	test("bun run neutral reads each file that git ls-files lists in this repo, and finds only the 7 images of the frozen pstack snapshot", () => {
-		const snapshotImages = [
-			"upstream/pstack/assets/logo.png",
-			"upstream/pstack/docs/guide/images/design.jpg",
-			"upstream/pstack/docs/guide/images/overnight.jpg",
-			"upstream/pstack/docs/guide/images/recipes.jpg",
-			"upstream/pstack/docs/guide/images/router.jpg",
-			"upstream/pstack/docs/guide/images/understanding.jpg",
-			"upstream/pstack/docs/guide/images/verification.jpg",
-		];
-		const tracked = spawnSync("git", ["ls-files", "-z"], {
-			cwd: repoRoot,
-			env: cleanEnv(),
-			encoding: "utf8",
-		})
-			.stdout.split("\0")
-			.filter(Boolean).length;
-		const result = run("neutral.ts", []);
-		const lines = result.stdout.split("\n");
-		expect({
-			head: lines[0],
-			binaries: lines.filter((line) => line.startsWith("binary ")),
-		}).toEqual({
-			head: `neutral: read ${tracked} of ${tracked} tracked file(s), ${snapshotImages.length} binary`,
-			binaries: snapshotImages.map((path) => `binary ${path}`),
-		});
-	});
+	test(
+		"bun run neutral reads each file that git ls-files lists in this repo, and finds only the 7 images of the frozen pstack snapshot",
+		() => {
+			const snapshotImages = [
+				"upstream/pstack/assets/logo.png",
+				"upstream/pstack/docs/guide/images/design.jpg",
+				"upstream/pstack/docs/guide/images/overnight.jpg",
+				"upstream/pstack/docs/guide/images/recipes.jpg",
+				"upstream/pstack/docs/guide/images/router.jpg",
+				"upstream/pstack/docs/guide/images/understanding.jpg",
+				"upstream/pstack/docs/guide/images/verification.jpg",
+			];
+			const tracked = spawnSync("git", ["ls-files", "-z"], {
+				cwd: repoRoot,
+				env: cleanEnv(),
+				encoding: "utf8",
+			})
+				.stdout.split("\0")
+				.filter(Boolean).length;
+			const result = run("neutral.ts", []);
+			const lines = result.stdout.split("\n");
+			expect({
+				head: lines[0],
+				binaries: lines.filter((line) => line.startsWith("binary ")),
+			}).toEqual({
+				head: `neutral: read ${tracked} of ${tracked} tracked file(s), ${snapshotImages.length} binary`,
+				binaries: snapshotImages.map((path) => `binary ${path}`),
+			});
+		},
+		heavyTestTimeout,
+	);
 
 	test("exits 1 on a companion with no machine.json, because the owner classes have no values", () => {
 		const root = companion({

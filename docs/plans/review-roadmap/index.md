@@ -25,6 +25,7 @@ The programme has 36 blocks in 8 milestones, and each block is one PR.
 - `bun run check` takes 200.7 s, and it runs `check:proof` twice.
 - No check compares the effects and laws of the proof contract with the code. TLC reads only the model files, so a code mutation cannot fail TLC.
 - CONTEXT.md holds glossary terms, but it names no bounded context.
+- ADRs 0011 to 0019 belong to index blocks. B01 takes ADR 0011, B05 takes 0014, B13 takes 0020, B03 takes 0021, B09 takes 0022, B20 takes 0023 and B14 takes 0024.
 
 ## Goal
 
@@ -105,14 +106,14 @@ Demo. The budget gate reports at most 120,000 skill words.
 Proof. `bun run budget && bun run validate && bun test tests/hardening-consistency.test.ts`
 Depends on. M1.
 Blocks.
-- B14 Orchestrate keeps supervision rules and a catch-up route (review `G4`, `H7`, `G3`). Lane. e. Depends on. B13. Brief. stub.
-- B15 Rule text fixes (review `D7`, `D8`, `H8`, `H5`, `C4`, `J6`). Lane. e. Brief. stub.
-- B16 Duplicate playbooks go, and the docs match the tree (review `H10`, `H4`, `H6`, `H9`). Lane. e. Depends on. B14, B15. Brief. stub.
-- B21 Wrapper skills fold into their homes. Lane. e. Brief. stub.
-- B22 Programme charting moves into the plan skill. Lane. e. Depends on. B21. Brief. stub.
-- B23 Thinking skills take the pstack size (review `H3`). Lane. e. Brief. stub.
-- B24 The repo hardening stub needs the plugin. Lane. e. Depends on. B03. Brief. stub.
-- B25 One lexer reads TypeScript and JavaScript comments. Lane. c. Brief. stub.
+- B14 Orchestrate keeps supervision rules and a catch-up route (review `G4`, `H7`, `G3`). Lane. e. Depends on. B13. Brief. B14.md.
+- B15 Rule text fixes (review `D7`, `D8`, `H8`, `H5`, `C4`, `J6`). Lane. e. Brief. B15.md.
+- B16 Duplicate playbooks go, and the docs match the tree (review `H10`, `H4`, `H6`, `H9`). Lane. e. Depends on. B14, B15. Brief. B16.md.
+- B21 Wrapper skills fold into their homes. Lane. e. Brief. B21.md.
+- B22 Programme charting moves into the plan skill. Lane. e. Depends on. B21. Brief. B22.md.
+- B23 Thinking skills take the pstack size (review `H3`). Lane. e. Brief. B23.md.
+- B24 The repo hardening stub needs the plugin. Lane. e. Depends on. B03. Brief. B24.md.
+- B25 One lexer reads TypeScript and JavaScript comments. Lane. c. Brief. B25.md.
 
 ### M4 Proof follows risk, and models meet the code
 
@@ -120,10 +121,10 @@ State. later
 Demo. A docs-only diff starts no java process. A code mutation that drops the authority check fails the conformance test.
 Depends on. M1.
 Blocks.
-- B26 `Result` gets `map`, `andThen` and `all`, with property tests for its laws. Lane. g. Depends on. B04. Brief. stub.
-- B06 The risk ladder and a model registry select models by path (review `A3`, `A7`). Lane. b. Depends on. B05. Brief. stub.
-- B07 Each change carries its own proof manifest (review `A2`). Lane. b. Depends on. B06. Brief. stub.
-- B27 A conformance test drives the real guards from the SessionGuards model. Lane. a. Depends on. B04, B06. Brief. stub.
+- B26 `Result` gets `map`, `andThen` and `all`, with property tests for its laws. Lane. g. Depends on. B04. Brief. B26.md.
+- B06 The risk ladder and a model registry select models by path (review `A3`, `A7`). Lane. b. Depends on. B05. Brief. B06.md.
+- B07 Each change carries its own proof manifest (review `A2`). Lane. b. Depends on. B06. Brief. B07.md.
+- B27 A conformance test drives the real guards from the SessionGuards model. Lane. a. Depends on. B04, B06. Brief. B27.md.
 
 ### M5 One domain and effects record, checked against code
 

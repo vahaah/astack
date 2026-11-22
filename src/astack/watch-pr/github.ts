@@ -480,43 +480,6 @@ export class GhGitHubReader implements T.GitHubReader {
 			context,
 		);
 	}
-	async openPullRequests(
-		repository: T.Repository,
-	): Promise<readonly T.OpenPullRequest[]> {
-		const value = await runJson([
-			"gh",
-			"pr",
-			"list",
-			"--repo",
-			`${repository.owner}/${repository.repo}`,
-			"--state",
-			"open",
-			"--limit",
-			"300",
-			"--json",
-			"number,headRefName,baseRefName,isCrossRepository",
-		]);
-		return list(value, "open PRs").map((item, index) => {
-			const object = record(item, `open PRs[${index}]`);
-			if (typeof object.isCrossRepository !== "boolean")
-				missing(
-					`open PRs[${index}].isCrossRepository`,
-					object.isCrossRepository,
-				);
-			return {
-				number: parsePrNumber(object.number, `open PRs[${index}].number`),
-				headRefName: string(
-					object.headRefName,
-					`open PRs[${index}].headRefName`,
-				),
-				baseRefName: string(
-					object.baseRefName,
-					`open PRs[${index}].baseRefName`,
-				),
-				isCrossRepository: object.isCrossRepository,
-			};
-		});
-	}
 	async checksFastPath(context: T.PrContext): Promise<T.ChecksFastPath> {
 		const result = await run([
 			"gh",
@@ -665,51 +628,4 @@ export async function resolveContext(args: {
 		repo: args.repo ?? inferred.repo,
 		number: args.pr ?? inferred.number,
 	};
-}
-export function orderStack(
-	context: T.PrContext,
-	open: readonly T.OpenPullRequest[],
-): T.NonEmpty<T.PrContext> {
-	const sameRepository = open.filter((pr) => !pr.isCrossRepository);
-	const byNumber = new Map(sameRepository.map((pr) => [pr.number, pr]));
-	const byHead = new Map(sameRepository.map((pr) => [pr.headRefName, pr]));
-	const children = new Map<string, T.OpenPullRequest[]>();
-	for (const pr of sameRepository)
-		children.set(pr.baseRefName, [...(children.get(pr.baseRefName) ?? []), pr]);
-	for (const values of children.values())
-		values.sort((a, b) => a.number - b.number);
-	const start = byNumber.get(context.number);
-	if (start === undefined) return [context];
-	const seen = new Set<T.PrNumber>([start.number]);
-	const down: T.OpenPullRequest[] = [];
-	let parent = byHead.get(start.baseRefName);
-	while (parent !== undefined && !seen.has(parent.number)) {
-		seen.add(parent.number);
-		down.push(parent);
-		parent = byHead.get(parent.baseRefName);
-	}
-	const up: T.OpenPullRequest[] = [];
-	const visit = (parent: T.OpenPullRequest): void => {
-		for (const child of children.get(parent.headRefName) ?? []) {
-			if (seen.has(child.number)) continue;
-			seen.add(child.number);
-			up.push(child);
-			visit(child);
-		}
-	};
-	visit(start);
-	return (
-		nonEmpty(
-			[...down.reverse(), start, ...up].map((pr) => ({
-				...context,
-				number: pr.number,
-			})),
-		) ?? [context]
-	);
-}
-export async function discoverStack(
-	reader: T.GitHubReader,
-	context: T.PrContext,
-): Promise<T.NonEmpty<T.PrContext>> {
-	return orderStack(context, await reader.openPullRequests(context));
 }

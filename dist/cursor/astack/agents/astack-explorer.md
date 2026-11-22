@@ -1,6 +1,6 @@
 ---
 name: "astack-explorer"
-description: "Read repo facts, review one diff axis, or outline an interface without changes. Used by astack-grilling, astack-code-review, astack-improve-codebase-architecture, and design-it-twice."
+description: "Read repo facts, review one diff axis, or outline an interface without changes. Used by astack-grilling, astack-code-review, the astack-codebase-design survey, and design-it-twice."
 model: "inherit"
 readonly: true
 ---

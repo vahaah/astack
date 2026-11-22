@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "review-roadmap-b04-plain-form",
-	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
+	"base": "ef9a3f625423e0f683c0ff26dc74db1a26a3a63f",
 	"scope": [
 		{
 			"path": "src/astack/shell.ts",

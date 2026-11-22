@@ -7,7 +7,9 @@
 		"docs/reference/word-budget.md",
 		"docs/reference/plan-boundary.md",
 		"docs/reference/doctor.md",
-		"docs/reference/finding-telemetry.md"
+		"docs/reference/finding-telemetry.md",
+		"docs/reference/test-fixtures.md",
+		"docs/reference/programme-supervision.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -51,7 +53,12 @@
 		"tests/pr-review-profile.test.ts",
 		"tests/astack/verdict.test.ts",
 		"tests/ste-own.test.ts",
-		"tests/dist/render.test.ts"
+		"tests/dist/render.test.ts",
+		"tests/git-template.test.ts",
+		"tests/check-companion.test.ts",
+		"tests/astack/watch-pr/cli.test.ts",
+		"tests/supervision-text.test.ts",
+		"tests/old-names.test.ts"
 	],
 	"links": [
 		{
@@ -458,11 +465,7 @@
 		},
 		{
 			"criterion": "WP-DEADLINE",
-			"controls": [
-				"wp-deadline-simple",
-				"wp-deadline-queued",
-				"wp-deadline-retry"
-			]
+			"controls": ["wp-deadline-simple", "wp-deadline-retry"]
 		},
 		{
 			"criterion": "CLI-MANAGED",
@@ -513,6 +516,54 @@
 		{
 			"criterion": "TEL-SUM",
 			"controls": ["tel-sum"]
+		},
+		{
+			"criterion": "FX-ISOLATE",
+			"controls": ["fx-isolate"]
+		},
+		{
+			"criterion": "FX-INDEX",
+			"controls": ["fx-index"]
+		},
+		{
+			"criterion": "FX-TREE",
+			"controls": ["fx-tree"]
+		},
+		{
+			"criterion": "FX-ATOMIC",
+			"controls": ["fx-atomic"]
+		},
+		{
+			"criterion": "FX-OWN-DIR",
+			"controls": ["fx-own-dir"]
+		},
+		{
+			"criterion": "FX-REAL-SCAN",
+			"controls": ["fx-real-scan"]
+		},
+		{
+			"criterion": "WP-ONE-PR",
+			"controls": ["wp-one-pr", "wp-text-commands"]
+		},
+		{
+			"criterion": "WP-SINGLE-JSON",
+			"controls": ["wp-single-json"]
+		},
+		{
+			"criterion": "OR-NO-STORE",
+			"controls": ["or-no-store", "or-kept-rules"]
+		},
+		{
+			"criterion": "CU-LIST",
+			"controls": ["cu-list"]
+		},
+		{
+			"criterion": "CU-CHECKPOINT",
+			"controls": ["cu-checkpoint"]
+		},
+		{
+			"criterion": "AN-NAMES",
+			"controls": ["an-names", "an-models-header"]
 		}
 	]
 }

@@ -58,7 +58,6 @@ The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-
    One case permits a new PR.
    A fix whose owning PR already merged becomes a new PR above the remaining stack.
    Never rewrite merged history.
-   Only this case can change the frozen queue list from step 6.
 
 5. Handle conflicts, then review threads, then CI.
 
@@ -88,28 +87,17 @@ The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-
    This selects dynamic mode.
    Run the watcher as a background Bash command so its verdict wakes you.
    Rearm after each push wave and each verdict you act on.
-   Watcher output supplies the wakeups.
    Never add a second sleep loop.
 
-   Stop at `READY` for a single PR or stack.
-   Queued mode never emits `READY`.
-   A frontier with no blocker reports non-terminal `WAITING` with reason `merge-queue`.
-   Report that frontier as merge-ready and stop the watcher.
+   Watch one PR at a time with `astack watch-pr --pr <n>`.
+   Start at the frontier.
+   Move up at each `READY`.
+   After the top PR, watch each lower PR again.
+   Stop only when each one still reports `READY`.
    Shipping owns the wait for merges.
-   If another actor merges the frontier, `ADVANCE` moves the babysit to the next frontier.
-   Continue there.
-   `COMPLETE` is terminal when another actor finishes the queue.
 
    Answer a question from the user during the loop, then continue.
-   Only an explicit stop ends the loop before its watcher stop condition.
-   Those conditions are `READY` for single or stack mode.
-   Queued mode stops at `WAITING` with `merge-queue`, or at `COMPLETE`.
-   Capture a queued stack's PR list once, from bottom to top.
-   Pass the same frozen list on every rearm.
-   Change it only for the follow-up PR that step 4 permits.
-   Append that PR at the end.
-   Remove the merged owner from the list.
-   Rearm with the corrected snapshot.
+   Only an explicit stop ends the loop before that stop condition.
 
 7. Classify a CI failure before any retrigger.
 
@@ -151,7 +139,7 @@ The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-
    Only an explicit request to merge, land, ship, or merge when ready grants it.
    Route that request to Shipping.
    Report the escalation and continue the remaining work.
-   Sweep the triage decisions once after `READY`, queued `WAITING` with `merge-queue`, or `COMPLETE`.
+   Sweep the triage decisions once after the last `READY`.
    Offer any dismissal pattern useful to the team as a candidate entry in `review-bot-triage.md`.
    Put that change in its own PR.
    Never keep the pattern only in private memory.

@@ -109,7 +109,6 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["full-stop", ["tstack"]],
 		["grilling", ["mattpocock-skills"]],
 		["how", ["pstack"]],
-		["improve-codebase-architecture", ["mattpocock-skills"]],
 		["in-your-own-words", ["pstack"]],
 		["interrogate", ["pstack"]],
 		["leaving-pr-comments", ["tstack"]],
@@ -119,10 +118,8 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["plan", ["mattpocock-skills", "pstack"]],
 		["pr-review-hardening", ["pstack"]],
 		["principles", ["pstack"]],
-		["prototype", ["mattpocock-skills"]],
 		["recall", ["pstack"]],
 		["reflect", ["pstack"]],
-		["research", ["mattpocock-skills"]],
 		["retro", ["mattpocock-skills"]],
 		["setup", ["mattpocock-skills"]],
 		["setup-models", ["pstack"]],
@@ -138,7 +135,6 @@ export const SKILL_ORIGINS: ReadonlyMap<string, readonly UpstreamName[]> =
 		["why", ["pstack"]],
 		["write-docs", ["mattpocock-skills", "pstack"]],
 		["write-ticket", ["mattpocock-skills", "pstack"]],
-		["writing-for-agents", ["mattpocock-skills"]],
 	]);
 
 export const AGENT_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> =

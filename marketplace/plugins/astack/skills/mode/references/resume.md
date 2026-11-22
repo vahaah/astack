@@ -1,6 +1,6 @@
 # Resume
 
-Use this playbook for "resume" and for a new session on old work. The plan, the tracker and git hold the state. A transcript never does.
+Use this playbook for "resume" and for a new session on old work. A status ask uses only its Catch up part. The plan, the tracker and git hold the state. A transcript never does.
 
 ## Read the state
 
@@ -22,6 +22,17 @@ There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no
 2. Read the status of the ticket and its last hand-off comment.
 3. Find the next step. It is the first step of the plan with no commit that meets its `Exit.` line.
 4. When the working tree has changes, or a stash or a worktree belongs to this work, say what you found. Do not delete it.
+
+## Catch up
+
+Use this part for "status", "where are we" and "what waits on me". A status ask only reads and starts no work. It changes no file, branch, PR or ticket.
+
+Run the commands of "Read the state". For a programme, also run `astack board <index>`. A waiting item is a call that only the owner can take. Examples are a green PR with no merge grant, an open question of the plan, a draft that `astack plan draft <plan>` prints and an owner gate.
+
+- Open the reply with one sentence that names what waits, or says that nothing waits.
+- Give each waiting item one line with its link, the call, your pick and its risk.
+- Give each failed read of gh or of the board its own line, in place of the stop of "Read the state".
+- Never drop an item in silence. Write unknown for a fact that you cannot read.
 
 ## Run the steps
 

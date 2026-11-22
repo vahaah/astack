@@ -12,7 +12,7 @@ These rules describe how engineering skills use the repo's domain documents duri
 Proceed silently when these optional files do not exist.
 Do not report their absence or propose empty files in advance.
 `/astack:domain-modeling` creates them when the discussion resolves a term or a qualifying decision.
-`/astack:grilling` and `/astack:improve-codebase-architecture` can invoke that skill.
+`/astack:grilling` and `/astack:codebase-design` can invoke that skill.
 
 ## File structure
 

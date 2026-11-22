@@ -5,7 +5,7 @@
 	"scripts": {
 		"build": "bun scripts/build.ts",
 		"bundle": "bun scripts/bundle.ts",
-		"test": "bun test tests --parallel --timeout=20000",
+		"test": "bun test tests --parallel",
 		"apply": "bun scripts/apply.ts",
 		"validate": "bun scripts/validate.ts",
 		"dist": "bun scripts/dist.ts",

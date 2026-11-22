@@ -1,61 +1,41 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	realpathSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
+import {
+	buildTemplate,
+	commitTree,
+	copyRepo,
+	type Files,
+	git,
+	type Template,
+} from "../git-template.ts";
 
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "astack-ci-pins-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 let count = 0;
 
-type Files = Readonly<Record<string, string | { readonly link: string }>>;
-
-function git(cwd: string, args: readonly string[]): string {
-	const result = spawnSync("git", args, {
-		cwd,
-		encoding: "utf8",
-		env: {
-			...process.env,
-			GIT_AUTHOR_NAME: "t",
-			GIT_AUTHOR_EMAIL: "t@example.com",
-			GIT_COMMITTER_NAME: "t",
-			GIT_COMMITTER_EMAIL: "t@example.com",
-		},
-	});
-	if (result.status !== 0)
-		throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
-	return result.stdout.trim();
-}
-
-function write(root: string, files: Files): void {
-	for (const [path, text] of Object.entries(files)) {
-		mkdirSync(dirname(join(root, path)), { recursive: true });
-		if (typeof text === "string") writeFileSync(join(root, path), text);
-		else symlinkSync(text.link, join(root, path));
-	}
-}
+let template: Template | undefined;
 
 function pullRequest(base: Files, head: Files): string {
 	count += 1;
-	const root = join(scratch, `repo-${count}`);
-	mkdirSync(root, { recursive: true });
-	git(root, ["init", "-q", "-b", "main"]);
-	write(root, base);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "base"]);
-	git(root, ["checkout", "-q", "-b", "pr"]);
-	write(root, head);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "head"]);
-	return root;
+	template ??= buildTemplate(
+		{
+			name: "ci-pins",
+			repos: ["."],
+			build: (root) => git(root, ["init", "-q", "-b", "main"]),
+		},
+		scratch,
+	);
+	return commitTree(copyRepo(template, join(scratch, `repo-${count}`)), {
+		commits: [
+			{ branch: "main", files: base },
+			{ branch: "pr", from: "main", files: head },
+		],
+		checkout: "pr",
+	}).root;
 }
 
 function ciPins(
@@ -311,27 +291,33 @@ describe("astack check ci-pins", () => {
 		});
 	});
 
-	test("a PR that changes a workflow, an action under .github/actions or a local action that a workflow uses, and no tool version, exits 3 in mode ci_proof", () => {
-		const base = {
-			".github/workflows/check.yml": workflow("      - uses: ./tools/ci-setup"),
-			".github/actions/lint/action.yml": "runs:\n  using: composite\n",
-			"tools/ci-setup/action.yml": "runs:\n  using: composite\n  steps: []\n",
-			"tools/other.ts": "export {};\n",
-		};
-		const changed = (path: string) =>
-			ciPins(pullRequest(base, { [path]: "# changed\n" }));
-		for (const path of [
-			".github/workflows/check.yml",
-			".github/actions/lint/action.yml",
-			"tools/ci-setup/action.yml",
-			"tools/ci-setup/install.sh",
-		])
-			expect(changed(path)).toEqual({
+	const localAction = {
+		".github/workflows/check.yml": workflow("      - uses: ./tools/ci-setup"),
+		".github/actions/lint/action.yml": "runs:\n  using: composite\n",
+		"tools/ci-setup/action.yml": "runs:\n  using: composite\n  steps: []\n",
+		"tools/other.ts": "export {};\n",
+	};
+	const changes = (path: string) =>
+		ciPins(pullRequest(localAction, { [path]: "# changed\n" }));
+
+	test.each([
+		[".github/workflows/check.yml", "only"],
+		[".github/actions/lint/action.yml", "and at the head"],
+		["tools/ci-setup/action.yml", "and at the head"],
+		["tools/ci-setup/install.sh", "and at the head"],
+	])(
+		"a PR that changes a workflow, an action under .github/actions or a local action that a workflow uses, and no tool version, exits 3 in mode ci_proof: %s",
+		(path, head) => {
+			expect(changes(path)).toEqual({
 				code: 3,
-				out: `${path}: the PR changes this CI file.\n.github/workflows/check.yml#static: CI sets up runner ubuntu-latest at the base ${path === ".github/workflows/check.yml" ? "only" : "and at the head"}.\n${ciProof}`,
+				out: `${path}: the PR changes this CI file.\n.github/workflows/check.yml#static: CI sets up runner ubuntu-latest at the base ${head}.\n${ciProof}`,
 				err: "",
 			});
-		expect(changed("tools/other.ts")).toEqual({ code: 0, out: ok, err: "" });
+		},
+	);
+
+	test("a PR that changes a file next to a local action, and no CI file, exits 0", () => {
+		expect(changes("tools/other.ts")).toEqual({ code: 0, out: ok, err: "" });
 	});
 
 	test("an input that the scan cannot read, or a file that astack reads no version from, stops only when it can hide a change", () => {

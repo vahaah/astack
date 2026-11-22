@@ -611,6 +611,23 @@ describe("prose", () => {
 		expect(added("Run ``G1 dump: ` b`` now.")).toEqual([]);
 	});
 
+	test("[control:an-names] a question that cites an unknown principle gets a warning that names astack:principles, and a known principle gets none", () => {
+		const before = warnings(check(memberExport));
+		const cite = (name: string) =>
+			warnings(
+				check(
+					memberExport.replace(
+						"(principle prove-it-works)",
+						`(principle ${name})`,
+					),
+				),
+			).filter((message) => !before.includes(message));
+		expect(cite("made-up")).toEqual([
+			"principle made-up is not a reference of astack:principles; cite the name of one of its references",
+		]);
+		expect(cite("fix-root-causes")).toEqual([]);
+	});
+
 	test("line numbers stay file line numbers after the front matter", () => {
 		const after = [{ n: 5, text: "We don't stop.", code: false }] as const;
 		expect(proseFindings(after).map((f) => f.line)).toEqual([5]);
