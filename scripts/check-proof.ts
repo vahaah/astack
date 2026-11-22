@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { historyGit } from "../src/astack/change-proof/candidate.ts";
 import { main } from "../src/astack/cli/main.ts";
 import { err, ok, type Result } from "../src/astack/result.ts";
 
@@ -47,11 +48,12 @@ function baseRef(env: Env): Result<string | undefined, string> {
 			if (ref.startsWith("refs/tags/")) return ok("HEAD^");
 			const branch = defaultBranch(env.GITHUB_EVENT_PATH);
 			if (!branch.ok) return branch;
-			return ok(
-				ref === `refs/heads/${branch.value}`
-					? "HEAD^"
-					: `origin/${branch.value}`,
-			);
+			const tip = `origin/${branch.value}`;
+			const heldByDefault =
+				ref === `refs/heads/${branch.value}` ||
+				historyGit(process.cwd(), ["merge-base", "--is-ancestor", "HEAD", tip])
+					.ok;
+			return ok(heldByDefault ? "HEAD^" : tip);
 		}
 		default:
 			return ok(undefined);

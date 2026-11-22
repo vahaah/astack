@@ -37,8 +37,10 @@ if (!prepared.ok) throw new Error(prepared.error);
 
 type Pushed = { readonly root: string; readonly event: string };
 
+type OriginMain = "head" | "r" | "ahead";
+
 function mergedQAfterR(
-	originMain: "head" | "r",
+	originMain: OriginMain,
 	extraCommit: boolean,
 	payload: string,
 ): Pushed {
@@ -62,12 +64,21 @@ function mergedQAfterR(
 		writeFiles(root, { "src/gate.ts": `${PROOF_FILES["src/gate.ts"]}\n` });
 		git(root, "commit", "-q", "-am", "PR Q again");
 	}
-	git(
-		root,
-		"update-ref",
-		"refs/remotes/origin/main",
-		originMain === "head" ? git(root, "rev-parse", "HEAD") : r,
-	);
+	const head = git(root, "rev-parse", "HEAD");
+	const tips: Record<OriginMain, string> = {
+		head,
+		r,
+		ahead: git(
+			root,
+			"commit-tree",
+			"HEAD^{tree}",
+			"-p",
+			head,
+			"-m",
+			"main moves on",
+		),
+	};
+	git(root, "update-ref", "refs/remotes/origin/main", tips[originMain]);
 	const event = `${root}.event.json`;
 	writeFileSync(event, payload);
 	return { root, event };
@@ -88,10 +99,12 @@ function pushRun(repo: Pushed, ref: string) {
 
 const PAYLOAD = JSON.stringify({ repository: { default_branch: "main" } });
 
-test.each<[string, string, "head" | "r", boolean]>([
+test.each<[string, string, OriginMain, boolean]>([
 	["a push to the default branch", "refs/heads/main", "head", false],
 	["a release tag", "refs/tags/v1.0.0", "head", false],
 	["a push to another branch", "refs/heads/topic", "r", true],
+	["a new branch at the default branch tip", "refs/heads/topic", "head", false],
+	["a branch behind the default branch", "refs/heads/topic", "ahead", false],
 ])(
 	"[control:proof-push-base] %s admits PR Q with base M0 after PR R merged",
 	(_name, ref, originMain, extraCommit) => {

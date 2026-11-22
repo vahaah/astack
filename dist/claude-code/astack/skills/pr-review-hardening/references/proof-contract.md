@@ -18,7 +18,9 @@ Do not change the manifest base after a merge or a rebase of the base branch.
 
 A CI run passes `--base`. A pull request run uses the base branch of the PR.
 A push to the default branch and a release use the first parent of HEAD.
+A branch push whose HEAD the default branch holds also uses the first parent of HEAD. An example is a new branch at the tip of the default branch.
 A push to another branch uses the default branch.
+
 A local run with `--base HEAD` has an empty diff, so it stops.
 Each base read and each diff read ignores replacement refs and graft ancestry, with Git's `--no-lazy-fetch` option.
 

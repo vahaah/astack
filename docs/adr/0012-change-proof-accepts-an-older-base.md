@@ -82,7 +82,9 @@ Each proof run now needs the `--no-lazy-fetch` option of Git.
 
 `scripts/check-proof.ts` passes `origin/<base>` on a pull request run.
 A push to the default branch and a release pass the first parent of HEAD.
+A branch push whose HEAD the default branch holds also passes the first parent of HEAD. An example is a new branch at the tip of the default branch.
 A push to another branch passes the default branch from the event payload.
+
 A branch push with no default branch in the payload fails.
 The rule expects a squash or a merge commit on main. A rebase merge diffs only its last commit.
 
