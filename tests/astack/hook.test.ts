@@ -722,10 +722,66 @@ describe("gh pr create and gh issue create", () => {
 		expect(reason(run)).toContain('Body line 1 has "Fixes #3"');
 	});
 
-	test("a merge with no grant is denied through the bundle", () => {
-		const run = runHook(tool("Bash", { command: "gh pr merge 12 --squash" }));
-		expect(decision(run)).toBe("deny");
-		expect(reason(run)).toContain("Nobody gave a merge grant");
+	test("a merge with no grant is denied through the bundle after it reads the base branch", () => {
+		const bin = mkdtempSync(join(tmpdir(), "astack-gh-"));
+		const head = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+		writeFileSync(
+			join(bin, "view.json"),
+			JSON.stringify({
+				number: 12,
+				url: "https://github.com/o/r/pull/12",
+				title: "feat: export reports",
+				body: "## Why\nx",
+				baseRefName: "main",
+				headRefOid: head,
+			}),
+		);
+		writeFileSync(
+			join(bin, "graph.json"),
+			JSON.stringify({
+				data: {
+					repository: {
+						object: null,
+						pullRequest: {
+							baseRef: { target: { oid: "9f3c1a2".padEnd(40, "0") } },
+							reviewThreads: { pageInfo: { hasNextPage: false }, nodes: [] },
+							commits: {
+								nodes: [
+									{
+										commit: {
+											oid: head,
+											statusCheckRollup: { state: "SUCCESS" },
+										},
+									},
+								],
+							},
+						},
+					},
+				},
+			}),
+		);
+		writeFileSync(
+			join(bin, "gh"),
+			`#!/bin/sh\nif [ "$1" = pr ]; then cat "${bin}/view.json"; else cat "${bin}/graph.json"; fi\n`,
+			{ mode: 0o755 },
+		);
+		try {
+			const run = runHook(
+				tool("Bash", { command: "gh pr merge 12 --squash" }),
+				undefined,
+				{
+					PATH: `${bin}:${process.env.PATH}`,
+					CLAUDE_CODE_ENTRYPOINT: "cli",
+					CLAUDE_CODE_SESSION_ATTENDED: "1",
+				},
+			);
+			expect(decision(run)).toBe("deny");
+			expect(reason(run)).toBe(
+				"astack blocked gh pr merge:\n- main at 9f3c1a2 has no .astack/profile.json, so it gives no standing grant. The owner did not say to merge in this turn. Ask the owner before you merge #12.\n",
+			);
+		} finally {
+			rmSync(bin, { recursive: true, force: true });
+		}
 	});
 
 	test("a PR for another repo only advises, without saying it blocked", () => {
