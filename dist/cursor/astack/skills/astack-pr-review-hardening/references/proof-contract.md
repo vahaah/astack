@@ -71,6 +71,15 @@ Both records must be regular UTF-8 files in that commit, the base, and the candi
 By default, their complete bytes must match across those views.
 Both cited decisions must exist outside fences and have text.
 
+The checker also reads both records at the merge base when `--base` gives one.
+The base branch can change the authority of a record after the manifest base. Then the gate stops.
+The stop names the record, the manifest base and the merge base.
+A change of only the selected Landed value does not stop.
+
+To repair, set `base` to the merge base.
+Set `integratedAt` to a commit that holds the new text.
+Examine the change against that text, and then run the proof again.
+
 The process must already be Accepted in all three views. Its authority cannot come from another Proposed record.
 The separate `proofRecord` supplies the four proof sections and their required links and arrow explanations.
 The checker binds those records and actual history facts before and after model execution.

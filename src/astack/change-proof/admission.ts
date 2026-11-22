@@ -45,8 +45,10 @@ export type RepoView = {
 export type IntegrationHistory = {
 	readonly integratedAt: string;
 	readonly base: string;
+	readonly mergeBase: string;
 	readonly files: ReadonlyMap<string, FileRead>;
 	readonly baseFiles: ReadonlyMap<string, FileRead>;
+	readonly mergeBaseFiles: ReadonlyMap<string, FileRead>;
 };
 
 export type Snapshot = {
@@ -265,6 +267,28 @@ export function proofSections(
 	return PASS;
 }
 
+function authorityMoved(
+	history: IntegrationHistory,
+	file: string,
+	landed: boolean,
+): boolean {
+	if (history.mergeBase === history.base) return false;
+	const atBase = history.baseFiles.get(file);
+	const atMerge = history.mergeBaseFiles.get(file);
+	if (atBase?.kind !== "text") return false;
+	if (atMerge?.kind !== "text") return true;
+	if (!landed) return atMerge.text !== atBase.text;
+	const integrated = history.files.get(file);
+	return (
+		integrated?.kind === "text" &&
+		!compareLandedAuthority({
+			candidate: atMerge.text,
+			integration: integrated.text,
+			base: atBase.text,
+		}).ok
+	);
+}
+
 function adrCheck(
 	proof: ChangeProof,
 	view: RepoView,
@@ -290,6 +314,7 @@ function adrCheck(
 	if (!history.ok) return fail(history.error);
 	if (
 		history.value.base !== proof.base ||
+		history.value.mergeBase !== view.base.diff ||
 		history.value.integratedAt !== ratification.integratedAt
 	)
 		return fail("ratification history does not match the fixed proof base");
@@ -298,6 +323,17 @@ function adrCheck(
 		if (!current.ok) return fail(current.error);
 		const governingMetadata =
 			reference === adr ? ratification.governingMetadata : undefined;
+		const { mergeBase } = history.value;
+		if (
+			authorityMoved(
+				history.value,
+				reference.file,
+				governingMetadata === "landed-header-value",
+			)
+		)
+			return fail(
+				`${reference.file} changed between the manifest base ${proof.base} and the merge base ${mergeBase}. Set base to ${mergeBase}, set integratedAt to a commit that holds the new text, and prove the change again.`,
+			);
 		switch (governingMetadata) {
 			case undefined:
 				for (const [commit, files] of [

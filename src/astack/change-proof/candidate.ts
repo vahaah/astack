@@ -211,10 +211,11 @@ export function historyGit(root: string, args: readonly string[]): GitResult {
 
 export function readIntegrationHistory(
 	root: string,
-	base: string,
+	bases: ProofBase,
 	integratedAt: string,
 	paths: readonly string[],
 ): Result<IntegrationHistory, string> {
+	const base = bases.manifest;
 	if (
 		resolveCommit(root, integratedAt, historyGit) !== integratedAt ||
 		historyGit(root, ["cat-file", "-t", integratedAt])
@@ -233,15 +234,26 @@ export function readIntegrationHistory(
 		return err(
 			`ratification ${integratedAt} is not an ancestor of the fixed proof base ${base}`,
 		);
+	const baseFiles = new Map(
+		paths.map((path) => [path, readCommittedFile(root, base, path)]),
+	);
 	return ok({
 		integratedAt,
 		base,
+		mergeBase: bases.diff,
 		files: new Map(
 			paths.map((path) => [path, readCommittedFile(root, integratedAt, path)]),
 		),
-		baseFiles: new Map(
-			paths.map((path) => [path, readCommittedFile(root, base, path)]),
-		),
+		baseFiles,
+		mergeBaseFiles:
+			bases.diff === base
+				? baseFiles
+				: new Map(
+						paths.map((path) => [
+							path,
+							readCommittedFile(root, bases.diff, path),
+						]),
+					),
 	});
 }
 

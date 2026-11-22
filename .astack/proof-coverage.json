@@ -111,6 +111,13 @@
 			"controls": ["proof-push-base", "proof-push-payload"]
 		},
 		{
+			"criterion": "CP-15",
+			"controls": [
+				"proof-ratification-names-a-base-move",
+				"proof-landing-base-move"
+			]
+		},
+		{
 			"criterion": "proof-ratification",
 			"controls": [
 				"proof-ratification",

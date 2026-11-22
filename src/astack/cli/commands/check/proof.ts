@@ -163,6 +163,7 @@ function repoView(
 function ratificationHistories(
 	root: string,
 	proof: ChangeProof,
+	base: ProofBase,
 ): ReadonlyMap<string, Result<IntegrationHistory, string>> {
 	const histories = new Map<string, Result<IntegrationHistory, string>>();
 	for (const adr of proof.domain.adrs) {
@@ -180,12 +181,7 @@ function ratificationHistories(
 		].sort();
 		histories.set(
 			ratification.integratedAt,
-			readIntegrationHistory(
-				root,
-				proof.base,
-				ratification.integratedAt,
-				paths,
-			),
+			readIntegrationHistory(root, base, ratification.integratedAt, paths),
 		);
 	}
 	return histories;
@@ -201,9 +197,11 @@ function historyState(
 			read.ok
 				? {
 						base: read.value.base,
+						mergeBase: read.value.mergeBase,
 						integratedAt: read.value.integratedAt,
 						files: [...read.value.files],
 						baseFiles: [...read.value.baseFiles],
+						mergeBaseFiles: [...read.value.mergeBaseFiles],
 					}
 				: { error: read.error },
 		]),
@@ -257,7 +255,7 @@ async function prove(
 		...modelPaths(proof),
 		...(matrix.kind === "text" ? matrixSourcePaths(matrix.text) : []),
 	];
-	const histories = ratificationHistories(root, proof);
+	const histories = ratificationHistories(root, proof, base.value);
 	const before = snapshot(
 		root,
 		base.value.diff,
@@ -330,7 +328,7 @@ async function prove(
 		base.value.diff,
 		changedAfter.value,
 		inputs,
-		historyState(ratificationHistories(root, proof)),
+		historyState(ratificationHistories(root, proof, base.value)),
 	);
 	if (!after.ok) return stopAt(io, "stale", after.error);
 	const currentManifest = readRepoFile(root, manifest.path);

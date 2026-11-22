@@ -111,8 +111,12 @@ function save(repo: Candidate): void {
 	);
 }
 
-function run(root: string, extra: Readonly<Record<string, string>> = {}) {
-	const result = spawnSync(process.execPath, [CLI, "check", "proof"], {
+function run(
+	root: string,
+	extra: Readonly<Record<string, string>> = {},
+	args: readonly string[] = [],
+) {
+	const result = spawnSync(process.execPath, [CLI, "check", "proof", ...args], {
 		cwd: root,
 		env: { ...environment(), ...extra },
 		encoding: "utf8",
@@ -318,7 +322,7 @@ describe("integrated ADR ratification", () => {
 				repo.manifest.base = missing;
 				save(repo);
 			}
-			const script = `import { readIntegrationHistory } from ${JSON.stringify(module)}; console.log(JSON.stringify(readIntegrationHistory(${JSON.stringify(repo.root)},${JSON.stringify(base)},${JSON.stringify(integrated)},[])));`;
+			const script = `import { readIntegrationHistory } from ${JSON.stringify(module)}; console.log(JSON.stringify(readIntegrationHistory(${JSON.stringify(repo.root)},${JSON.stringify({ manifest: base, diff: base })},${JSON.stringify(integrated)},[])));`;
 			const args = mode.startsWith("cli-")
 				? [
 						CLI,
@@ -516,6 +520,51 @@ describe("integrated ADR ratification", () => {
 			);
 		},
 	);
+
+	function mainMoves(repo: Candidate, path: string, text: string): string {
+		git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
+		writeFileSync(join(repo.root, path), text);
+		git(repo.root, "commit", "-q", "-am", "main edits an ADR");
+		const moved = git(repo.root, "rev-parse", "HEAD");
+		git(repo.root, "update-ref", "refs/remotes/origin/main", moved);
+		git(repo.root, "checkout", "-q", "main");
+		git(repo.root, "merge", "-q", "--no-edit", "trunk");
+		return moved;
+	}
+
+	test.each([
+		["the governing ADR", GOVERNING, PROPOSAL],
+		["the process ADR", PROCESS, POLICY],
+	])(
+		"[control:proof-ratification-names-a-base-move] a move of main that edits %s stops with the ADR, both commits and the repair",
+		(_name, path, text) => {
+			const repo = candidate();
+			const moved = mainMoves(repo, path, `${text}\nAmended on main.\n`);
+			expect(run(repo.root, {}, ["--base", "origin/main"])).toEqual({
+				code: 1,
+				err: "",
+				out: `stop: proof domain: ${path} changed between the manifest base ${repo.base} and the merge base ${moved}. Set base to ${moved}, set integratedAt to a commit that holds the new text, and prove the change again.\n`,
+			});
+		},
+	);
+
+	test("[control:proof-landing-base-move] a move of main that changes only the selected Landed value still admits", () => {
+		const repo = landingCandidate();
+		selectLanding(repo);
+		git(repo.root, "commit", "-q", "-am", "select the landing option");
+		const text = readFileSync(join(repo.root, GOVERNING), "utf8");
+		mainMoves(
+			repo,
+			GOVERNING,
+			text.replace("Landed: none yet", "Landed: fresh-input checks"),
+		);
+		const result = run(repo.root, {}, ["--base", "origin/main"]);
+		expect(result.err).toBe("");
+		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+			`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+		);
+		expect(result.code).toBe(0);
+	});
 
 	test("[control:proof-ratification-compares-the-fixed-base-even-when-current-bytes-match-the-older-integration] compares the fixed base even when current bytes match the older integration", () => {
 		const repo = candidate();
