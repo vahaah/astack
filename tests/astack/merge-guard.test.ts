@@ -601,22 +601,47 @@ describe("the merge guard", () => {
 		expect(bash(guard(GREEN), "gh pr merge 12 --disable-auto").exit).toBe(0);
 	});
 
-	test("a merge through gh api is denied", () => {
-		const run = bash(
-			guard(GREEN),
-			"gh api -X PUT repos/o/r/pulls/12/merge",
-			project,
-			"standing",
-		);
-		expect(run.stderr).toContain("Merge with gh pr merge");
-		expect(
-			bash(
-				guard(GREEN),
-				"gh api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
-			).stderr,
-		).toContain("Merge with gh pr merge");
-		expect(bash(guard(GREEN), "gh api repos/o/r/pulls/12/merge").exit).toBe(0);
-	});
+	const API_DENY: Run = {
+		exit: 2,
+		stderr:
+			"astack blocked gh pr merge:\n- Merge with gh pr merge, so astack can examine the PR first.",
+	};
+	const PASSES: Run = { exit: 0, stderr: "" };
+
+	test.each([
+		["gh api -X PUT repos/o/r/pulls/12/merge", API_DENY],
+		["gh api -iXPUT repos/o/r/pulls/12/merge", API_DENY],
+		[
+			"gh api -if merge_method=squash 'repos/{owner}/{repo}/pulls/{pull_number}/merge'",
+			API_DENY,
+		],
+		[
+			"gh api -F merge_method=squash projects/5/merge_requests/12/merge",
+			API_DENY,
+		],
+		["gh api --method=PUT repos/o/r/pulls/12/merge", API_DENY],
+		[
+			"gh api --raw-field merge_method=squash repos/o/r/pulls/12/merge",
+			API_DENY,
+		],
+		["gh api --input body.json repos/o/r/pulls/12/merge", API_DENY],
+		[
+			"gh api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
+			API_DENY,
+		],
+		["gh api repos/o/r/pulls/12/merge", PASSES],
+		["gh api -i repos/o/r/pulls/12/merge", PASSES],
+		[
+			"gh api -H 'X-GitHub-Api-Version: 2022-11-28' repos/o/r/pulls/12/merge",
+			PASSES,
+		],
+		["gh api -iXPUT repos/o/r/pulls/12/requested_reviewers", PASSES],
+	] as const)(
+		"a gh api merge passes only when its method is provably GET: %s",
+		(command, run) => {
+			expect(bash(guard(GREEN), command)).toEqual(run);
+		},
+	);
 
 	test("other commands pass", () => {
 		expect(bash(guard(GREEN), "gh pr view 12 --json state").exit).toBe(0);
@@ -888,6 +913,24 @@ describe("MCP merge tools", () => {
 			"mcp__gh__gh",
 			true,
 			{ args: ["api", "-XPUT", "repos/o/r/pulls/12/merge"] },
+		],
+		[
+			"gh api with the method in a short-flag cluster on the merge path",
+			"mcp__gh__gh",
+			true,
+			{ args: ["api", "-sXPUT", "repos/o/r/pulls/12/merge"] },
+		],
+		[
+			"gh api with a comment sign before a clustered method on the merge path",
+			"mcp__gh__gh",
+			true,
+			{ args: ["api", "-H", "#:x", "-iXPUT", "repos/o/r/pulls/12/merge"] },
+		],
+		[
+			"gh api with a plain GET on the merge path",
+			"mcp__gh__gh",
+			false,
+			{ args: ["api", "-i", "repos/o/r/pulls/12/merge"] },
 		],
 		[
 			"an HTTP_PUT method on the merge path",

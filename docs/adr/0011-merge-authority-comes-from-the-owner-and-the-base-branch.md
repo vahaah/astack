@@ -124,6 +124,12 @@ It also decodes each JSON escape in a value, because the body of a raw request c
 
 An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
 The guard also reads each array of strings as the arguments of `gh`, because a `gh` tool can take `["pr", "merge", "12"]`.
+It also quotes each item, so an item such as `#:x` does not start a comment that hides the items after it.
+
+A `gh api` call on a merge path, in a Bash call or in an MCP input, passes only when its method is provably GET.
+gh reads a short-flag cluster as pflag does, so `-iXPUT` sends PUT.
+So a short-flag cluster with `X`, `f` or `F` gets a deny, because a field flag sends POST.
+`--method`, `--field`, `--raw-field` and `--input`, with `=` or with a separate value, get a deny too.
 A tool with `click`, `press` or `tap` in its name gets a deny when its input holds a merge word, such as `Squash and merge`.
 A browser tool can click the merge button of the forge.
 

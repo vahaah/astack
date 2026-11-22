@@ -27,12 +27,13 @@ import {
 	type Verdict,
 } from "../events.ts";
 
-const API_MERGE = /(?:^|\/)pulls\/\d+\/merge$/;
 const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
 const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
-const MERGE_PATH_IN_INPUT =
+const MERGE_PATH =
 	/\b(?:pulls|merge_requests)\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
+const METHOD_CHANGING_FLAG =
+	/^(?:-(?!-)[\s\S]*[XfF]|--(?:method|field|raw-field|input)(?:=|$))/;
 const WRITE_METHOD_IN_TEXT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/;
 const WRITE_METHOD_VALUE =
 	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
@@ -55,22 +56,12 @@ type MergeCommand = { readonly kind: "none" | "api" | "unreadable" } | GhMerge;
 const NONE: MergeCommand = { kind: "none" };
 const UNREADABLE: MergeCommand = { kind: "unreadable" };
 
-function apiMethod(values: readonly string[]): string | undefined {
-	for (let index = 0; index < values.length; index++) {
-		const value = values[index] ?? "";
-		if (value === "-X" || value === "--method") return values[index + 1];
-		const joined = /^(?:-X|--method=)(\w+)$/.exec(value);
-		if (joined) return joined[1];
-	}
-	return undefined;
-}
-
 function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
 	if (args.some((value) => PR_MERGE_MUTATION.test(value))) return true;
 	return (
-		apiMethod(args)?.toUpperCase() === "PUT" &&
-		args.some((value) => API_MERGE.test(value))
+		args.some((value) => MERGE_PATH.test(value)) &&
+		args.some((value) => METHOD_CHANGING_FLAG.test(value))
 	);
 }
 
@@ -313,15 +304,21 @@ function runsGhMerge(value: string): boolean {
 	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
 }
 
+function quotedWord(item: string): string {
+	return `'${item.replaceAll("'", "'\\''")}'`;
+}
+
 function ghCommands(value: unknown): readonly string[] {
 	if (Array.isArray(value)) {
 		const items = value.filter(
 			(item): item is string => typeof item === "string",
 		);
-		const command = GH.test(items[0] ?? "")
-			? items.join(" ")
-			: `gh ${items.join(" ")}`;
-		return [command, ...value.flatMap(ghCommands)];
+		const words = GH.test(items[0] ?? "") ? items : ["gh", ...items];
+		return [
+			words.join(" "),
+			words.map(quotedWord).join(" "),
+			...value.flatMap(ghCommands),
+		];
 	}
 	return typeof value === "object" && value !== null
 		? Object.values(value).flatMap(ghCommands)
@@ -334,7 +331,7 @@ function holdsMerge(input: unknown): boolean {
 	return (
 		[...values, ...ghCommands(input)].some(runsGhMerge) ||
 		MERGE_MUTATION_IN_INPUT.test(text) ||
-		(MERGE_PATH_IN_INPUT.test(text) &&
+		(MERGE_PATH.test(text) &&
 			(WRITE_METHOD_IN_TEXT.test(text) ||
 				values.some((value) => WRITE_METHOD_VALUE.test(value.trim()))))
 	);
