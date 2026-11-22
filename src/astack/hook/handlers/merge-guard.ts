@@ -12,6 +12,7 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
+import { kindOf } from "../../repo-facts.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
@@ -187,7 +188,10 @@ function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
 }
 
 function fileReader(step: ShellStep): ReadFile {
-	return (path) => readOptional(resolve(step.dir, path));
+	return (path) => {
+		const file = resolve(step.dir, path);
+		return kindOf(file) === "file" ? readOptional(file) : undefined;
+	};
 }
 
 function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
