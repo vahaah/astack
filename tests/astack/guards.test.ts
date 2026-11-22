@@ -372,8 +372,12 @@ describe("a hook skip", () => {
 		hooked = join(root, "hooked");
 		state = join(root, "hooked-state");
 		mkdirSync(join(hooked, ".githooks"), { recursive: true });
+		mkdirSync(join(hooked, "src"));
 		initRepo(hooked);
-		write(hooked, { ".githooks/pre-push": "#!/bin/sh\nexit 0\n" });
+		write(hooked, {
+			".githooks/pre-push": "#!/bin/sh\nexit 0\n",
+			"src/app.ts": "a\n",
+		});
 		git(hooked, "add", ".");
 		git(hooked, "commit", "-q", "-m", "base");
 		git(hooked, "checkout", "-q", "-b", "feature");
@@ -417,8 +421,28 @@ describe("a hook skip", () => {
 	});
 
 	test.each([
+		["git -c core.hooksPath=src push", "git -c core.hooksPath=src push"],
+		["git -c core.hooksPath=. push", "git -c core.hooksPath=. push"],
+		["git -c 'core.hooksPath=*' push", "git -c core.hooksPath=* push"],
+		[
+			"git -c core.hooksPath=src commit -m x",
+			"git -c core.hooksPath=src commit -m x",
+		],
+		["git config core.hooksPath src", "git config core.hooksPath src"],
+		["git config core.hooksPath .", "git config core.hooksPath ."],
+	])(
+		"%s skips the hooks, because its folder holds no tracked hook",
+		(command, form) => {
+			const said = reason(run(command, false));
+			expect(said).toContain(`${form} skips the git hooks of the repo.`);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
 		"git config --get core.hooksPath",
 		"git config core.hooksPath .githooks",
+		"git config core.hooksPath ./.githooks/",
 		"git -c core.hooksPath=.githooks push origin feature",
 	])("%s passes, because it reads the hooks or turns them on", (command) => {
 		expect(run(command, false).kind).toBe("allow");

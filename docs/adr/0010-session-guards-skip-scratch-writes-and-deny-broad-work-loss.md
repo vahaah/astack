@@ -51,7 +51,7 @@ An unreadable work-loss command gets a deny on a changed tree, and each other un
 So is `git archive` piped to `tar -x`. A named-file form still passes.
 
 Amended 2026-11-22. A hook skip is an owner gate too.
-A hook skip is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` that git does not track.
+A hook skip is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder that holds no tracked hook file.
 A push of a source that `astack gates run` recorded as green can skip the hooks.
 A commit and a config write with a hook skip stay owner gates, because a new commit has no gate record.
 

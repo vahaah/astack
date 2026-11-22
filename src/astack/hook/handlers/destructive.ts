@@ -1,4 +1,4 @@
-import { basename, isAbsolute, join, relative, resolve } from "node:path";
+import { basename, isAbsolute, join, resolve } from "node:path";
 import { loadGateRecord } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
 import {
@@ -573,14 +573,50 @@ function gitText(dir: string, args: string[]): string | undefined {
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
 }
 
-function tracksFolder(dir: string, folder: string): boolean {
+const HOOK_NAMES = [
+	"applypatch-msg",
+	"commit-msg",
+	"fsmonitor-watchman",
+	"p4-changelist",
+	"p4-post-changelist",
+	"p4-pre-submit",
+	"p4-prepare-changelist",
+	"post-applypatch",
+	"post-checkout",
+	"post-commit",
+	"post-index-change",
+	"post-merge",
+	"post-receive",
+	"post-rewrite",
+	"post-update",
+	"pre-applypatch",
+	"pre-auto-gc",
+	"pre-commit",
+	"pre-merge-commit",
+	"pre-push",
+	"pre-rebase",
+	"pre-receive",
+	"prepare-commit-msg",
+	"proc-receive",
+	"push-to-checkout",
+	"reference-transaction",
+	"sendemail-validate",
+	"update",
+];
+
+function tracksHooks(dir: string, folder: string): boolean {
 	const root = repoRoot(dir);
-	if (root === undefined) return false;
-	const path = isAbsolute(folder) ? relative(root, folder) : folder;
-	if (path === "" || path.startsWith("..")) return false;
-	return (
-		(gitText(root, [...READ_ONLY_GIT, "ls-files", "--", path]) ?? "") !== ""
-	);
+	if (root === undefined || folder === "") return false;
+	const path = canonicalRelative(root, resolve(root, folder));
+	if (isAbsolute(path)) return false;
+	const prefix = path === "" ? "" : `${path}/`;
+	const listed = gitText(root, [
+		...READ_ONLY_GIT,
+		"ls-files",
+		"--",
+		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
+	]);
+	return (listed ?? "") !== "";
 }
 
 function turnsHooksOff(setting: string, dir: string): boolean {
@@ -588,7 +624,7 @@ function turnsHooksOff(setting: string, dir: string): boolean {
 	const key = at < 0 ? setting : setting.slice(0, at);
 	return (
 		HOOKS_PATH_KEY.test(key) &&
-		!tracksFolder(dir, at < 0 ? "" : setting.slice(at + 1))
+		!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1))
 	);
 }
 
@@ -672,7 +708,7 @@ function hooksPathReasons(
 		action === "list" ||
 		flags.some((flag) => /^(?:--get|--list|-l)/.test(flag)) ||
 		(!unsets && value === undefined);
-	if (reads || (!unsets && value !== undefined && tracksFolder(git.dir, value)))
+	if (reads || (!unsets && value !== undefined && tracksHooks(git.dir, value)))
 		return [];
 	return [
 		`${step.values.join(" ")} skips the git hooks of the repo. ${OWNER_GATE}`,

@@ -157,7 +157,7 @@ _Code_: `shellSteps`
 ### Hook skip
 
 A git commit or push that runs without the git hooks of the repo.
-It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` that git does not track.
+It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder that holds no tracked hook file.
 _Avoid_: Bypass, quiet push
 _Code_: `skipForm`
 
