@@ -12,7 +12,8 @@
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
 		"docs/reference/pr-head-check.md",
-		"docs/reference/law-controls.md"
+		"docs/reference/law-controls.md",
+		"docs/reference/review-stub.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -70,7 +71,8 @@
 		"tests/old-names.test.ts",
 		"tests/astack/pr-head.test.ts",
 		"tests/property/result-laws.test.ts",
-		"tests/property/verdict-monoid.test.ts"
+		"tests/property/verdict-monoid.test.ts",
+		"tests/apply/review-stub.test.ts"
 	],
 	"links": [
 		{
@@ -707,6 +709,30 @@
 		{
 			"criterion": "ADMIT-ORDER",
 			"controls": ["proof-stage-order"]
+		},
+		{
+			"criterion": "RS-INSTALL",
+			"controls": ["rs-install"]
+		},
+		{
+			"criterion": "RS-RETIRE",
+			"controls": ["rs-retire"]
+		},
+		{
+			"criterion": "RS-RULES",
+			"controls": ["rs-rules"]
+		},
+		{
+			"criterion": "RS-KEEP",
+			"controls": ["rs-keep-apply", "rs-keep-command", "rs-keep-doctor"]
+		},
+		{
+			"criterion": "RS-WINDOW",
+			"controls": ["rs-window", "rs-window-command"]
+		},
+		{
+			"criterion": "RS-ONE-LIST",
+			"controls": ["rs-one-list"]
 		}
 	]
 }

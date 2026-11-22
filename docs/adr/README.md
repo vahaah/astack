@@ -24,3 +24,4 @@
 | [0023](0023-heavy-test-files-copy-one-template-repo.md) | Heavy test files copy one template repo, and the suite runs at the 5 s default | Accepted |
 | [0024](0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md) | Orchestrate supervises through the board, a status ask lists each waiting item, and watch-pr watches one PR | Accepted |
 | [0025](0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md) | Each text that reads a PR with gh runs the head check command | Accepted |
+| [0027](0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md) | The review stub needs the plugin, and commentKeep is the one keep list | Accepted |

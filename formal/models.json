@@ -388,6 +388,50 @@
 			"text": []
 		},
 		{
+			"name": "ReviewStub",
+			"model": {
+				"module": "formal/ReviewStub.tla",
+				"config": "formal/ReviewStub.cfg",
+				"dependencies": [],
+				"bounds": [
+					"One repo with a plugin that is present or absent, an old tracked copy or none, and a profile that sets comments or not.",
+					"A boundary cast marker or none, and a keep list that matches it or not.",
+					"Each order of one stub run, one apply update and one profile check."
+				],
+				"fairness": [],
+				"invariants": [
+					"TypeOK",
+					"NoStepWithoutEngine",
+					"InstallOnlyWhenAbsent",
+					"NoFallbackAfterUpdate",
+					"PreflightAcceptsApplied",
+					"OneKeepList"
+				],
+				"properties": []
+			},
+			"negative": {
+				"file": "formal/ReviewStub.tla",
+				"action": "Apply",
+				"original": "/\\ tracked' = FALSE",
+				"replacement": "/\\ tracked' = tracked",
+				"defect": "An apply that drops the fallback from the managed list but keeps no retired entry leaves the old copy in each repo.",
+				"expect": {
+					"kind": "invariant",
+					"name": "NoFallbackAfterUpdate"
+				}
+			},
+			"records": [
+				"docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md"
+			],
+			"covers": [
+				"scripts/lib/render.ts",
+				"scripts/lib/removals.ts",
+				"src/astack/managed.ts",
+				"src/astack/pr-review-profile.ts"
+			],
+			"text": ["templates/pr-review-hardening.stub.SKILL.md"]
+		},
+		{
 			"name": "SessionGuards",
 			"model": {
 				"module": "formal/SessionGuards.tla",
