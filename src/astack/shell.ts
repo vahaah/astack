@@ -18,6 +18,7 @@ export interface SimpleCommand {
 	redirects: Redirect[];
 	substitutions?: string[];
 	piped?: boolean;
+	wholeStage?: boolean;
 	background?: boolean;
 }
 
@@ -209,11 +210,18 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "|") {
+			const stage = current;
 			endCommand();
 			if (src[i + 1] === "|") {
 				i += 2;
 				continue;
 			}
+			if (
+				commands.at(-1) === stage &&
+				(stage.substitutions ?? []).length === 0 &&
+				!RESERVED.has(stage.words[0]?.value ?? "")
+			)
+				stage.wholeStage = true;
 			current.piped = true;
 			i++;
 			continue;
@@ -281,7 +289,13 @@ export function parseShell(src: string): SimpleCommand[] {
 
 export const ENV_ASSIGNMENT = /^[A-Za-z_]\w*=/;
 
-export type Unreadable = "folder" | "depth" | "body" | "wrapper" | "program";
+export type Unreadable =
+	| "folder"
+	| "depth"
+	| "body"
+	| "stdin"
+	| "wrapper"
+	| "program";
 
 export interface ShellStep {
 	simple: SimpleCommand;
@@ -289,6 +303,7 @@ export interface ShellStep {
 	unsetsEnv: boolean;
 	words: Word[];
 	values: string[];
+	hidden: readonly string[];
 	dir: string;
 	unreadable: Unreadable | undefined;
 }
@@ -551,24 +566,38 @@ function plainForm(raw: readonly Word[]): Plain {
 	};
 }
 
+type Body = {
+	readonly text: string;
+	readonly dynamic: boolean;
+	readonly stdin: boolean;
+};
+
 function stdinScript(
 	simple: SimpleCommand,
-	previous: ShellStep | undefined,
-): Word | undefined {
+	earlier: readonly ShellStep[],
+): Body | undefined {
 	if (simple.stdin !== undefined)
-		return { value: simple.stdin, dynamic: false };
+		return { text: simple.stdin, dynamic: false, stdin: true };
 	if (simple.piped !== true) return undefined;
-	const printed = previous === undefined ? undefined : printedText(previous);
+	const previous = earlier.at(-1);
+	const printed =
+		previous?.simple.wholeStage === true ? printedText(previous) : undefined;
 	return printed === undefined
-		? { value: "", dynamic: true }
-		: { value: printed, dynamic: false };
+		? {
+				text: earlier
+					.flatMap((step) => [...step.values, ...step.hidden])
+					.join(" "),
+				dynamic: true,
+				stdin: true,
+			}
+		: { text: printed, dynamic: false, stdin: true };
 }
 
 function scriptBody(
 	words: readonly Word[],
 	simple: SimpleCommand,
-	previous: ShellStep | undefined,
-): Word | undefined {
+	earlier: readonly ShellStep[],
+): Body | undefined {
 	const [program, ...args] = words;
 	if (program === undefined || program.dynamic) return undefined;
 	const name = basename(program.value);
@@ -576,8 +605,9 @@ function scriptBody(
 		return args.length === 0
 			? undefined
 			: {
-					value: args.map((arg) => arg.value).join(" "),
+					text: args.map((arg) => arg.value).join(" "),
 					dynamic: args.some((arg) => arg.dynamic),
+					stdin: false,
 				};
 	if (!SHELLS.has(name)) return undefined;
 	let command = false;
@@ -590,13 +620,14 @@ function scriptBody(
 			command ||= text.includes("c");
 			fromStdin ||= text.includes("s");
 		} else if (!/^(?:\+[A-Za-z]+|--.*)$/.test(text)) {
-			if (command) return arg;
+			if (command)
+				return arg && { text: arg.value, dynamic: arg.dynamic, stdin: false };
 			return fromStdin || text === "-"
-				? stdinScript(simple, previous)
+				? stdinScript(simple, earlier)
 				: undefined;
 		}
 	}
-	return command ? undefined : stdinScript(simple, previous);
+	return command ? undefined : stdinScript(simple, earlier);
 }
 
 type Folder = { readonly dir: string; readonly known: boolean };
@@ -625,12 +656,13 @@ function folderMove(dir: string, words: readonly Word[]): Move {
 
 function bodyMark(
 	plain: Plain,
-	body: Word | undefined,
+	body: Body | undefined,
 	deep: boolean,
 ): Unreadable | undefined {
 	if (deep) return "depth";
 	if (body === undefined) return plain.unreadable;
-	return body.dynamic ? "body" : "depth";
+	if (!body.dynamic) return "depth";
+	return body.stdin ? "stdin" : "body";
 }
 
 type Inherited = { readonly env: readonly Word[]; readonly unsetsEnv: boolean };
@@ -668,10 +700,10 @@ function scriptSteps(
 		}
 		const body = plain.unreadable
 			? undefined
-			: scriptBody(plain.words, simple, steps.at(-1));
+			: scriptBody(plain.words, simple, steps);
 		if (body !== undefined && !body.dynamic && nested) {
 			steps.push(
-				...scriptSteps(body.value, folder, depth + 1, { env, unsetsEnv }),
+				...scriptSteps(body.text, folder, depth + 1, { env, unsetsEnv }),
 			);
 			continue;
 		}
@@ -682,6 +714,10 @@ function scriptSteps(
 				unsetsEnv,
 				words: plain.words,
 				values: plain.words.map((word) => word.value),
+				hidden: [
+					...bodies,
+					...(body?.dynamic === true && body.stdin ? [body.text] : []),
+				],
 				dir: folder.dir,
 				unreadable: folder.known
 					? bodyMark(plain, body, !nested && bodies.length > 0)

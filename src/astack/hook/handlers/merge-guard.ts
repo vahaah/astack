@@ -265,8 +265,8 @@ function mergeVerdict(
 }
 
 function mayMerge(step: ShellStep, source: string): boolean {
-	return [source, ...step.values, ...(step.simple.substitutions ?? [])].some(
-		(value) => MERGE_TEXT.test(value),
+	return [source, ...step.values, ...step.hidden].some((value) =>
+		MERGE_TEXT.test(value),
 	);
 }
 

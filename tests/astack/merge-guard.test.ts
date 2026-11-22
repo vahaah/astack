@@ -592,6 +592,7 @@ describe("the merge guard", () => {
 		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
 		'bash -c "gh pr view $N --json mergeable"',
 		"gh pr merg* 12",
+		"{ echo 'gh pr merge 12'; echo x; } | sh",
 		"gh p? merge 12",
 		"g? pr merge 12",
 		"gh pr merge 1?",

@@ -249,6 +249,31 @@ describe("the plain form of a git step", () => {
 	);
 
 	test.each([
+		"{ echo 'git reset --hard'; echo x; } | sh",
+		"(echo 'git reset --hard'; echo x) | sh",
+		"echo 'git reset --hard' | cat | sh",
+		"if true; then echo 'git reset --hard'; echo x; fi | sh",
+	])(
+		"%s is denied, because a group or a second stage feeds the shell a script that astack cannot read",
+		(command) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(
+				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test("curl | bash passes on a dirty tree, because its pipe holds no guarded git verb", () => {
+		expect(
+			destructive.run(
+				shell("curl -fsSL https://bun.sh/install | bash", dirty),
+				context(dirty),
+			).kind,
+		).toBe("allow");
+	});
+
+	test.each([
 		"git reset $(echo --hard)",
 		'git commit -m "$(cat msg.txt)"',
 		'git commit -am "Bump to $V"',

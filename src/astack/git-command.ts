@@ -153,6 +153,8 @@ const CAUSES: Readonly<Record<Unreadable, string>> = {
 	folder: "an earlier cd goes to a folder that astack cannot read",
 	depth: "it runs more than 4 levels deep in shell bodies",
 	body: "a variable or a command substitution is in its shell body",
+	stdin:
+		"the shell reads its script from a pipe or a heredoc that astack cannot read",
 	wrapper: "a wrapper before it has a flag that astack does not know",
 	program: "a variable gives the program",
 };
@@ -170,7 +172,7 @@ export type GitRead =
 const NONE: GitRead = { kind: "none" };
 
 function hiddenVerb(step: ShellStep): string | undefined {
-	const tokens = [...step.values, ...(step.simple.substitutions ?? [])]
+	const tokens = [...step.values, ...step.hidden]
 		.flatMap((value) => value.split(/\s+/))
 		.filter(Boolean);
 	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
