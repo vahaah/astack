@@ -421,6 +421,10 @@ describe("astack doctor", () => {
 			const old = join(home, "node");
 			writeFileSync(old, "#!/bin/sh\necho v21.7.3\n");
 			chmodSync(old, 0o755);
+			const newer = join(home, ".volta", "bin", "node");
+			mkdirSync(join(home, ".volta", "bin"), { recursive: true });
+			writeFileSync(newer, "#!/bin/sh\necho v24.13.1\n");
+			chmodSync(newer, 0o755);
 			const io = {
 				out: () => {},
 				err: () => {},
