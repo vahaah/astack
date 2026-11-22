@@ -23,7 +23,6 @@ When a person must judge the result, replace steps 3 to 5 with "Person-judged pr
 
 ## Person-judged prototype
 
-Use this section when a person, such as the owner, judges the result.
 Pick one branch from the question before you build.
 When nobody can answer, pick logic for a backend module and UI for a page.
 Write that assumption at the top of the prototype.
@@ -54,7 +53,8 @@ Both branches follow these rules:
 
 ## Reply
 
-Report the variants, evidence, tradeoffs, recommendation, and scratch path.
+Report the variants, evidence, tradeoffs and recommendation.
+Report the scratch path, or the `prototype/<name>` branch and verdict of a person-judged prototype.
 For a visual decision, include screenshots.
 For behavior or timing, include the observed output or timing.
 State plainly that the prototype is throwaway.
