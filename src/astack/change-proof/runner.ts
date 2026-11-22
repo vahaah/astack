@@ -174,6 +174,10 @@ export type ModelRun = {
 	readonly cleanup: Result<undefined, string>;
 };
 
+type Halt =
+	| { readonly kind: "timeout" }
+	| Extract<RunEnd, { kind: "output-cap" | "failed" }>;
+
 function waitForExit(
 	command: string,
 	args: readonly string[],
@@ -190,15 +194,12 @@ function waitForExit(
 		const stdout: Buffer[] = [];
 		const stderr: Buffer[] = [];
 		let bytes = 0;
-		let stop: RunEnd | undefined;
-		const halt = (reason: RunEnd): void => {
+		let stop: Halt | undefined;
+		const halt = (reason: Halt): void => {
 			stop ??= reason;
 			child.kill("SIGKILL");
 		};
-		const timer = setTimeout(
-			() => halt({ kind: "timeout", ms: timeoutMs }),
-			timeoutMs,
-		);
+		const timer = setTimeout(() => halt({ kind: "timeout" }), timeoutMs);
 		const collect = (into: Buffer[]) => (chunk: Buffer) => {
 			bytes += chunk.length;
 			if (bytes > OUTPUT_CAP_BYTES)
@@ -212,7 +213,13 @@ function waitForExit(
 		});
 		child.on("close", (code, signal) => {
 			clearTimeout(timer);
-			if (stop !== undefined) settle(stop);
+			if (stop?.kind === "timeout")
+				settle({
+					kind: "timeout",
+					ms: timeoutMs,
+					stdout: Buffer.concat(stdout).toString("utf8"),
+				});
+			else if (stop !== undefined) settle(stop);
 			else if (code === null)
 				settle({ kind: "signalled", signal: signal ?? "unknown" });
 			else

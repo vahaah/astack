@@ -1,6 +1,7 @@
-import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { afterAll, describe, expect, test } from "bun:test";
+import { chmodSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { runModel } from "../../src/astack/change-proof/runner.ts";
 import {
 	judgeNegative,
 	judgePositive,
@@ -8,6 +9,7 @@ import {
 	type RunEnd,
 } from "../../src/astack/change-proof/tlc.ts";
 import { ok } from "../../src/astack/result.ts";
+import { scratchDir } from "./change-proof-fixture.ts";
 
 const FIXTURES = join(import.meta.dir, "../fixtures/tlc");
 
@@ -170,5 +172,63 @@ describe("violation traces", () => {
 				name: "Ends",
 			}),
 		).toEqual(ok({ name: "Ends", states: 3, trace: LOOP_TRACE }));
+	});
+});
+
+const PROGRESS = (time: string, distinct: string): string =>
+	record(
+		2200,
+		0,
+		`Progress(3) at ${time}: 9 states generated (1,702 s/min), ${distinct} distinct states found (1,276 ds/min), 4 states left on queue.`,
+	);
+
+const scratch = scratchDir("astack-tlc-output-");
+afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+
+describe("a run past the deadline", () => {
+	test.each([
+		[
+			"two progress records and an open record",
+			`${PROGRESS("2026-11-22 11:57:50", "3")}${PROGRESS("2026-11-22 11:58:50", "1,234")}@!@!@STARTMSG 2200:0 @!@!@\nProgress(3) at 2026-11-22 11:59:50: 12`,
+			"the positive run passed the 3000 ms deadline and was stopped. It found at least 1234 distinct states by 2026-11-22 11:58:50",
+		],
+		[
+			"no progress record",
+			record(
+				2190,
+				0,
+				"Finished computing initial states: 1 distinct state generated.",
+			),
+			"the positive run passed the 3000 ms deadline and was stopped",
+		],
+	])(
+		"[control:proof-timeout-progress] with %s names its last progress",
+		(_name, stdout, message) => {
+			expect(
+				judgePositive("positive", { kind: "timeout", ms: 3000, stdout }, []),
+			).toEqual({ ok: false, error: message });
+		},
+	);
+
+	test("[control:proof-timeout-progress] keeps the stdout that the checker printed before the kill", async () => {
+		const java = join(scratch, "slow-java.sh");
+		const progress = PROGRESS("2026-11-22 11:57:50", "3");
+		writeFileSync(
+			java,
+			`#!/bin/sh\nprintf '%s' '${progress}'\nexec sleep 30\n`,
+		);
+		chmodSync(java, 0o755);
+		const run = await runModel(
+			{ PATH: process.env.PATH ?? "", TMPDIR: scratch },
+			{ jar: new Uint8Array(), java, javaVersion: "17" },
+			[],
+			"M.tla",
+			"M.cfg",
+			500,
+		);
+		expect(run).toEqual({
+			end: { kind: "timeout", ms: 500, stdout: progress },
+			cleanup: ok(undefined),
+		});
 	});
 });

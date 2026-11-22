@@ -20,7 +20,7 @@ export type RunEnd =
 			readonly stderr: string;
 	  }
 	| { readonly kind: "signalled"; readonly signal: string }
-	| { readonly kind: "timeout"; readonly ms: number }
+	| { readonly kind: "timeout"; readonly ms: number; readonly stdout: string }
 	| { readonly kind: "output-cap"; readonly bytes: number }
 	| { readonly kind: "failed"; readonly message: string };
 
@@ -195,6 +195,21 @@ function failureNotes(
 	return `${broke}${sanyNote(output)}`;
 }
 
+function lastProgress(stdout: string): string {
+	const progress = [
+		...stdout.matchAll(
+			/^@!@!@STARTMSG 2200:\d+ @!@!@\r?\n(.*)\r?\n@!@!@ENDMSG 2200 @!@!@$/gm,
+		),
+	].at(-1)?.[1];
+	const time = / at (\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}): /.exec(
+		progress ?? "",
+	)?.[1];
+	const distinct = /([\d,]+) distinct states found/.exec(progress ?? "")?.[1];
+	return time === undefined || distinct === undefined
+		? ""
+		: `. It found at least ${counted(distinct)} distinct states by ${time}`;
+}
+
 function interrupted(label: RunLabel, end: RunEnd): string | undefined {
 	switch (end.kind) {
 		case "exited":
@@ -202,7 +217,7 @@ function interrupted(label: RunLabel, end: RunEnd): string | undefined {
 		case "signalled":
 			return `the ${label} run stopped on signal ${end.signal}`;
 		case "timeout":
-			return `the ${label} run passed the ${end.ms} ms deadline and was stopped`;
+			return `the ${label} run passed the ${end.ms} ms deadline and was stopped${lastProgress(end.stdout)}`;
 		case "output-cap":
 			return `the ${label} run printed more than ${end.bytes} bytes and was stopped`;
 		case "failed":
