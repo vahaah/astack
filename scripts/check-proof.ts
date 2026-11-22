@@ -1,5 +1,8 @@
 import { readFileSync } from "node:fs";
-import { historyGit } from "../src/astack/change-proof/candidate.ts";
+import {
+	changedPaths,
+	historyGit,
+} from "../src/astack/change-proof/candidate.ts";
 import { main } from "../src/astack/cli/main.ts";
 import { err, ok, type Result } from "../src/astack/result.ts";
 
@@ -35,6 +38,34 @@ function defaultBranch(path: string | undefined): Result<string, string> {
 		: err(NO_DEFAULT_BRANCH);
 }
 
+function localBase(root: string): string | undefined {
+	const followed = historyGit(root, [
+		"symbolic-ref",
+		"--quiet",
+		"refs/remotes/origin/HEAD",
+	]);
+	if (!followed.ok) return undefined;
+	const tip = followed.stdout
+		.toString("utf8")
+		.trim()
+		.replace(/^refs\/remotes\//, "");
+	if (
+		!historyGit(root, ["rev-parse", "--verify", "--quiet", `${tip}^{commit}`])
+			.ok
+	)
+		return undefined;
+	const dirty = changedPaths(root, "HEAD");
+	const clean = dirty.ok && dirty.value.length === 0;
+	if (
+		!clean ||
+		!historyGit(root, ["merge-base", "--is-ancestor", "HEAD", tip]).ok
+	)
+		return tip;
+	return historyGit(root, ["rev-parse", "--verify", "--quiet", "HEAD^"]).ok
+		? "HEAD^"
+		: undefined;
+}
+
 function baseRef(env: Env): Result<string | undefined, string> {
 	switch (env.GITHUB_EVENT_NAME) {
 		case "pull_request": {
@@ -56,7 +87,7 @@ function baseRef(env: Env): Result<string | undefined, string> {
 			return ok(heldByDefault ? "HEAD^" : tip);
 		}
 		default:
-			return ok(undefined);
+			return ok(localBase(process.cwd()));
 	}
 }
 

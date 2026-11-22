@@ -60,7 +60,7 @@ They do not establish refinement of all TypeScript behavior.
 
 #### Verification
 
-`.astack/proof-coverage.json` links CP-16 to CP-20 of `docs/reference/change-proof-contract.md` to executable controls.
+`.astack/proof-coverage.json` links CP-17 to CP-21 of `docs/reference/change-proof-contract.md` to executable controls.
 The TLC fixtures in `tests/fixtures/tlc/` are real runs of the pinned tla2tools 1.7.4 with synthetic paths.
 The CLI controls use real temporary Git repositories that change the index or a file mode during the runs.
 The named mutation removes the changed inputs from the stale stop in `RejectEvidence`, and it must violate `StaleStopNamesPaths`.

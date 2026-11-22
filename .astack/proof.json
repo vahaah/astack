@@ -1,81 +1,81 @@
 {
 	"version": 1,
 	"change": "b05-proof-stops-name-their-cause",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"base": "16f6cb81083189e5b1f939fd7534df6e200b7129",
 	"scope": [
 		{
 			"path": "src/astack/change-proof/tlc.ts",
-			"obligation": "CP-18",
+			"obligation": "CP-19",
 			"modelRefs": ["RejectPositive", "RunNegative"]
 		},
 		{
 			"path": "src/astack/change-proof/runner.ts",
-			"obligation": "CP-19",
+			"obligation": "CP-20",
 			"modelRefs": ["RejectPositive"]
 		},
 		{
 			"path": "src/astack/change-proof/admission.ts",
-			"obligation": "CP-19",
+			"obligation": "CP-20",
 			"modelRefs": ["RejectEvidence", "StaleStopNamesPaths"]
 		},
 		{
 			"path": "src/astack/change-proof/candidate.ts",
-			"obligation": "CP-19",
+			"obligation": "CP-20",
 			"modelRefs": ["InputChange", "StaleStopNamesPaths"]
 		},
 		{
 			"path": "src/astack/change-proof/contract.ts",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection"]
 		},
 		{
 			"path": "src/astack/cli/commands/check/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection", "RejectPositive"]
 		},
 		{
 			"path": "tests/astack/**",
-			"obligation": "CP-19",
+			"obligation": "CP-20",
 			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "RejectPositive"]
 		},
 		{
 			"path": "tests/fixtures/tlc/**",
-			"obligation": "CP-17",
+			"obligation": "CP-18",
 			"modelRefs": ["RejectPositive"]
 		},
 		{
 			"path": "formal/**",
-			"obligation": "CP-19",
+			"obligation": "CP-20",
 			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "AdmitSafe"]
 		},
 		{
 			"path": ".astack/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
 		},
 		{
 			"path": "docs/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection"]
 		},
 		{
 			"path": "marketplace/plugins/astack/agents/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection"]
 		},
 		{
 			"path": "rules/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection"]
 		},
 		{
 			"path": "research_notes/**",
-			"obligation": "CP-20",
+			"obligation": "CP-21",
 			"modelRefs": ["StopNamesSection"]
 		},
 		{
@@ -138,11 +138,11 @@
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"CP-16",
 				"CP-17",
 				"CP-18",
 				"CP-19",
 				"CP-20",
+				"CP-21",
 				"WB-ratchet",
 				"SG-generated"
 			]

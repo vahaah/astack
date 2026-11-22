@@ -35,11 +35,12 @@ import {
 	DEADLINE_CAP_MS,
 	deadlineMs,
 	javaRuntime,
+	type ModelRun,
 	pinnedJar,
 	runModel,
 	TLC_PIN,
 } from "../../../change-proof/runner.ts";
-import type { ModelFile, ModelPlan } from "../../../change-proof/tla.ts";
+import type { ModelFile } from "../../../change-proof/tla.ts";
 import {
 	type Counts,
 	judgeNegative,
@@ -222,29 +223,39 @@ function countsLine(label: RunLabel, counts: Counts): string {
 	return `${label}: ${counts.distinct} distinct states, ${counts.generated} generated, ${counts.queued} left on queue\n`;
 }
 
-type RunPlan = {
+type StartedRun = {
 	readonly label: RunLabel;
-	readonly files: readonly ModelFile[];
+	readonly run: Promise<ModelRun>;
 };
 
-async function modelRun(
+function leftRoot(label: RunLabel, run: ModelRun): string | undefined {
+	return run.cleanup.ok
+		? undefined
+		: `the ${label} run left its temp root: ${run.cleanup.error}`;
+}
+
+async function ended(started: StartedRun): Promise<Result<RunEnd, string>> {
+	const run = await started.run;
+	const leak = leftRoot(started.label, run);
+	return leak === undefined ? ok(run.end) : err(leak);
+}
+
+async function stopRuns(
 	io: Io,
-	checker: Checker,
-	plan: ModelPlan,
-	run: RunPlan,
-	timeoutMs: number,
-): Promise<Result<RunEnd, string>> {
-	const { end, cleanup } = await runModel(
-		io.env,
-		checker,
-		run.files,
-		plan.moduleFile,
-		plan.configFile,
-		timeoutMs,
+	cancel: AbortController,
+	runs: readonly StartedRun[],
+	stage: Stage,
+	message: string,
+): Promise<number> {
+	cancel.abort();
+	const leaks = await Promise.all(
+		runs.map(async (started) => leftRoot(started.label, await started.run)),
 	);
-	if (!cleanup.ok)
-		return err(`the ${run.label} run left its temp root: ${cleanup.error}`);
-	return ok(end);
+	const lines = new Set([
+		message,
+		...leaks.filter((leak) => leak !== undefined),
+	]);
+	return stopAt(io, stage, [...lines].join("; "));
 }
 
 async function prove(
@@ -290,45 +301,46 @@ async function prove(
 	};
 	const { properties } = plan.value.config;
 
-	const positiveEnd = await modelRun(
-		io,
-		checker,
-		plan.value,
-		{ label: "positive", files: plan.value.positive },
-		timeoutMs.value,
-	);
+	const cancel = new AbortController();
+	const start = (label: RunLabel, files: readonly ModelFile[]): StartedRun => ({
+		label,
+		run: runModel(
+			io.env,
+			checker,
+			files,
+			plan.value.moduleFile,
+			plan.value.configFile,
+			timeoutMs.value,
+			cancel.signal,
+		),
+	});
+	const positiveRun = start("positive", plan.value.positive);
+	const negativeRun = start("negative", plan.value.negative);
+	const restoredRun = start("restored", plan.value.positive);
+	const runs = [positiveRun, negativeRun, restoredRun];
+
+	const positiveEnd = await ended(positiveRun);
 	const positive = positiveEnd.ok
 		? judgePositive("positive", positiveEnd.value, properties)
 		: positiveEnd;
-	if (!positive.ok) return stopAt(io, "model", positive.error);
+	if (!positive.ok) return stopRuns(io, cancel, runs, "model", positive.error);
 	io.out(countsLine("positive", positive.value));
 
-	const negativeEnd = await modelRun(
-		io,
-		checker,
-		plan.value,
-		{ label: "negative", files: plan.value.negative },
-		timeoutMs.value,
-	);
+	const negativeEnd = await ended(negativeRun);
 	const negative: Result<Violation, string> = negativeEnd.ok
 		? judgeNegative(negativeEnd.value, proof.negative.expect)
 		: negativeEnd;
-	if (!negative.ok) return stopAt(io, "countermodel", negative.error);
+	if (!negative.ok)
+		return stopRuns(io, cancel, runs, "countermodel", negative.error);
 	io.out(
 		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states: ${negative.value.trace}\n`,
 	);
 
-	const restoredEnd = await modelRun(
-		io,
-		checker,
-		plan.value,
-		{ label: "restored", files: plan.value.positive },
-		timeoutMs.value,
-	);
+	const restoredEnd = await ended(restoredRun);
 	const restored = restoredEnd.ok
 		? judgePositive("restored", restoredEnd.value, properties)
 		: restoredEnd;
-	if (!restored.ok) return stopAt(io, "model", restored.error);
+	if (!restored.ok) return stopRuns(io, cancel, runs, "model", restored.error);
 	io.out(countsLine("restored", restored.value));
 
 	const changedAfter = changedPaths(root, base.value.diff);
@@ -387,7 +399,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 
 export const command: Command<Promise<number>> = {
 	name: "proof",
-	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it runs the pinned tla2tools.jar ${TLC_PIN.version} three times in owned temporary copies: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
+	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it starts the pinned tla2tools.jar ${TLC_PIN.version} three times together in owned temporary copies: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
 	usage: "check proof [manifest.json] [--base <ref>] [--summary]",
 	run,
 };

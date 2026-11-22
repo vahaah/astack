@@ -229,6 +229,7 @@ describe("a run past the deadline", () => {
 			"M.tla",
 			"M.cfg",
 			500,
+			new AbortController().signal,
 		);
 		expect(run).toEqual({
 			end: { kind: "timeout", ms: 500, stdout: progress },

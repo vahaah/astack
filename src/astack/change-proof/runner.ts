@@ -184,6 +184,7 @@ function waitForExit(
 	cwd: string,
 	env: Record<string, string>,
 	timeoutMs: number,
+	cancel: AbortSignal,
 ): Promise<RunEnd> {
 	return new Promise((settle) => {
 		const child = spawn(command, args, {
@@ -191,6 +192,10 @@ function waitForExit(
 			env,
 			stdio: ["ignore", "pipe", "pipe"],
 		});
+		const kill = (): void => {
+			child.kill("SIGKILL");
+		};
+		cancel.addEventListener("abort", kill, { once: true });
 		const stdout: Buffer[] = [];
 		const stderr: Buffer[] = [];
 		let bytes = 0;
@@ -213,6 +218,7 @@ function waitForExit(
 		});
 		child.on("close", (code, signal) => {
 			clearTimeout(timer);
+			cancel.removeEventListener("abort", kill);
 			if (stop?.kind === "timeout")
 				settle({
 					kind: "timeout",
@@ -251,6 +257,7 @@ export async function runModel(
 	module: string,
 	config: string,
 	timeoutMs: number,
+	cancel: AbortSignal,
 ): Promise<ModelRun> {
 	let root: string;
 	try {
@@ -296,6 +303,7 @@ export async function runModel(
 			model,
 			childEnv(env),
 			timeoutMs,
+			cancel,
 		);
 	} catch (error) {
 		end = {
