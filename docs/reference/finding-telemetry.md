@@ -9,7 +9,7 @@ The [model](../../formal/FindingTelemetry.tla) examines two parallel handler run
 - [criterion:OWN-ZERO] astack's own text and the text that apply renders hold 0 deny findings, also in each fence that is not code or data. Each skill stays at or under its word cap.
 - [criterion:UNIT-ONE] A number and its next unit count as one word, also for a decimal such as 3.4. The units are ms, s, min, h, KB, MB, GB and px. A number and a plain noun count as two words.
 - [criterion:NOUN-CHECKS] "checks" gives no word-broad note after a number word from two to ten or after a state word such as required. A comma after it also means a noun. "CI checks the branch on each push." keeps its note.
-- [criterion:TEL-NOTEXT] Each event line holds only the keys time, turn, release, pid, handler, check, event, surface, rule, outcome and fingerprint. No line holds a sentence, a comment or a path.
+- [criterion:TEL-NOTEXT] Each event line holds only the keys time, turn, release, pid, handler, check, event, surface, rule, outcome and fingerprint. No line holds a sentence, a comment or a path. The release is the manifest version of the plugin build with its build stamp, in the Claude Code and the Cursor build.
 - [criterion:TEL-APPEND] 8 parallel hooks of one session that each deny write 8 complete lines. Each line is one append call.
 - [criterion:TEL-OUTCOME] The outcome of a line is deny, demoted, advise, quiet, rewrite or pending, as the agent saw the finding. Each line names the handler that found it.
 - [criterion:TEL-MASKED] A finding that does not block and has no quiet rule writes masked when its handler run denies.

@@ -29,7 +29,8 @@
 		"tests/validate.test.ts",
 		"tests/astack/verdict.test.ts",
 		"tests/astack/cursor-hook.test.ts",
-		"tests/ste-own.test.ts"
+		"tests/ste-own.test.ts",
+		"tests/dist/render.test.ts"
 	],
 	"links": [
 		{
@@ -257,7 +258,7 @@
 		},
 		{
 			"criterion": "TEL-NOTEXT",
-			"controls": ["tel-notext", "tel-comment"]
+			"controls": ["tel-notext", "tel-comment", "tel-release"]
 		},
 		{
 			"criterion": "TEL-APPEND",

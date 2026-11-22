@@ -273,6 +273,30 @@ describe("the dist build", () => {
 		]);
 	});
 
+	test("[control:tel-release] the Cursor astack manifest gets a build stamp from the plugin files, so the release key of a new bundle is new", () => {
+		const path = "cursor/astack/.cursor-plugin/plugin.json";
+		const version = (out: Rendered): unknown =>
+			JSON.parse(text(out, path)).version;
+		const first = version(rendered());
+		expect(first).toMatch(/^1\.2\.3\+[0-9a-f]{12}$/);
+		const rebundled = render({
+			...SOURCE,
+			plugins: {
+				...SOURCE.plugins,
+				astack: new Map([
+					...SOURCE.plugins.astack,
+					["bin/astack.js", textFile("console.log(2)\n")],
+				]),
+			},
+		});
+		if (!rebundled.ok) throw new Error(rebundled.error.join("\n"));
+		expect(version(rebundled.value)).toMatch(/^1\.2\.3\+[0-9a-f]{12}$/);
+		expect(version(rebundled.value)).not.toBe(first);
+		expect(checkCursorManifests(rebundled.value.tree, schemas).errors).toEqual(
+			[],
+		);
+	});
+
 	test.each([
 		["cursor/astack", []],
 		["grok-bot", ["astack-rules", "astack-sync"]],
