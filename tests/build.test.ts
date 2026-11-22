@@ -57,7 +57,7 @@ describe("bun run build", () => {
 		});
 		expect(run.stderr.toString()).toBe("");
 		expect(run.stdout.toString()).toBe(
-			"rules/astack.md fresh\ndocs/migration.md fresh\nmarketplace/plugins/astack/NOTICE fresh\n.claude-plugin/marketplace.json fresh\n.cursor-plugin/marketplace.json fresh\npackage.json fresh\nLICENSE fresh\nNOTICE fresh\n",
+			"rules/astack.md fresh\nmarketplace/plugins/astack/NOTICE fresh\n.claude-plugin/marketplace.json fresh\n.cursor-plugin/marketplace.json fresh\npackage.json fresh\nLICENSE fresh\nNOTICE fresh\n",
 		);
 		expect(run.exitCode).toBe(0);
 	});

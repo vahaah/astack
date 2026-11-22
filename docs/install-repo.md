@@ -12,7 +12,7 @@ astack has two parts. The owner installs the plugins and the rules one time on e
 | Grok Bot | `dist/grok-bot/README.md` |
 | Other Agent Skills clients | `dist/agentskills/README.md` |
 
-`dist/README.md` gives the Claude Code steps for a machine without a clone. If the machine has the old agent-stack install, do the steps in [migration.md](migration.md) first. Run `astack doctor` after each install.
+`dist/README.md` gives the Claude Code steps for a machine without a clone. Run `astack doctor` after each install.
 
 Claude Code puts the `bin` folder of each installed plugin on the PATH of its Bash tool. So in a Claude Code session, `astack` runs the installed copy of the plugin. A terminal does not get that PATH. To use `astack` in a terminal, link the launcher of your clone into a folder on your PATH:
 

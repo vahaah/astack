@@ -9,7 +9,7 @@
 - `src/astack/` holds the astack CLI sources. `src/astack/hook/` holds the hook dispatcher, and `src/astack/cli/` holds the command registry.
 - `.astack/profile.json` in a product repo is the astack profile of that repo. `src/astack/profile.ts` reads it.
 - `rules/` holds the always-on rules that users symlink into `~/.claude/rules/`. `rules/astack.md` is the rule card. It is a copy of the mode's `references/card.md`, so the plugin carries it too, and a project apply never copies it into a repo.
-- `src/astack/rules.ts` owns shared rule names and selection for installs, migration, doctor, and builds. The scoped packs are `rules/typescript.md` and `rules/postgres.md`.
+- `src/astack/rules.ts` owns shared rule names and selection for installs, doctor, and builds. The scoped packs are `rules/typescript.md` and `rules/postgres.md`.
 - `src/astack/hook-profile.ts` parses `hooks.profile` and its `ste`, `types`, and `comments` overrides. Strict is the default. Minimal disables only those quality groups. Every unmarked handler stays required. Invalid settings retain strict runtime behavior. CLI checks stay independent. See `docs/runbooks/hook-profiles.md`.
 - `upstream/` holds pristine snapshots of the pinned upstream plugins. `upstream/lock.json` records the repo, path and commit of each.
 - The companion is a private folder of the owner, outside this repo. It holds the apply configs, their hardening profiles and the deny list. `scripts/lib/companion.ts` owns its layout. Apply, `bun run deny`, `bun run neutral` and `bun run check:companion` find it through `--companion <dir>`, then `ASTACK_COMPANION_DIR`, then the synthetic `examples/companion/`. The tests always use the example, and a write refuses it. `bun run check:companion` examines each config and profile of the companion, and fails on 0 configs. It also runs each test file that reads `profilePaths` or `scanProjectDirs` from `tests/profile-paths.ts`, with `ASTACK_PROFILE_SCAN_DIR` set to the companion. So the profile and config scans of the tests read each profile and overlay of the companion, with the exception rows of its `profile-scan.json`. It runs each `tests/*.test.ts` of the companion too.
@@ -21,7 +21,7 @@
 - `scripts/` holds the build, apply, validate, dist and neutrality scripts, and `scripts/skill-load-report.ts`, which prints source load sets. `docs/runbooks/skill-load-measurement.md` names its limits. `scripts/dist/` holds the per-tool renderers and their checks.
 - `dist/` holds the generated install builds, with one folder per tool. The public source root points to them through generated marketplace manifests.
 - `tests/` holds unit tests and synthetic fixtures. `tests/fixtures/hook-input/` holds synthetic hook payloads with the shapes that Claude Code sends.
-- `docs/` holds the design. `docs/migration.md` is the switch from the old agent-stack install, and `bun run apply --global --dry-run` prints the same steps. `docs/review-lessons.md` records each class of review finding with its rule and its guards. `tests/review-lessons.test.ts` compares it with the guard files and with the review checklist of the engine, `references/checklist.md`.
+- `docs/` holds the design. `docs/review-lessons.md` records each class of review finding with its rule and its guards. `tests/review-lessons.test.ts` compares it with the guard files and with the review checklist of the engine, `references/checklist.md`.
 
 ## Add a hook handler or a CLI command
 
@@ -40,7 +40,6 @@ Change the source and rerun the command.
 | Generated file | Source | Command |
 |---|---|---|
 | `rules/astack.md` | `marketplace/plugins/astack/skills/mode/references/card.md` | `bun run build` |
-| `docs/migration.md` | `scripts/lib/migration.ts` | `bun run build` |
 | `marketplace/plugins/astack/NOTICE` | the origins of the astack items and `scripts/lib/upstreams.ts` | `bun run build` |
 | `marketplace/plugins/astack/bin/astack.js` | `src/astack/` | `bun run bundle` |
 | `dist/` | `marketplace/`, `rules/` and `scripts/dist/` | `bun run dist` |
