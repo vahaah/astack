@@ -3,7 +3,6 @@ import {
 	buildReviewThreads,
 	ChecksUnavailable,
 	mapRollupNode,
-	orderStack,
 	parseFastCheck,
 	parsePullRequest,
 	parseReviewThreadPage,
@@ -430,7 +429,7 @@ describe("review thread pagination", () => {
 	});
 });
 
-describe("context and stack discovery", () => {
+describe("context discovery", () => {
 	test("returns a fully explicit context without any reader call", async () => {
 		const reader = fakeReader();
 		expect(
@@ -455,77 +454,5 @@ describe("context and stack discovery", () => {
 			}),
 		).toEqual({ owner: "local", repo: "checkout", number: context.number });
 		expect(reader.calls).toEqual(["originRepo"]);
-	});
-
-	test("orders the connected stack bottom-to-top", () => {
-		const ordered = orderStack(context, [
-			{
-				number: parsePrNumber(41),
-				headRefName: "base-feature",
-				baseRefName: "main",
-				isCrossRepository: false,
-			},
-			{
-				number: context.number,
-				headRefName: "feature",
-				baseRefName: "base-feature",
-				isCrossRepository: false,
-			},
-			{
-				number: parsePrNumber(43),
-				headRefName: "upstack",
-				baseRefName: "feature",
-				isCrossRepository: false,
-			},
-		]);
-		expect(ordered.map((item) => Number(item.number))).toEqual([41, 42, 43]);
-	});
-
-	test("ends the walk down the stack when the bases of open PRs form a cycle", () => {
-		const ordered = orderStack(context, [
-			{
-				number: context.number,
-				headRefName: "feature",
-				baseRefName: "loop",
-				isCrossRepository: false,
-			},
-			{
-				number: parsePrNumber(7),
-				headRefName: "loop",
-				baseRefName: "feature",
-				isCrossRepository: false,
-			},
-		]);
-		expect(ordered.map((item) => Number(item.number))).toEqual([7, 42]);
-	});
-
-	test("leaves each PR from a fork out of the stack, also one whose head branch name matches a base", () => {
-		const ordered = orderStack(context, [
-			{
-				number: parsePrNumber(41),
-				headRefName: "base-feature",
-				baseRefName: "main",
-				isCrossRepository: false,
-			},
-			{
-				number: parsePrNumber(99),
-				headRefName: "base-feature",
-				baseRefName: "main",
-				isCrossRepository: true,
-			},
-			{
-				number: context.number,
-				headRefName: "feature",
-				baseRefName: "base-feature",
-				isCrossRepository: false,
-			},
-			{
-				number: parsePrNumber(98),
-				headRefName: "fork-upstack",
-				baseRefName: "feature",
-				isCrossRepository: true,
-			},
-		]);
-		expect(ordered.map((item) => Number(item.number))).toEqual([41, 42]);
 	});
 });
