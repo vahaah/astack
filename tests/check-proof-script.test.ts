@@ -166,7 +166,7 @@ test.each<[string, OriginMain, boolean]>([
 	},
 );
 
-test("[control:proof-local-base] an untracked path at the default tip reads its diff from origin/main", () => {
+test("[control:proof-local-untracked] an untracked path at the default tip reads its diff from origin/main", () => {
 	const repo = mergedQAfterR("head", false, PAYLOAD);
 	followMain(repo.root);
 	writeFileSync(join(repo.root, "notes/new.md"), "new\n");
@@ -205,7 +205,7 @@ test.each<[string, (root: string) => void]>([
 	},
 );
 
-test("[control:proof-local-fallback] a local run on a clean default tip with no HEAD^ keeps the manifest base", () => {
+test("[control:proof-local-shallow] a local run on a clean default tip with no HEAD^ keeps the manifest base", () => {
 	const repo = mergedQAfterR("head", false, PAYLOAD);
 	const shallow = `${repo.root}-shallow`;
 	git(

@@ -117,7 +117,12 @@
 		},
 		{
 			"criterion": "CP-16",
-			"controls": ["proof-local-base", "proof-local-fallback"]
+			"controls": [
+				"proof-local-base",
+				"proof-local-untracked",
+				"proof-local-fallback",
+				"proof-local-shallow"
+			]
 		},
 		{
 			"criterion": "CP-15",
