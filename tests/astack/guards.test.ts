@@ -235,6 +235,18 @@ describe("the plain form of a git step", () => {
 	});
 
 	test.each([
+		"bash <<'EOF'\ngit reset --hard\nEOF",
+		"echo 'git reset --hard' | sh",
+	])(
+		"%s is denied on a dirty tree, because the shell reads the script from stdin",
+		(command) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain("- git reset --hard discards the uncommitted changes in");
+		},
+	);
+
+	test.each([
 		"git reset $(echo --hard)",
 		'git commit -m "$(cat msg.txt)"',
 		'git commit -am "Bump to $V"',

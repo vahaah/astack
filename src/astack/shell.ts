@@ -536,7 +536,24 @@ function plainForm(raw: readonly Word[]): Plain {
 	};
 }
 
-function scriptBody(words: readonly Word[]): Word | undefined {
+function stdinScript(
+	simple: SimpleCommand,
+	previous: ShellStep | undefined,
+): Word | undefined {
+	if (simple.stdin !== undefined)
+		return { value: simple.stdin, dynamic: false };
+	if (simple.piped !== true) return undefined;
+	const printed = previous === undefined ? undefined : printedText(previous);
+	return printed === undefined
+		? { value: "", dynamic: true }
+		: { value: printed, dynamic: false };
+}
+
+function scriptBody(
+	words: readonly Word[],
+	simple: SimpleCommand,
+	previous: ShellStep | undefined,
+): Word | undefined {
 	const [program, ...args] = words;
 	if (program === undefined || program.dynamic) return undefined;
 	const name = basename(program.value);
@@ -549,15 +566,22 @@ function scriptBody(words: readonly Word[]): Word | undefined {
 				};
 	if (!SHELLS.has(name)) return undefined;
 	let command = false;
+	let fromStdin = false;
 	for (let at = 0; at < args.length; at++) {
 		const arg = args[at];
 		const text = arg === undefined || arg.dynamic ? "" : arg.value;
 		if (/^(?:[-+][oO]|--init-file|--rcfile)$/.test(text)) at++;
-		else if (/^-[A-Za-z]+$/.test(text)) command ||= text.includes("c");
-		else if (!/^(?:\+[A-Za-z]+|--.*)$/.test(text))
-			return command ? arg : undefined;
+		else if (/^-[A-Za-z]+$/.test(text)) {
+			command ||= text.includes("c");
+			fromStdin ||= text.includes("s");
+		} else if (!/^(?:\+[A-Za-z]+|--.*)$/.test(text)) {
+			if (command) return arg;
+			return fromStdin || text === "-"
+				? stdinScript(simple, previous)
+				: undefined;
+		}
 	}
-	return undefined;
+	return command ? undefined : stdinScript(simple, previous);
 }
 
 type Folder = { readonly dir: string; readonly known: boolean };
@@ -627,7 +651,9 @@ function scriptSteps(
 			folder = { dir: move.dir, known: folder.known };
 			continue;
 		}
-		const body = plain.unreadable ? undefined : scriptBody(plain.words);
+		const body = plain.unreadable
+			? undefined
+			: scriptBody(plain.words, simple, steps.at(-1));
 		if (body !== undefined && !body.dynamic && nested) {
 			steps.push(
 				...scriptSteps(body.value, folder, depth + 1, { env, unsetsEnv }),

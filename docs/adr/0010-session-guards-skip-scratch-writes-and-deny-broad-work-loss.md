@@ -44,7 +44,7 @@ A command that names one file, `git restore --staged` and each `git stash` form 
 
 Amended 2026-11-22. Both guards read the plain form of each shell step.
 `shellSteps` drops reserved words and braces, and it unwraps a fixed list of wrappers.
-It also parses static `sh -c`, `eval` and substitution bodies as steps.
+It also parses static `sh -c`, `eval` and substitution bodies as steps, and a static script that a shell reads from a heredoc or a pipe.
 A guarded verb that a variable hides is unreadable.
 An unreadable work-loss command gets a deny on a changed tree when astack can read its folder.
 Each other unreadable guarded verb gets a deny at once.
