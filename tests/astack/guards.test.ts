@@ -1100,6 +1100,13 @@ describe("a repo that this session made", () => {
 			'setopt allexport; read -r "$name" < place.txt; git reset --hard',
 			DISCARDED,
 		],
+		["export $'GIT\\x5fDIR=REPO/.git'; git reset --hard", DISCARDED],
+		["export GIT_{DIR,X}=REPO/.git; git reset --hard", DISCARDED],
+		[
+			"$'\\x65val' $'export GIT\\x5fWORK_TREE=REPO'; git reset --hard",
+			DISCARDED,
+		],
+		["git $'--git\\x2ddir=REPO/.git' reset --hard", DISCARDED],
 	])(
 		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
 		(command, text) => {

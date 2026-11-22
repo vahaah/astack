@@ -110,14 +110,18 @@ export function hasPlaceForm(step: ShellStep): boolean {
 	);
 }
 
+function unreadWord(word: Word): boolean {
+	return word.dynamic || word.expands === true || word.value.includes("\\");
+}
+
 export function movesPlace(step: ShellStep): boolean {
-	const [program, ...args] = step.words;
+	const program = step.words[0];
 	return (
 		hasPlaceForm(step) ||
-		program?.dynamic === true ||
 		(program !== undefined && SHELL_STATE.has(program.value)) ||
-		(program?.value === "export" && args.some((word) => word.dynamic)) ||
-		[...step.env, ...step.words].some((word) => PLACE_MENTION.test(word.value))
+		[...step.env, ...step.words].some(
+			(word) => unreadWord(word) || PLACE_MENTION.test(word.value),
+		)
 	);
 }
 

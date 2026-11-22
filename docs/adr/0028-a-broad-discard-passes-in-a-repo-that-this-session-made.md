@@ -47,7 +47,10 @@ A loop or a function can run a step after a later step of the text.
 A place variable counts in the env of a step, in each step that names it and in the env of the hook.
 A step that can change the state of the shell also removes the exemption from the whole line.
 Such steps are `declare`, `typeset`, `local`, `readonly`, `float`, `integer`, `set`, `setopt`, `unsetopt`, `emulate`, `alias`, `eval`, `source` and `.`.
-So do a dynamic program and an `export` with a dynamic word.
+
+So does a word that the parser cannot read in full, in any step of the line.
+That is a dynamic word, a word with a glob or a brace expansion, and a word with a backslash.
+The parser does not decode each escape of a `$'...'` string, so a backslash can hide a place form.
 A line with a place form records no target and gets no exemption, so it gets the verdict of ADR 0010 D3.
 
 ### D4. A record starts pending, and the next shell call settles it
