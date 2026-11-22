@@ -15,3 +15,4 @@
 | [0012](0012-change-proof-accepts-an-older-base.md) | Change proof accepts an older base | Accepted |
 | [0013](0013-astack-keeps-a-part-only-on-measured-use.md) | astack keeps a part only on measured use, and a word budget stops skill text from growing | Accepted |
 | [0014](0014-each-proof-stop-names-its-cause.md) | Each proof stop names its cause and the rule section of its stage | Accepted |
+| [0022](0022-each-hook-finding-leaves-an-event-line-with-no-text.md) | Each hook finding leaves an event line with no text | Accepted |

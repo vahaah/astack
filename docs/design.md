@@ -142,6 +142,7 @@ The POSIX sh launcher `bin/astack` finds a runtime in a fixed order. It tries `$
 - It prints the lowest enforcement rung of each tool (section 10), the rule card link and size, and the parsed profile of the current repo.
 - It fails on duplicate plugin copies and on duplicate skill names in `~/.agents/skills` or in the skills folder of a profile. It fails on untrusted Codex hooks, and on trusted hashes that are not the pins in `codex/hooks.trust.json`. It fails on output-style plugins that are on and on a runtime older than node 22. It also fails on a profile with astack and no rule card link.
 - It notes Stop hooks of other plugins with their effect on the rewrite, and a cache copy that differs from the marketplace source in `dist/`.
+- It sums the finding events of the last 7 days (section 9.1). Each rule, surface and outcome gets one note in area `ste-events` with its count, also in `--json`. With no event log, it prints one note.
 
 ## 4. /astack:mode and the rule card
 
@@ -361,12 +362,17 @@ STE is mandatory. Deny applies only to rules with proven precision. Judgment rul
 
 - A rule moves to deny at 95% precision or more on 30 or more labelled fires from held-out texts. Held-out texts come after the glossary and are not part of the corpus that tuned the rules. CI fails when a deny rule falls under 95% on the labelled corpus. Then the rule gets a fix or moves to advise.
 - STE does not approve "check", "verify" and "confirm" as verbs (Q7). They sit in the broad list, and the detector reaches them only in finite or imperative position.
-- An observation log records each fire with a fingerprint. `astack ste review` will label fires when the first promotion starts. It is deferred (section 3).
+- An event log records each finding of the STE artifact hook, the STE reply hook and the comment hook. Each finding appends one JSON line to `<state>/ste/<session>/events.jsonl`. ADR 0022 records the rule.
+- A line holds time, turn, release, pid, handler, check, event, surface, rule, outcome and fingerprint. It holds no sentence, comment or path, because the transcript holds the text.
+- The outcome is `deny`, `demoted`, `advise`, `quiet`, `masked`, `rewrite` or `pending`. A finding is `masked` when it does not block, has no quiet rule and its handler run denies.
+- A log error never changes a verdict, and a refresh run writes no line. B11 tunes a rule only after one week of this log.
+- `astack ste review` will label fires when the first promotion starts. It is deferred (section 3).
 
 ### 9.2 Scope
 
 - The checker skips front matter, fenced and indented code, HTML, blockquotes, tables and images. Tables stay out of scope, because the `tooling/forecast.ts` of a client repo parses table cells.
 - Inline code, URLs, paths, CLI flags, versions, ticket keys, plan handles and identifiers each count as one word. So do quoted strings of 200 characters or fewer, `plugin:skill` names, `${VARS}` and a comma list of code spans.
+- A number and its next unit count as one word, also for a decimal such as `3.4 MB`. The units are ms, s, min, h, KB, MB, GB and px. A `%` never counts as a word.
 - Headings get the word list, contraction and long dash rules as advise only. A commit subject and a PR, issue or Linear title get the exact deny tier and the word list at deny. They get no length rule. Field labels of the plan and ticket schema (`^Word[.:]`) are exempt.
 - On the reply surface, each line that is not indented is its own unit, because the chat shows each line on its own. A number with a comma or a colon, such as `2,406` or `14:02`, counts as one word. Text in single quotes is masked like text in double quotes. The text of a link to a PR, an issue, a commit or a Linear issue counts as one word.
 - Each list item is a paragraph. The text kind comes from each sentence.
@@ -387,14 +393,14 @@ Per-repo settings live in `.astack/profile.json` under `ste`. `ste.mode` is `"de
 | commit message, `git commit -m`, `-F` or heredoc, the commit-msg git hook | PreToolUse Bash, git hook | deny, everywhere. Strip the Conventional prefix and trailers. Skip Merge, Revert, `fixup!`, `squash!` and `amend!` |
 | docs, plans, ADRs (`*.md`, `*.mdx`) | PreToolUse Edit, Write, `apply_patch`, a cat or tee heredoc, a static echo or printf into the file or into `tee` | deny where `ste.mode` is `"deny"`, advise elsewhere |
 | kept code comments | PreToolUse on source, after Sicko | deny. License text and keep patterns are exempt. JSDoc tags are removed first |
-| astack skill, rule, README and doc text, and skill descriptions | `bun run validate`, in `bun run check` | must pass with zero deny findings. `scripts/lib/ste-own.ts` lists the files and the exemptions |
+| astack skill, rule, README and doc text, and skill descriptions | `bun run validate`, in `bun run check` | must pass with zero deny findings. `scripts/lib/ste-own.ts` lists the files and the exemptions. Outside `docs/`, the gate also reads each fence whose info string is not on the code and data list of that file. A bare fence counts as prose |
 | astack CLI message text | none yet | open. No gate examines the strings in `src/astack/` |
 | The four protected quotations in `rules/comments.md` | `bun run validate` | The gate blanks these verbatim upstream sections. The catalog has no moved-prose exemptions |
 | every chat reply to the owner, also a short one | Stop, UserPromptSubmit | one forced rewrite for each reply (9.4) |
 | subagent and workflow-worker output | none | exempt |
 
 - A deny lists every finding as `L<n> <rule> <fix>`, up to about 2,000 characters, with the total count. Skill text tells the agent to run `astack check ste -` on a draft first.
-- A session ledger counts deny fingerprints of the measured rule and the word list. When one fingerprint gets a deny twice, it becomes advise for the session, and the log marks it as a false-positive candidate. The exact STE rules and the exact type classes never downgrade, because the detector is the definition. The exact STE rules are contraction, semicolon, dash, Latin short forms and `and/or`.
+- A session ledger counts deny fingerprints of the measured rule and the word list. When one fingerprint gets a deny twice, it becomes advise for the session, and the event log records it as `demoted`. The exact STE rules and the exact type classes never downgrade, because the detector is the definition. The exact STE rules are contraction, semicolon, dash, Latin short forms and `and/or`.
 - A commit message that is not static text fails open. The commit-msg git hook also runs on the owner's own commits where a repo installs it.
 
 ### 9.4 Chat replies, the strict Stop hook

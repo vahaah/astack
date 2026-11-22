@@ -4,7 +4,8 @@
 		"docs/reference/change-proof-contract.md",
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
-		"docs/reference/word-budget.md"
+		"docs/reference/word-budget.md",
+		"docs/reference/finding-telemetry.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -28,7 +29,11 @@
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
-		"tests/validate.test.ts"
+		"tests/validate.test.ts",
+		"tests/astack/verdict.test.ts",
+		"tests/astack/cursor-hook.test.ts",
+		"tests/ste-own.test.ts",
+		"tests/dist/render.test.ts"
 	],
 	"links": [
 		{
@@ -287,6 +292,52 @@
 		{
 			"criterion": "WB-validate",
 			"controls": ["wb-validate-skip"]
+		},
+		{
+			"criterion": "OWN-FENCE",
+			"controls": ["own-fence", "own-fence-list"]
+		},
+		{
+			"criterion": "OWN-ZERO",
+			"controls": ["own-zero"]
+		},
+		{
+			"criterion": "UNIT-ONE",
+			"controls": ["unit-one"]
+		},
+		{
+			"criterion": "NOUN-CHECKS",
+			"controls": ["noun-checks"]
+		},
+		{
+			"criterion": "TEL-NOTEXT",
+			"controls": ["tel-notext", "tel-comment", "tel-release"]
+		},
+		{
+			"criterion": "TEL-APPEND",
+			"controls": ["tel-append"]
+		},
+		{
+			"criterion": "TEL-OUTCOME",
+			"controls": ["tel-outcome", "tel-outcome-map", "tel-comment", "tel-reply"]
+		},
+		{
+			"criterion": "TEL-MASKED",
+			"controls": ["tel-masked", "tel-comment-masked", "tel-outcome-map"]
+		},
+		{
+			"criterion": "TEL-SAFE",
+			"controls": [
+				"tel-safe",
+				"tel-comment-safe",
+				"tel-reply-safe",
+				"tel-refresh",
+				"tel-comment-refresh"
+			]
+		},
+		{
+			"criterion": "TEL-SUM",
+			"controls": ["tel-sum"]
 		}
 	]
 }

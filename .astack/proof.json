@@ -1,95 +1,243 @@
 {
 	"version": 1,
-	"change": "b05-proof-stops-name-their-cause",
-	"base": "16f6cb81083189e5b1f939fd7534df6e200b7129",
+	"change": "finding-telemetry-and-own-fences",
+	"base": "1508fb47273ceb33ef8b57f499fc8ebcff47372e",
 	"scope": [
 		{
-			"path": "src/astack/change-proof/tlc.ts",
-			"obligation": "CP-19",
-			"modelRefs": ["RejectPositive", "RunNegative"]
+			"path": "src/astack/ste/events.ts",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": [
+				"Write",
+				"NoTextInEvent",
+				"OneLinePerFinding",
+				"LogNeverChangesVerdict"
+			]
 		},
 		{
-			"path": "src/astack/change-proof/runner.ts",
-			"obligation": "CP-20",
-			"modelRefs": ["RejectPositive"]
+			"path": "src/astack/ste/state.ts",
+			"obligation": "TEL-APPEND",
+			"modelRefs": ["Write", "OneLinePerFinding"]
 		},
 		{
-			"path": "src/astack/change-proof/admission.ts",
-			"obligation": "CP-20",
-			"modelRefs": ["RejectEvidence", "StaleStopNamesPaths"]
+			"path": "src/astack/ste/verdict.ts",
+			"obligation": "TEL-MASKED",
+			"modelRefs": ["Judge", "Write", "MaskedOnlyUnderDeny"]
 		},
 		{
-			"path": "src/astack/change-proof/candidate.ts",
-			"obligation": "CP-20",
-			"modelRefs": ["InputChange", "StaleStopNamesPaths"]
+			"path": "src/astack/hook/handlers/**",
+			"obligation": "TEL-SAFE",
+			"modelRefs": [
+				"Judge",
+				"Write",
+				"Return",
+				"LogNeverChangesVerdict",
+				"RefreshWritesNothing"
+			]
 		},
 		{
-			"path": "src/astack/change-proof/contract.ts",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "src/astack/cli/commands/check/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection", "RejectPositive"]
-		},
-		{
-			"path": "tests/astack/**",
-			"obligation": "CP-20",
-			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "RejectPositive"]
-		},
-		{
-			"path": "tests/check-proof-script.test.ts",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "tests/fixtures/tlc/**",
-			"obligation": "CP-18",
-			"modelRefs": ["RejectPositive"]
-		},
-		{
-			"path": "formal/**",
-			"obligation": "CP-20",
-			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "AdmitSafe"]
-		},
-		{
-			"path": ".astack/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
-		},
-		{
-			"path": "docs/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "marketplace/plugins/astack/agents/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "rules/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "research_notes/**",
-			"obligation": "CP-21",
-			"modelRefs": ["StopNamesSection"]
-		},
-		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
+			"path": "src/astack/doctor.ts",
+			"obligation": "TEL-SUM",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/bin/**",
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "TEL-SUM",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/check.ts",
+			"obligation": "OWN-FENCE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/scope.ts",
+			"obligation": "OWN-FENCE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/lib/ste-own.ts",
+			"obligation": "OWN-FENCE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/ste-own.test.ts",
+			"obligation": "OWN-FENCE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/mask.ts",
+			"obligation": "UNIT-ONE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/rules.ts",
+			"obligation": "UNIT-ONE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "UNIT-ONE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/fixtures/ste/labelled.txt",
+			"obligation": "UNIT-ONE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/lexicon.ts",
+			"obligation": "NOUN-CHECKS",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/ste/sentences.ts",
+			"obligation": "NOUN-CHECKS",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "OWN-ZERO",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "OWN-ZERO",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "OWN-ZERO",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/verdict.test.ts",
+			"obligation": "TEL-MASKED",
+			"modelRefs": ["Judge", "MaskedOnlyUnderDeny"]
+		},
+		{
+			"path": "tests/astack/telemetry-composition.ts",
+			"obligation": "TEL-OUTCOME",
+			"modelRefs": ["Judge", "Write"]
+		},
+		{
+			"path": "tests/astack/ste-hook.test.ts",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": [
+				"Write",
+				"NoTextInEvent",
+				"OneLinePerFinding",
+				"LogNeverChangesVerdict"
+			]
+		},
+		{
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "TEL-SAFE",
+			"modelRefs": ["Write", "Return", "LogNeverChangesVerdict"]
+		},
+		{
+			"path": "tests/astack/cursor-hook.test.ts",
+			"obligation": "TEL-SAFE",
+			"modelRefs": ["Judge", "RefreshWritesNothing"]
+		},
+		{
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "TEL-SUM",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "formal/FindingTelemetry.*",
+			"obligation": "TEL-SAFE",
+			"modelRefs": [
+				"Judge",
+				"Write",
+				"Return",
+				"LogNeverChangesVerdict",
+				"NoTextInEvent",
+				"RefreshWritesNothing",
+				"OneLinePerFinding",
+				"MaskedOnlyUnderDeny"
+			]
+		},
+		{
+			"path": "docs/adr/0022-*.md",
+			"obligation": "TEL-SAFE",
+			"modelRefs": [
+				"Judge",
+				"Write",
+				"Return",
+				"LogNeverChangesVerdict",
+				"NoTextInEvent",
+				"RefreshWritesNothing",
+				"OneLinePerFinding",
+				"MaskedOnlyUnderDeny"
+			]
+		},
+		{
+			"path": "docs/reference/finding-telemetry.md",
+			"obligation": "TEL-SAFE",
+			"modelRefs": [
+				"Judge",
+				"Write",
+				"Return",
+				"LogNeverChangesVerdict",
+				"NoTextInEvent",
+				"RefreshWritesNothing",
+				"OneLinePerFinding",
+				"MaskedOnlyUnderDeny"
+			]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "TEL-OUTCOME",
+			"modelRefs": ["Write", "MaskedOnlyUnderDeny", "RefreshWritesNothing"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": ["NoTextInEvent"]
+		},
+		{
+			"path": "README.md",
+			"obligation": "TEL-SUM",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "TEL-SUM",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/dist/targets/cursor.ts",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/dist/render.test.ts",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "AGENTS.md",
+			"obligation": "TEL-NOTEXT",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
@@ -103,52 +251,68 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/change-proof/contract.ts",
-			"symbol": "ChangeProof"
+			"path": "src/astack/ste/events.ts",
+			"symbol": "FindingEvent"
 		},
-		"terms": [
-			"ChangeProof",
-			"Proof admission",
-			"Candidate inputs",
-			"Model control"
-		],
+		"terms": ["Finding event", "Session guard", "ChangeProof"],
 		"invariants": [
 			{
-				"name": "A stale stop names each changed candidate input",
-				"modelRef": "StaleStopNamesPaths"
+				"name": "A log never changes the verdict of a handler run",
+				"modelRef": "LogNeverChangesVerdict"
 			},
 			{
-				"name": "Each stop names the proof contract section of its stage",
-				"modelRef": "StopNamesSection"
+				"name": "An event line holds only the event keys and no text",
+				"modelRef": "NoTextInEvent"
 			},
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "A refresh run writes no event line",
+				"modelRef": "RefreshWritesNothing"
+			},
+			{
+				"name": "Each finding of a finished run that is not a refresh has one line",
+				"modelRef": "OneLinePerFinding"
+			},
+			{
+				"name": "A masked line comes only from a run that denies",
+				"modelRef": "MaskedOnlyUnderDeny"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"decision": "D5"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"CP-17",
-				"CP-18",
-				"CP-19",
-				"CP-20",
-				"CP-21",
-				"WB-ratchet",
+				"OWN-FENCE",
+				"OWN-ZERO",
+				"UNIT-ONE",
+				"NOUN-CHECKS",
+				"TEL-NOTEXT",
+				"TEL-APPEND",
+				"TEL-OUTCOME",
+				"TEL-MASKED",
+				"TEL-SAFE",
+				"TEL-SUM",
+				"SG-preserve",
 				"SG-generated"
 			]
 		}
@@ -156,274 +320,292 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow returns a Result. The judges and snapshot give a refusal text, and admitChangeProof gives a Rejection with its stage. No arrow writes a file."
+			"contract": "Each handler run maps its findings to one verdict and one event line for each finding. A line holds no text, and a log error or a refresh never changes the verdict."
 		},
 		"objects": [
 			{
-				"name": "RunEnd",
+				"name": "Findings",
 				"link": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "RunEnd"
+					"path": "src/astack/ste/types.ts",
+					"symbol": "Finding"
 				}
 			},
 			{
-				"name": "Counts",
+				"name": "Outcome",
 				"link": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "Counts"
+					"path": "src/astack/ste/verdict.ts",
+					"symbol": "Outcome"
 				}
 			},
 			{
-				"name": "Violation",
+				"name": "Observation",
 				"link": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "Violation"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "Observation"
 				}
 			},
 			{
-				"name": "ChangedPath",
+				"name": "EventOutcome",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "ChangedPath"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "EventOutcome"
 				}
 			},
 			{
-				"name": "Snapshot",
+				"name": "Judged",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "Snapshot"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "Judged"
 				}
 			},
 			{
-				"name": "AdmissionFacts",
+				"name": "Verdict",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "AdmissionFacts"
+					"path": "src/astack/hook/events.ts",
+					"symbol": "Verdict"
 				}
 			},
 			{
-				"name": "Admitted",
+				"name": "EventEntries",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "Admitted"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "EventEntry"
+				}
+			},
+			{
+				"name": "EventLog",
+				"link": {
+					"path": "src/astack/ste/state.ts",
+					"symbol": "EVENTS_FILE"
+				}
+			},
+			{
+				"name": "SteEvents",
+				"link": {
+					"path": "src/astack/doctor.ts",
+					"symbol": "SteEvents"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "judgePositive",
-				"from": "RunEnd",
-				"to": "Counts",
+				"name": "outcomeOf",
+				"from": "Findings",
+				"to": "Outcome",
 				"link": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "judgePositive"
+					"path": "src/astack/ste/verdict.ts",
+					"symbol": "outcomeOf"
 				},
 				"effects": []
 			},
 			{
-				"name": "judgeNegative",
-				"from": "RunEnd",
-				"to": "Violation",
+				"name": "outcomeIn",
+				"from": "Observation",
+				"to": "EventOutcome",
 				"link": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "judgeNegative"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "outcomeIn"
 				},
 				"effects": []
 			},
 			{
-				"name": "snapshot",
-				"from": "ChangedPath",
-				"to": "Snapshot",
+				"name": "withLedger",
+				"from": "Outcome",
+				"to": "Judged",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "snapshot"
+					"path": "src/astack/ste/verdict.ts",
+					"symbol": "withLedger"
 				},
-				"effects": ["fs-read", "spawn", "env"]
+				"effects": ["fs-read", "fs-write", "env"]
 			},
 			{
-				"name": "admitChangeProof",
-				"from": "AdmissionFacts",
-				"to": "Admitted",
+				"name": "logRun",
+				"from": "Judged",
+				"to": "Verdict",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "logRun"
+				},
+				"effects": ["fs-read", "fs-write", "clock", "env"]
+			},
+			{
+				"name": "writeEvents",
+				"from": "EventEntries",
+				"to": "EventLog",
+				"link": {
+					"path": "src/astack/ste/events.ts",
+					"symbol": "writeEvents"
+				},
+				"effects": ["fs-read", "fs-write", "clock", "env"]
+			},
+			{
+				"name": "sumSteEvents",
+				"from": "EventLog",
+				"to": "SteEvents",
+				"link": {
+					"path": "src/astack/doctor.ts",
+					"symbol": "sumSteEvents"
 				},
 				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two results are equal when their values are equal. Two refusals are equal when their stage and text are equal.",
+		"equality": "Two verdicts are equal when their kinds and texts are equal. Two event lines are equal when each key holds the same value. Two sums are equal when their log counts, broken counts and ordered counts are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
+				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "src/astack/cli/commands/check/proof.ts"
+		"typedWitness": "tests/astack/telemetry-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The TLC record protocol, the SANY text outside the records, the state records of a trace, the progress records of a run past the deadline and the entry lines of each snapshot.",
+		"hides": "The JSON shape of a line, the stamp of time, turn, release and pid, the append call and the outcome rules for each tier.",
 		"callersKnow": [
-			"The last stdout line of a stop names its stage and its cause.",
-			"One stderr line names the proof contract section of the stage.",
-			"A SANY stop names the module, the line, the column and the message.",
-			"A failed run names its invariant or property and prints at most 20 steps.",
-			"A stale stop names at most 10 changed paths, the index or the ratification history.",
-			"A run past the deadline names the distinct state count and the time of its last progress record."
+			"A handler returns the same verdict with or without the log, and a log error never denies or allows.",
+			"Each finding of a run that is not a refresh writes one line with no sentence, comment or path.",
+			"A finding that does not block and has no quiet rule writes masked when its handler run denies.",
+			"astack doctor prints one ste-events note for each rule, surface and outcome of the last 7 days."
 		],
-		"deletionTest": "Deleting the judges puts the TLC record protocol, the SANY text and the trace format into prove, and the fixtures can then test them only with Java. Deleting staleInputs puts the entry comparison into admitChangeProof and into each snapshot test.",
+		"deletionTest": "Deleting logRun puts the refresh test, the masked rule and the line stamp into each of the two handlers. Deleting writeEvents gives the reply hook its own line format, so a labeller must read two shapes.",
 		"alternatives": [
 			{
-				"name": "A new --explain flag",
-				"rejectedBecause": "It only repeats the reference."
+				"name": "Store the sentence in each line",
+				"rejectedBecause": "The transcript holds the text, and the log must hold no client text."
 			},
 			{
-				"name": "Leave gate rewrite paths out of the digest",
-				"rejectedBecause": "It goes against ADR 0005 D3, which binds each candidate file."
+				"name": "One shared log outside the session folder",
+				"rejectedBecause": "The session folder already has a 14-day prune."
 			},
 			{
-				"name": "A second stdout line for the section",
-				"rejectedBecause": "It changes 28 pinned stop lines, and scripts read the last stdout line."
+				"name": "A log error that denies",
+				"rejectedBecause": "Telemetry must never block the work."
 			},
 			{
-				"name": "Print only the state count of a trace",
-				"rejectedBecause": "The agent cannot see the path to the broken claim."
+				"name": "A new CLI command for the counts",
+				"rejectedBecause": "Doctor already reports the local state, and the CLI list adds no command."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "judgePositive"
+					"path": "src/astack/ste/verdict.ts",
+					"symbol": "outcomeOf"
 				},
-				"modelAction": "RejectPositive"
+				"modelAction": "Judge"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/tlc.ts",
-					"symbol": "judgeNegative"
+					"path": "src/astack/ste/verdict.ts",
+					"symbol": "withLedger"
 				},
-				"modelAction": "RunNegative"
+				"modelAction": "Judge"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "snapshot"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "logRun"
 				},
-				"modelAction": "InputChange"
+				"modelAction": "Write"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "staleInputs"
+					"path": "src/astack/ste/events.ts",
+					"symbol": "writeEvents"
 				},
-				"modelAction": "RejectEvidence"
+				"modelAction": "Write"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/contract.ts",
-					"symbol": "STAGE_SECTIONS"
+					"path": "src/astack/ste/state.ts",
+					"symbol": "appendEvents"
 				},
-				"modelAction": "ValidationFail"
+				"modelAction": "Write"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "src/astack/hook/dispatch.ts",
+					"symbol": "judgeEach"
 				},
-				"modelAction": "Admit"
+				"modelAction": "Return"
 			}
 		],
 		"omitted": [
-			"TLC, SANY and their output text are abstracted to the bounded positive, negative and restored results.",
-			"Git and the file system are abstracted to three input kinds that can change during the runs.",
-			"The limit of 10 named paths and 20 trace steps is not modelled. Unit controls examine both limits.",
-			"The earlier authority, base, evidence and Result law parts of the model stay as they were."
+			"The model takes the append of one short line as atomic. The 8-process test examines that premise on a local disk.",
+			"The reply hook, the comment rule check and the demoted outcome have no own model state. Their hook tests examine them.",
+			"sumSteEvents, the fence rule, the unit rule and the noun-side words are outside the model. Their tests, validate and the precision gate examine them."
 		]
 	},
 	"model": {
-		"module": "formal/ProofAdmission.tla",
-		"config": "formal/ProofAdmission.cfg",
+		"module": "formal/FindingTelemetry.tla",
+		"config": "formal/FindingTelemetry.cfg",
 		"dependencies": [],
-		"bounds": [
-			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
-			"Nine failure kinds map to five sections of the proof contract.",
-			"The authority and base cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model.",
-			"Finite Result laws use two values, two errors and all total functions between them."
-		],
-		"fairness": ["WF_vars(Next)"],
 		"invariants": [
 			"TypeOK",
-			"AdmitSafe",
-			"FailureIsTerminal",
-			"StrictDefault",
-			"LandingAuthoritySafe",
-			"ProcessAuthoritySafe",
-			"HistoryBound",
-			"RatifiedAuthority",
-			"BaseAncestry",
-			"ScopeFromMergeBase",
-			"HistoryAtManifest",
-			"MovedAuthorityStops",
-			"StaleStopNamesPaths",
-			"StopNamesSection",
-			"ResultLeftIdentity",
-			"ResultRightIdentity",
-			"ResultAssociativity"
+			"LogNeverChangesVerdict",
+			"NoTextInEvent",
+			"RefreshWritesNothing",
+			"OneLinePerFinding",
+			"MaskedOnlyUnderDeny"
 		],
-		"properties": ["EventuallyTerminal"]
+		"properties": [],
+		"bounds": [
+			"Two parallel runs of one handler, three rules with one rule of each tier, a refresh flag for each run and one log that can refuse writes.",
+			"Each order of the judge, write and return steps of the two runs, one line at a time."
+		],
+		"fairness": []
 	},
 	"negative": {
-		"file": "formal/ProofAdmission.tla",
-		"action": "RejectEvidence",
-		"original": "/\\ named' = IF firstFailure' = \"stale\" THEN changed ELSE {}",
-		"replacement": "/\\ named' = {}",
-		"defect": "Dropping the changed inputs from the stale stop hides which file changed during the runs, so the agent cannot repair the stop.",
+		"file": "formal/FindingTelemetry.tla",
+		"action": "Write",
+		"original": "/\\ verdict' = verdict",
+		"replacement": "/\\ verdict' = [verdict EXCEPT ![p] = IF broken THEN \"allow\" ELSE @]",
+		"defect": "A log error that escapes to the dispatcher turns the verdict of the run into an allow, so a deny is lost.",
 		"expect": {
 			"kind": "invariant",
-			"name": "StaleStopNamesPaths"
+			"name": "LogNeverChangesVerdict"
 		}
 	},
 	"limits": [
-		"The finite model takes the TLC output and the Git reads as true. It does not model TLC, SANY or Git.",
+		"The finite model covers two runs and three rules, and it takes one append of a short line as atomic.",
 		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"The TLC fixtures come from tla2tools 1.7.4. Another TLC version can print other text.",
-		"Exact-head CI, review and every ordinary gate stay required."
+		"The one-week window of D4 starts at the owner's install, and no check can see it.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

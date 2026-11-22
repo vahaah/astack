@@ -35,6 +35,39 @@ const QUOTED_HEADINGS: readonly string[] = [
 	"Long justifications",
 ];
 const COPIES: ReadonlySet<string> = new Set(["rules/astack.md"]);
+export const CODE_AND_DATA_FENCES: readonly string[] = [
+	"bash",
+	"conf",
+	"console",
+	"css",
+	"csv",
+	"data",
+	"diff",
+	"html",
+	"javascript",
+	"js",
+	"json",
+	"jsonc",
+	"jsonl",
+	"jsx",
+	"log",
+	"mermaid",
+	"python",
+	"sh",
+	"shell",
+	"sql",
+	"swift",
+	"tla",
+	"toml",
+	"ts",
+	"tsv",
+	"tsx",
+	"typescript",
+	"yaml",
+	"yml",
+	"zsh",
+];
+const FENCE_FREE_ROOT = "docs/";
 
 export const EXEMPTIONS: readonly string[] = [
 	`each file that a list file in ${STE_EXEMPT_DIR}/ names: moved upstream text with deny findings`,
@@ -111,9 +144,23 @@ export function withoutQuotedSections(text: string): Result<string, string> {
 	);
 }
 
-function denyFindings(text: string, glossary: Glossary): readonly Finding[] {
+export function isProseFence(info: string): boolean {
+	const word = info.split(/\s+/)[0]?.toLowerCase() ?? "";
+	return !CODE_AND_DATA_FENCES.includes(word);
+}
+
+function denyFindings(
+	text: string,
+	glossary: Glossary,
+	proseFence?: (info: string) => boolean,
+): readonly Finding[] {
 	return denied(
-		checkText(text, { surface: "doc", enforcement: "deny", glossary }),
+		checkText(text, {
+			surface: "doc",
+			enforcement: "deny",
+			glossary,
+			proseFence,
+		}),
 	);
 }
 
@@ -141,7 +188,11 @@ export function ownTextReport(
 ): OwnReport {
 	const checked = sources.map((source) => ({
 		source,
-		body: denyFindings(source.text, glossary),
+		body: denyFindings(
+			source.text,
+			glossary,
+			source.path.startsWith(FENCE_FREE_ROOT) ? undefined : isProseFence,
+		),
 		description: descriptionFindings(source, glossary),
 	}));
 	return {

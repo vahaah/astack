@@ -24,9 +24,12 @@ import {
 	render,
 	type SkillFolder,
 	type Snapshot,
+	sumSteEvents,
 } from "../../doctor.ts";
 import { repoRoot } from "../../git.ts";
 import { PROFILE_PATH } from "../../profile.ts";
+import { stateDir } from "../../state.ts";
+import { EVENTS_FILE } from "../../ste/state.ts";
 import type { Command } from "../command.ts";
 import { NODE_FLOOR } from "../floor.ts";
 import { type Io, usageError } from "../io.ts";
@@ -322,6 +325,16 @@ function claudeSkillFolders(
 	});
 }
 
+function steEventLogs(env: Io["env"]): readonly string[] {
+	const root = stateDir(env);
+	if (root === undefined) return [];
+	const parent = join(root, "ste");
+	return list(parent).flatMap((name) => {
+		const text = readText(join(parent, name, EVENTS_FILE));
+		return text === undefined ? [] : [text];
+	});
+}
+
 export function gather(io: Io): Snapshot {
 	const home = io.env.HOME || homedir();
 	const claude = claudeProfiles(io.env, home);
@@ -334,6 +347,7 @@ export function gather(io: Io): Snapshot {
 		claudeSkills: claudeSkillFolders(claude, home),
 		profile: profileState(io.cwd),
 		unattendedReason: unattendedReason(io.env),
+		steEvents: sumSteEvents(steEventLogs(io.env), io.now),
 	};
 }
 
@@ -375,7 +389,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, untrusted Codex hooks, output-style plugins and the repo profile. Reads only, and exits 1 on a failure. --save-runtime writes the runtime path for the launcher.",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, untrusted Codex hooks, output-style plugins, the repo profile and 7 days of hook findings. Reads only, and exits 1 on a failure. --save-runtime writes the runtime path for the launcher.",
 	usage: "doctor [--json]\ndoctor --save-runtime",
 	run,
 };

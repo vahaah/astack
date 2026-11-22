@@ -2,6 +2,7 @@ import { NODE_FLOOR } from "./cli/floor.ts";
 import { CODEX_HOOK_EVENTS, CODEX_HOOK_HASHES } from "./codex-trust.ts";
 import { MARKETPLACE_NAME, PLUGIN_IDS } from "./marketplace.ts";
 import { ASTACK_RULES, ruleLinkName } from "./rules.ts";
+import { EVENT_OUTCOMES } from "./ste/events.ts";
 
 export const ASTACK_PLUGINS: readonly string[] = PLUGIN_IDS.map(pluginName);
 
@@ -57,6 +58,22 @@ export type ProfileState =
 			readonly keys: readonly string[];
 	  };
 
+export type SteEventCount = {
+	readonly rule: string;
+	readonly surface: string;
+	readonly outcome: string;
+	readonly count: number;
+};
+
+export type SteEvents = {
+	readonly logs: number;
+	readonly broken: number;
+	readonly counts: readonly SteEventCount[];
+};
+
+export const EVENT_WINDOW_DAYS = 7;
+const DAY_MS = 86_400_000;
+
 export type Snapshot = {
 	readonly runtime: {
 		readonly current: string;
@@ -70,6 +87,7 @@ export type Snapshot = {
 	readonly claudeSkills?: readonly SkillFolder[];
 	readonly profile: ProfileState;
 	readonly unattendedReason: string | undefined;
+	readonly steEvents?: SteEvents;
 };
 
 export type Level = "ok" | "note" | "warn" | "fail";
@@ -489,6 +507,98 @@ function sessionFinding(unattendedReason: string | undefined): Finding {
 			);
 }
 
+type LoggedEvent = Omit<SteEventCount, "count"> & { readonly time: number };
+
+function parseEvent(line: string): LoggedEvent | undefined {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(line);
+	} catch {
+		return undefined;
+	}
+	if (typeof parsed !== "object" || parsed === null) return undefined;
+	const rule: unknown = Reflect.get(parsed, "rule");
+	const surface: unknown = Reflect.get(parsed, "surface");
+	const outcome = EVENT_OUTCOMES.find(
+		(known) => known === Reflect.get(parsed, "outcome"),
+	);
+	const time = Date.parse(String(Reflect.get(parsed, "time")));
+	if (
+		typeof rule !== "string" ||
+		typeof surface !== "string" ||
+		outcome === undefined ||
+		Number.isNaN(time)
+	)
+		return undefined;
+	return { rule, surface, outcome, time };
+}
+
+export function sumSteEvents(logs: readonly string[], now: Date): SteEvents {
+	const parsed = logs
+		.flatMap((text) => text.split("\n"))
+		.filter((line) => line.trim() !== "")
+		.map(parseEvent);
+	const from = now.getTime() - EVENT_WINDOW_DAYS * DAY_MS;
+	const counts = new Map<string, SteEventCount>();
+	for (const event of parsed) {
+		if (event === undefined || event.time < from) continue;
+		const key = [event.rule, event.surface, event.outcome].join("\u0000");
+		const count = (counts.get(key)?.count ?? 0) + 1;
+		counts.set(key, {
+			rule: event.rule,
+			surface: event.surface,
+			outcome: event.outcome,
+			count,
+		});
+	}
+	return {
+		logs: logs.length,
+		broken: parsed.filter((event) => event === undefined).length,
+		counts: [...counts.values()].sort(
+			(a, b) =>
+				b.count - a.count ||
+				a.rule.localeCompare(b.rule) ||
+				a.surface.localeCompare(b.surface) ||
+				a.outcome.localeCompare(b.outcome),
+		),
+	};
+}
+
+function counted(count: number, word: string): string {
+	return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function steEventFindings(events: SteEvents): Finding[] {
+	const area = "ste-events";
+	if (events.logs === 0)
+		return [
+			finding(
+				area,
+				"note",
+				"no events.jsonl in the state folder, so no hook finding is in the log",
+			),
+		];
+	const total = events.counts.reduce((sum, item) => sum + item.count, 0);
+	const broken =
+		events.broken === 0
+			? ""
+			: ` ${counted(events.broken, "broken line")} skipped.`;
+	return [
+		finding(
+			area,
+			"note",
+			`${counted(total, "event")} of the last ${EVENT_WINDOW_DAYS} days in ${counted(events.logs, "session log")}.${broken}`,
+		),
+		...events.counts.map((item) =>
+			finding(
+				area,
+				"note",
+				`${item.rule}, ${item.surface}, ${item.outcome}: ${item.count}`,
+			),
+		),
+	];
+}
+
 export function diagnose(snapshot: Snapshot): Finding[] {
 	return [
 		...runtimeFindings(snapshot),
@@ -503,6 +613,9 @@ export function diagnose(snapshot: Snapshot): Finding[] {
 		...duplicateFindings(snapshot),
 		...profileFindings(snapshot.profile),
 		sessionFinding(snapshot.unattendedReason),
+		...(snapshot.steEvents === undefined
+			? []
+			: steEventFindings(snapshot.steEvents)),
 	];
 }
 

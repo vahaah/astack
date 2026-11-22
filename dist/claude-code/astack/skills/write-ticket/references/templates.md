@@ -37,7 +37,7 @@ Optional. Only limits the implementer cannot discover alone: another team's cont
 
 ## Verification
 
-How you prove the work is done, and who checks it: the test or suite, the role to sign in as, the preview URL and screenshots, or the metric to watch after deploy.
+How you prove the work is done, and who checks it. The test or suite, the role to sign in as, the preview URL and screenshots, or the metric to watch after deploy.
 
 ## Links
 
@@ -246,9 +246,9 @@ An admin downloads every member of their workspace as a CSV file from the Member
 
 ## Acceptance criteria
 
-- [ ] Given an admin on the Members page, when they choose Export, then a CSV downloads with one row per member and the columns name, role, status and joined date.
+- [ ] Given an admin on the Members page, when they choose Export, then a CSV downloads with one row per member. Its columns are name, role, status and joined date.
 - [ ] Given a member whose name contains a comma, when an admin opens the CSV in a spreadsheet, then the name stays in one cell.
-- [ ] Given a user who is not an admin, when they open the Members page, then the page shows no Export control and the export endpoint returns 403.
+- [ ] Given a user who is not an admin, when they open the Members page, then the page shows no Export control. The export endpoint returns 403.
 
 ## Scope
 

@@ -314,7 +314,7 @@ astack board docs/plans/x/index.md    # drain first, the startable frontier, the
 astack skill-path astack:architect    # the SKILL.md path of an installed plugin skill
 astack check-ste docs/x.md            # or - for stdin; --mode advise, --json, --profile <file>, --surface commit, --old <file>
 astack check-migrations supabase/migrations --db <url> --reset "supabase db reset" --allow-pending   # the stack against the files of the branch
-astack doctor                         # the runtime, the copies of each tool, Codex trust, duplicate skills and the profile
+astack doctor                         # the runtime, the copies of each tool, Codex trust, duplicate skills, the profile and 7 days of hook findings
 astack print codex-agents ~/.codex/AGENTS.md           # that file with the astack block in it; also print cursor-install
 ```
 
