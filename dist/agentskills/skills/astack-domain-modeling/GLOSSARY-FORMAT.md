@@ -48,8 +48,8 @@ The map lists each context, its location and its relationships:
 
 ## Relationships
 
-- **Ordering → Fulfillment**: Ordering emits `OrderPlaced` events; Fulfillment consumes them to start picking
-- **Fulfillment → Billing**: Fulfillment emits `ShipmentDispatched` events; Billing consumes them to generate invoices
+- **Ordering → Fulfillment**: Ordering emits `OrderPlaced` events. Fulfillment consumes them to start picking
+- **Fulfillment → Billing**: Fulfillment emits `ShipmentDispatched` events. Billing consumes them to generate invoices
 - **Ordering ↔ Billing**: Shared types for `CustomerId` and `Money`
 ```
 

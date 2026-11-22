@@ -2,7 +2,7 @@ import { foreignWords, nonLatin, otherLatinLanguage } from "./language.ts";
 import { DEFAULT_TECHNICAL_VERBS } from "./lexicon.ts";
 import { restore } from "./mask.ts";
 import { paragraphLength, RULE_TIER, SENTENCE_RULES } from "./rules.ts";
-import { type Scoped, scope } from "./scope.ts";
+import { PROSE_FENCE, type Scoped, scope } from "./scope.ts";
 import { sentencesOf } from "./sentences.ts";
 import type {
 	Enforcement,
@@ -29,6 +29,7 @@ export type CheckOptions = {
 	readonly oldLines?: readonly LineRange[] | undefined;
 	readonly titleLines?: readonly number[] | undefined;
 	readonly headerFields?: boolean | undefined;
+	readonly proseFence?: ((info: string) => boolean) | undefined;
 };
 
 export const DEFAULT_GLOSSARY: Glossary = {
@@ -144,13 +145,19 @@ function languageReport(units: readonly Unit[], options: CheckOptions): Report {
 	};
 }
 
+function replyProseFence(info: string): boolean {
+	return PROSE_FENCE.test(info);
+}
+
 function scoped(text: string, options: CheckOptions): Scoped {
 	const base = {
 		technicalNames: options.glossary.technicalNames,
 		lines: options.lines,
 		titleLines: options.titleLines,
 		lineBreaks: options.surface === "reply",
-		proseFences: options.surface === "reply",
+		proseFence:
+			options.proseFence ??
+			(options.surface === "reply" ? replyProseFence : undefined),
 		headerFields: options.headerFields,
 	};
 	const plain = scope(text, { ...base, quotesAsProse: false });

@@ -9,8 +9,10 @@ import {
 } from "../scripts/lib/ste-exempt.ts";
 import {
 	astackWrittenText,
+	CODE_AND_DATA_FENCES,
 	COMMENTS_RULE,
 	exemptProblems,
+	isProseFence,
 	ownTextPaths,
 	ownTextReport,
 	quotedSections,
@@ -202,6 +204,96 @@ describe("the own text of astack", () => {
 		expect(
 			report.findings.map(({ finding }) => [finding.rule, finding.line]),
 		).toEqual([["contraction", 3]]);
+	});
+
+	test("[control:own-fence] a contraction in a md, bare or prompt fence of a skill file fails at its line, and a sh fence and a docs fence pass", () => {
+		const skill = "marketplace/plugins/astack/skills/a/SKILL.md";
+		const adr = "docs/adr/0001-a.md";
+		const fences = [
+			"# A",
+			"",
+			"```md",
+			"It's one.",
+			"```",
+			"",
+			"```",
+			"It's two.",
+			"```",
+			"",
+			"```prompt",
+			"It's three.",
+			"```",
+			"",
+			"```sh",
+			"echo it's code; done",
+			"```",
+			"",
+		].join("\n");
+		const report = ownTextReport(
+			[
+				{ path: skill, text: fences },
+				{ path: adr, text: "# A\n\n```text\nP(x) is it's; q\n```\n" },
+			],
+			DEFAULT_GLOSSARY,
+		);
+		expect(
+			report.findings.map(({ path, finding }) => [
+				path,
+				finding.rule,
+				finding.line,
+			]),
+		).toEqual([
+			[skill, "contraction", 4],
+			[skill, "contraction", 8],
+			[skill, "contraction", 12],
+		]);
+	});
+
+	test("[control:own-fence-list] the gate skips only the pinned code and data info strings, by the first word in any case", () => {
+		expect(CODE_AND_DATA_FENCES).toEqual([
+			"bash",
+			"conf",
+			"console",
+			"css",
+			"csv",
+			"data",
+			"diff",
+			"html",
+			"javascript",
+			"js",
+			"json",
+			"jsonc",
+			"jsonl",
+			"jsx",
+			"log",
+			"mermaid",
+			"python",
+			"sh",
+			"shell",
+			"sql",
+			"swift",
+			"tla",
+			"toml",
+			"ts",
+			"tsv",
+			"tsx",
+			"typescript",
+			"yaml",
+			"yml",
+			"zsh",
+		]);
+		expect(
+			["TS title=a", "md", "", "prompt"].map((info) => isProseFence(info)),
+		).toEqual([false, true, true, true]);
+	});
+
+	test("[control:own-zero] the own text and the text that apply renders hold 0 deny findings, also in each fence that is not code or data", () => {
+		const root = resolve(import.meta.dir, "..");
+		expect(
+			checkOwnSte(root).findings.map(
+				({ file, message }) => `${file} ${message}`,
+			),
+		).toEqual([]);
 	});
 
 	test("the validate check fails on a deny finding and passes clean text", () => {

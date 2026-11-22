@@ -103,17 +103,17 @@ Every spawn carries the full brief.
 A field that you cannot fill means that you have not scoped the unit yet.
 
 ```
-GOAL         one sentence, the outcome, executable by a stranger with no chat access
-SCOPE        paths this unit may write; paths it may not; its exclusive worktree or branch
-CONTEXT      pointers to files and PRs; upstream reports pasted in full when this unit
-             depends on them, because workers cannot see siblings
-ACCEPTANCE   checkable criteria, one per line
-VERIFY       exact commands or the control-skill path, plus known gotchas
-TIMEBOX      rough cap on runtime; on expiry, return partial findings and stop rather than run on
-FORBIDDEN    no PR retargets or merges, no rebase, no force-push, no fixes outside scope,
-             no pattern kill (stop only the PIDs the unit started), plus unit-specific bans
+GOAL         one sentence, the outcome, executable by a stranger with no chat access.
+SCOPE        paths this unit may write, paths it may not, its exclusive worktree or branch.
+CONTEXT      pointers to files and PRs. Upstream reports pasted in full when this unit
+             depends on them, because workers cannot see siblings.
+ACCEPTANCE   checkable criteria, one per line.
+VERIFY       exact commands or the control-skill path, plus known gotchas.
+TIMEBOX      rough cap on runtime. On expiry, return partial findings and stop rather than run on.
+FORBIDDEN    no PR retargets or merges, no rebase, no force-push, no fixes outside scope.
+             No pattern kill (stop only the PIDs the unit started), plus unit-specific bans.
 REPORT       status, branch, head SHA, PRs, verdict, what you actually ran, deviations,
-             suggested follow-ups
+             suggested follow-ups.
 STANDING     <preferences.md pasted verbatim>
 ```
 
