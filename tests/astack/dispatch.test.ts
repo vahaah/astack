@@ -25,6 +25,7 @@ import {
 	TOOLS,
 } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
+import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures/hook-input");
 let project = "";
@@ -149,6 +150,27 @@ describe("the handler registry", () => {
 			deps([throwing, denying]),
 		);
 		expect(output).toEqual({ stdout: "", stderr: "no\n", exit: 2 });
+	});
+
+	test("[control:sg-guard-error] a merge guard that throws on a merge denies it and names the error", () => {
+		const failing = mergeGuard(() => {
+			throw new Error("gh exploded");
+		});
+		const run = (command: string) =>
+			runHook(
+				"claude-code",
+				"PreToolUse",
+				payload({ tool_name: "Bash", tool_input: { command } }),
+				{},
+				deps([failing]),
+			);
+		expect(run("gh pr merge 12")).toEqual({
+			stdout: "",
+			stderr:
+				'astack blocked gh pr merge:\n- The merge guard failed with "gh exploded", so astack cannot examine this merge. Ask the owner, or let the owner merge.\n',
+			exit: 2,
+		});
+		expect(run("gh pr view 12")).toEqual(SILENT);
 	});
 
 	test("verdicts of several handlers combine in registry order", () => {

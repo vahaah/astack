@@ -279,7 +279,8 @@ The hooks fail open. When something goes wrong, the tool call goes ahead as if a
 - To deny, astack exits 2 and writes the reason to stderr. To add a note, it exits 0 and prints JSON. Otherwise it exits 0 and prints nothing.
 - A handler that fails gives no verdict. The verdicts of the other handlers still apply.
 - Unreadable input, a file it cannot tokenize, an `Edit` whose `old_string` does not match, and any internal error all pass silently.
-- The merge guard is the one exception. When `gh` cannot read the PR, it refuses the merge, because it cannot see the threads or the CI state.
+- The merge guard is the one exception. When `gh` cannot read the PR, it refuses the merge, because it cannot see the threads, the CI state or the standing grant.
+- When the merge guard fails on a merge command or an MCP merge tool, it refuses the merge and names the error.
 - Each hook has a 10-second timeout, and Claude Code lets a timed-out `PreToolUse` hook through.
 
 A typical edit takes about 30 ms under Node and about 10 ms under Bun. Most of that time is runtime startup.

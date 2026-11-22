@@ -204,10 +204,27 @@ function mcpVerdict(event: EventOf<"mcp">): Verdict {
 	);
 }
 
+function failedVerdict(
+	event: EventOf<"prompt" | "shell" | "mcp">,
+	error: unknown,
+): Verdict | undefined {
+	const merges =
+		(event.kind === "shell" && event.command.includes("merge")) ||
+		(event.kind === "mcp" && isMcpMergeTool(event.tool));
+	if (!merges) return undefined;
+	const cause = error instanceof Error ? error.message : String(error);
+	return deny(
+		mergeDenial([
+			`The merge guard failed with "${cause}", so astack cannot examine this merge. Ask the owner, or let the owner merge.`,
+		]),
+	);
+}
+
 export function mergeGuard(read: ReadPullRequest): Handler {
 	return defineHandler({
 		id: "merge-guard",
 		on: ["prompt", "shell", "mcp"],
+		failed: failedVerdict,
 		run: (event, context) => {
 			switch (event.kind) {
 				case "prompt":
