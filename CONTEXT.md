@@ -151,3 +151,17 @@ _Code_: `FindingEvent`
 A skill, agent, command or module with no measured use in 30 days and no live dependent.
 A live dependent is code, a route, a test or an accepted ADR that needs the part.
 _Avoid_: Unused code, dead skill
+
+### Codex hook trust
+
+The trust status that Codex reports for one hook in its `hooks/list` reply: `trusted`, `managed`, `modified` or `untrusted`.
+Codex binds it to the hook hash and to a content hash that changes in each release, so a pinned hook hash proves no trust.
+_Avoid_: Trusted hash, pin match
+_Code_: `CodexHooksRead`
+
+### Hardening profile rule
+
+A rule that a review profile must pass before a hardening run loads it.
+Apply, `astack check hardening-profile` and doctor read one list of these rules, and each problem has a repair.
+_Avoid_: Profile lint, profile schema
+_Code_: `reviewProfileProblems`

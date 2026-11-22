@@ -8,6 +8,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
+	type CodexHooksRead,
+	parseHookList,
+} from "../../src/astack/codex-hooks.ts";
+import {
 	CODEX_HOOK_EVENTS,
 	CODEX_HOOK_HASHES,
 } from "../../src/astack/codex-trust.ts";
@@ -136,26 +140,40 @@ export function codexFindings(
 	);
 }
 
-export function codexHashFindings(listing: string | undefined): string[] {
-	if (listing === undefined)
-		return ["codex app-server hooks/list gave no reply"];
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(listing);
-	} catch {
-		return ["codex app-server hooks/list gave no JSON"];
-	}
-	const hashes =
-		typeof parsed === "object" && parsed !== null ? parsed : undefined;
+export function codexHashFindings(read: CodexHooksRead): string[] {
+	if (read.kind === "failed")
+		return [`codex app-server hooks/list failed: ${read.cause}`];
+	const hooks = read.list.data.flatMap((entry) => entry.hooks);
 	return CODEX_HOOK_EVENTS.flatMap((event) => {
 		const key = codexTrustKey("astack@astack", event);
-		const actual = hashes === undefined ? undefined : Reflect.get(hashes, key);
+		const actual = hooks
+			.find((hook) => hook.key === key)
+			?.currentHash.split("/")[0];
 		return actual === CODEX_HOOK_HASHES[event]
 			? []
 			: [
 					`Codex shows ${String(actual)} for ${key}, but src/astack/codex-trust.ts pins ${CODEX_HOOK_HASHES[event]}. Update the pin when hooks.json changes on purpose.`,
 				];
 	});
+}
+
+function hooksRead(reader: Run): CodexHooksRead {
+	if (reader.exitCode !== 0)
+		return {
+			kind: "failed",
+			cause:
+				reader.stderr.trim() || `the reader exited with ${reader.exitCode}`,
+		};
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(reader.stdout);
+	} catch {
+		parsed = undefined;
+	}
+	const list = parseHookList(parsed);
+	return list === undefined
+		? { kind: "failed", cause: "the reader printed no hook list" }
+		: { kind: "listed", list };
 }
 
 export function codexProbe(
@@ -215,7 +233,7 @@ export function codexProbe(
 			id: "codex",
 			errors: [
 				...codexFindings(listed, expected),
-				...codexHashFindings(hooks.exitCode === 0 ? hooks.stdout : undefined),
+				...codexHashFindings(hooksRead(hooks)),
 			],
 			summary: `codex debug prompt-input in a temporary CODEX_HOME and HOME lists ${listed.size} plugin skills, and codex app-server hooks/list shows the pinned hook hashes`,
 		};
@@ -224,12 +242,47 @@ export function codexProbe(
 	}
 }
 
+function releaseVersion(distRoot: string): string | undefined {
+	try {
+		const parsed: unknown = JSON.parse(
+			readFileSync(join(distRoot, "package.json"), "utf8"),
+		);
+		const version: unknown =
+			typeof parsed === "object" && parsed !== null
+				? Reflect.get(parsed, "version")
+				: undefined;
+		return typeof version === "string" ? version : undefined;
+	} catch {
+		return undefined;
+	}
+}
+
+function versionFindings(distRoot: string): string[] {
+	const release = releaseVersion(distRoot);
+	if (release === undefined) return ["dist/package.json holds no version"];
+	return [
+		CLI_PATH,
+		`${CLAUDE_ROOT}/astack/bin/astack.js`,
+		`${CURSOR_ROOT}/bin/astack.js`,
+	].flatMap((script) => {
+		const result = run(["node", join(distRoot, script), "--version"], distRoot);
+		const printed = result.stdout.trim();
+		return result.exitCode === 0 &&
+			(printed === release || printed.startsWith(`${release}+`))
+			? []
+			: [
+					`node ${script} --version gave exit ${result.exitCode} and ${JSON.stringify(printed)}, not the release version ${release}`,
+				];
+	});
+}
+
 export function cliSmoke(distRoot: string): CheckReport {
 	const errors: string[] = [];
 	if (onPath("node")) {
 		const help = run(["node", join(distRoot, CLI_PATH), "--help"], distRoot);
 		if (help.exitCode !== 0 || !help.stdout.includes("astack hook"))
 			errors.push(`node ${CLI_PATH} --help failed: ${help.stderr.trim()}`);
+		errors.push(...versionFindings(distRoot));
 	}
 	const launcher = join(distRoot, CURSOR_ROOT, "bin", "astack");
 	const bare = mkdtempSync(join(tmpdir(), "astack-launcher-"));
@@ -297,6 +350,6 @@ export function cliSmoke(distRoot: string): CheckReport {
 		id: "cli",
 		errors,
 		summary:
-			"node runs the package CLI, a copy of bin/ outside the repository loads, and the Cursor launcher prints valid JSON with no PATH and allows a plain command",
+			"node runs the package CLI, each of the 3 bundles prints the release version, a copy of bin/ outside the repository loads, and the Cursor launcher prints valid JSON with no PATH and allows a plain command",
 	};
 }

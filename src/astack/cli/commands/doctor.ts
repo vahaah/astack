@@ -1,6 +1,7 @@
 import { spawnSync } from "node:child_process";
 import {
 	accessSync,
+	appendFileSync,
 	constants,
 	existsSync,
 	mkdirSync,
@@ -11,8 +12,9 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { unattendedReason } from "../../attended.ts";
+import { readCodexHooks } from "../../codex-hooks.ts";
 import {
 	type ClaudeProfile,
 	type CodexState,
@@ -21,12 +23,17 @@ import {
 	failed,
 	type Install,
 	type ProfileState,
+	readBases,
 	render,
 	type SkillFolder,
 	type Snapshot,
 	sumSteEvents,
 } from "../../doctor.ts";
-import { repoRoot } from "../../git.ts";
+import { originSlug, repoRoot } from "../../git.ts";
+import { MANAGED_PATHS } from "../../managed.ts";
+import { ghJson } from "../../pr/github.ts";
+import { loadPrProfile } from "../../pr/profile.ts";
+import { reviewProfileState } from "../../pr-review-profile.ts";
 import { PROFILE_PATH } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
@@ -78,6 +85,16 @@ function executable(path: string | undefined): path is string {
 
 export function savedRuntimePath(home: string): string {
 	return join(home, ".local", "state", "astack", "runtime");
+}
+
+export function skipFilePath(home: string): string {
+	return join(dirname(savedRuntimePath(home)), "skip-profiles");
+}
+
+function skippedProfiles(home: string): string[] {
+	return (readText(skipFilePath(home)) ?? "")
+		.split("\n")
+		.filter((line) => line !== "");
 }
 
 function nodeMajor(path: string): number | undefined {
@@ -187,13 +204,13 @@ function claudeDirs(env: Io["env"], home: string): string[] {
 			.filter((name) => name.startsWith(".claude-"))
 			.map((name) => join(home, name)),
 	].filter((dir): dir is string => Boolean(dir));
-	return [...new Set(dirs)].filter((dir) =>
+	return [...new Set(dirs.map((dir) => resolve(dir)))].filter((dir) =>
 		existsSync(join(dir, "plugins", "installed_plugins.json")),
 	);
 }
 
-function claudeProfiles(env: Io["env"], home: string): ClaudeProfile[] {
-	return claudeDirs(env, home).map((dir) => ({
+function claudeProfiles(dirs: readonly string[]): ClaudeProfile[] {
+	return dirs.map((dir) => ({
 		dir,
 		installs: installsOf(dir),
 		enabled: enabledPlugins(dir),
@@ -254,15 +271,31 @@ export function codexState(
 			agents === undefined
 				? undefined
 				: /<!-- astack (\S+) -->/.exec(agents)?.[1],
+		hooks: undefined,
 	};
 }
 
-function codex(env: Io["env"], home: string): CodexState | undefined {
-	const codexHome = env.CODEX_HOME || join(home, ".codex");
+export const CODEX_HOOKS_TIMEOUT_MS = 10_000;
+
+async function codex(io: Io, home: string): Promise<CodexState | undefined> {
+	const codexHome = io.env.CODEX_HOME || join(home, ".codex");
 	const config = readText(join(codexHome, "config.toml"));
-	return config === undefined
-		? undefined
-		: codexState(codexHome, config, readText(join(codexHome, "AGENTS.md")));
+	if (config === undefined) return undefined;
+	const state = codexState(
+		codexHome,
+		config,
+		readText(join(codexHome, "AGENTS.md")),
+	);
+	return state.enabled.some((id) => id.startsWith("astack@"))
+		? {
+				...state,
+				hooks: await readCodexHooks({
+					cwd: io.cwd,
+					env: io.env,
+					timeoutMs: CODEX_HOOKS_TIMEOUT_MS,
+				}),
+			}
+		: state;
 }
 
 function cursor(home: string): CursorState | undefined {
@@ -325,6 +358,17 @@ function claudeSkillFolders(
 	});
 }
 
+function bases(cwd: string): Snapshot["bases"] {
+	const root = repoRoot(cwd);
+	const repo = root === undefined ? undefined : originSlug(root);
+	if (root === undefined || repo === undefined) return undefined;
+	return readBases(
+		(args) => ghJson(root, args),
+		repo,
+		loadPrProfile(root).standingBases,
+	);
+}
+
 function steEventLogs(env: Io["env"]): readonly string[] {
 	const root = stateDir(env);
 	if (root === undefined) return [];
@@ -335,17 +379,30 @@ function steEventLogs(env: Io["env"]): readonly string[] {
 	});
 }
 
-export function gather(io: Io): Snapshot {
+export async function gather(io: Io): Promise<Snapshot> {
 	const home = io.env.HOME || homedir();
-	const claude = claudeProfiles(io.env, home);
+	const listed = claudeDirs(io.env, home);
+	const skipList = skippedProfiles(home);
+	const claude = claudeProfiles(
+		listed.filter((dir) => !skipList.includes(dir)),
+	);
 	return {
+		skipped: {
+			file: skipFilePath(home),
+			dirs: listed.filter((dir) => skipList.includes(dir)),
+		},
 		runtime: { current: currentRuntime(), ...guiRuntime(io.env, home) },
 		claude,
-		codex: codex(io.env, home),
+		codex: await codex(io, home),
 		cursor: cursor(home),
 		agentsSkills: list(join(home, ".agents", "skills")),
 		claudeSkills: claudeSkillFolders(claude, home),
 		profile: profileState(io.cwd),
+		bases: bases(io.cwd),
+		reviewProfile: reviewProfileState(
+			MANAGED_PATHS.reviewProfile,
+			readText(join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile)),
+		),
 		unattendedReason: unattendedReason(io.env),
 		steEvents: sumSteEvents(steEventLogs(io.env), io.now),
 	};
@@ -367,7 +424,41 @@ function saveRuntime(io: Io): number {
 	return 0;
 }
 
-function run(args: readonly string[], io: Io): number {
+function skipProfile(io: Io, value: string): number {
+	const home = io.env.HOME || homedir();
+	const dir = resolve(io.cwd, value);
+	const listed = claudeDirs(io.env, home);
+	if (!listed.includes(dir)) {
+		io.err(
+			`astack doctor: ${dir} is not a Claude config folder that doctor checks: ${listed.join(", ")}\n`,
+		);
+		return 1;
+	}
+	const file = skipFilePath(home);
+	if (skippedProfiles(home).includes(dir)) {
+		io.out(`${file} already lists ${dir}\n`);
+		return 0;
+	}
+	try {
+		mkdirSync(dirname(file), { recursive: true });
+		appendFileSync(file, `${dir}\n`);
+	} catch (error) {
+		io.err(
+			`astack doctor: cannot write ${file}: ${error instanceof Error ? error.message : String(error)}\n`,
+		);
+		return 1;
+	}
+	io.out(`doctor skips ${dir}, because ${file} lists it\n`);
+	return 0;
+}
+
+async function run(args: readonly string[], io: Io): Promise<number> {
+	if (args[0] === "--skip-profile") {
+		const [, value, ...rest] = args;
+		if (value === undefined || rest.length > 0)
+			return usageError(io, "astack doctor: give --skip-profile <dir>");
+		return skipProfile(io, value);
+	}
 	const unknown = args.filter(
 		(arg) => arg !== "--save-runtime" && arg !== "--json",
 	);
@@ -377,7 +468,7 @@ function run(args: readonly string[], io: Io): number {
 			`astack doctor: unknown argument ${unknown.join(" ")}`,
 		);
 	if (args.includes("--save-runtime")) return saveRuntime(io);
-	const findings = diagnose(gather(io));
+	const findings = diagnose(await gather(io));
 	io.out(
 		args.includes("--json")
 			? `${JSON.stringify(findings, null, 2)}\n`
@@ -386,10 +477,10 @@ function run(args: readonly string[], io: Io): number {
 	return failed(findings) ? 1 : 0;
 }
 
-export const command: Command = {
+export const command: Command<Promise<number>> = {
 	name: "doctor",
 	summary:
-		"Reports the runtime, the astack copies of each tool, duplicate skills, untrusted Codex hooks, output-style plugins, the repo profile and 7 days of hook findings. Reads only, and exits 1 on a failure. --save-runtime writes the runtime path for the launcher.",
-	usage: "doctor [--json]\ndoctor --save-runtime",
+		"Reports the runtime, the astack copies of each tool, duplicate skills, the hook trust that Codex reports, output-style plugins, the repo profile, the review profile with the rules of astack check hardening-profile, the protection of the default branch and the standing bases, and 7 days of hook findings. It reads at most 3 bases with gh. Exits 1 on a failure. It asks codex app-server for the hook trust, and codex keeps state in CODEX_HOME. --save-runtime writes the runtime path for the launcher. --skip-profile adds a Claude config folder to the skip file beside it, and doctor then prints one note for that folder.",
+	usage: "doctor [--json]\ndoctor --save-runtime\ndoctor --skip-profile <dir>",
 	run,
 };

@@ -1,233 +1,240 @@
 {
 	"version": 1,
-	"change": "finding-telemetry-and-own-fences",
-	"base": "1508fb47273ceb33ef8b57f499fc8ebcff47372e",
+	"change": "doctor-trust-and-review-profile",
+	"base": "5b9e279f1f64249461ea85e11ff68e6d51ff144b",
 	"scope": [
 		{
-			"path": "src/astack/ste/events.ts",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": [
-				"Write",
-				"NoTextInEvent",
-				"OneLinePerFinding",
-				"LogNeverChangesVerdict"
-			]
+			"path": "src/astack/codex-hooks.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
 		},
 		{
-			"path": "src/astack/ste/state.ts",
-			"obligation": "TEL-APPEND",
-			"modelRefs": ["Write", "OneLinePerFinding"]
+			"path": "scripts/dist/codex-hooks.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
 		},
 		{
-			"path": "src/astack/ste/verdict.ts",
-			"obligation": "TEL-MASKED",
-			"modelRefs": ["Judge", "Write", "MaskedOnlyUnderDeny"]
+			"path": "scripts/dist/external.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
 		},
 		{
-			"path": "src/astack/hook/handlers/**",
-			"obligation": "TEL-SAFE",
-			"modelRefs": [
-				"Judge",
-				"Write",
-				"Return",
-				"LogNeverChangesVerdict",
-				"RefreshWritesNothing"
-			]
+			"path": "tests/dist/external.test.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
+		},
+		{
+			"path": "tests/astack/codex-hooks.test.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
+		},
+		{
+			"path": "tests/astack/codex-fake.ts",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
+		},
+		{
+			"path": "tests/fixtures/codex/hooks-list.json",
+			"obligation": "DT-READ-FAIL",
+			"modelRefs": ["Read"]
+		},
+		{
+			"path": "scripts/dist/targets/codex.ts",
+			"obligation": "DT-TRUST",
+			"modelRefs": ["Report", "OkMeansCodexTrusts"]
 		},
 		{
 			"path": "src/astack/doctor.ts",
-			"obligation": "TEL-SUM",
-			"modelRefs": ["TypeOK"]
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
 		},
 		{
 			"path": "src/astack/cli/commands/doctor.ts",
-			"obligation": "TEL-SUM",
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
+		},
+		{
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
+		},
+		{
+			"path": "formal/DoctorTrust.*",
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Release",
+				"Trust",
+				"Toggle",
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
+		},
+		{
+			"path": "docs/adr/0021-*.md",
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Release",
+				"Trust",
+				"Toggle",
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
+		},
+		{
+			"path": "docs/reference/doctor.md",
+			"obligation": "DT-TRUST",
+			"modelRefs": [
+				"Release",
+				"Trust",
+				"Toggle",
+				"Read",
+				"Report",
+				"OkMeansCodexTrusts",
+				"OkNeedsReply",
+				"ListedReportIsExact"
+			]
+		},
+		{
+			"path": "src/astack/cli/main.ts",
+			"obligation": "CLI-VERSION",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/check.ts",
-			"obligation": "OWN-FENCE",
+			"path": "tests/astack/version.test.ts",
+			"obligation": "CLI-VERSION",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/scope.ts",
-			"obligation": "OWN-FENCE",
+			"path": "src/astack/cli/io.ts",
+			"obligation": "CLI-VERSION",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "scripts/lib/ste-own.ts",
-			"obligation": "OWN-FENCE",
+			"path": "src/astack/cli/commands/managed.ts",
+			"obligation": "CLI-MANAGED",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/ste-own.test.ts",
-			"obligation": "OWN-FENCE",
+			"path": "tests/astack/managed.test.ts",
+			"obligation": "CLI-MANAGED",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/mask.ts",
-			"obligation": "UNIT-ONE",
+			"path": "src/astack/pr-review-profile.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/rules.ts",
-			"obligation": "UNIT-ONE",
+			"path": "src/astack/cli/commands/check/**",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/ste.test.ts",
-			"obligation": "UNIT-ONE",
+			"path": "scripts/lib/render.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/fixtures/ste/labelled.txt",
-			"obligation": "UNIT-ONE",
+			"path": "scripts/check-companion.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/lexicon.ts",
-			"obligation": "NOUN-CHECKS",
+			"path": "tests/astack/hardening-profile.test.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/ste/sentences.ts",
-			"obligation": "NOUN-CHECKS",
+			"path": "tests/pr-review-profile.test.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/**",
-			"obligation": "OWN-ZERO",
+			"path": "tests/astack/registry.test.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "OWN-ZERO",
+			"path": "tests/apply/render.test.ts",
+			"obligation": "HP-RULES",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/check-companion.test.ts",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "tests/hardening-consistency.test.ts",
-			"obligation": "OWN-ZERO",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/verdict.test.ts",
-			"obligation": "TEL-MASKED",
-			"modelRefs": ["Judge", "MaskedOnlyUnderDeny"]
-		},
-		{
-			"path": "tests/astack/telemetry-composition.ts",
-			"obligation": "TEL-OUTCOME",
-			"modelRefs": ["Judge", "Write"]
-		},
-		{
-			"path": "tests/astack/ste-hook.test.ts",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": [
-				"Write",
-				"NoTextInEvent",
-				"OneLinePerFinding",
-				"LogNeverChangesVerdict"
-			]
-		},
-		{
-			"path": "tests/astack/hook.test.ts",
-			"obligation": "TEL-SAFE",
-			"modelRefs": ["Write", "Return", "LogNeverChangesVerdict"]
-		},
-		{
-			"path": "tests/astack/cursor-hook.test.ts",
-			"obligation": "TEL-SAFE",
-			"modelRefs": ["Judge", "RefreshWritesNothing"]
-		},
-		{
-			"path": "tests/astack/doctor.test.ts",
-			"obligation": "TEL-SUM",
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/SKILL.md",
+			"obligation": "HP-RULES",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "formal/FindingTelemetry.*",
-			"obligation": "TEL-SAFE",
-			"modelRefs": [
-				"Judge",
-				"Write",
-				"Return",
-				"LogNeverChangesVerdict",
-				"NoTextInEvent",
-				"RefreshWritesNothing",
-				"OneLinePerFinding",
-				"MaskedOnlyUnderDeny"
-			]
+			"path": "src/astack/pr/github.ts",
+			"obligation": "DT-BASE",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/adr/0022-*.md",
-			"obligation": "TEL-SAFE",
-			"modelRefs": [
-				"Judge",
-				"Write",
-				"Return",
-				"LogNeverChangesVerdict",
-				"NoTextInEvent",
-				"RefreshWritesNothing",
-				"OneLinePerFinding",
-				"MaskedOnlyUnderDeny"
-			]
+			"path": "src/astack/watch-pr/policy.ts",
+			"obligation": "WP-DEADLINE",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/reference/finding-telemetry.md",
-			"obligation": "TEL-SAFE",
-			"modelRefs": [
-				"Judge",
-				"Write",
-				"Return",
-				"LogNeverChangesVerdict",
-				"NoTextInEvent",
-				"RefreshWritesNothing",
-				"OneLinePerFinding",
-				"MaskedOnlyUnderDeny"
-			]
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "TEL-OUTCOME",
-			"modelRefs": ["Write", "MaskedOnlyUnderDeny", "RefreshWritesNothing"]
-		},
-		{
-			"path": "CONTEXT.md",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": ["NoTextInEvent"]
+			"path": "tests/astack/watch-pr/policy.test.ts",
+			"obligation": "WP-DEADLINE",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "README.md",
-			"obligation": "TEL-SUM",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "TEL-SUM",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/dist/targets/cursor.ts",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/dist/render.test.ts",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "AGENTS.md",
-			"obligation": "TEL-NOTEXT",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/adr/README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/plans/review-roadmap/**",
+			"path": "AGENTS.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/adr/README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
@@ -251,67 +258,59 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/ste/events.ts",
-			"symbol": "FindingEvent"
+			"path": "src/astack/doctor.ts",
+			"symbol": "Snapshot"
 		},
-		"terms": ["Finding event", "Session guard", "ChangeProof"],
+		"terms": [
+			"Codex hook trust",
+			"Hardening profile rule",
+			"Session guard",
+			"ChangeProof"
+		],
 		"invariants": [
 			{
-				"name": "A log never changes the verdict of a handler run",
-				"modelRef": "LogNeverChangesVerdict"
+				"name": "An ok line for the Codex hooks means that Codex runs each astack hook",
+				"modelRef": "OkMeansCodexTrusts"
 			},
 			{
-				"name": "An event line holds only the event keys and no text",
-				"modelRef": "NoTextInEvent"
+				"name": "An ok line for the Codex hooks needs a hooks/list reply",
+				"modelRef": "OkNeedsReply"
 			},
 			{
-				"name": "A refresh run writes no event line",
-				"modelRef": "RefreshWritesNothing"
-			},
-			{
-				"name": "Each finding of a finished run that is not a refresh has one line",
-				"modelRef": "OneLinePerFinding"
-			},
-			{
-				"name": "A masked line comes only from a run that denies",
-				"modelRef": "MaskedOnlyUnderDeny"
+				"name": "With a reply, doctor says ok exactly when the hook is on and trusted or managed",
+				"modelRef": "ListedReportIsExact"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"file": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"file": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"file": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"file": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
 				"decision": "D4"
-			},
-			{
-				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
-				"decision": "D5"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"OWN-FENCE",
-				"OWN-ZERO",
-				"UNIT-ONE",
-				"NOUN-CHECKS",
-				"TEL-NOTEXT",
-				"TEL-APPEND",
-				"TEL-OUTCOME",
-				"TEL-MASKED",
-				"TEL-SAFE",
-				"TEL-SUM",
+				"DT-TRUST",
+				"DT-FALLBACK",
+				"DT-READ-FAIL",
+				"DT-SKIP",
+				"CLI-VERSION",
+				"HP-RULES",
+				"DT-BASE",
+				"WP-DEADLINE",
+				"CLI-MANAGED",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -320,292 +319,208 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each handler run maps its findings to one verdict and one event line for each finding. A line holds no text, and a log error or a refresh never changes the verdict."
+			"contract": "The command gathers one Snapshot from the config files, codex app-server and gh, and maps it to one list of findings. An ok line for the Codex hooks needs a hooks/list reply that marks each astack hook on and trusted or managed."
 		},
 		"objects": [
 			{
-				"name": "Findings",
+				"name": "Io",
 				"link": {
-					"path": "src/astack/ste/types.ts",
-					"symbol": "Finding"
+					"path": "src/astack/cli/io.ts",
+					"symbol": "Io"
 				}
 			},
 			{
-				"name": "Outcome",
+				"name": "CodexHooksRead",
 				"link": {
-					"path": "src/astack/ste/verdict.ts",
-					"symbol": "Outcome"
+					"path": "src/astack/codex-hooks.ts",
+					"symbol": "CodexHooksRead"
 				}
 			},
 			{
-				"name": "Observation",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "Observation"
-				}
-			},
-			{
-				"name": "EventOutcome",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "EventOutcome"
-				}
-			},
-			{
-				"name": "Judged",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "Judged"
-				}
-			},
-			{
-				"name": "Verdict",
-				"link": {
-					"path": "src/astack/hook/events.ts",
-					"symbol": "Verdict"
-				}
-			},
-			{
-				"name": "EventEntries",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "EventEntry"
-				}
-			},
-			{
-				"name": "EventLog",
-				"link": {
-					"path": "src/astack/ste/state.ts",
-					"symbol": "EVENTS_FILE"
-				}
-			},
-			{
-				"name": "SteEvents",
+				"name": "Snapshot",
 				"link": {
 					"path": "src/astack/doctor.ts",
-					"symbol": "SteEvents"
+					"symbol": "Snapshot"
+				}
+			},
+			{
+				"name": "Findings",
+				"link": {
+					"path": "src/astack/doctor.ts",
+					"symbol": "Finding"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "outcomeOf",
-				"from": "Findings",
-				"to": "Outcome",
+				"name": "readCodexHooks",
+				"from": "Io",
+				"to": "CodexHooksRead",
 				"link": {
-					"path": "src/astack/ste/verdict.ts",
-					"symbol": "outcomeOf"
+					"path": "src/astack/codex-hooks.ts",
+					"symbol": "readCodexHooks"
 				},
-				"effects": []
+				"effects": ["spawn", "env", "clock"]
 			},
 			{
-				"name": "outcomeIn",
-				"from": "Observation",
-				"to": "EventOutcome",
+				"name": "gather",
+				"from": "Io",
+				"to": "Snapshot",
 				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "outcomeIn"
+					"path": "src/astack/cli/commands/doctor.ts",
+					"symbol": "gather"
 				},
-				"effects": []
+				"effects": ["fs-read", "spawn", "env"]
 			},
 			{
-				"name": "withLedger",
-				"from": "Outcome",
-				"to": "Judged",
-				"link": {
-					"path": "src/astack/ste/verdict.ts",
-					"symbol": "withLedger"
-				},
-				"effects": ["fs-read", "fs-write", "env"]
-			},
-			{
-				"name": "logRun",
-				"from": "Judged",
-				"to": "Verdict",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "logRun"
-				},
-				"effects": ["fs-read", "fs-write", "clock", "env"]
-			},
-			{
-				"name": "writeEvents",
-				"from": "EventEntries",
-				"to": "EventLog",
-				"link": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "writeEvents"
-				},
-				"effects": ["fs-read", "fs-write", "clock", "env"]
-			},
-			{
-				"name": "sumSteEvents",
-				"from": "EventLog",
-				"to": "SteEvents",
+				"name": "diagnose",
+				"from": "Snapshot",
+				"to": "Findings",
 				"link": {
 					"path": "src/astack/doctor.ts",
-					"symbol": "sumSteEvents"
+					"symbol": "diagnose"
 				},
 				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their kinds and texts are equal. Two event lines are equal when each key holds the same value. Two sums are equal when their log counts, broken counts and ordered counts are equal.",
+		"equality": "Two reads are equal when their kind and their hook list or cause are equal. Two finding lists are equal when their area, level and text are equal in order.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "The record runs six arrows from the handlers, the reply hook and doctor, and it declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The command runs gather and then diagnose from one run function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/astack/telemetry-composition.ts"
+		"typedWitness": "src/astack/cli/commands/doctor.ts"
 	},
 	"abstraction": {
-		"hides": "The JSON shape of a line, the stamp of time, turn, release and pid, the append call and the outcome rules for each tier.",
+		"hides": "The JSON-RPC exchange with codex app-server, its deadline and the parse of the hooks/list reply, the gh reads of each base, and the parse of the review profile.",
 		"callersKnow": [
-			"A handler returns the same verdict with or without the log, and a log error never denies or allows.",
-			"Each finding of a run that is not a refresh writes one line with no sentence, comment or path.",
-			"A finding that does not block and has no quiet rule writes masked when its handler run denies.",
-			"astack doctor prints one ste-events note for each rule, surface and outcome of the last 7 days."
+			"An ok line for the Codex hooks means that Codex reported each astack hook on and trusted or managed.",
+			"With no hooks/list reply, doctor warns with the cause and prints no ok line for the hooks.",
+			"A drifted review profile fails with each problem and its repair, and astack check hardening-profile prints the same text.",
+			"A base with no blocking rule gives a note and no FAIL.",
+			"Doctor writes only its skip file, its runtime file and the state that codex app-server keeps in CODEX_HOME."
 		],
-		"deletionTest": "Deleting logRun puts the refresh test, the masked rule and the line stamp into each of the two handlers. Deleting writeEvents gives the reply hook its own line format, so a labeller must read two shapes.",
+		"deletionTest": "Deleting readCodexHooks puts the JSON-RPC exchange in doctor and in the dist check, so the two readers drift apart. Deleting diagnose puts each rule in the command, and the tests then need a real home folder for each case.",
 		"alternatives": [
 			{
-				"name": "Store the sentence in each line",
-				"rejectedBecause": "The transcript holds the text, and the log must hold no client text."
+				"name": "Pin the content hash too",
+				"rejectedBecause": "Only Codex computes it, and it changes in each release."
 			},
 			{
-				"name": "One shared log outside the session folder",
-				"rejectedBecause": "The session folder already has a 14-day prune."
+				"name": "FAIL on each status other than trusted",
+				"rejectedBecause": "It fails a managed hook and passes a disabled one."
 			},
 			{
-				"name": "A log error that denies",
-				"rejectedBecause": "Telemetry must never block the work."
-			},
-			{
-				"name": "A new CLI command for the counts",
-				"rejectedBecause": "Doctor already reports the local state, and the CLI list adds no command."
+				"name": "Read hooks/list in a temporary CODEX_HOME",
+				"rejectedBecause": "That home cannot see the trust of the owner."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/ste/verdict.ts",
-					"symbol": "outcomeOf"
+					"path": "src/astack/codex-hooks.ts",
+					"symbol": "readCodexHooks"
 				},
-				"modelAction": "Judge"
+				"modelAction": "Read"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/ste/verdict.ts",
-					"symbol": "withLedger"
+					"path": "src/astack/doctor.ts",
+					"symbol": "codexFindings"
 				},
-				"modelAction": "Judge"
+				"modelAction": "Report"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "logRun"
+					"path": "src/astack/doctor.ts",
+					"symbol": "listedFindings"
 				},
-				"modelAction": "Write"
+				"modelAction": "Report"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/ste/events.ts",
-					"symbol": "writeEvents"
+					"path": "src/astack/doctor.ts",
+					"symbol": "pinnedFindings"
 				},
-				"modelAction": "Write"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/ste/state.ts",
-					"symbol": "appendEvents"
-				},
-				"modelAction": "Write"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/hook/dispatch.ts",
-					"symbol": "judgeEach"
-				},
-				"modelAction": "Return"
+				"modelAction": "Report"
 			}
 		],
 		"omitted": [
-			"The model takes the append of one short line as atomic. The 8-process test examines that premise on a local disk.",
-			"The reply hook, the comment rule check and the demoted outcome have no own model state. Their hook tests examine them.",
-			"sumSteEvents, the fence rule, the unit rule and the noun-side words are outside the model. Their tests, validate and the precision gate examine them."
+			"The model has one hook. The code applies the same rule to each of the 4 astack hooks, and the tests examine that rule.",
+			"The model takes the status that Codex reports as a true observation of the trust that Codex enforces.",
+			"The review profile rules and their YAML parse, the base note, the skip file, the version, the managed exit codes and the watch-pr clamp have no model state. Their tests examine them."
 		]
 	},
 	"model": {
-		"module": "formal/FindingTelemetry.tla",
-		"config": "formal/FindingTelemetry.cfg",
+		"module": "formal/DoctorTrust.tla",
+		"config": "formal/DoctorTrust.cfg",
 		"dependencies": [],
 		"invariants": [
 			"TypeOK",
-			"LogNeverChangesVerdict",
-			"NoTextInEvent",
-			"RefreshWritesNothing",
-			"OneLinePerFinding",
-			"MaskedOnlyUnderDeny"
+			"OkMeansCodexTrusts",
+			"OkNeedsReply",
+			"ListedReportIsExact"
 		],
 		"properties": [],
 		"bounds": [
-			"Two parallel runs of one handler, three rules with one rule of each tier, a refresh flag for each run and one log that can refuse writes.",
-			"Each order of the judge, write and return steps of the two runs, one line at a time."
+			"One hook, 3 releases with a new content hash each, and a managed flag that the start state picks.",
+			"Each order of the release, trust, toggle, read and report steps, with a read that can fail."
 		],
 		"fairness": []
 	},
 	"negative": {
-		"file": "formal/FindingTelemetry.tla",
-		"action": "Write",
-		"original": "/\\ verdict' = verdict",
-		"replacement": "/\\ verdict' = [verdict EXCEPT ![p] = IF broken THEN \"allow\" ELSE @]",
-		"defect": "A log error that escapes to the dispatcher turns the verdict of the run into an allow, so a deny is lost.",
+		"file": "formal/DoctorTrust.tla",
+		"action": "Report",
+		"original": "enabled /\\ CodexStatus \\in {\"trusted\", \"managed\"}",
+		"replacement": "trustedHash = HookHash",
+		"defect": "A doctor that reads only the trusted hook hash prints ok after a release, when Codex marks the hook modified and skips it.",
 		"expect": {
 			"kind": "invariant",
-			"name": "LogNeverChangesVerdict"
+			"name": "OkMeansCodexTrusts"
 		}
 	},
 	"limits": [
-		"The finite model covers two runs and three rules, and it takes one append of a short line as atomic.",
+		"The finite model takes the Codex status as a true observation and covers one hook only.",
 		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
-		"The one-week window of D4 starts at the owner's install, and no check can see it.",
+		"The recorded hooks/list reply comes from codex-cli 0.171.0. A later reply shape needs a new recording.",
 		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

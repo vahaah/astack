@@ -1,3 +1,6 @@
+import { parse as parseYaml } from "yaml";
+import { proofGateIssues } from "./change-proof/profile.ts";
+
 export type ProfileIssue = { path: string; message: string };
 
 export type ProfileBlock = { language: "yaml" | "json"; source: string };
@@ -42,32 +45,36 @@ function isClosingFence(line: string, marker: string): boolean {
 	);
 }
 
-export function parseProfile(markdown: string): ParsedProfile {
-	const block = extractProfileBlock(markdown);
-	if (!block) {
-		return {
-			data: null,
-			issues: [{ path: "", message: "no fenced yaml or json block" }],
-		};
-	}
-	let data: unknown;
+const NO_BLOCK = "no fenced yaml or json block";
+
+type ParsedBlock =
+	| { readonly kind: "data"; readonly data: unknown }
+	| { readonly kind: "syntax"; readonly message: string };
+
+function parseBlock(block: ProfileBlock): ParsedBlock {
 	try {
-		data =
-			block.language === "json"
-				? JSON.parse(block.source)
-				: Bun.YAML.parse(block.source);
+		return {
+			kind: "data",
+			data:
+				block.language === "json"
+					? JSON.parse(block.source)
+					: parseYaml(block.source, { merge: true, uniqueKeys: false }),
+		};
 	} catch (error) {
 		return {
-			data: null,
-			issues: [
-				{
-					path: "",
-					message: `${block.language} does not parse: ${String(error)}`,
-				},
-			],
+			kind: "syntax",
+			message: `${block.language} does not parse: ${String(error)}`,
 		};
 	}
-	return { data, issues: validateProfile(data) };
+}
+
+export function parseProfile(markdown: string): ParsedProfile {
+	const block = extractProfileBlock(markdown);
+	if (!block) return { data: null, issues: [{ path: "", message: NO_BLOCK }] };
+	const parsed = parseBlock(block);
+	return parsed.kind === "syntax"
+		? { data: null, issues: [{ path: "", message: parsed.message }] }
+		: { data: parsed.data, issues: validateProfile(parsed.data) };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -909,7 +916,7 @@ function safeTest(source: string, sample: string): boolean {
 const CHECKS_CI_ON_HEAD = (condition: string): boolean =>
 	/\bCI\b/.test(condition) && /\bhead\b/i.test(condition);
 
-export function mergesWithoutCi(data: unknown): boolean {
+function mergesWithoutCi(data: unknown): boolean {
 	if (!isRecord(data) || !isRecord(data.merge)) return false;
 	return (
 		data.merge.after_clean_stop === "merge" &&
@@ -930,4 +937,87 @@ function checkMerge(merge: unknown, issues: ProfileIssue[]): void {
 			message:
 				"needs a condition that checks CI on the head when after_clean_stop is merge, because a local version note is advisory only when CI gates the merge",
 		});
+}
+
+export type ReviewProfileProblem = ProfileIssue & { readonly repair: string };
+
+const REFERENCE = "references/profile.md of the pr-review-hardening skill";
+
+export const MISSING_PROFILE_REPAIR = `Draft a profile as the Draft a profile section of ${REFERENCE} says`;
+
+export const NO_BLOCK_REPAIR = `Put the keys in one fenced yaml block, as the Template section of ${REFERENCE} shows`;
+
+function schemaRepair(issue: ProfileIssue): string {
+	return issue.path === "merge.conditions"
+		? "Add a condition that checks CI on the head SHA, or set merge.after_clean_stop to report"
+		: `Change it as ${REFERENCE} says`;
+}
+
+export function reviewProfileProblems(
+	markdown: string,
+): ReviewProfileProblem[] {
+	const block = extractProfileBlock(markdown);
+	if (!block) return [{ path: "", message: NO_BLOCK, repair: NO_BLOCK_REPAIR }];
+	const parsed = parseBlock(block);
+	if (parsed.kind === "syntax")
+		return [
+			{
+				path: "",
+				message: parsed.message,
+				repair: "Fix the syntax of the fenced block",
+			},
+		];
+	const { data } = parsed;
+	const missing = missingFallbackKeys(data);
+	const unread = unreadFallbackKeys(data);
+	return [
+		...validateProfile(data).map((issue) => ({
+			...issue,
+			repair: schemaRepair(issue),
+		})),
+		...proofGateIssues(data).map((issue) => ({
+			...issue,
+			repair: `Copy the change-proof gate from the Template section of ${REFERENCE}`,
+		})),
+		...(missing.length === 0
+			? []
+			: [
+					{
+						path: "",
+						message: `the stub fallback reads ${missing.join(", ")}, which the profile does not define`,
+						repair: `Define each key as ${REFERENCE} says`,
+					},
+				]),
+		...(unread.length === 0
+			? []
+			: [
+					{
+						path: "",
+						message: `the profile sets ${unread.join(", ")} away from the default, but the stub fallback does not follow them`,
+						repair: "Keep each at its default, or teach the stub to follow it",
+					},
+				]),
+	];
+}
+
+export function problemText(problem: ReviewProfileProblem): string {
+	return `${problem.path === "" ? "" : `${problem.path}: `}${problem.message}. ${problem.repair}`;
+}
+
+export type ReviewProfileState =
+	| { readonly kind: "missing"; readonly path: string }
+	| { readonly kind: "no-block"; readonly path: string }
+	| {
+			readonly kind: "checked";
+			readonly path: string;
+			readonly problems: readonly ReviewProfileProblem[];
+	  };
+
+export function reviewProfileState(
+	path: string,
+	text: string | undefined,
+): ReviewProfileState {
+	if (text === undefined) return { kind: "missing", path };
+	if (extractProfileBlock(text) === null) return { kind: "no-block", path };
+	return { kind: "checked", path, problems: reviewProfileProblems(text) };
 }
