@@ -1,10 +1,11 @@
 import { resolve } from "node:path";
 import { readOptional } from "../paths.ts";
+import { PROFILE_PATH } from "../profile.ts";
 import type { SimpleCommand, Word } from "../shell.ts";
-import type { PullRequestState } from "./github.ts";
+import type { BaseAuthority, PullRequestState } from "./github.ts";
 import { grantCovers, type MergeGrant } from "./grant.ts";
 import { closingRefs, linkFindings } from "./links.ts";
-import type { PrProfile } from "./profile.ts";
+import { DEFAULT_MERGE_PROFILE, type MergeProfile } from "./profile.ts";
 
 export type MergeCall = {
 	readonly selector: string | undefined;
@@ -132,8 +133,6 @@ export type MergeInputs = {
 	readonly call: MergeCall;
 	readonly chained: boolean;
 	readonly setsEnv: boolean;
-	readonly profile: PrProfile;
-	readonly profileRepo: string | undefined;
 	readonly grant: MergeGrant;
 	readonly unattendedReason: string | undefined;
 };
@@ -169,14 +168,6 @@ export function preflightReasons(inputs: MergeInputs): readonly string[] {
 		reasons.push(
 			"Do not put NAME=value words, such as GH_REPO, before gh pr merge. astack reads the PR without them, so it can read a different PR. Use --repo to name a different repo.",
 		);
-	if (
-		inputs.profile.mergeAuthority === "turn" &&
-		inputs.profile.standingBases.length === 0 &&
-		inputs.grant.kind === "none"
-	)
-		reasons.push(
-			`Nobody gave a merge grant. ${noTurnGrantText(inputs.unattendedReason)} .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.`,
-		);
 	if (inputs.call.dynamic)
 		reasons.push(
 			"astack cannot read a PR number or merge text from a shell variable. Name the PR by number, and write the merge text as plain text.",
@@ -208,40 +199,33 @@ function checkReasons(pr: PullRequestState, requireChecks: boolean): string[] {
 		case "none":
 			return requireChecks
 				? [
-						`GitHub shows no CI check on head ${short(pr.head)} of #${pr.number}. Wait for CI to start. A repo with no CI sets merge.requireChecks to false in .astack/profile.json.`,
+						`GitHub shows no CI check on head ${short(pr.head)} of #${pr.number}. Wait for CI to start. A repo with no CI sets merge.requireChecks to false in ${PROFILE_PATH} on its base branch.`,
 					]
 				: [];
 	}
 }
 
-function intoStandingBase(
-	standingBases: readonly string[],
-	pr: PullRequestState,
-): boolean {
-	return standingBases.some((base) => base === pr.base);
+function mergeProfileOf(authority: BaseAuthority): MergeProfile {
+	return authority.kind === "committed"
+		? authority.profile
+		: DEFAULT_MERGE_PROFILE;
 }
 
-function inRepo(repo: string | undefined, pr: PullRequestState): boolean {
-	return (
-		repo !== undefined &&
-		pr.url.toLowerCase().startsWith(`https://github.com/${repo}/pull/`)
-	);
-}
-
-function standingBaseText(inputs: MergeInputs, pr: PullRequestState): string[] {
-	const { standingBases } = inputs.profile;
-	if (standingBases.length === 0) return [];
-	if (intoStandingBase(standingBases, pr))
-		return [
-			`#${pr.number} is ${pr.url}, and merge.standingBases covers only the PRs of ${inputs.profileRepo ?? "the origin remote, and origin names no GitHub repo"}.`,
-		];
-	const into =
-		pr.base === undefined
-			? `gh gives no base branch for #${pr.number}`
-			: `#${pr.number} goes into ${pr.base}`;
-	return [
-		`${into}, and merge.standingBases covers only ${standingBases.join(", ")}.`,
-	];
+function baseProfileText(pr: PullRequestState): string {
+	const { authority } = pr;
+	switch (authority.kind) {
+		case "committed": {
+			const where = `${PROFILE_PATH} on ${pr.base} at ${short(authority.commit)}`;
+			const bases = authority.profile.standingBases;
+			return bases.length === 0
+				? `${where} gives no standing grant.`
+				: `#${pr.number} goes into ${pr.base}, and merge.standingBases in ${where} covers only ${bases.join(", ")}.`;
+		}
+		case "absent":
+			return `${pr.base} at ${short(authority.commit)} has no ${PROFILE_PATH}, so it gives no standing grant.`;
+		case "unread":
+			return `astack could not read the standing grant of ${pr.base}, because ${authority.reason}.`;
+	}
 }
 
 function turnGrantText(inputs: MergeInputs, number: number): string {
@@ -252,14 +236,13 @@ function turnGrantText(inputs: MergeInputs, number: number): string {
 }
 
 function grantReasons(inputs: MergeInputs, pr: PullRequestState): string[] {
-	const { mergeAuthority, standingBases } = inputs.profile;
-	if (mergeAuthority === "standing") return [];
-	if (intoStandingBase(standingBases, pr) && inRepo(inputs.profileRepo, pr))
-		return [];
+	const profile = mergeProfileOf(pr.authority);
+	if (profile.authority === "standing") return [];
+	if (profile.standingBases.includes(pr.base)) return [];
 	if (grantCovers(inputs.grant, pr.number)) return [];
 	return [
 		[
-			...standingBaseText(inputs, pr),
+			baseProfileText(pr),
 			turnGrantText(inputs, pr.number),
 			`Ask the owner before you merge #${pr.number}.`,
 		].join(" "),
@@ -272,7 +255,7 @@ export function stateReasons(
 ): readonly string[] {
 	if (!pr)
 		return [
-			"astack could not read the PR with gh, so it cannot see the review threads or the CI state. Run gh auth status, or let the owner merge.",
+			"astack could not read the PR with gh, so it cannot see the review threads, the CI state or the standing grant of its base branch. Run gh auth status, or let the owner merge.",
 		];
 	const reasons = [...grantReasons(inputs, pr)];
 	if (pr.openThreads > 0)
@@ -283,7 +266,7 @@ export function stateReasons(
 		reasons.push(
 			`#${pr.number} has more than 100 review threads, so astack cannot see that all of them are resolved.`,
 		);
-	reasons.push(...checkReasons(pr, inputs.profile.requireChecks));
+	reasons.push(...checkReasons(pr, mergeProfileOf(pr.authority).requireChecks));
 	reasons.push(
 		...linkFindings(
 			{ title: pr.title, body: pr.body },

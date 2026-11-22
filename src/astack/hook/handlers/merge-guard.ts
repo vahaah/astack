@@ -1,5 +1,4 @@
 import { unattendedReason } from "../../attended.ts";
-import { originSlug, repoRoot } from "../../git.ts";
 import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
@@ -11,7 +10,6 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
-import { loadPrProfile } from "../../pr/profile.ts";
 import {
 	ENV_ASSIGNMENT,
 	type ShellStep,
@@ -26,13 +24,35 @@ import {
 	deny,
 	type EventOf,
 	type Handler,
-	projectDirOf,
 	type Verdict,
 } from "../events.ts";
 
-const API_MERGE = /(?:^|\/)pulls\/\d+\/merge$/;
+const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
+const GRAPHQL = /graphql/i;
+const PERCENT = /%/;
+
+function namesGraphql(value: string): boolean {
+	if (GRAPHQL.test(value)) return true;
+	if (!PERCENT.test(value)) return false;
+	try {
+		return GRAPHQL.test(decodeURIComponent(value));
+	} catch {
+		return true;
+	}
+}
+const MERGE_MUTATION_IN_INPUT =
+	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
+const MERGE_PATH =
+	/\b(?:pulls|merge_requests)\/[^/\s]+\/merge\b|\brepos\/[^/\s]+\/[^/\s]+\/merges\b/;
+const METHOD_CHANGING_FLAG =
+	/^(?:-(?!-)[\s\S]*[XfF]|--(?:method|field|raw-field|input)(?:=|$))/;
+const WRITE_METHOD_IN_TEXT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/;
+const WRITE_METHOD_VALUE =
+	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
+const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
+const GH_WORD = /\bgh\b/;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -48,22 +68,14 @@ type MergeCommand = { readonly kind: "none" | "api" | "unreadable" } | GhMerge;
 const NONE: MergeCommand = { kind: "none" };
 const UNREADABLE: MergeCommand = { kind: "unreadable" };
 
-function apiMethod(values: readonly string[]): string | undefined {
-	for (let index = 0; index < values.length; index++) {
-		const value = values[index] ?? "";
-		if (value === "-X" || value === "--method") return values[index + 1];
-		const joined = /^(?:-X|--method=)(\w+)$/.exec(value);
-		if (joined) return joined[1];
-	}
-	return undefined;
-}
-
 function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
-	if (args.some((value) => /\bmergePullRequest\b/.test(value))) return true;
+	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
+	if (args.some(namesGraphql) && args.some((value) => UNREAD_QUERY.test(value)))
+		return true;
 	return (
-		apiMethod(args)?.toUpperCase() === "PUT" &&
-		args.some((value) => API_MERGE.test(value))
+		args.some((value) => MERGE_PATH.test(value)) &&
+		args.some((value) => METHOD_CHANGING_FLAG.test(value))
 	);
 }
 
@@ -121,13 +133,10 @@ function mergeVerdict(
 ): Verdict {
 	const call = parseMergeCall(step.simple, merge.args, step.dir);
 	if (call.disableAuto) return ALLOW;
-	const root = repoRoot(step.dir);
 	const inputs = {
 		call,
 		chained,
 		setsEnv: merge.setsEnv,
-		profile: loadPrProfile(root ?? projectDirOf(context)),
-		profileRepo: root === undefined ? undefined : originSlug(root),
 		grant: loadGrant(context.env, context.session),
 		unattendedReason: unattendedReason(context.env),
 	};
@@ -138,6 +147,23 @@ function mergeVerdict(
 		read({ selector: call.selector, repo: call.repo, dir: step.dir }),
 	);
 	return reasons.length > 0 ? deny(mergeDenial(reasons)) : ALLOW;
+}
+
+function holdsMergeWord(step: ShellStep): boolean {
+	return step.values.some((value) => value.includes("merge"));
+}
+
+function examinesMerge(step: ShellStep): boolean {
+	const merge = mergeCommand(step);
+	switch (merge.kind) {
+		case "none":
+			return false;
+		case "unreadable":
+			return holdsMergeWord(step);
+		case "api":
+		case "merge":
+			return true;
+	}
 }
 
 function stepVerdict(
@@ -157,7 +183,7 @@ function stepVerdict(
 				]),
 			);
 		case "unreadable":
-			return step.values.some((value) => value.includes("merge"))
+			return holdsMergeWord(step)
 				? deny(
 						mergeDenial([
 							"astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
@@ -174,7 +200,7 @@ function shellVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	if (!/\bgh\b/.test(event.command)) return ALLOW;
+	if (!GH_WORD.test(event.command)) return ALLOW;
 	const steps = shellSteps(event.command, event.cwd);
 	const chained = steps.length > 1;
 	return combineAll(
@@ -182,14 +208,184 @@ function shellVerdict(
 	);
 }
 
-const MCP_MERGE = /^(?:merge_pull_request|merge_pr)$/;
+const MERGE_STEM = "merg";
+const MERGE_STATE = /merge(?:d|able|ability)$/;
+const MERGE_REQUEST = /^requests?$/;
+const CLICK_VERBS = new Set(["click", "press", "tap"]);
+const READ_VERBS = new Set([
+	"check",
+	"find",
+	"get",
+	"list",
+	"read",
+	"search",
+	"show",
+	"view",
+]);
+const WRITE_VERBS = new Set([
+	"accept",
+	"add",
+	"apply",
+	"approve",
+	"close",
+	"commit",
+	"complete",
+	"create",
+	"delete",
+	"disable",
+	"do",
+	"edit",
+	"enable",
+	"execute",
+	"finish",
+	"land",
+	"mark",
+	"modify",
+	"patch",
+	"perform",
+	"post",
+	"push",
+	"put",
+	"queue",
+	"rebase",
+	"remove",
+	"resolve",
+	"run",
+	"save",
+	"schedule",
+	"send",
+	"set",
+	"ship",
+	"squash",
+	"start",
+	"submit",
+	"toggle",
+	"trigger",
+	"update",
+	"upsert",
+	"write",
+]);
+
+function nameTokens(name: string): readonly string[] {
+	return name
+		.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+		.replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+		.replace(/(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])/g, " ")
+		.split(/[\s._-]+/)
+		.filter((token) => token !== "")
+		.map((token) => token.toLowerCase());
+}
+
+function isMergeWord(token: string, next: string | undefined): boolean {
+	if (token === "merge" && MERGE_REQUEST.test(next ?? "")) return false;
+	return token.includes(MERGE_STEM) && !MERGE_STATE.test(token);
+}
+
+function hasMergeWord(tokens: readonly string[]): boolean {
+	return tokens.some((token, index) => isMergeWord(token, tokens[index + 1]));
+}
+
+function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
+	const tokens = [server, tool].flatMap(nameTokens);
+	const onlyReads =
+		tokens.some((token) => READ_VERBS.has(token)) &&
+		!tokens.some((token) => WRITE_VERBS.has(token)) &&
+		!hasMergeWord(tokens);
+	return tokens.some((token) => token.includes(MERGE_STEM)) && !onlyReads;
+}
+
+function inputStrings(value: unknown): readonly string[] {
+	if (typeof value === "string") return [value];
+	if (Array.isArray(value)) {
+		const items = value.flatMap(inputStrings);
+		return [...items, items.join("/")];
+	}
+	if (typeof value === "object" && value !== null)
+		return Object.entries(value).flatMap(([key, item]) => [
+			key,
+			...inputStrings(item),
+		]);
+	return value === undefined || value === null ? [] : [String(value)];
+}
+
+function decodedEscapes(text: string): string {
+	return text.replace(JSON_ESCAPE, (sequence) =>
+		String(JSON.parse(`"${sequence}"`)),
+	);
+}
+
+function runsGhMerge(value: string): boolean {
+	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
+}
+
+function quotedWord(item: string): string {
+	return `'${item.replaceAll("'", "'\\''")}'`;
+}
+
+function ghCommands(value: unknown): readonly string[] {
+	if (Array.isArray(value)) {
+		const items = value.filter(
+			(item): item is string => typeof item === "string",
+		);
+		const words = GH.test(items[0] ?? "") ? items : ["gh", ...items];
+		return [
+			words.join(" "),
+			words.map(quotedWord).join(" "),
+			...value.flatMap(ghCommands),
+		];
+	}
+	return typeof value === "object" && value !== null
+		? Object.values(value).flatMap(ghCommands)
+		: [];
+}
+
+function holdsMerge(input: unknown): boolean {
+	const values = inputStrings(input).map(decodedEscapes);
+	const text = values.join("\n");
+	return (
+		[...values, ...ghCommands(input)].some(runsGhMerge) ||
+		MERGE_MUTATION_IN_INPUT.test(text) ||
+		(MERGE_PATH.test(text) &&
+			(WRITE_METHOD_IN_TEXT.test(text) ||
+				values.some((value) => WRITE_METHOD_VALUE.test(value.trim()))))
+	);
+}
+
+function clicksMerge({ server, tool, input }: EventOf<"mcp">): boolean {
+	return (
+		[server, tool]
+			.flatMap(nameTokens)
+			.some((token) => CLICK_VERBS.has(token)) &&
+		inputStrings(input).some((value) => hasMergeWord(nameTokens(value)))
+	);
+}
+
+function isMcpMerge(event: EventOf<"mcp">): boolean {
+	return isMcpMergeTool(event) || holdsMerge(event.input) || clicksMerge(event);
+}
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {
-	if (!/github/i.test(event.server) || !MCP_MERGE.test(event.tool))
-		return ALLOW;
+	if (!isMcpMerge(event)) return ALLOW;
 	return deny(
 		mergeDenial([
-			"Merge with gh pr merge, so astack can examine the PR first.",
+			"astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge in a Bash call, or ask the owner.",
+		]),
+	);
+}
+
+function failedVerdict(
+	event: EventOf<"prompt" | "shell" | "mcp">,
+	error: unknown,
+): Verdict | undefined {
+	const merges =
+		(event.kind === "shell" &&
+			shellSteps(event.command, event.cwd).some(examinesMerge)) ||
+		(event.kind === "mcp" && isMcpMerge(event));
+	if (!merges) return undefined;
+	const cause = error instanceof Error ? error.message : String(error);
+	return deny(
+		mergeDenial([
+			`The merge guard failed with "${cause}", so astack cannot examine this merge. Ask the owner, or let the owner merge.`,
 		]),
 	);
 }
@@ -198,6 +394,7 @@ export function mergeGuard(read: ReadPullRequest): Handler {
 	return defineHandler({
 		id: "merge-guard",
 		on: ["prompt", "shell", "mcp"],
+		failed: failedVerdict,
 		run: (event, context) => {
 			switch (event.kind) {
 				case "prompt":

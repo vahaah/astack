@@ -7,7 +7,7 @@ import {
 	prHeadings,
 } from "../../headings.ts";
 import { linkFindings } from "../../pr/links.ts";
-import { loadPrProfile } from "../../pr/profile.ts";
+import { partOfRequired } from "../../pr/profile.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import {
 	ALLOW,
@@ -48,9 +48,7 @@ function headingVerdict(pr: PrText, body: string): Verdict {
 
 function linkVerdict(pr: PrText): Verdict {
 	const requirePartOf =
-		!pr.foreign &&
-		pr.root !== undefined &&
-		loadPrProfile(pr.root).requirePartOf;
+		!pr.foreign && pr.root !== undefined && partOfRequired(pr.root);
 	const findings = linkFindings(
 		{ title: pr.title, body: pr.body },
 		{ requirePartOf },

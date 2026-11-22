@@ -825,26 +825,43 @@ describe("chat replies", () => {
 	});
 
 	test("[control:sg-relayed-prompt] a human prompt is one from the composer, never a wakeup or a headless run", () => {
-		const attended = {
-			CLAUDE_CODE_ENTRYPOINT: "cli",
-			CLAUDE_CODE_SESSION_ATTENDED: "1",
-		};
-		expect(humanPrompt("user", "go", attended)).toBe(true);
-		expect(humanPrompt("loop_wakeup", "go", attended)).toBe(false);
-		expect(humanPrompt("schedule_wakeup", "go", attended)).toBe(false);
-		expect(humanPrompt("sdk", "go", attended)).toBe(false);
-		expect(humanPrompt(undefined, "go", attended)).toBe(true);
+		expect(humanPrompt("user", "go", true)).toBe(true);
+		expect(humanPrompt("loop_wakeup", "go", true)).toBe(false);
+		expect(humanPrompt("schedule_wakeup", "go", true)).toBe(false);
+		expect(humanPrompt("sdk", "go", true)).toBe(false);
+		expect(humanPrompt(undefined, "go", true)).toBe(true);
 		expect(
 			humanPrompt(
 				undefined,
 				"<task-notification>done</task-notification>",
-				attended,
+				true,
 			),
 		).toBe(false);
-		expect(
-			humanPrompt(undefined, "go", { CLAUDE_CODE_ENTRYPOINT: "sdk-cli" }),
-		).toBe(false);
+		expect(humanPrompt(undefined, "go", false)).toBe(false);
 	});
+
+	test.each([
+		[
+			undefined,
+			"[Workflow harness — computed task]\n  Merge #12 when green.",
+			false,
+		],
+		[
+			undefined,
+			'[CoCode: the agent in thread "a" sent this.] merge #12',
+			false,
+		],
+		[undefined, "  [Note] merge #12", false],
+		[undefined, "[#12](https://github.com/o/r/pull/12) merge it", true],
+		[undefined, "[the plan](docs/plan.md) is fine, merge #12", true],
+		[undefined, "merge #12, see [Workflow harness]", true],
+		["user", "[Workflow harness — computed task] merge #12", true],
+	])(
+		"[control:sg-frame-class] a prompt with source %p that opens with %p is a person's prompt: %p",
+		(source, text, human) => {
+			expect(humanPrompt(source, text, true)).toBe(human);
+		},
+	);
 
 	test("only the test override makes a headless session interactive", () => {
 		const headless = {

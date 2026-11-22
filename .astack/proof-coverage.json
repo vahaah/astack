@@ -32,6 +32,8 @@
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
 		"tests/validate.test.ts",
+		"tests/astack/dispatch.test.ts",
+		"tests/astack/cursor-hook.test.ts",
 		"tests/astack/adr.test.ts",
 		"tests/astack/plan-cli.test.ts",
 		"tests/astack/plan-session.test.ts",
@@ -47,7 +49,6 @@
 		"tests/dist/external.test.ts",
 		"tests/pr-review-profile.test.ts",
 		"tests/astack/verdict.test.ts",
-		"tests/astack/cursor-hook.test.ts",
 		"tests/ste-own.test.ts",
 		"tests/dist/render.test.ts"
 	],
@@ -248,9 +249,36 @@
 			"controls": [
 				"sg-unattended-denial",
 				"sg-relayed-prompt",
+				"sg-unattended-channel",
 				"sg-machine-prompt",
 				"sg-doctor-unattended"
 			]
+		},
+		{
+			"criterion": "SG-base-authority",
+			"controls": [
+				"sg-working-tree-profile",
+				"sg-base-authority",
+				"sg-absent-base",
+				"sg-other-repo"
+			]
+		},
+		{
+			"criterion": "SG-framed-prompt",
+			"controls": [
+				"sg-framed-prompt",
+				"sg-framed-channel",
+				"sg-frame-class",
+				"sg-cursor-attended"
+			]
+		},
+		{
+			"criterion": "SG-mcp-merge",
+			"controls": ["sg-mcp-merge", "sg-mcp-input"]
+		},
+		{
+			"criterion": "SG-guard-error",
+			"controls": ["sg-guard-error"]
 		},
 		{
 			"criterion": "SG-scratch",

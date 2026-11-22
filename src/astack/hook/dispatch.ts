@@ -60,8 +60,8 @@ export function judgeEach(
 				let verdict: Verdict | undefined;
 				try {
 					verdict = handler.run(event, checked);
-				} catch {
-					verdict = undefined;
+				} catch (error) {
+					verdict = handler.failed?.(event, error);
 				}
 				return { handler: handler.id, event, verdict };
 			}),

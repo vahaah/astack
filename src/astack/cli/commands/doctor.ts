@@ -32,9 +32,9 @@ import {
 import { originSlug, repoRoot } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
 import { ghJson } from "../../pr/github.ts";
-import { loadPrProfile } from "../../pr/profile.ts";
+import { parseMergeProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
-import { PROFILE_PATH } from "../../profile.ts";
+import { PROFILE_PATH, readProfileJson } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
 import type { Command } from "../command.ts";
@@ -365,7 +365,7 @@ function bases(cwd: string): Snapshot["bases"] {
 	return readBases(
 		(args) => ghJson(root, args),
 		repo,
-		loadPrProfile(root).standingBases,
+		parseMergeProfile(readProfileJson(root)).standingBases,
 	);
 }
 

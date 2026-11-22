@@ -6,7 +6,7 @@ import {
 	templateSource,
 } from "../../../headings.ts";
 import { linkFindings } from "../../../pr/links.ts";
-import { loadPrProfile } from "../../../pr/profile.ts";
+import { partOfRequired } from "../../../pr/profile.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
@@ -14,7 +14,7 @@ import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
 export const PR_BODY_MAX_LINES = 40;
 
 function reportLinks(io: Io, body: string, root: string | undefined): number {
-	const requirePartOf = root !== undefined && loadPrProfile(root).requirePartOf;
+	const requirePartOf = root !== undefined && partOfRequired(root);
 	const findings = linkFindings({ title: undefined, body }, { requirePartOf });
 	for (const finding of findings) io.out(`PR body: ${finding}\n`);
 	return findings.length > 0 ? 1 : 0;

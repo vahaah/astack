@@ -15,6 +15,7 @@ import {
 	type Context,
 	defineHandler,
 	deny,
+	type Env,
 	type EventKind,
 	type Handler,
 	HOOK_EVENTS,
@@ -25,6 +26,7 @@ import {
 	TOOLS,
 } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
+import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures/hook-input");
 let project = "";
@@ -150,6 +152,37 @@ describe("the handler registry", () => {
 		);
 		expect(output).toEqual({ stdout: "", stderr: "no\n", exit: 2 });
 	});
+
+	test.each([
+		["gh pr merge 12", true],
+		['gh pr mer"ge" 12', true],
+		["gh pr view 12", false],
+	])(
+		"[control:sg-guard-error] a merge guard that throws on %p denies it and names the error: %p",
+		(command, denied) => {
+			const failing = mergeGuard(() => {
+				throw new Error("gh exploded");
+			});
+			expect(
+				runHook(
+					"claude-code",
+					"PreToolUse",
+					payload({ tool_name: "Bash", tool_input: { command } }),
+					{},
+					deps([failing]),
+				),
+			).toEqual(
+				denied
+					? {
+							stdout: "",
+							stderr:
+								'astack blocked gh pr merge:\n- The merge guard failed with "gh exploded", so astack cannot examine this merge. Ask the owner, or let the owner merge.\n',
+							exit: 2,
+						}
+					: SILENT,
+			);
+		},
+	);
 
 	test("verdicts of several handlers combine in registry order", () => {
 		const first = defineHandler({
@@ -381,6 +414,73 @@ describe("the Claude Code decoder", () => {
 			tool: "create_issue",
 		});
 	});
+});
+
+describe("the captured prompt channels", () => {
+	function captured(channel: string): unknown {
+		return JSON.parse(
+			readFileSync(
+				join(FIXTURES, `hook-input-UserPromptSubmit-${channel}.json`),
+				"utf8",
+			),
+		);
+	}
+
+	function decodedPrompt(
+		raw: unknown,
+		env: Env = { CLAUDE_CODE_ENTRYPOINT: "cli" },
+	): HookEvent | undefined {
+		return decode("claude-code", "UserPromptSubmit", raw, {
+			env,
+			cwd: project,
+			readText: () => undefined,
+		})?.events[0];
+	}
+
+	test.each([
+		["workflow-brief", "[Workflow harness — computed task] "],
+		["cocode-relay", '[CoCode: the agent in CoCode thread "'],
+		["agent-message", '<agent-message from="'],
+		["print", "Merge #12 when green."],
+	])(
+		"[premise] the %s channel sends no source field, so only its opening text marks it",
+		(channel, opening) => {
+			const raw = captured(channel);
+			const event = decodedPrompt(raw);
+			expect({
+				source: typeof raw === "object" && raw !== null && "source" in raw,
+				opening: event?.kind === "prompt" && event.text.startsWith(opening),
+			}).toEqual({ source: false, opening: true });
+		},
+	);
+
+	test.each([
+		["workflow-brief", false],
+		["cocode-relay", false],
+		["agent-message", false],
+		["print", true],
+	])(
+		"[control:sg-framed-channel] in an attended session the %s prompt is a person's prompt: %p",
+		(channel, human) => {
+			expect(decodedPrompt(captured(channel))).toMatchObject({
+				kind: "prompt",
+				human,
+			});
+		},
+	);
+
+	test.each([
+		{ CLAUDE_CODE_ENTRYPOINT: "sdk-cli" },
+		{ CLAUDE_CODE_ENTRYPOINT: "cli", CLAUDE_CODE_SESSION_ATTENDED: "0" },
+	])(
+		"[control:sg-unattended-channel] with env %p the print prompt is not a person's prompt",
+		(env) => {
+			expect(decodedPrompt(captured("print"), env)).toMatchObject({
+				kind: "prompt",
+				human: false,
+			});
+		},
+	);
 });
 
 describe("tool and event names", () => {

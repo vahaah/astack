@@ -1,179 +1,216 @@
 {
 	"version": 1,
-	"change": "plan-boundary-and-plan-tools",
-	"base": "32cafd14af4ebc8e3fcc49d6cc7a18a391f79645",
+	"change": "review-roadmap-b01-merge-authority",
+	"base": "ad80df7c445df5739f95342a02fd044047d10f25",
 	"scope": [
 		{
-			"path": "src/astack/adr.ts",
-			"obligation": "ADR-HEADING",
-			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+			"path": "src/astack/pr/**",
+			"obligation": "SG-base-authority",
+			"modelRefs": ["Merge", "MergeNeedsAuthority"]
 		},
 		{
-			"path": "src/astack/change-proof/admission.ts",
-			"obligation": "ADR-HEADING",
-			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-mcp-merge",
+			"modelRefs": [
+				"Prompt",
+				"Merge",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
+			]
 		},
 		{
-			"path": "tests/astack/adr.test.ts",
-			"obligation": "ADR-HEADING",
-			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+			"path": "src/astack/hook/handlers/pr-body.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["MergeNeedsAuthority"]
 		},
 		{
-			"path": "src/astack/plan/check.ts",
-			"obligation": "GRAD-ONCE",
-			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+			"path": "src/astack/cli/commands/check/pr.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["MergeNeedsAuthority"]
 		},
 		{
-			"path": "src/astack/plan/parse.ts",
-			"obligation": "GRAD-ONCE",
-			"modelRefs": ["Graduate"]
+			"path": "src/astack/hook/dispatch.ts",
+			"obligation": "SG-guard-error",
+			"modelRefs": ["Merge", "GuardErrorDenies"]
 		},
 		{
-			"path": "src/astack/plan/types.ts",
-			"obligation": "GRAD-ONCE",
-			"modelRefs": ["Graduate"]
+			"path": "src/astack/hook/events.ts",
+			"obligation": "SG-guard-error",
+			"modelRefs": ["Merge", "GuardErrorDenies"]
 		},
 		{
-			"path": "src/astack/plan/units.ts",
-			"obligation": "GRAD-ONCE",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/ste/session.ts",
+			"obligation": "SG-framed-prompt",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
 		},
 		{
-			"path": "tests/astack/plan-check.test.ts",
-			"obligation": "GRAD-ONCE",
-			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+			"path": "src/astack/hook/decode/**",
+			"obligation": "SG-framed-prompt",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
 		},
 		{
-			"path": "src/astack/plan/trail.ts",
-			"obligation": "TRAIL-BATCH",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/doctor.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
 		},
 		{
-			"path": "src/astack/cli/commands/plan.ts",
-			"obligation": "TRAIL-BATCH",
-			"modelRefs": ["TypeOK"]
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
 		},
 		{
-			"path": "tests/astack/plan-cli.test.ts",
-			"obligation": "TRAIL-BATCH",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-base-authority",
+			"modelRefs": [
+				"Prompt",
+				"EditProfile",
+				"Merge",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied"
+			]
 		},
 		{
-			"path": "src/astack/plan/files.ts",
-			"obligation": "CWD-FREE",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "SG-base-authority",
+			"modelRefs": ["Merge", "MergeNeedsAuthority"]
 		},
 		{
-			"path": "src/astack/cli/commands/session.ts",
-			"obligation": "CWD-FREE",
-			"modelRefs": ["Boundary"]
+			"path": "tests/astack/dispatch.test.ts",
+			"obligation": "SG-guard-error",
+			"modelRefs": ["Prompt", "Merge", "GrantFromPerson", "GuardErrorDenies"]
 		},
 		{
-			"path": "src/astack/plan/session.ts",
-			"obligation": "CWD-FREE",
-			"modelRefs": ["Boundary"]
-		},
-		{
-			"path": "tests/astack/plan-session.test.ts",
-			"obligation": "CWD-FREE",
-			"modelRefs": ["Boundary"]
-		},
-		{
-			"path": "src/astack/ste/mask.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/plan/prose.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/comments/classify.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/pr/links.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/cursor-hook.test.ts",
+			"obligation": "SG-framed-prompt",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
 		},
 		{
 			"path": "tests/astack/ste.test.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
+			"obligation": "SG-framed-prompt",
+			"modelRefs": ["Prompt", "GrantFromPerson"]
 		},
 		{
-			"path": "tests/astack/classify.test.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/doctor.test.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson"]
 		},
 		{
-			"path": "tests/astack/pr-links.test.ts",
-			"obligation": "SPAN-RUN",
-			"modelRefs": ["TypeOK"]
+			"path": "tests/astack/guard-composition.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["MergeNeedsAuthority"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/plan/**",
-			"obligation": "BOUNDARY-ONCE",
+			"path": "tests/fixtures/hook-input/**",
+			"obligation": "SG-framed-prompt",
+			"modelRefs": ["Prompt", "GrantFromPerson", "McpMergeDenied"]
+		},
+		{
+			"path": "formal/SessionGuards.*",
+			"obligation": "SG-base-authority",
 			"modelRefs": [
+				"Prompt",
+				"EditProfile",
 				"Merge",
-				"Boundary",
-				"Resume",
-				"OneBoundaryPerMerge",
-				"LastPrDeletesPlan"
+				"TypeOK",
+				"GrantFromWords",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped",
+				"CommitSurfaceChecked",
+				"BroadLossDenied",
+				"DenialNeedsLoss"
 			]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/coding-guide/SKILL.md",
-			"obligation": "BOUNDARY-ONCE",
-			"modelRefs": ["Boundary", "OneBoundaryPerMerge"]
-		},
-		{
-			"path": "rules/coding.md",
-			"obligation": "BOUNDARY-ONCE",
-			"modelRefs": ["Boundary", "OneBoundaryPerMerge"]
-		},
-		{
-			"path": "tests/tracker-schema.test.ts",
-			"obligation": "BOUNDARY-ONCE",
-			"modelRefs": ["Resume", "OneBoundaryPerMerge"]
-		},
-		{
-			"path": "docs/plans/review-roadmap/**",
-			"obligation": "BOUNDARY-ONCE",
-			"modelRefs": ["Boundary", "EachMergeCarriesItsBoundary"]
-		},
-		{
-			"path": "formal/PlanBoundary.*",
-			"obligation": "BOUNDARY-ONCE",
+			"path": "docs/adr/0011-*.md",
+			"obligation": "SG-base-authority",
 			"modelRefs": [
+				"Prompt",
+				"EditProfile",
 				"Merge",
-				"Boundary",
-				"Resume",
-				"WriteAdr",
-				"Graduate",
-				"OneBoundaryPerMerge",
-				"NoBoundaryAfterLast",
-				"EachMergeCarriesItsBoundary",
-				"RowLeavesWithAuthority",
-				"LastPrDeletesPlan"
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
 			]
 		},
 		{
-			"path": "docs/adr/0020-*.md",
-			"obligation": "BOUNDARY-ONCE",
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-base-authority",
 			"modelRefs": [
-				"Boundary",
-				"Graduate",
-				"OneBoundaryPerMerge",
-				"RowLeavesWithAuthority"
+				"Prompt",
+				"Merge",
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
 			]
 		},
 		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
-			"modelRefs": ["TypeOK"]
+			"path": "CONTEXT.md",
+			"obligation": "SG-base-authority",
+			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-base-authority",
+			"modelRefs": [
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
+			]
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "SG-base-authority",
+			"modelRefs": [
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
+			]
+		},
+		{
+			"path": "README.md",
+			"obligation": "SG-guard-error",
+			"modelRefs": ["GuardErrorDenies"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/routes.md",
+			"obligation": "SG-base-authority",
+			"modelRefs": ["MergeNeedsAuthority"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/unattended.md",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
+			]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": [
+				"GrantFromPerson",
+				"MergeNeedsAuthority",
+				"McpMergeDenied",
+				"GuardErrorDenies"
+			]
 		},
 		{
 			"path": "docs/adr/README.md",
@@ -181,12 +218,7 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/reference/plan-boundary.md",
-			"obligation": "BOUNDARY-ONCE",
-			"modelRefs": ["Boundary", "Graduate"]
-		},
-		{
-			"path": "CONTEXT.md",
+			"path": "docs/plans/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
@@ -194,369 +226,346 @@
 			"path": ".astack/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "dist/**",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/plan/types.ts",
-			"symbol": "DecisionRow"
+			"path": "src/astack/hook/events.ts",
+			"symbol": "Handler"
 		},
 		"terms": [
-			"Session boundary",
-			"Graduated row",
-			"Plan state folder",
-			"Effective decision"
+			"Session guard",
+			"Merge grant",
+			"Unattended session",
+			"Base branch authority",
+			"Harness frame"
 		],
 		"invariants": [
 			{
-				"name": "Each merged session gets at most one boundary",
-				"modelRef": "OneBoundaryPerMerge"
+				"name": "A merge needs a grant of the base branch profile or a covering prompt of a person",
+				"modelRef": "MergeNeedsAuthority"
 			},
 			{
-				"name": "Each later merge carries the boundary of the session before it",
-				"modelRef": "EachMergeCarriesItsBoundary"
+				"name": "Only a person's prompt sets a grant, and a framed prompt is not one",
+				"modelRef": "GrantFromPerson"
 			},
 			{
-				"name": "A decision row leaves the live rows only with a resolving ADR heading",
-				"modelRef": "RowLeavesWithAuthority"
+				"name": "No merge goes through an MCP tool",
+				"modelRef": "McpMergeDenied"
 			},
 			{
-				"name": "The last session PR deletes the plan",
-				"modelRef": "LastPrDeletesPlan"
+				"name": "No merge goes ahead after a guard error",
+				"modelRef": "GuardErrorDenies"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
 				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"decision": "D7"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"ADR-HEADING",
-				"TRAIL-BATCH",
-				"CWD-FREE",
-				"GRAD-ONCE",
-				"BOUNDARY-ONCE",
-				"SPAN-RUN",
-				"WB-ratchet",
-				"SG-preserve",
-				"SG-generated"
+				"SG-merge-grant",
+				"SG-unattended",
+				"SG-base-authority",
+				"SG-framed-prompt",
+				"SG-mcp-merge",
+				"SG-guard-error",
+				"SG-generated",
+				"SG-preserve"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow reads or writes one plan artifact. A heading read returns an offset or nothing, a state read returns the paths of the plan state folder or a usage problem, and a batch reaches the trail file only when each row parses."
+			"contract": "Each guard maps one decoded hook call to one Verdict. The PR read gives the base branch authority with the threads and the checks. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
 		},
 		"objects": [
 			{
-				"name": "CheckEnv",
+				"name": "PromptText",
 				"link": {
-					"path": "src/astack/plan/types.ts",
-					"symbol": "CheckEnv"
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
 				}
 			},
 			{
-				"name": "AdrText",
+				"name": "MergeGrant",
 				"link": {
-					"path": "src/astack/adr.ts",
-					"symbol": "adrProse"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "MergeGrant"
 				}
 			},
 			{
-				"name": "HeadingOffset",
+				"name": "PrTarget",
 				"link": {
-					"path": "src/astack/adr.ts",
-					"symbol": "decisionHeading"
+					"path": "src/astack/pr/github.ts",
+					"symbol": "PrTarget"
 				}
 			},
 			{
-				"name": "PlanTarget",
+				"name": "PullRequestState",
 				"link": {
-					"path": "src/astack/cli/commands/plan.ts",
-					"symbol": "stateFor"
+					"path": "src/astack/pr/github.ts",
+					"symbol": "PullRequestState"
 				}
 			},
 			{
-				"name": "PlanState",
+				"name": "HookCall",
 				"link": {
-					"path": "src/astack/plan/files.ts",
-					"symbol": "PlanState"
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
 				}
 			},
 			{
-				"name": "PlanFileState",
+				"name": "Verdict",
 				"link": {
-					"path": "src/astack/plan/files.ts",
-					"symbol": "PlanFileState"
-				}
-			},
-			{
-				"name": "StdinRows",
-				"link": {
-					"path": "src/astack/cli/io.ts",
-					"symbol": "Io"
-				}
-			},
-			{
-				"name": "TrailCells",
-				"link": {
-					"path": "src/astack/plan/trail.ts",
-					"symbol": "TrailCells"
-				}
-			},
-			{
-				"name": "TrailFile",
-				"link": {
-					"path": "src/astack/plan/trail.ts",
-					"symbol": "TRAIL_HEADER"
+					"path": "src/astack/hook/events.ts",
+					"symbol": "Verdict"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "readAdr",
-				"from": "CheckEnv",
-				"to": "AdrText",
+				"name": "mergeGrantIn",
+				"from": "PromptText",
+				"to": "MergeGrant",
 				"link": {
-					"path": "src/astack/plan/check.ts",
-					"symbol": "readAdr"
-				},
-				"effects": ["fs-read"]
-			},
-			{
-				"name": "decisionHeading",
-				"from": "AdrText",
-				"to": "HeadingOffset",
-				"link": {
-					"path": "src/astack/adr.ts",
-					"symbol": "decisionHeading"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
 				},
 				"effects": []
 			},
 			{
-				"name": "planFileState",
-				"from": "PlanTarget",
-				"to": "PlanFileState",
+				"name": "readPullRequestWithGh",
+				"from": "PrTarget",
+				"to": "PullRequestState",
 				"link": {
-					"path": "src/astack/plan/files.ts",
-					"symbol": "planFileState"
+					"path": "src/astack/pr/github.ts",
+					"symbol": "readPullRequestWithGh"
 				},
-				"effects": ["fs-read", "spawn"]
+				"effects": ["spawn", "network"]
 			},
 			{
-				"name": "planStateFor",
-				"from": "PlanTarget",
-				"to": "PlanState",
+				"name": "mergeGuard",
+				"from": "HookCall",
+				"to": "Verdict",
 				"link": {
-					"path": "src/astack/plan/files.ts",
-					"symbol": "planStateFor"
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
 				},
-				"effects": ["fs-read", "spawn"]
-			},
-			{
-				"name": "parseTrailBatch",
-				"from": "StdinRows",
-				"to": "TrailCells",
-				"link": {
-					"path": "src/astack/plan/trail.ts",
-					"symbol": "parseTrailBatch"
-				},
-				"effects": []
-			},
-			{
-				"name": "appendTrail",
-				"from": "TrailCells",
-				"to": "TrailFile",
-				"link": {
-					"path": "src/astack/plan/trail.ts",
-					"symbol": "appendTrail"
-				},
-				"effects": ["fs-write"]
+				"effects": ["fs-read", "fs-write", "spawn", "network"]
 			}
 		],
 		"composites": [],
-		"equality": "Two heading results are equal when both are absent or both name the same offset. Two plan states are equal when their root, slug, trail and drafts paths are equal. Two batches are equal when their rows are equal cell by cell.",
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two base authorities are equal when their kind, their commit and their merge profile are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
+				"reason": "The guards run side by side on one hook call, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "docs/adr/0020-plan-tools-share-one-adr-reader.md"
+		"typedWitness": "tests/astack/guard-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The fence mask of an ADR, the real path of a plan file, the git calls that find the common dir of a plan folder, the tab split of a batch, the one append call of the trail file and the backtick runs of a code span.",
+		"hides": "The GraphQL read of the profile at the base tip and its parse, the frame test of a prompt, the token grammar of an MCP tool name and the failure verdict of the merge guard.",
 		"callersKnow": [
-			"A titled ADR heading with a full stop or a long dash resolves in check-plan and in change proof, and a fenced or untitled heading does not.",
-			"A plan path finds the plan state folder from any folder, and a slug needs a folder of the repo.",
-			"A plan path through a symlink gives its path from the git root, and a plan path that gives an invalid slug writes no state.",
-			"A batch writes all rows or none, and a problem names its line and the nearest phase.",
-			"A code span starts only at a full backtick run, and the STE mask, check-plan, the comment classifier and the PR link reader share that rule.",
-			"A boundary runs once and commits first on the next session branch, and a resume that finds that branch continues it.",
-			"A graduated row needs a resolving heading, and its handle never becomes live again."
+			"A merge needs a grant of the profile on the PR base branch, or a covering prompt of a person in this turn.",
+			"A working-tree edit of the profile changes no merge verdict.",
+			"A workflow brief, a relay message and a Cursor background prompt never give a grant.",
+			"Each MCP tool with a merge word gets a deny, and an error of the merge guard on a merge gives a deny."
 		],
-		"deletionTest": "Deleting decisionHeading puts two heading readers back in check-plan and change proof, and they disagree again. Deleting planStateFor puts a cwd lookup back in each plan and session command.",
+		"deletionTest": "Deleting baseAuthorityFrom puts the profile read back in the guard, and each caller must again choose a working tree, a cwd and an origin repo. Deleting isMcpMergeTool brings back a list of known tools for each host.",
 		"alternatives": [
 			{
-				"name": "A separate plan PR after each session merge",
-				"rejectedBecause": "It costs one CI run and one review for each session."
+				"name": "Read origin/<base> from local git",
+				"rejectedBecause": "A session can move a remote-tracking ref with git update-ref or a fetch."
 			},
 			{
-				"name": "A --repo flag on the plan commands",
-				"rejectedBecause": "It is a second form for one fact that the plan path already gives."
+				"name": "Deny each write of the profile",
+				"rejectedBecause": "Shell writes, branch switches and old worktrees are open sets, so the guard cannot cover them."
 			},
 			{
-				"name": "A delete of a graduated row",
-				"rejectedBecause": "The base check reads only the base, so a deleted top row frees its number."
+				"name": "Add only the literal prefix of the workflow frame",
+				"rejectedBecause": "The next frame label passes again."
+			},
+			{
+				"name": "Keep an exact deny list of MCP merge tools",
+				"rejectedBecause": "The list missed CoCode and Linear, and it drifts with each host."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/adr.ts",
-					"symbol": "decisionHeading"
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
 				},
-				"modelAction": "Graduate"
+				"modelAction": "Prompt"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/plan/check.ts",
-					"symbol": "checkAgainstBase"
+					"path": "src/astack/ste/session.ts",
+					"symbol": "humanPrompt"
 				},
-				"modelAction": "Graduate"
+				"modelAction": "Prompt"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/plan/check.ts",
-					"symbol": "graduationProblem"
+					"path": "src/astack/hook/decode/cursor.ts",
+					"symbol": "decodeCursor"
 				},
-				"modelAction": "Graduate"
+				"modelAction": "Prompt"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
-					"symbol": "Resume"
+					"path": "src/astack/pr/github.ts",
+					"symbol": "readPullRequestWithGh"
 				},
-				"modelAction": "Resume"
+				"modelAction": "Merge"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
-					"symbol": "boundary"
+					"path": "src/astack/pr/merge.ts",
+					"symbol": "stateReasons"
 				},
-				"modelAction": "Boundary"
+				"modelAction": "Merge"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
-					"symbol": "Finish"
+					"path": "src/astack/pr/merge.ts",
+					"symbol": "preflightReasons"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/dispatch.ts",
+					"symbol": "judgeEach"
 				},
 				"modelAction": "Merge"
 			}
 		],
 		"omitted": [
-			"The model takes the push of a branch and the result of git fetch as true observations.",
-			"The trail batch, the nearest phase, the plan state folder and the code span function have no model state. The tests examine them.",
-			"The skill text tells an agent what to do. Review and the boundary control examine that text, and the model does not show that an agent follows it."
+			"The GraphQL reply is abstracted to one base observation of turn, standing, base or unread.",
+			"The frame test is abstracted to the source class frame.",
+			"The MCP token grammar is abstracted to two channels, gh and mcp.",
+			"A guard error is abstracted to one fault flag for each merge.",
+			"One repo is modeled, so the same-repo rule holds by the shape of the base read.",
+			"The host decides the prompt source and the attended variables, and the model takes them as true."
 		]
 	},
 	"model": {
-		"module": "formal/PlanBoundary.tla",
-		"config": "formal/PlanBoundary.cfg",
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
 		"dependencies": [],
 		"invariants": [
 			"TypeOK",
-			"OneBoundaryPerMerge",
-			"NoBoundaryAfterLast",
-			"EachMergeCarriesItsBoundary",
-			"RowLeavesWithAuthority",
-			"LastPrDeletesPlan"
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"McpMergeDenied",
+			"GuardErrorDenies",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss"
 		],
 		"properties": [],
 		"bounds": [
-			"Three sessions, two decision rows and four heading forms.",
-			"Each order of the merge, boundary, resume, ADR write and graduate steps."
+			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects."
 		],
 		"fairness": []
 	},
 	"negative": {
-		"file": "formal/PlanBoundary.tla",
-		"action": "Graduate",
-		"original": "Resolves(heading[r])",
-		"replacement": "TRUE",
-		"defect": "A check that drops the heading test lets a row leave the live rows with an ADR heading that does not resolve.",
+		"file": "formal/SessionGuards.tla",
+		"action": "Merge",
+		"original": "/\\ ProfileCovers(baseAuthority, n) \\/ n \\in grant",
+		"replacement": "/\\ ProfileCovers(workingAuthority, n) \\/ n \\in grant",
+		"defect": "The merge guard reads the working-tree profile, so an uncommitted edit of merge.authority gives standing merge authority with no owner word.",
 		"expect": {
 			"kind": "invariant",
-			"name": "RowLeavesWithAuthority"
+			"name": "MergeNeedsAuthority"
 		}
 	},
 	"limits": [
-		"The finite model covers three sessions and two rows, and it takes git observations as true.",
-		"The model does not show that the TypeScript code or an agent refines it. The linked controls and review examine that relation.",
-		"Exact-head CI, review and every ordinary gate stay required."
+		"The finite model takes the base read, the prompt source class, the attended state and the tool channel as true observations.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"A session that can push to an unprotected base branch can change the base profile. Branch protection is the control for that case.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

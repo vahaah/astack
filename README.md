@@ -45,7 +45,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 | Layer | What runs | Where | What it guarantees |
 |---|---|---|---|
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
-| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
+| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler, but a merge guard error refuses the merge. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
 | CI | This repo's Check workflow runs `bun run check` on a push to main and on each pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate diffs from the merge base, and the manifest `base` must be an ancestor of it |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
@@ -477,7 +477,7 @@ Cursor calls `astack hook cursor <event>`. `encodeCursor` always exits 0 and wri
 
 `afterFileEdit` and `afterAgentResponse` do not block. An edit saves a type, comment or STE finding. The reply event saves the reply text. At `stop`, a saved finding comes back as `followup_message`.
 
-In Cursor, deny means a follow-up prompt, unless the change goes through `preToolUse` on Write. That event can refuse the write before it lands. A shell or MCP deny still blocks through the permission JSON. If a handler throws, the action is allowed. If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
+In Cursor, deny means a follow-up prompt, unless the change goes through `preToolUse` on Write. That event can refuse the write before it lands. A shell or MCP deny still blocks through the permission JSON. If a handler throws, the action is allowed, but a merge guard error refuses the merge. If `gh` cannot list pull requests, the duplicate-PR guard allows the action.
 
 | Handler | Runs on | What it does | Off under `minimal` |
 |---|---|---|---|

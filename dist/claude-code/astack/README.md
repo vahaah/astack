@@ -76,7 +76,7 @@ Adding a rule pack does not start a reviewer.
 | `Bash` running `gh pr edit` | The `Part of` line and closing words in a new body or title | Deny as for `gh pr create`. |
 | `Bash` running `gh pr merge` | The merge grant, the review threads, CI on the PR head, closing words and `--admin` | Deny with each reason. See Merges below. |
 | `Bash` running `gh pr create`, or the GitHub MCP tool `create_pull_request` | Open PRs of the same author for the same branch or the same `Part of` ticket | Deny a second PR. One plan is one PR. When `gh` cannot read the list, allow. |
-| The GitHub MCP tools `merge_pull_request`, `create_pull_request` and `update_pull_request` | The merge path, the `Part of` line, closing words and headings | Deny a merge through MCP, so each merge goes through `gh pr merge`. Check the PR text as for `gh pr create`. |
+| Each MCP tool with a merge word in the server name or the tool name, and the GitHub MCP tools `create_pull_request` and `update_pull_request` | The merge path, the `Part of` line, closing words and headings | Deny a merge through MCP on each server, also with a grant, so each merge goes through `gh pr merge`. A state word such as `merged` passes only with a read verb and no write verb. A read tool on a merge request, such as `list_merge_requests`, passes. Deny an input that holds a `gh pr merge` command or a `gh api` merge, such as `mergePullRequest`. Deny a click tool whose input names a merge button. Check the PR text as for `gh pr create`. |
 | `Bash` running `supabase db reset` or a package script that runs it, `git push --force` to `main`, `master`, `develop`, `staging`, `production` or a `release` branch, or `--no-verify` on `git commit` or `git push` | The owner gates | Deny, and ask the owner. |
 | `Bash` running `gh issue create` | Headings in the issue body | Deny when a heading is missing. Add a note for email addresses. |
 | A Linear MCP tool named `save_issue`, `create_issue` or `update_issue` | Headings in the issue description | Deny a new issue with a missing heading. Add a note on an update. Add a note for email addresses. |
@@ -168,14 +168,18 @@ astack refuses `gh pr merge` in these cases:
 - The command has other commands before or after it in the same Bash call.
 - A `NAME=value` word, such as `GH_REPO=owner/repo`, comes before `gh pr merge`, also after `env`. astack reads the PR without these words, so it can read a different PR. Use `--repo` to name a different repo.
 - astack cannot read the merge command with certainty. Examples are an option of `env` or `command` and a shell variable before `merge`. Another example is a `gh` flag before `merge` that can take the next word as its value, such as `--subject x`. Only `-R` and `--repo` are clear there. Run `gh pr merge <number>` as its own Bash call.
-- Nobody gave a merge grant. A grant comes from `.astack/profile.json`, or from the owner's words in the current turn, such as "merge when green" or "merge 12". A grant in the turn that names PR numbers covers only those PRs, and the next human prompt with no merge words ends it. In the profile, `merge.authority: "standing"` covers each PR, and `merge.standingBases` covers only a PR of the `origin` repo into a base branch that it names. `merge.standingBases` needs `merge.authority: "turn"`, so a PR into another base still needs the owner's words.
+- Nobody gave a merge grant. A grant comes from `.astack/profile.json` on the PR base branch, or from the owner's words in this turn, such as "merge when green" or "merge 12". A grant in the turn that names PR numbers covers only those PRs, and the next human prompt with no merge words ends it. astack reads the profile at the tip of the base branch with the PR, so a working-tree edit or a local commit grants nothing. An absent or unreadable profile gives no standing grant. In that profile, `merge.authority: "standing"` covers each PR of its repo, and `merge.standingBases` covers only a PR into a base branch that it names. `merge.standingBases` needs `merge.authority: "turn"`, so a PR into another base still needs the owner's words.
 - A review thread on the PR is not resolved.
-- CI on the PR head is not green. With no CI check at all, the merge also stops, unless the profile sets `merge.requireChecks` to `false`.
+- CI on the PR head is not green. With no CI check at all, the merge also stops, unless the profile on the base branch sets `merge.requireChecks` to `false`.
 - A closing word with a ticket key is in the PR title, the PR body or the merge commit text.
 - astack cannot read the PR. It reads the PR with `gh pr view` and one `gh api graphql` call.
 - The command has `--admin`, which skips the branch protection rules. This is an owner gate, also with a standing grant.
 
-A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. astack also refuses a merge through `gh api` on `pulls/<n>/merge` and through the GitHub MCP tool `merge_pull_request`. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
+A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. A workflow brief and a relay message are harness text too. A prompt that opens with a tag, or with a bracket label that is not a Markdown link, is harness text.
+
+astack also refuses a merge through `gh api` on `pulls/<n>/merge`, and an MCP call whose input holds such a merge or a `gh pr merge` command. A `gh api` call on a merge path passes only when its method is provably GET. A short-flag cluster with `X`, `f` or `F`, `--method`, `--field`, `--raw-field` or `--input` gets a refusal.
+
+astack refuses a click tool whose input names a merge button too. It refuses each MCP tool with a merge word in the server name or the tool name, such as `pull_request_merge`, also with a grant. `gh pr merge --disable-auto` passes. The merge guard keeps the grant of each session under `~/.local/state/astack/merge-grants/`, or under `$ASTACK_STATE_DIR` when it is set.
 
 ```json
 {
@@ -279,7 +283,8 @@ The hooks fail open. When something goes wrong, the tool call goes ahead as if a
 - To deny, astack exits 2 and writes the reason to stderr. To add a note, it exits 0 and prints JSON. Otherwise it exits 0 and prints nothing.
 - A handler that fails gives no verdict. The verdicts of the other handlers still apply.
 - Unreadable input, a file it cannot tokenize, an `Edit` whose `old_string` does not match, and any internal error all pass silently.
-- The merge guard is the one exception. When `gh` cannot read the PR, it refuses the merge, because it cannot see the threads or the CI state.
+- The merge guard is the one exception. When `gh` cannot read the PR, it refuses the merge, because it cannot see the threads, the CI state or the standing grant.
+- When the merge guard fails on a merge command or an MCP merge tool, it refuses the merge and names the error.
 - Each hook has a 10-second timeout, and Claude Code lets a timed-out `PreToolUse` hook through.
 
 A typical edit takes about 30 ms under Node and about 10 ms under Bun. Most of that time is runtime startup.

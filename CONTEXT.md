@@ -107,9 +107,24 @@ _Code_: `Handler`
 ### Merge grant
 
 The PRs that an agent can merge with no new question to the owner.
-It comes from the repo profile, or from merge words or an un-negated "full send" clause in a person's prompt of the current turn.
+It comes from the base branch authority of the PR.
+It also comes from merge words or an un-negated "full send" clause in a person's prompt of the current turn.
 _Avoid_: Approval, green light
 _Code_: `MergeGrant`
+
+### Base branch authority
+
+The merge keys of `.astack/profile.json` at the tip of the base branch of a PR, read with the PR.
+An absent or unreadable file gives turn authority. A working-tree edit gives nothing.
+_Avoid_: Local profile, working-tree grant
+_Code_: `BaseAuthority`
+
+### Harness frame
+
+A tag, or a bracket label that is not a Markdown link, at the start of a prompt that a host relays.
+A framed prompt is never a person's prompt, unless the host marks it with the source `user`.
+_Avoid_: Wrapper text, system prompt
+_Code_: `humanPrompt`
 
 ### Unattended session
 
