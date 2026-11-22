@@ -14,7 +14,7 @@
 			"modelRefs": ["TemplateUnchanged"]
 		},
 		{
-			"path": "docs/adr/0022-heavy-test-files-copy-one-template-repo.md",
+			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 			"obligation": "FX-ISOLATE",
 			"modelRefs": [
 				"TemplateUnchanged",
@@ -209,15 +209,15 @@
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0022-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0022-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0022-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
 				"decision": "D3"
 			}
 		],

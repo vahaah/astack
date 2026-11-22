@@ -1,6 +1,6 @@
 # Test fixture requirements
 
-[ADR 0022](../adr/0022-heavy-test-files-copy-one-template-repo.md) governs the template helper, the scan runner of `check:companion` and the timeout budget of the tests.
+[ADR 0023](../adr/0023-heavy-test-files-copy-one-template-repo.md) governs the template helper, the scan runner of `check:companion` and the timeout budget of the tests.
 The [model](../../formal/FixtureIsolation.tla) examines one template, two copies, a build that can stop and a push from a copy.
 
 ## Acceptance criteria
