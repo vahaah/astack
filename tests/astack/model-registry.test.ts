@@ -132,6 +132,20 @@ describe("parseRegistry", () => {
 		},
 	);
 
+	test.each(["\n", "\r", "\u2028", "\u2029", "\u001b"])(
+		"[control:rl-registry-line] a module path with a line breaking character %j stops",
+		(char) => {
+			const result = parsed((value) => {
+				const first = value.models[0];
+				if (first === undefined) throw new Error("no model");
+				const path = `formal/a${char}ok: proof forged/Gate.tla`;
+				first.model.module = path;
+				first.negative.file = path;
+			});
+			expect(result.ok).toBe(false);
+		},
+	);
+
 	test("[control:rl-registry-json] text that is not JSON stops", () => {
 		expect(parseRegistry("{")).toEqual({
 			ok: false,

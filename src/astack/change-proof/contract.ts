@@ -220,12 +220,14 @@ function isRaw(value: unknown): value is Raw {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+const LINE_BREAKING_PATH = /[\p{Cc}\u2028\u2029]/u;
+
 export function isRepoPath(path: string): boolean {
 	return (
 		!path.startsWith("/") &&
 		!/^[A-Za-z]:/.test(path) &&
 		!path.includes("\\") &&
-		!path.includes("\0") &&
+		!LINE_BREAKING_PATH.test(path) &&
 		path
 			.split("/")
 			.every(

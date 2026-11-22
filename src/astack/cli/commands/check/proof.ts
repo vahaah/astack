@@ -493,7 +493,7 @@ async function prove(
 		};
 		for (const { run, plan } of planned) {
 			if (ladder.value.kind === "ladder")
-				io.out(`model: ${run.name} ${run.model.module}\n`);
+				io.out(`model: ${oneLine(run.name)} ${oneLine(run.model.module)}\n`);
 			const triple = await runTriple(io, checker, plan, run, timeoutMs.value);
 			if (!triple.ok) return triple.error;
 			evidence.push(triple.value);
