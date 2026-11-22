@@ -133,3 +133,12 @@ Shipping waits for the checks with `--pr`, and reads back each merge with `gh pr
 - A new catch-up skill. Rejected because the resume reads already give each fact.
 - Keep the watch-pr stack runners. Rejected because they have 0 runs in all history.
 - Drop `mode` from the JSON lines. Rejected because that shape change needs a new schema version.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/OwnerCatchUp.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `CatchUpListsEach` | restates | `CatchUp` | `cu-list` |
+| `CheckpointHidesNothing` | restates | `Checkpoint` | `cu-checkpoint` |

@@ -156,3 +156,18 @@ A rung variable in that model multiplies its states, so the ladder rule is a sep
 - Globs in the profile. Rejected because a repo can lower them.
 - A rung that the author picks. Rejected because the author is the party that the gate checks.
 - A schema stop for `modelRefs`. Rejected because it breaks each product gate at its next CLI update.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/ProofLadder.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `TlcOnlyAtR4` | independent | It joins the `needed` set of `Derive` with the guard of `Start` |  |
+| `AdmitNeedsEachTriple` | independent | It joins `Derive`, each `Start` and the guard of `Admit` |  |
+| `FailClosedStops` | restates | `Derive` | `rl-fail-closed` |
+| `FloorOnlyRaises` | restates | `Derive` | `rl-floor`, `rl-rung` |
+| `OneTriplePerModel` | restates | `Start` | `rl-one-run` |
+| `ManifestFirst` | restates | `Start` | `rl-select`, `rl-registry-diff` |
+| `RegistryRunsAll` | independent | It joins `Selected` of `Derive` with the guard of `Admit` |  |
+| `DeletedRegistryStops` | restates | `Derive` | `rl-registry-gone` |

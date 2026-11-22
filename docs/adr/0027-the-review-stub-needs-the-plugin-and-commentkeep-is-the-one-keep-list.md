@@ -122,3 +122,15 @@ Apply refuses a companion profile that sets `comments`, with its repair.
 - The `--marketplace-repo` value of apply. Rejected because an update without the flag drops it.
 - A plain removal of the managed path. Rejected because `planRemovals` refuses the old entry and `strayCopies` reports the file.
 - A drop of the `comments` key now. Rejected because it stops each applied product profile at preflight until its apply.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/ReviewStub.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `NoStepWithoutEngine` | restates | `RunStub` | `rs-install` |
+| `InstallOnlyWhenAbsent` | restates | `RunStub` | `rs-install` |
+| `NoFallbackAfterUpdate` | restates | `Apply` | `rs-retire` |
+| `PreflightAcceptsApplied` | independent | It joins the fail result of `Check` with the refusal of `Apply`, which read the same marker |  |
+| `OneKeepList` | restates | `Check` | `rs-one-list`, `rs-keep-command` |

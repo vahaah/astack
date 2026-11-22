@@ -143,3 +143,23 @@ The manifest negative of the session repo change cuts the identity compare of `E
 The unchanged model must pass again with the same state counts.
 `tests/property/shell-wrapper-law.test.ts` examines the wrapper law on both guards, and `tests/fixtures/guard-bypass.json` holds the probe forms.
 Current results belong to CI and the proof receipt, so this record does not copy a pass result.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/SessionGuards.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `GrantFromWords` | restates | `Prompt` | `sg-grant-words`, `sg-conformance-merge` |
+| `GrantFromPerson` | restates | `Prompt` | `sg-unattended-denial`, `sg-machine-prompt` |
+| `MergeNeedsAuthority` | independent | It joins the grant that `Prompt` saves with the guard of `Merge` |  |
+| `McpMergeDenied` | restates | `Merge` | `sg-mcp-merge`, `sg-conformance-merge` |
+| `GuardErrorDenies` | restates | `Merge` | `sg-guard-error`, `sg-conformance-merge` |
+| `FullStopNeverMerges` | restates | `Merge` | `sg-full-stop-merge`, `sg-model-merge` |
+| `WriteChecksKept` | restates | `Write` | `sg-scratch-write`, `sg-conformance-scratch` |
+| `ScratchSkipped` | restates | `Write` | `sg-scratch-write`, `sg-conformance-scratch` |
+| `CommitSurfaceChecked` | restates | `Commit` | `sg-commit-staged` |
+| `BroadLossDenied` | independent | It compares `CodeLost` with `GitLost`, and the record of `MakeRepo` and `Shell` with the repo that `Appear` can put at the path |  |
+| `DenialNeedsLoss` | independent | It compares `CodeLost` of the hook with `GitLost` of git over each command row |  |
+| `HookSkipNeedsGates` | independent | It joins the record of `GatesRun` with the guard and the update of `Push` |  |
+| `SessionRepoPasses` | restates | `RunGit` | `sg-session-repo`, `sg-session-repo-bundle` |
