@@ -27,7 +27,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-17] A SANY error stop names the module, the first line and column and the message line of the error.
 - [criterion:CP-18] A failed run names its invariant or property. It prints at most 20 numbered steps of 200 characters, then a count of the rest.
 - [criterion:CP-19] A stale stop names each changed path, the index or the ratification history. A run past the deadline names its last progress record.
-- [criterion:CP-20] Each stop writes one stderr line with the proof contract section of its stage. The example manifest of the proof contract parses.
+- [criterion:CP-20] Each stop writes one stderr line with the proof contract section of its stage. The example manifest of the proof contract parses, and the schema accepts each carrier form of the proof contract.
 
 ## Claim boundary
 

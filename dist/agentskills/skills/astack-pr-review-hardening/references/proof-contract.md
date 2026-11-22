@@ -31,7 +31,7 @@ Each base read and each diff read ignores replacement refs and graft ancestry, w
 | `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
 | `scope` | `[{path, obligation, modelRefs}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle |
 | `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
-| `category` | `carrier {kind, error}`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
+| `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
 | `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
 | `model` | `module`, `config`, `dependencies`, `bounds`, `fairness`, `invariants` and `properties`. [TLC execution](#tlc-execution) |
 | `negative` | `file`, `action`, `original`, `replacement`, `defect` and `expect {kind, name}`. [TLC execution](#tlc-execution) |
@@ -114,10 +114,10 @@ Objects name valid values or artifact contracts.
 Arrows reference real functions or document transformations.
 Adjacent arrow types must compose.
 
-- `pure` uses ordinary `o` composition and declares no effects.
-- `result` fixes an error type and uses `>=>` composition.
-- `promise-result` also states observable equality and rejection behavior.
-- `artifact` states the preserved artifact contract and uses ordinary composition.
+- `carrier {kind: pure}` uses ordinary `o` composition and declares no effects.
+- `carrier {kind: result, error}` fixes the error type and uses `>=>` composition.
+- `carrier {kind: promise-result, error, observation, rejection}` also states observable equality and rejection behavior.
+- `carrier {kind: artifact, contract}` states the preserved artifact contract and uses ordinary composition.
 
 For `o`, `[g, f]` means that `f` runs first.
 For `>=>`, `[f, g]` means that `f` runs first.
@@ -141,7 +141,6 @@ The checker cannot infer their truth from names alone.
 ## TLC execution
 
 The runner pins `tla2tools.jar` release 1.7.4 and verifies its SHA-256 on every use.
-The pin was computed from the official release asset after its published SHA-1 was checked.
 Java 17 or later is required.
 The runner downloads only the pinned jar into the astack cache when it is absent.
 

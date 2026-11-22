@@ -55,6 +55,16 @@ const ROWS = (SECTIONS.get("required-records") ?? "")
 		return { records: codeTokens(records), text: `${records}|${keys}` };
 	});
 
+const CARRIER_FORM = /^- `carrier \{kind: ([a-z-]+)((?:, [A-Za-z]+)*)\}`/gm;
+
+function withCarrier(carrier: Readonly<Record<string, string>>): string {
+	return JSON.stringify(
+		JSON.parse(EXAMPLE_TEXT, (key, value: unknown) =>
+			key === "carrier" ? carrier : value,
+		),
+	);
+}
+
 function documented(record: string): ReadonlySet<string> {
 	const row = ROWS.find((candidate) => candidate.records.has(record));
 	if (row === undefined) return new Set();
@@ -79,6 +89,37 @@ describe("the proof contract reference", () => {
 				.map((key) => `${record}: ${key}`);
 		});
 		expect([...new Set(missing)]).toEqual([]);
+	});
+
+	test("[control:proof-carrier-forms] the reference gives one carrier form for each carrier kind, and the schema accepts each form", () => {
+		const forms = [
+			...(SECTIONS.get("category-and-abstraction") ?? "").matchAll(
+				CARRIER_FORM,
+			),
+		].map(([, kind = "", keys = ""]) => ({
+			kind,
+			...Object.fromEntries(
+				keys
+					.split(", ")
+					.filter(Boolean)
+					.map((key) => [key, "text"]),
+			),
+		}));
+		const unknownKind = parseChangeProof(withCarrier({ kind: "none" }));
+		const kinds = unknownKind.ok
+			? []
+			: [...unknownKind.error.message.matchAll(/"([a-z-]+)"/g)].map(
+					([, kind]) => kind,
+				);
+		expect(forms.map((form) => form.kind)).toEqual(kinds);
+		expect(
+			forms.map((form) => {
+				const parsed = parseChangeProof(withCarrier(form));
+				return parsed.ok || parsed.error.stage !== "schema"
+					? "accepted"
+					: parsed.error.message;
+			}),
+		).toEqual(kinds.map(() => "accepted"));
 	});
 
 	test("[control:proof-stop-heading] the section of each stop stage is a heading of the proof contract", () => {
