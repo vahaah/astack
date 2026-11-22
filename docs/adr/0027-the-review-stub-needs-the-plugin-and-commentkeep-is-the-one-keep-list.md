@@ -50,9 +50,9 @@ The profile sets a boundary cast marker or not, and `commentKeep` matches it or 
 #### Category composition
 
 ```text
-renderReviewCopies    : ProjectConfig -> Rendered                 effects: fs-read
-reviewProfileProblems : ProfileText -> ReviewProfileProblem[]     effects: none
-planRemovals          : RemovalInput -> RemovalPlan               effects: none
+renderReviewCopies    : (ProjectConfig, dir) -> Rendered                           effects: fs-read
+reviewProfileProblems : (ProfileText, readonly RegExp[]) -> ReviewProfileProblem[] effects: none
+planRemovals          : RemovalInput -> RemovalPlan                                effects: none
 ```
 
 `renderReviewCopies` reads the stub template and the profile.
