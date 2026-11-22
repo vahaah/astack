@@ -66,7 +66,7 @@ Done when. The budget gate reports at most 98,100 skill words. A plan with a dom
 | D9 | decision | The CLI gets `astack update`, dry run by default, and it never writes Codex trust | Keep the README steps | two-way | user R1 | plan |
 | D10 | | Superseded by D15 | | | | |
 | D11 | decision | The writing hooks keep the 20 and 25 word limits, count a number and its unit as one word and fix astack's own templates. B11 softens a rule only after one week of B09 telemetry | Soften the hooks now | two-way | user R2 | plan |
-| D12 | decision | Attended detection stays as ADR 0010 D4 says. The owner files the host request for `source` set to `user`, and B04 owns the astack side | Infer the source from text | two-way | user R2 | ADR 0010 D4 |
+| D12 | decision | Attended detection stays as ADR 0010 D4 says. The owner files the host request for `source` set to `user`, and B04 owns the astack side. The ready report names each deploy job. A broad discard passes only in a repo that this session made | Infer the source from text. An attended override | two-way | user R2 | ADR 0010 D4 |
 | D13 | decision | Branch protection controls a pushed profile edit, and B03 adds a doctor note for an unprotected base | A push guard | two-way | user R2 | plan |
 | D14 | goal | A part stays only with measured use, a live dependent, an accepted ADR or a failed text rule. Each code change carries one domain and effects record whose laws run on code | Add the theory on top of the catalogue | two-way | user R2 | ADR 0013 |
 | D15 | decision | B02 merges first, then B18. B01, B03 and B04 start right after B02 merges, because subtraction first shrinks each later diff | B01 to B04 in M1 | two-way | delegated | plan |
@@ -79,43 +79,40 @@ Done when. The budget gate reports at most 98,100 skill words. A plan with a dom
 
 ### M1 Subtract: the stale proof stop and the zero-use parts go
 
-State. now
+State. exited
 Demo. An older proof of a PR passes after main moves. The B18 paths are gone, and the budget gate reports at most 141,500 skill words.
-Proof. `bun test tests/astack/change-proof-cli.test.ts tests/astack/ci-proof-records.test.ts tests/astack/change-proof-ratification.test.ts tests/budget.test.ts && bun run check`
-Depends on. None.
-Blocks.
-- B02 A PR proof stays valid when main moves (review `A1`). Lane. b. Brief. B02.md.
-- B18 Dead code and zero-use parts go, and a word budget gate stops text growth. Lane. e. Depends on. B02. Brief. B18.md.
 
 ### M2 Only the owner grants a merge, and the gate answers in seconds
 
-State. next
+State. now
 Demo. A harness brief, a working-tree profile edit and an MCP merge tool each fail to merge. `bun run check` takes less than 60 s.
 Proof. `bun test tests/astack/merge-guard.test.ts tests/astack/dispatch.test.ts tests/astack/doctor.test.ts && bun run check`
 Depends on. M1.
 Blocks.
-- B19 Fast gates run one proof, parallel tests, one CI run for each PR commit and `check:fast`. Lane. h. Depends on. B02. Brief. stub.
-- B01 The merge guard takes authority only from a person's prompt and the base branch profile (review `C1a`, `C3`, `C2`). Lane. a. Depends on. B02. Brief. B01.md.
-- B03 Doctor finds untrusted hooks, drifted profiles and an unprotected base (review `J2`, `J4`, `J5`, `J3`, `D5`, `H1`). Lane. d. Depends on. B02. Brief. stub.
-- B04 One shell normaliser closes the guard bypasses, and fast-check proves the wrapper law (review `E2`, `E3`, `E1`, `C1`). Lane. a. Depends on. B01. Brief. stub.
-- B09 Own templates pass STE, and each hook finding goes to a telemetry log (review `B7`, `B8`, `B1`). Lane. c. Depends on. B02. Brief. stub.
-- B13 Session boundary edits ride in the next session PR, with one ADR heading reader (review `F3`, `F1`, `F2`, `H2`). Lane. f. Brief. stub.
-- B20 Heavy test files reuse one git fixture repo. Lane. h. Depends on. B19. Brief. stub.
+- B19 Fast gates run one proof, parallel tests, one CI run for each PR commit and `check:fast`. Lane. h. Brief. B19.md.
+- B01 The merge guard takes authority only from a person's prompt and the base branch profile (review `C1a`, `C3`, `C2`). Lane. a. Brief. B01.md.
+- B03 Doctor finds untrusted hooks, drifted profiles and an unprotected base (review `J2`, `J4`, `J5`, `J3`, `D5`, `H1`). Lane. d. Brief. B03.md.
+- B04 One shell normaliser closes the guard bypasses, and fast-check proves the wrapper law (review `E2`, `E3`, `E1`, `C1`). Lane. a. Depends on. B01. Brief. B04.md.
+- B09 Own templates pass STE, and each hook finding goes to a telemetry log (review `B7`, `B8`, `B1`). Lane. c. Brief. B09.md.
+- B13 Session boundary edits ride in the next session PR, with one ADR heading reader (review `F3`, `F1`, `F2`, `H2`). Lane. f. Brief. B13.md.
+- B20 Heavy test files reuse one git fixture repo. Lane. h. Depends on. B19. Brief. B20.md.
+- B05 TLC errors name the line, the invariant and the trace (review `A5`, `A4`, `A6`, `A8`). Lane. b. Brief. B05.md.
 
 ### M3 Text takes the pstack shape
 
-State. later
+State. next
 Demo. The budget gate reports at most 120,000 skill words.
+Proof. `bun run budget && bun run validate && bun test tests/hardening-consistency.test.ts`
 Depends on. M1.
 Blocks.
-- B14 Orchestrate keeps supervision rules and a catch-up route (review `G4`, `H7`, `G3`). Lane. e. Depends on. B13, B18. Brief. stub.
+- B14 Orchestrate keeps supervision rules and a catch-up route (review `G4`, `H7`, `G3`). Lane. e. Depends on. B13. Brief. stub.
 - B15 Rule text fixes (review `D7`, `D8`, `H8`, `H5`, `C4`, `J6`). Lane. e. Brief. stub.
 - B16 Duplicate playbooks go, and the docs match the tree (review `H10`, `H4`, `H6`, `H9`). Lane. e. Depends on. B14, B15. Brief. stub.
-- B21 Wrapper skills fold into their homes. Lane. e. Depends on. B18. Brief. stub.
+- B21 Wrapper skills fold into their homes. Lane. e. Brief. stub.
 - B22 Programme charting moves into the plan skill. Lane. e. Depends on. B21. Brief. stub.
-- B23 Thinking skills take the pstack size (review `H3`). Lane. e. Depends on. B18. Brief. stub.
+- B23 Thinking skills take the pstack size (review `H3`). Lane. e. Brief. stub.
 - B24 The repo hardening stub needs the plugin. Lane. e. Depends on. B03. Brief. stub.
-- B25 One lexer reads TypeScript and JavaScript comments. Lane. c. Depends on. B02. Brief. stub.
+- B25 One lexer reads TypeScript and JavaScript comments. Lane. c. Brief. stub.
 
 ### M4 Proof follows risk, and models meet the code
 
@@ -123,7 +120,6 @@ State. later
 Demo. A docs-only diff starts no java process. A code mutation that drops the authority check fails the conformance test.
 Depends on. M1.
 Blocks.
-- B05 TLC errors name the line, the invariant and the trace (review `A5`, `A4`, `A6`, `A8`). Lane. b. Depends on. B02. Brief. stub.
 - B26 `Result` gets `map`, `andThen` and `all`, with property tests for its laws. Lane. g. Depends on. B04. Brief. stub.
 - B06 The risk ladder and a model registry select models by path (review `A3`, `A7`). Lane. b. Depends on. B05. Brief. stub.
 - B07 Each change carries its own proof manifest (review `A2`). Lane. b. Depends on. B06. Brief. stub.
