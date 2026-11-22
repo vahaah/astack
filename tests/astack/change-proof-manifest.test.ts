@@ -292,6 +292,20 @@ describe("the manifest of the change", () => {
 				"stop: proof stale: delete .astack/proof.json, which the manifest base BASE holds",
 			],
 		],
+		[
+			"a new .astack/proof.json beside a new manifest",
+			{ [M0]: OLDER },
+			{
+				name: "beside-new",
+				manifests: [".astack/proof/beside-new.json", LEGACY],
+				remove: [M0],
+			},
+			[],
+			[
+				"manifest: .astack/proof/beside-new.json",
+				"stop: proof stale: delete .astack/proof.json beside the manifest .astack/proof/beside-new.json",
+			],
+		],
 	])(
 		"[control:cp-manifest-held] %s stops with that path",
 		(_name, held, plan, args, lines) => {
