@@ -36,9 +36,7 @@ Spawn them only through the Agent tool.
 Resume them only through `SendMessage`.
 Drain their completion notifications.
 Choose each subagent's model and effort through the Subagents rules.
-Read and write state through `astack orch` at drain points.
-Each call takes one command and returns one line.
-The CLI never spawns, waits, or wakes anything.
+Read and write the plain files of the store at drain points.
 
 ##### Sub-coordinator
 
@@ -79,17 +77,14 @@ Earlier fixed swarm trees proved too rigid.
 #### Store layout
 
 Create `orchestrate/<project-slug>/` in the pstack store from `references/paths-and-wakeups.md`.
-Export its absolute path as `ORCH_STORE`.
 Give every file exactly one writer.
 Owners publish facts, and readers aggregate them when they read.
-Use `astack orch` for bookkeeping.
-The text below abbreviates that command as `orch`.
-Its canonical plain TSV and JSON remain readable without the CLI.
+Edit its plain TSV, JSON and Markdown files directly.
 
 - `preferences.md` records the standing orders as numbered lines, with one constraint per line. Include model policy, stack shape and count, verification bar, forbidden paths, and escalation policy. Paste it verbatim into every spawn and resume. Instructions fade across resumes, and each lost instruction costs a human turn.
   - Put only rules that bind future work in it. Never write a clock time, a PR state, a head SHA, a lane result or an event into it. Put PR facts in `overview.md`, and unit state in `units.tsv` and `ledger.tsv`.
   - When a newer order replaces an older order, edit or delete the older order.
-  - `orch standing add` only appends an order. To edit, delete or insert an order, rewrite `preferences.md` by hand. Then number its lines from 1 to n again, in order. `orch standing` refuses a file with other numbers.
+  - To add, edit, delete or insert an order, rewrite `preferences.md`. Then number its lines from 1 to n again, in order.
   - Keep the file within 60 lines and 8 KB, so that one paste costs little. At that budget, move a stable order into the brief template, the repo profile or an ADR. Then delete it from the file.
   - When you repeat a correction, encode it in structure first, such as the brief template or a check. Follow Encode Lessons in Structure (`astack skill-path astack:principles references/encode-lessons-in-structure.md`). Add an order before you act only when structure cannot hold the rule.
 - `overview.md` is the durable PR and issue database. Append to it. Never rewrite the whole file for each event.
@@ -151,7 +146,7 @@ Spawn a fresh agent with consolidated scope.
 #### Steps
 
 1. Frame the programme. State a countable done predicate, such as "all 126 units merged, each ledger-verified `unit-test-verified` or better". Quantify the units, rough effort, expected stacks, and wall-clock budget. If one agent can finish within that budget, stop here and use Autonomous run. That smaller route must not depend on another document being present. Work directly in this session, with plain workers where useful. Verify inline and land work as it becomes ready. Use none of the store, register, or pilot machinery below. Schedule landing against the budget. At roughly 70% of the budget, stop spawning. Land the verified work. Name the tracks for this project. Use `arena` before the pilot for a contested decomposition or one-way door. Present the framing once. Continue reversible preparation without waiting.
-2. Install the runtime. Run `orch init`. Open the trail through `show-me-your-work`. Write the standing orders before any spawn. Seed `frontier.json` from existing PRs with `orch frontier set --repo <repo-dir>`.
+2. Create the store. Open the trail through `show-me-your-work`. Write the standing orders before any spawn. Seed `frontier.json` from existing PRs.
 3. Run a pilot. Take one unit through brief, worker, verification, stack entry, ledger row, and merge. Use the pilot to try to disprove the brief template, verification recipe, and unit size.
    It exposes mistakes while they cost one agent instead of fifty. Fix the contract from pilot evidence before any fan-out. Scale the pilot to the unit. For almost identical cheap units, the first normal unit is the pilot. Give it the verification command inline. Start fan-out when it lands. Use a separate verifier agent and audit gate for expensive or novel unit shapes. Do not serialize that extra pipeline for copies of the same unit when it has nothing to disprove.
 4. Scale the work. Spawn a rolling window of workers up to the active cap. Refill it as children finish. Blocking batches wait for their slowest child. Add track sub-coordinators only past the one-drain threshold in Roles. Recompute ready work after every drain. Put upstream reports into downstream briefs. Keep sibling communication upward only. Run the sampled brief audit beside its wave. On failure, stop the next refill, not the current wave.
@@ -161,12 +156,12 @@ Spawn a fresh agent with consolidated scope.
 
 #### Queue and drain
 
-- On a completion notification, run `orch inbox push <agent> <unit> <status> [--report PATH]`. Return to the current work. Never perform a deep review inline. Make a completion that needs review a verifier unit. Never review a diff inside a drain.
-- Drain batches at four points. These are a critical section's end, a track rollup, a frontier watcher wake, and before a human report. Arm the watcher through the loop skill with a long heartbeat fallback. Start each batch with `orch inbox drain`. Leave arrivals during a drain for the next batch.
+- On a completion notification, write a pointer with the agent, unit, status and report path into `inbox/`. Return to the current work. Never perform a deep review inline. Make a completion that needs review a verifier unit. Never review a diff inside a drain.
+- Drain batches at four points. These are a critical section's end, a track rollup, a frontier watcher wake, and before a human report. Arm the watcher through the loop skill with a long heartbeat fallback. Start each batch with a read of `inbox/`. Leave arrivals during a drain for the next batch.
 - Finish critical sections first. These include writing a brief, a stack operation, a conflict decision, a gate, or an update to ledger or frontier.
-- Classify every pointer as `landed`, `needs-verify`, `failed`, `zombie`, or `noise`. Write rows through `orch unit add`, `orch unit set`, and `orch ledger record`. Run `orch status`. Then spawn the next wave in one message.
+- Classify every pointer as `landed`, `needs-verify`, `failed`, `zombie`, or `noise`. Write the rows of `units.tsv` and `ledger.tsv`. Then spawn the next wave in one message.
 - Account for every child at its track's rollup. It must have arrived, have a replacement, or have its scope explicitly absorbed. Repeating a missing child's work without recording that hides wasted cost and a coverage gap.
-- End a drain turn with the three lines from `orch status`. Give counts by state, what changed, and open gates. Keep details in `status.md`. Use the full reply contract at checkpoints and close.
+- End a drain turn with three lines. Give counts by state, what changed, and open gates. Keep details in `status.md`. Use the full reply contract at checkpoints and close.
 
 #### Stack safety
 
@@ -184,8 +179,8 @@ The coordinator examines a sample of receipts.
 Use a dedicated verifier from a different model family for expensive verification or work with high risk or judgment.
 A dedicated verifier whose only output repeats one command adds process, not verification.
 
-Write verdict rows with `orch ledger record`.
-Check the current PR and head SHA with `orch ledger check`.
+Write verdict rows into `ledger.tsv`.
+Compare each row with the current PR and head SHA.
 Keep one `ledger.tsv` row per verdict, keyed by PR number and head SHA.
 Its verdict values are `live-ui-verified | unit-test-verified | type-check-only | verifier-blocked | verifier-failed`.
 Green CI is input to a verdict, not a verdict itself.
@@ -213,7 +208,7 @@ Work left only on a VM that dies was never done.
 - Reconcile a zombie that returns hours late with the current frontier and ledger before you accept anything. Save unique findings through a fresh unit. Never merge its work blindly.
 - Stop spawning when bad upstream output, broken acceptance, or dead infrastructure would spread bad work through the tree. Write a stop line as item 1 of the standing orders, and number the other orders after it. Let active work finish. Fix the cause. Then delete the stop line. Number the other orders from 1 again.
 - Limit your own infrastructure retries as you limit a child's. Stop after a few consecutive tool aborts. Write a terminal handoff to durable state. State what is done, where it lives, and the exact command to resume. End the run.
-- After a Claude Code restart, local agents are dead. Remote work and kept worktrees survive. Read the standing orders and `units.tsv` again. Recompute the frontier. Reattach surviving work by PR and branch instead of agent id. Spawn one sub-coordinator per track from its stored brief and current state. Drain the queue. Resume the work. The dead session's store lock clears on the next write. `orch` replaces a lock when its holder pid is gone.
+- After a Claude Code restart, local agents are dead. Remote work and kept worktrees survive. Read the standing orders and `units.tsv` again. Recompute the frontier. Reattach surviving work by PR and branch instead of agent id. Spawn one sub-coordinator per track from its stored brief and current state. Drain the queue. Resume the work.
 
 #### Escalation
 

@@ -6,7 +6,6 @@ import { command as doctor } from "./doctor.ts";
 import { command as hook } from "./hook.ts";
 import { command as init } from "./init.ts";
 import { command as managed } from "./managed.ts";
-import { command as orch } from "./orch.ts";
 import { command as plan } from "./plan.ts";
 import { command as planTicket } from "./plan-ticket.ts";
 import { command as print } from "./print.ts";
@@ -28,7 +27,6 @@ export const COMMANDS: readonly Command<number | Promise<number>>[] = [
 	doctor,
 	print,
 	init,
-	orch,
 	watchPr,
 ];
 

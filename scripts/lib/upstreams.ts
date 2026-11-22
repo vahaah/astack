@@ -150,7 +150,6 @@ export const AGENT_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> =
 export const PATH_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> = {
 	"rules/coding.md": ["pstack"],
 	"rules/comments.md": ["pstack"],
-	"src/astack/orch": ["pstack"],
 	"src/astack/plan": ["pstack"],
 	"src/astack/watch-pr": ["pstack"],
 };
