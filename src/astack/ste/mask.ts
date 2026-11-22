@@ -10,6 +10,14 @@ export const PLACEHOLDER_SOURCE = `${OPEN}\\d+${CLOSE}`;
 const PLACEHOLDER = new RegExp(`${OPEN}(\\d+)${CLOSE}`, "g");
 const ONE_PLACEHOLDER = new RegExp(`^${PLACEHOLDER_SOURCE}$`);
 const TRAILING = /[.,;:!?)\]'"]+$/;
+const CODE_SPAN = /(?<!`)(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g;
+
+export function replaceCodeSpans(
+	text: string,
+	by: (span: string) => string,
+): string {
+	return text.replace(CODE_SPAN, by);
+}
 
 type Step =
 	| {
@@ -30,7 +38,7 @@ function replace(pattern: RegExp, by: string): Step {
 const P = PLACEHOLDER_SOURCE;
 
 const LEADING: readonly Step[] = [
-	mask(/(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g),
+	mask(CODE_SPAN),
 	replace(/\band\s*\/\s*or\b/gi, AND_OR),
 	replace(/!\[[^\]]*\]\([^)]*\)/g, " "),
 	mask(

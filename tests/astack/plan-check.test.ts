@@ -592,6 +592,25 @@ describe("prose", () => {
 		).toEqual([]);
 	});
 
+	test("[control:span-run] a double-backtick span hides its words from the prose, ledger and avoid-list checks", () => {
+		const before = warnings(check(memberExport));
+		const added = (line: string) =>
+			warnings(
+				check(
+					memberExport.replace(
+						"Admins copy member lists",
+						`${line} Admins copy member lists`,
+					),
+				),
+			).filter((message) => !before.includes(message));
+		expect(added("Run G1 dump: b now.")).toEqual([
+			"G1 reads like a typed ID; use one D<n> family with a Kind",
+			"mid-sentence colon; end the sentence instead",
+			'"dump" is on the glossary\'s avoid list; say Export',
+		]);
+		expect(added("Run ``G1 dump: ` b`` now.")).toEqual([]);
+	});
+
 	test("line numbers stay file line numbers after the front matter", () => {
 		const after = [{ n: 5, text: "We don't stop.", code: false }] as const;
 		expect(proseFindings(after).map((f) => f.line)).toEqual([5]);

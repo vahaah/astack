@@ -32,6 +32,10 @@ describe("closing words", () => {
 		expect(closingRefs(text)).toEqual([]);
 	});
 
+	test("[control:span-run-links] a double-backtick span hides a closing word before its inner backtick", () => {
+		expect(closingRefs("``Closes #12 ` x``")).toEqual([]);
+	});
+
 	test("each match gives its line number", () => {
 		expect(closingRefs("Part of ABC-1\n\nFixes #4")).toEqual([
 			{ line: 3, phrase: "Fixes #4", ref: "#4" },

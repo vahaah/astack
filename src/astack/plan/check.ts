@@ -1,5 +1,6 @@
 import { basename, dirname, resolve } from "node:path";
 import { decisionHeading } from "../adr.ts";
+import { replaceCodeSpans } from "../ste/mask.ts";
 import {
 	bullets,
 	DECISION_HEADER,
@@ -1533,7 +1534,7 @@ function checkLedger(ctx: Ctx, emit: Emit): void {
 				line.n,
 				"a commit SHA; point at a branch, a ticket or an ADR instead",
 			);
-		const code = OLD_CODE.exec(text.replace(/`[^`]*`/g, " "))?.[0];
+		const code = OLD_CODE.exec(replaceCodeSpans(text, () => " "))?.[0];
 		if (code)
 			emit(
 				"warning",
@@ -1568,7 +1569,7 @@ function checkProse(ctx: Ctx, emit: Emit): void {
 	for (const line of ctx.plan.lines) {
 		if (line.code) continue;
 		for (const entry of avoid)
-			if (entry.pattern.test(line.text.replace(/`[^`]*`/g, " ")))
+			if (entry.pattern.test(replaceCodeSpans(line.text, () => " ")))
 				emit(
 					"warning",
 					"prose",

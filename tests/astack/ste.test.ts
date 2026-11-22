@@ -269,6 +269,11 @@ describe("text scope", () => {
 		});
 	});
 
+	test("[control:span-run-mask] a code span never opens inside a longer backtick run", () => {
+		expect(maskInline("Use ```a`` b here.").spans).toEqual([]);
+		expect(maskInline("Use ``a ` b`` here.").spans).toEqual(["``a ` b``"]);
+	});
+
 	test("restore gives back the original spans", () => {
 		const masked = maskInline("Run `x;y` on src/a.ts now.");
 		expect(masked.text).not.toContain(";");

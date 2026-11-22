@@ -1,3 +1,4 @@
+import { replaceCodeSpans } from "../ste/mask.ts";
 import { isTypeTest } from "../types/policy.ts";
 import type { LanguageId } from "./lexer.ts";
 import type { CommentLimits, CommentSize, LengthKind } from "./limits.ts";
@@ -392,10 +393,8 @@ function hasSessionCode(text: string): boolean {
 }
 
 function withoutQuotes(text: string, backticks: boolean): string {
-	return text.replace(
-		backticks ? /"[^"]*"|“[^”]*”|`[^`]*`/g : /"[^"]*"|“[^”]*”/g,
-		" ",
-	);
+	const unquoted = backticks ? replaceCodeSpans(text, () => " ") : text;
+	return unquoted.replace(/"[^"]*"|“[^”]*”/g, " ");
 }
 
 function planCodeHit(pattern: RegExp, text: string): boolean {
