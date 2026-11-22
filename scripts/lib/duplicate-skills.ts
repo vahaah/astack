@@ -14,7 +14,7 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	"implement-spec": ["plan"],
 	"improve-codebase-architecture": ["improve-codebase-architecture"],
 	prototype: ["prototype"],
-	research: ["research"],
+	research: ["plan"],
 	retro: ["retro"],
 	"setup-matt-pocock-skills": ["setup", "setup-matt-pocock-skills"],
 	tdd: ["tdd"],

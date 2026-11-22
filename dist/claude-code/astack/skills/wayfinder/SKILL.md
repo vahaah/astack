@@ -160,8 +160,7 @@ An AFK ticket permits the agent to drive its work alone.
 
 Research is AFK.
 Use it to find facts in documentation, third-party APIs or resources outside the working directory, such as knowledge bases.
-Delegate to a background `Agent` with `subagent_type: "general-purpose"`.
-Follow `astack:research`: use primary sources and produce one cited file.
+Delegate to a background `general-purpose` subagent with the S1 research brief of `astack:plan references/stages.md`.
 The facts must settle a prerequisite for a decision.
 
 ### Prototype

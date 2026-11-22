@@ -6,7 +6,7 @@ Grilling makes facts your job and decisions the owner's.
 
 | Kind | Test | Settled by | Thread |
 |---|---|---|---|
-| Fact | Reading the repo, the tracker, the docs or a running system answers it | `astack-how`, `astack-why`, `astack-recall`, `astack-research`, read-only explorers | subagent |
+| Fact | Reading the repo, the tracker, the docs or a running system answers it | `astack-how`, `astack-why`, `astack-recall`, the S1 research brief, read-only explorers | subagent |
 | Empirical fork | Running something answers it | `astack-mode` with `playbooks/prototype.md`, or `astack-prototype` when a person must judge the result | subagent, or main when the owner must see it |
 | Design fork | Two or more viable shapes, judged on structure | `astack-architect` phases A and B, which read `astack-arena` by path | subagent, then the owner ratifies |
 | Agent call | Reversible and cheap, with no product or risk preference riding on it | You decide, write a `default` row, and put it on the next veto list | main |

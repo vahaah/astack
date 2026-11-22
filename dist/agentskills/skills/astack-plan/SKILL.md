@@ -161,7 +161,7 @@ Run S7 and S8 last.
 | Stage | Thread | What runs | Exit |
 |---|---|---|---|
 | S0 Intake | main | The interview. The goal and the one decision the work drives, `astack-in-your-own-words` and `astack-sharpen`, `astack plan attended` | The goal is one sentence, the decision is named, and the done check is false today |
-| S1 Facts | subagents | `astack-how`, `astack-why`, `astack-recall`, `astack-research` | A facts brief under one page, with each open question sorted by kind |
+| S1 Facts | subagents | `astack-how`, `astack-why`, `astack-recall`, the research brief | A facts brief under one page, with each open question sorted by kind |
 | S2 Grill | main | `astack-grilling` over the whole frontier, at most 7 questions in a round | The frontier is empty and the owner agrees |
 | S3 Words | main | `astack-domain-modeling` writes each term at once | Each `terms:` entry is in the glossary |
 | S4 Design | lead subagent | `astack-architect` phases A and B with checkpoint | A sketch branch that compiles, and its open questions sorted |
@@ -185,7 +185,7 @@ When a stage runs inline with no subagent, the main thread reads the skills of t
 | Stage | Load | Read by path |
 |---|---|---|
 | S0 | `astack-write-docs`, for the prose of the plan. ASD-STE100 takes priority over its other prose rules | `astack-in-your-own-words`, `astack-sharpen`. `astack-show-me-your-work` before the first trail row |
-| S1 | `astack-research`, for a fact outside the repo | The S1 subagents read `astack-how`, `astack-why` and `astack-recall` |
+| S1 | None | The S1 subagents read `astack-how`, `astack-why` and `astack-recall`. A fact outside the repo takes the research brief of `references/stages.md` |
 | S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
 | S4 | `astack-codebase-design` for the depth words. `astack-prototype` when a person must judge a prototype | The S4 lead reads `astack-architect` and `astack-arena`. A fork that a test settles reads `astack-mode playbooks/prototype.md` |
 | S5 | None | `astack-principles` and each reference that its index says applies. The slicing rules of `astack-to-tickets`. `astack-figure-it-out` for a large migration or an unattended run. The charting rules of `astack-wayfinder`, in a programme |

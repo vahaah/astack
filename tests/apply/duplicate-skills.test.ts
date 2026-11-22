@@ -58,53 +58,67 @@ describe("flowSupersedes", () => {
 		}
 	});
 
-	test("[control:wb-successor] maps each cut upstream skill to the skill of its route, and a flat copy of it is never superseded", () => {
-		const flow = builtFlowSkills(join(root, "marketplace"));
-		if (!flow.ok) throw new Error(flow.error);
-		const cut = [
-			"implement",
-			"implement-spec",
-			"to-questionnaire",
-			"to-spec",
-			"triage",
-			"wait-what",
-			"wizard",
-		];
-		const found = findDuplicateSkills({
-			entries: cut.map(link),
+	const cut = [
+		"implement",
+		"implement-spec",
+		"research",
+		"to-questionnaire",
+		"to-spec",
+		"triage",
+		"wait-what",
+		"wizard",
+	];
+
+	test.each([
+		{
+			from: "from mattpocock/skills",
 			lock: {
 				skills: Object.fromEntries(
 					cut.map((name) => [name, { source: "mattpocock/skills" }]),
 				),
 			},
-			flowSkills: flow.value,
-		});
-		expect(
-			found.map(({ name, flowSkill, verdict }) => [name, flowSkill, verdict]),
-		).toEqual([
-			["implement", "astack:mode", "not-in-flow"],
-			["implement-spec", "astack:plan", "not-in-flow"],
-			["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
-			["to-spec", "astack:write-ticket", "not-in-flow"],
-			["triage", "astack:write-ticket", "not-in-flow"],
-			["wait-what", "astack:wait-what", "not-in-flow"],
-			["wizard", "astack:wizard", "not-in-flow"],
-		]);
-		const shipped = new Set(
-			readdirSync(join(root, "marketplace/plugins/astack/skills")),
-		);
-		const orphans = Object.entries(flowSupersedes)
-			.filter(([, candidates]) => !candidates.some((name) => shipped.has(name)))
-			.map(([name]) => name);
-		expect(orphans).toEqual([
-			"ask-matt",
-			"handoff",
-			"teach",
-			"to-questionnaire",
-			"wait-what",
-			"wizard",
-		]);
-	});
+		},
+		{ from: "with no lock entry", lock: {} },
+	])(
+		"[control:wb-successor] maps each cut upstream skill $from to the skill of its route, and a flat copy of it is never superseded",
+		({ lock }) => {
+			const flow = builtFlowSkills(join(root, "marketplace"));
+			if (!flow.ok) throw new Error(flow.error);
+			const found = findDuplicateSkills({
+				entries: cut.map(link),
+				lock,
+				flowSkills: flow.value,
+			});
+			expect(
+				found.map(({ name, flowSkill, verdict }) => [name, flowSkill, verdict]),
+			).toEqual([
+				["implement", "astack:mode", "not-in-flow"],
+				["implement-spec", "astack:plan", "not-in-flow"],
+				["research", "astack:plan", "not-in-flow"],
+				["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
+				["to-spec", "astack:write-ticket", "not-in-flow"],
+				["triage", "astack:write-ticket", "not-in-flow"],
+				["wait-what", "astack:wait-what", "not-in-flow"],
+				["wizard", "astack:wizard", "not-in-flow"],
+			]);
+			const shipped = new Set(
+				readdirSync(join(root, "marketplace/plugins/astack/skills")),
+			);
+			const orphans = Object.entries(flowSupersedes)
+				.filter(
+					([, candidates]) => !candidates.some((name) => shipped.has(name)),
+				)
+				.map(([name]) => name);
+			expect(orphans).toEqual([
+				"ask-matt",
+				"handoff",
+				"teach",
+				"to-questionnaire",
+				"wait-what",
+				"wizard",
+			]);
+		},
+	);
 });
 
 describe("parseSkillsTxt", () => {
@@ -189,14 +203,18 @@ describe("findDuplicateSkills", () => {
 	});
 
 	test("a skill with no lock entry is never called superseded", () => {
-		const [research] = findDuplicateSkills({
+		const [unmanaged] = findDuplicateSkills({
 			entries: [
-				{ name: "research", path: `${skills}/research`, kind: "directory" },
+				{
+					name: "diagnosing-bugs",
+					path: `${skills}/diagnosing-bugs`,
+					kind: "directory",
+				},
 			],
 			lock,
 		});
-		expect(research?.verdict).toBe("name-only");
-		expect(research?.source).toBeUndefined();
+		expect(unmanaged?.verdict).toBe("name-only");
+		expect(unmanaged?.source).toBeUndefined();
 	});
 
 	test("maps setup-matt-pocock-skills to the name the built astack plugin ships", () => {

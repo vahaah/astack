@@ -84,7 +84,7 @@ Then the facts come from a fresh context.
 - One `astack:how` run for each touched subsystem.
 - One `astack:why` run when the work changes an existing shape. Its Preserve, Change, Avoid and Risk set becomes constraints on the plan.
 - One `astack:recall` run for earlier attempts at the same work.
-- `astack:research` in the background for facts outside the repo. Its file goes to a `research/<slug>-<topic>` branch, never to main.
+- The research brief, for each fact outside the repo. Start one background `general-purpose` subagent. Tell it to read primary sources, such as official docs, specs, source code and first-party APIs. It follows each claim to the source that owns it. It writes one cited file, with a citation beside each claim. It commits that file on a `research/<slug>-<topic>` branch, never on main.
 
 Write the facts brief to the session scratch directory.
 Keep it under one page.
