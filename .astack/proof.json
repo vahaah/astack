@@ -239,11 +239,6 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/plans/review-roadmap/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
 			"path": ".astack/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
