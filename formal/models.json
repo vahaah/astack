@@ -352,6 +352,7 @@
 				"dependencies": [],
 				"bounds": [
 					"Two models, seven path kinds, a base registry that can be absent, and the floors R0, R1 and R4 on each side.",
+					"Four law kinds: none, a prop law on a read-only cap, another prop law and a tla law that selects the second model.",
 					"A diff of one or two path kinds, and each order of the derive, start, judge and admit steps."
 				],
 				"fairness": [],
@@ -364,7 +365,8 @@
 					"OneTriplePerModel",
 					"ManifestFirst",
 					"RegistryRunsAll",
-					"DeletedRegistryStops"
+					"DeletedRegistryStops",
+					"TlaLawSelects"
 				],
 				"properties": []
 			},

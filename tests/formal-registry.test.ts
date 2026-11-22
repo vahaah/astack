@@ -9,8 +9,16 @@ import {
 	modelFiles,
 	REGISTRY_PATH,
 } from "../src/astack/change-proof/rung.ts";
+import {
+	javaRuntime,
+	pinnedJar,
+	runModel,
+} from "../src/astack/change-proof/runner.ts";
 import { planModel } from "../src/astack/change-proof/tla.ts";
+import { judgeNegative } from "../src/astack/change-proof/tlc.ts";
 import { anyGlob, globMatches } from "../src/astack/glob.ts";
+import { map, ok } from "../src/astack/result.ts";
+import { heavyTestTimeout } from "./heavy-test.ts";
 
 const ROOT = resolve(import.meta.dir, "..");
 const read = (path: string): string => readFileSync(join(ROOT, path), "utf8");
@@ -266,4 +274,59 @@ describe("the model registry of astack", () => {
 				.map((row) => `${row.path} names ${row.control}`),
 		).toEqual([]);
 	});
+});
+
+const LADDER_CUTS: readonly (readonly [string, string, string, string])[] = [
+	[
+		"the law rung in Rung",
+		"Max({PathRung, LawRung, baseFloor, treeFloor})",
+		"Max({PathRung, baseFloor, treeFloor})",
+		"FloorOnlyRaises",
+	],
+	[
+		"the tla term of Selected",
+		' \\cup (IF law = "tla" THEN {"m2"} ELSE {})',
+		"",
+		"TlaLawSelects",
+	],
+];
+
+describe("the law rung of ProofLadder", () => {
+	test.each(LADDER_CUTS)(
+		"[control:ladder-law-cuts] TLC finds a violation of the invariant when a cut drops %s",
+		async (_name, original, replacement, invariant) => {
+			const module = read("formal/ProofLadder.tla");
+			expect(module.split(original).length).toBe(2);
+			const jar = await pinnedJar(process.env, ROOT);
+			const java = javaRuntime(process.env);
+			if (!jar.ok) throw new Error(jar.error);
+			if (!java.ok) throw new Error(java.error);
+			const run = await runModel(
+				process.env,
+				{
+					jar: jar.value,
+					java: java.value.java,
+					javaVersion: java.value.version,
+				},
+				[
+					{
+						fileName: "ProofLadder.tla",
+						text: module.replace(original, replacement),
+					},
+					{ fileName: "ProofLadder.cfg", text: read("formal/ProofLadder.cfg") },
+				],
+				"ProofLadder.tla",
+				"ProofLadder.cfg",
+				heavyTestTimeout,
+				new AbortController().signal,
+			);
+			expect(
+				map(
+					judgeNegative(run.end, { kind: "invariant", name: invariant }),
+					(violation) => violation.name,
+				),
+			).toEqual(ok(invariant));
+		},
+		heavyTestTimeout,
+	);
 });

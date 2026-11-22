@@ -8,6 +8,7 @@ Covers == [m1 |-> "cover1", m2 |-> "cover2"]
 Floors == {0, 1, 4}
 TlcRung == 4
 Results == {"none", "pending", "pass", "fail"}
+LawKinds == {"none", "propRead", "prop", "tla"}
 
 Rank(kind) == IF kind = "contract" THEN 0
               ELSE IF kind \in {"other", "unmodelled"} THEN 1
@@ -15,31 +16,40 @@ Rank(kind) == IF kind = "contract" THEN 0
 Max(set) == CHOOSE x \in set : \A y \in set : y <= x
 
 VARIABLES changed, base, tree, treeModels, baseModels, baseFloor, treeFloor,
-          status, rung, needed, triples, result
-fixed == <<changed, base, tree, treeModels, baseModels, baseFloor, treeFloor>>
+          law, status, rung, needed, triples, result
+fixed == <<changed, base, tree, treeModels, baseModels, baseFloor, treeFloor,
+           law>>
 vars == <<changed, base, tree, treeModels, baseModels, baseFloor, treeFloor,
-          status, rung, needed, triples, result>>
+          law, status, rung, needed, triples, result>>
 
 Lost == base /\ ~tree
 Legacy == ~base /\ ~tree
 Edited == "registry" \in changed \/ (tree /\ ~base) \/ baseModels # treeModels
 PathRung == Max({0} \cup {Rank(kind) : kind \in changed \ {"failGap"}}
                 \cup (IF Edited THEN {TlcRung} ELSE {}))
-Rung == IF Legacy THEN TlcRung ELSE Max({PathRung, baseFloor, treeFloor})
+LawRung == IF law = "tla" THEN TlcRung
+           ELSE IF law = "prop" THEN 3
+           ELSE IF law = "propRead" THEN 2
+           ELSE 0
+Rung == IF Legacy THEN TlcRung
+        ELSE Max({PathRung, LawRung, baseFloor, treeFloor})
 Selected == IF Legacy THEN {Manifest}
             ELSE {Manifest}
                  \cup {m \in Models : Covers[m] \in changed}
                  \cup (IF Edited THEN treeModels \cup baseModels ELSE {})
+                 \cup (IF law = "tla" THEN {"m2"} ELSE {})
 
 Diffs == {set \in SUBSET PathKinds : set # {} /\ Cardinality(set) <= 2}
 Consistent == /\ ~tree => changed \subseteq {"contract", "other"}
               /\ "cover2" \in changed => "m2" \in treeModels
+              /\ law = "tla" => "m2" \in treeModels
 
 Init == /\ base \in BOOLEAN
         /\ tree \in BOOLEAN
         /\ treeModels \in IF tree THEN {{Manifest}, Models} ELSE {{}}
         /\ baseModels \in IF base THEN SUBSET Models ELSE {{}}
         /\ changed \in Diffs
+        /\ law \in LawKinds
         /\ Consistent
         /\ baseFloor \in Floors
         /\ treeFloor \in Floors
@@ -96,8 +106,9 @@ TypeOK == /\ changed \in Diffs
           /\ baseModels \subseteq Models
           /\ baseFloor \in Floors
           /\ treeFloor \in Floors
+          /\ law \in LawKinds
           /\ status \in {"start", "derived", "admitted", "stopped"}
-          /\ rung \in Floors
+          /\ rung \in 0..TlcRung
           /\ needed \subseteq Models
           /\ triples \in [Models -> Nat]
           /\ result \in [Models -> Results]
@@ -108,13 +119,16 @@ AdmitNeedsEachTriple == status = "admitted" /\ Rung = TlcRung =>
 FailClosedStops == "failGap" \in changed => status \in {"start", "stopped"}
 FloorOnlyRaises == status \in {"derived", "admitted"} /\ ~Legacy =>
                      /\ rung >= PathRung
+                     /\ rung >= LawRung
                      /\ rung >= baseFloor
                      /\ rung >= treeFloor
-                     /\ rung \in {PathRung, baseFloor, treeFloor}
+                     /\ rung \in {PathRung, LawRung, baseFloor, treeFloor}
 OneTriplePerModel == \A m \in Models : triples[m] <= 1
 ManifestFirst == \A m \in Models \ {Manifest} :
                    triples[m] > 0 => result[Manifest] = "pass"
 RegistryRunsAll == status = "admitted" /\ Edited =>
                      \A m \in treeModels \cup baseModels : result[m] = "pass"
 DeletedRegistryStops == Lost => status \in {"start", "stopped"}
+TlaLawSelects == status \in {"derived", "admitted"} /\ law = "tla" =>
+                   "m2" \in needed
 =============================================================================
