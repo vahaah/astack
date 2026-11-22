@@ -410,6 +410,7 @@
 		"callersKnow": [
 			"check proof gets one manifest path or one stop, and a found manifest prints its path first.",
 			"ci-pins gets the same choice at the committed HEAD.",
+			"With --base, a manifest that the merge base holds stops at schema, so a change never edits a merged manifest.",
 			"A held base manifest and .astack/proof.json beside a folder manifest stop at stale."
 		],
 		"deletionTest": "Without manifest.ts, proof.ts and ci-pins.ts each repeat the choice rule, and the two copies can drift.",
