@@ -176,6 +176,11 @@ describe("renderIssueTracker", () => {
 			...(/inside a clone/i.test(doc)
 				? [`the ${name} says that gh finds the repo inside a clone`]
 				: []),
+			...(/prints nothing/i.test(doc)
+				? [
+						`the ${name} waits for no output, but gh prints a message when no default is set`,
+					]
+				: []),
 		];
 		expect([
 			...(seed.includes(

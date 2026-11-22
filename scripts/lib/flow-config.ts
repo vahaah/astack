@@ -108,7 +108,7 @@ function githubTracker(
 	return lines(
 		"# Issue tracker: GitHub",
 		"",
-		"Issues and specs live as GitHub issues in this repo. Use the `gh` CLI. Run `gh repo set-default --view` before the first `gh` command. When it prints nothing or a repo other than `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command.",
+		"Issues and specs live as GitHub issues in this repo. Use the `gh` CLI. Run `gh repo set-default --view` before the first `gh` command. If it does not print the repo of `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command.",
 		"",
 		"## Conventions",
 		"",
