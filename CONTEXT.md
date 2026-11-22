@@ -144,3 +144,10 @@ _Code_: `budgetReport`
 A skill, agent, command or module with no measured use in 30 days and no live dependent.
 A live dependent is code, a route, a test or an accepted ADR that needs the part.
 _Avoid_: Unused code, dead skill
+
+### Fixture template
+
+A git repo, or a folder of repos, that a heavy test file builds once and copies for each test.
+Each copy points its git config at itself, so a write in a copy never reaches the template or another copy.
+_Avoid_: Shared repo, golden repo
+_Code_: `buildTemplate`

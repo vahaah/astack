@@ -4,7 +4,8 @@
 		"docs/reference/change-proof-contract.md",
 		"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 		"docs/reference/session-guards.md",
-		"docs/reference/word-budget.md"
+		"docs/reference/word-budget.md",
+		"docs/reference/test-fixtures.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -26,7 +27,9 @@
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
-		"tests/validate.test.ts"
+		"tests/validate.test.ts",
+		"tests/git-template.test.ts",
+		"tests/check-companion.test.ts"
 	],
 	"links": [
 		{
@@ -255,6 +258,30 @@
 		{
 			"criterion": "WB-validate",
 			"controls": ["wb-validate-skip"]
+		},
+		{
+			"criterion": "FX-ISOLATE",
+			"controls": ["fx-isolate"]
+		},
+		{
+			"criterion": "FX-INDEX",
+			"controls": ["fx-index"]
+		},
+		{
+			"criterion": "FX-TREE",
+			"controls": ["fx-tree"]
+		},
+		{
+			"criterion": "FX-ATOMIC",
+			"controls": ["fx-atomic"]
+		},
+		{
+			"criterion": "FX-OWN-DIR",
+			"controls": ["fx-own-dir"]
+		},
+		{
+			"criterion": "FX-REAL-SCAN",
+			"controls": ["fx-real-scan"]
 		}
 	]
 }
