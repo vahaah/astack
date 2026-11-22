@@ -22,6 +22,7 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-13] With `--base <ref>`, the scope and the snapshots read from the merge base of the ref and HEAD. The manifest base must be an ancestor of that merge base. Replace objects and grafts cannot change a base or hide a changed path.
 - [criterion:CP-14] Each CI run of `scripts/check-proof.ts` passes a base. A push to the default branch and a release use the first parent of HEAD. A branch push whose HEAD the default branch holds also uses the first parent of HEAD. A push to another branch uses the default branch.
 - [criterion:CP-15] The base branch can change the authority of a ratified ADR after the manifest base. Then the stop names the ADR, both commits and the repair. A change of only the selected Landed value does not stop.
+- [criterion:CP-16] A local run of `scripts/check-proof.ts` reads `origin/HEAD`. A clean HEAD that the default branch holds uses the first parent of HEAD, and each other HEAD uses the default branch. With no `origin/HEAD` that resolves, or no first parent, the run keeps the manifest base.
 
 ## Claim boundary
 
