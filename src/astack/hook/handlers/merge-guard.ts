@@ -304,8 +304,8 @@ function inputStrings(value: unknown): readonly string[] {
 }
 
 function decodedEscapes(text: string): string {
-	return text.replace(JSON_ESCAPE, (escape) =>
-		String(JSON.parse(`"${escape}"`)),
+	return text.replace(JSON_ESCAPE, (sequence) =>
+		String(JSON.parse(`"${sequence}"`)),
 	);
 }
 
