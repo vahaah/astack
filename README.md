@@ -451,7 +451,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
 | `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
 | `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
-| `astack managed <path>` | Exit 0 when apply writes the path, 1 when the repo owns it, and 2 when the profile cannot tell |
+| `astack managed <path>` | Print whether apply writes the path or the repo owns it. Exit 0 when the owner is known, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |
 | `astack doctor` | Report the runtime, installed copies, duplicate skills and the hook trust that Codex reports. `--skip-profile <dir>` skips a Claude config folder on purpose. Doctor writes only its skip file, its runtime file and the state that `codex app-server` keeps in `CODEX_HOME` |
