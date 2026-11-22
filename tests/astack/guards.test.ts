@@ -116,6 +116,8 @@ describe("the destructive command guard", () => {
 		['git commit --no-verify --allow-empty -m "Add the parser"', "--no-verify"],
 		['git commit -nm "Add the parser"', "--no-verify"],
 		["git push --no-verify origin dev/abc-1/export", "--no-verify"],
+		["git push --no-verif origin dev/abc-1/export", "--no-verify"],
+		["git commit --no-veri -m x", "--no-verify"],
 	])("%s is denied", (command, text) => {
 		const verdict = destructive.run(shell(command), context(repo));
 		expect(verdict.kind).toBe("deny");

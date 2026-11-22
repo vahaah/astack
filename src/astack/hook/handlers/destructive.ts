@@ -631,7 +631,7 @@ function turnsHooksOff(setting: string, dir: string): boolean {
 function noVerify(git: GitInvocation, flags: readonly string[]): boolean {
 	return flags.some(
 		(flag) =>
-			flag === "--no-verify" ||
+			isLongForm(flag, "--no-verify") ||
 			(git.sub === "commit" && /^-[A-Za-z]*n[A-Za-z]*$/.test(flag)),
 	);
 }
