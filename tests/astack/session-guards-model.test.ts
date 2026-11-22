@@ -1,13 +1,68 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { saveGateRecord } from "../../src/astack/gates.ts";
+import { gitInvocation } from "../../src/astack/git-command.ts";
+import { runHook } from "../../src/astack/hook/dispatch.ts";
+import type { Context, Handler } from "../../src/astack/hook/events.ts";
 import {
+	handler as destructive,
+	type Treeish,
+	type WorkLoss,
+	workLoss,
+} from "../../src/astack/hook/handlers/destructive.ts";
+import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { isScratchPath } from "../../src/astack/paths.ts";
+import type {
+	BaseAuthority,
+	PullRequestState,
+	ReadPullRequest,
+} from "../../src/astack/pr/github.ts";
+import { DEFAULT_MERGE_PROFILE } from "../../src/astack/pr/profile.ts";
+import {
+	type Change,
+	type Command,
+	codeLost,
 	loadSessionGuards,
+	MERGE_START,
+	merge,
 	pinFailures,
+	prompt,
+	push,
 	readSessionGuards,
+	scratch,
 } from "./session-guards-model.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 const MODEL = loadSessionGuards(ROOT);
+const TEMP = mkdtempSync(join(tmpdir(), "astack-conformance-"));
+afterAll(() => rmSync(TEMP, { recursive: true, force: true }));
+
+function git(dir: string, ...args: string[]): string {
+	const run = spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+	if (run.status !== 0) throw new Error(`git ${args.join(" ")}: ${run.stderr}`);
+	return run.stdout.trim();
+}
+
+function context(cwd: string, env: Context["env"]): Context {
+	return {
+		tool: "claude-code",
+		event: "PreToolUse",
+		cwd,
+		projectDir: cwd,
+		env,
+		today: "2026-11-22",
+		session: "conformance",
+	};
+}
+
+function oneOf<T>(table: Readonly<Record<string, T>>, name: string): T {
+	const found = table[name];
+	if (found === undefined) throw new Error(`no conformance form for ${name}`);
+	return found;
+}
 
 describe("the SessionGuards model reader", () => {
 	test("reads the spec that the registry names and counts each table", () => {
@@ -72,5 +127,353 @@ describe("the SessionGuards model reader", () => {
 			expect(MODEL.text).toContain(from);
 			expect(pinFailures(MODEL.text.replace(from, to))).toEqual([name]);
 		});
+	});
+});
+
+const TREES: Treeish = (name) => name === "HEAD" || name === "main";
+const PATHSPEC_SCOPE: Readonly<Record<string, string>> = {
+	":/": "tree",
+	".": "tree",
+	src: "folder",
+	"notes.txt": "named",
+};
+const PLACE_FILE: Readonly<Record<string, string>> = {
+	named: "notes.txt",
+	folder: "src/a.txt",
+	other: "other.txt",
+};
+
+type Row = {
+	readonly name: string;
+	readonly lost: string;
+	readonly scope?: string;
+};
+
+function codeRow(command: Command): Row {
+	const invocation = gitInvocation(["git", ...command.name.split(" ")], ROOT);
+	const loss: WorkLoss | undefined =
+		invocation === undefined ? undefined : workLoss(invocation, TREES);
+	return loss === undefined
+		? { name: command.name, lost: "none" }
+		: {
+				name: command.name,
+				lost: loss.lost,
+				scope: loss.pathspecs.map((spec) => oneOf(PATHSPEC_SCOPE, spec)).join(),
+			};
+}
+
+function changedRepo(change: Change): string {
+	const dir = join(TEMP, "work-loss", `${change.kind}-${change.place}`);
+	const file = oneOf(PLACE_FILE, change.place);
+	mkdirSync(join(dir, "src"), { recursive: true });
+	git(dir, "init", "-q", "-b", "main");
+	git(dir, "config", "user.email", "t@example.com");
+	git(dir, "config", "user.name", "T");
+	git(dir, "config", "commit.gpgsign", "false");
+	for (const path of Object.values(PLACE_FILE))
+		if (change.kind !== "untracked" || path !== file)
+			writeFileSync(join(dir, path), "base\n");
+	git(dir, "add", "-A");
+	git(dir, "commit", "-q", "-m", "base");
+	writeFileSync(join(dir, file), "staged\n");
+	if (change.kind === "staged" || change.kind === "both") git(dir, "add", file);
+	if (change.kind === "both") writeFileSync(join(dir, file), "work\n");
+	return dir;
+}
+
+describe("[control:sg-conformance-work-loss] the work-loss guard answers each row of the model", () => {
+	test("workLoss gives the kind and the scope of each command row", () => {
+		expect(MODEL.commands.map(codeRow)).toEqual(
+			MODEL.commands.map(
+				({ name, lost, scope }): Row =>
+					lost === "none" ? { name, lost } : { name, lost, scope },
+			),
+		);
+	});
+
+	test("the destructive handler denies a command on a repo with one change exactly when CodeLost holds", () => {
+		const env = { ASTACK_STATE_DIR: join(TEMP, "work-loss-state") };
+		const verdicts = MODEL.changes.flatMap((change) => {
+			const dir = changedRepo(change);
+			return MODEL.commands.map((command) => ({
+				command: command.name,
+				change,
+				code:
+					destructive.run(
+						{ kind: "shell", command: `git ${command.name}`, cwd: dir },
+						context(dir, env),
+					).kind === "deny",
+				model: codeLost(command, [change]).length > 0,
+			}));
+		});
+		expect(verdicts.length).toBe(MODEL.changes.length * MODEL.commands.length);
+		expect(verdicts.filter(({ code, model }) => code !== model)).toEqual([]);
+		expect(verdicts.some(({ model }) => model)).toBe(true);
+	});
+});
+
+const PUSH_FORMS: Readonly<Record<string, readonly [string, string]>> = {
+	head: ["git push", "git push --no-verify"],
+	refs: ["git push --all", "git push --no-verify --all"],
+	commit: ["git commit -m x", "git commit --no-verify -m x"],
+};
+
+describe("[control:sg-conformance-push] the push guard answers each target of the model", () => {
+	test("a hook skip passes exactly when Push allows it", () => {
+		const dir = join(TEMP, "push");
+		mkdirSync(dir, { recursive: true });
+		git(dir, "init", "-q", "-b", "main");
+		git(dir, "config", "user.email", "t@example.com");
+		git(dir, "config", "user.name", "T");
+		git(dir, "commit", "-q", "--allow-empty", "-m", "base");
+		const head = git(dir, "rev-parse", "HEAD");
+		const states = [false, true].map((recorded) => {
+			const env = { ASTACK_STATE_DIR: join(TEMP, `push-${recorded}`) };
+			if (recorded)
+				saveGateRecord(env, {
+					head,
+					base: "main",
+					baseSha: head,
+					ran: [],
+					skipped: [],
+				});
+			return { recorded, env };
+		});
+		const verdicts = MODEL.targets.flatMap((target) =>
+			states.flatMap(({ recorded, env }) =>
+				[false, true].map((skips) => {
+					const command = oneOf(PUSH_FORMS, target)[skips ? 1 : 0] ?? "";
+					return {
+						target,
+						recorded,
+						skips,
+						code:
+							destructive.run(
+								{ kind: "shell", command, cwd: dir },
+								context(dir, env),
+							).kind !== "deny",
+						model: push(skips, target, recorded),
+					};
+				}),
+			),
+		);
+		expect(verdicts.length).toBe(MODEL.targets.length * 4);
+		expect(verdicts.filter(({ code, model }) => code !== model)).toEqual([]);
+	});
+});
+
+const CLAUSE_TEXT: Readonly<Record<string, string>> = {
+	merge: "Merge it.",
+	mergeOne: "Merge #12.",
+	negatedMerge: "Do not merge.",
+	fullSend: "Full send.",
+	negatedFullSend: "No full send.",
+	fullStop: "Full stop.",
+	other: "Fix the tests.",
+};
+const PR_OF: Readonly<Record<number, { number: number; base: string }>> = {
+	1: { number: 12, base: "main" },
+	2: { number: 34, base: "dev" },
+};
+const HEAD_SHA = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+
+function committed(merge: object): BaseAuthority {
+	return {
+		kind: "committed",
+		commit: HEAD_SHA,
+		profile: { ...DEFAULT_MERGE_PROFILE, ...merge },
+	};
+}
+
+const AUTHORITY: Readonly<Record<string, BaseAuthority>> = {
+	turn: committed({}),
+	standing: committed({ authority: "standing" }),
+	base: committed({ standingBases: ["main"] }),
+	unread: { kind: "unread", reason: "the conformance test gives no profile" },
+};
+
+function pullRequest(n: number, authority: BaseAuthority): PullRequestState {
+	const { number, base } = oneOf(PR_OF, String(n));
+	return {
+		number,
+		url: `https://github.com/o/r/pull/${number}`,
+		title: "feat: x",
+		body: "Part of ABC-1",
+		base,
+		head: HEAD_SHA,
+		openThreads: 0,
+		threadsListed: true,
+		checks: "success",
+		checkedHead: HEAD_SHA,
+		authority,
+	};
+}
+
+function orderedPrompts(): readonly (readonly string[])[] {
+	return MODEL.prompts.flatMap((p) =>
+		p.length === 1 ? [p] : [p, [...p].reverse()],
+	);
+}
+
+function promptPayload(
+	session: string,
+	project: string,
+	clauses: readonly string[],
+	source: string,
+): string {
+	const text = clauses.map((clause) => oneOf(CLAUSE_TEXT, clause)).join(" ");
+	const sources: Readonly<Record<string, object>> = {
+		user: { prompt: text, source: "user" },
+		none: { prompt: text },
+		frame: { prompt: `[Workflow harness] ${text}` },
+		machine: { prompt: text, source: "agent" },
+	};
+	return JSON.stringify({
+		session_id: session,
+		cwd: project,
+		hook_event_name: "UserPromptSubmit",
+		...oneOf(sources, source),
+	});
+}
+
+function toolPayload(
+	session: string,
+	project: string,
+	name: string,
+	input: object,
+): string {
+	return JSON.stringify({
+		session_id: session,
+		cwd: project,
+		hook_event_name: "PreToolUse",
+		tool_name: name,
+		tool_input: input,
+	});
+}
+
+describe("[control:sg-conformance-merge] the merge guard answers each merge of the model", () => {
+	test("each prompt, source, attended state, base authority and PR gives the merge verdict of the model, and an MCP merge and a failed PR read give a deny", () => {
+		const project = join(TEMP, "merge-project");
+		mkdirSync(project, { recursive: true });
+		const stateDir = join(TEMP, "merge-state");
+		let id = 0;
+		const verdicts = orderedPrompts().flatMap((clauses) =>
+			MODEL.sources.flatMap((source) =>
+				[true, false].flatMap((attended) =>
+					MODEL.baseAuthorities.flatMap((authority) =>
+						MODEL.prs.map((n) => {
+							const session = `merge-${id++}`;
+							const env = attended
+								? { ASTACK_STATE_DIR: stateDir }
+								: {
+										ASTACK_STATE_DIR: stateDir,
+										CLAUDE_CODE_SESSION_ATTENDED: "0",
+									};
+							const pr = pullRequest(n, oneOf(AUTHORITY, authority));
+							const read: ReadPullRequest = () => pr;
+							const deps = (handler: Handler) => ({
+								cwd: project,
+								today: "2026-11-22",
+								readText: () => undefined,
+								handlers: [handler],
+							});
+							const guard = mergeGuard(read);
+							runHook(
+								"claude-code",
+								"UserPromptSubmit",
+								promptPayload(session, project, clauses, source),
+								env,
+								deps(guard),
+							);
+							const passes = (handler: Handler, name: string, input: object) =>
+								runHook(
+									"claude-code",
+									"PreToolUse",
+									toolPayload(session, project, name, input),
+									env,
+									deps(handler),
+								).exit === 0;
+							const thrown = mergeGuard(() => {
+								throw new Error("gh failed");
+							});
+							const modelState = prompt(
+								MODEL,
+								MERGE_START,
+								clauses,
+								source,
+								attended,
+							);
+							return {
+								case: `${clauses.join("+")} ${source} ${attended} ${authority} ${n}`,
+								code: [
+									passes(guard, "Bash", {
+										command: `gh pr merge ${pr.number}`,
+									}),
+									passes(guard, "mcp__github__merge_pull_request", {
+										owner: "o",
+										repo: "r",
+										pullNumber: pr.number,
+									}),
+									passes(thrown, "Bash", {
+										command: `gh pr merge ${pr.number}`,
+									}),
+								],
+								model: [
+									merge(modelState, authority, n, "gh", false),
+									merge(modelState, authority, n, "mcp", false),
+									merge(modelState, authority, n, "gh", true),
+								],
+							};
+						}),
+					),
+				),
+			),
+		);
+		expect(verdicts.length).toBe(
+			orderedPrompts().length *
+				MODEL.sources.length *
+				2 *
+				MODEL.baseAuthorities.length *
+				MODEL.prs.length,
+		);
+		expect(
+			verdicts.filter(({ code, model }) => code.join() !== model.join()),
+		).toEqual([]);
+		expect(verdicts.filter(({ model }) => model[0]).length).toBeGreaterThan(0);
+	});
+});
+
+describe("[control:sg-conformance-scratch] isScratchPath answers each file fact of the model", () => {
+	test("each fact gives the Scratch verdict of the model", () => {
+		const temp = join(TEMP, "scratch", "tmp");
+		const home = join(TEMP, "scratch", "home");
+		const other = join(home, "project");
+		mkdirSync(other, { recursive: true });
+		const saved = process.env.TMPDIR;
+		process.env.TMPDIR = temp;
+		try {
+			const verdicts = MODEL.files.map((fact, index) => {
+				const base = join(fact.inTemp ? temp : home, `fact-${index}`);
+				mkdirSync(join(base, "sub"), { recursive: true });
+				if (fact.git) mkdirSync(join(base, ".git"));
+				if (fact.marked) {
+					mkdirSync(join(base, ".astack"));
+					writeFileSync(join(base, ".astack/profile.json"), "{}\n");
+				}
+				const file = join(base, "sub", "probe.ts");
+				writeFileSync(file, "export {};\n");
+				return {
+					fact,
+					code: isScratchPath(fact.inProject ? base : other, file),
+					model: scratch(fact),
+				};
+			});
+			expect(verdicts.length).toBe(16);
+			expect(verdicts.filter(({ code, model }) => code !== model)).toEqual([]);
+			expect(verdicts.filter(({ model }) => model).length).toBe(2);
+		} finally {
+			if (saved === undefined) delete process.env.TMPDIR;
+			else process.env.TMPDIR = saved;
+		}
 	});
 });
