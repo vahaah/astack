@@ -50,7 +50,7 @@ For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 - A question or a step that only a person can settle: name it to the owner and stop.
 - A behavior that you build test-first with no plan: `astack:tdd`.
 - A ticket or a document outside a plan: `astack:write-ticket` or `astack:write-docs`.
-- Codebase upkeep: `astack:improve-codebase-architecture`. Then take the selected candidate into `/astack:plan`.
+- Codebase upkeep: the Survey of `astack:codebase-design`. Then take the selected candidate into `/astack:plan`.
 - Work that moves to another agent tool, folder or person: `astack session handoff`.
 - Setup: `astack:setup` for the tracker and the labels, `astack:setup-models` for the astack model roles.
 

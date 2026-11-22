@@ -1,6 +1,6 @@
 # astack for Agent Skills clients
 
-This folder holds 49 astack skills in the Agent Skills format. Each SKILL.md keeps only `name`, `description`, `license` and `metadata`. A skill that only the user can start has `disable-model-invocation: "true"` in its `metadata`.
+This folder holds 48 astack skills in the Agent Skills format. Each SKILL.md keeps only `name`, `description`, `license` and `metadata`. A skill that only the user can start has `disable-model-invocation: "true"` in its `metadata`.
 
 ## Install
 

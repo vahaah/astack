@@ -12,7 +12,7 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	handoff: ["handoff"],
 	implement: ["mode"],
 	"implement-spec": ["plan"],
-	"improve-codebase-architecture": ["improve-codebase-architecture"],
+	"improve-codebase-architecture": ["codebase-design"],
 	prototype: ["prototype"],
 	research: ["plan"],
 	retro: ["retro"],
@@ -28,6 +28,18 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	wizard: ["wizard"],
 	"writing-for-agents": ["writing-for-agents"],
 };
+
+const cutSkills: ReadonlySet<string> = new Set([
+	"implement",
+	"implement-spec",
+	"improve-codebase-architecture",
+	"research",
+	"to-questionnaire",
+	"to-spec",
+	"triage",
+	"wait-what",
+	"wizard",
+]);
 
 export type UserSkillEntry = {
 	name: string;
@@ -101,7 +113,7 @@ export function findDuplicateSkills(input: {
 		const source = lockSource(input.lock, entry.name);
 		const flowName = flowSkillFor(candidates, input.flowSkills);
 		const verdict: DuplicateVerdict =
-			flowName === undefined
+			flowName === undefined || cutSkills.has(entry.name)
 				? "not-in-flow"
 				: source === flowUpstream
 					? "superseded"

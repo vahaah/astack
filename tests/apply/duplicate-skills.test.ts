@@ -61,6 +61,7 @@ describe("flowSupersedes", () => {
 	const cut = [
 		"implement",
 		"implement-spec",
+		"improve-codebase-architecture",
 		"research",
 		"to-questionnaire",
 		"to-spec",
@@ -94,6 +95,11 @@ describe("flowSupersedes", () => {
 			).toEqual([
 				["implement", "astack:mode", "not-in-flow"],
 				["implement-spec", "astack:plan", "not-in-flow"],
+				[
+					"improve-codebase-architecture",
+					"astack:codebase-design",
+					"not-in-flow",
+				],
 				["research", "astack:plan", "not-in-flow"],
 				["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
 				["to-spec", "astack:write-ticket", "not-in-flow"],
