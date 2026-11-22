@@ -222,11 +222,6 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/plans/review-roadmap/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
 			"path": "docs/charts/checked-path.mmd",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
