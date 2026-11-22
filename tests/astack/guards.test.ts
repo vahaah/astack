@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
@@ -466,6 +467,7 @@ describe("a hook skip", () => {
 			".githooks/pre-push": "#!/bin/sh\nexit 0\n",
 			"src/app.ts": "a\n",
 		});
+		chmodSync(join(hooked, ".githooks/pre-push"), 0o755);
 		git(hooked, "add", ".");
 		git(hooked, "commit", "-q", "-m", "base");
 		git(hooked, "checkout", "-q", "-b", "feature");
@@ -571,6 +573,73 @@ describe("a hook skip", () => {
 		expect(said).toContain(text);
 		expect(said).toContain("owner gate");
 	});
+});
+
+describe("a core.hooksPath that names a folder", () => {
+	let active = "";
+
+	beforeAll(() => {
+		active = join(root, "active-hooks");
+		for (const folder of [".githooks", "docs", "plain", "partial", "staged"])
+			mkdirSync(join(active, folder), { recursive: true });
+		initRepo(active);
+		const hook = "#!/bin/sh\nexit 0\n";
+		write(active, {
+			".githooks/pre-push": hook,
+			".githooks/pre-commit": hook,
+			"docs/update": "How to update\n",
+			"plain/pre-push": hook,
+			"plain/pre-commit": hook,
+			"partial/pre-push": hook,
+		});
+		for (const path of [
+			".githooks/pre-push",
+			".githooks/pre-commit",
+			"partial/pre-push",
+		])
+			chmodSync(join(active, path), 0o755);
+		git(active, "add", ".");
+		git(active, "commit", "-q", "-m", "base");
+		write(active, { "staged/pre-push": hook, "staged/pre-commit": hook });
+		chmodSync(join(active, "staged/pre-push"), 0o755);
+		chmodSync(join(active, "staged/pre-commit"), 0o755);
+		git(active, "add", "staged");
+		for (const name of ["pre-push", "pre-commit"]) {
+			write(active, { [`.git/hooks/${name}`]: "#!/bin/sh\nexit 1\n" });
+			chmodSync(join(active, ".git/hooks", name), 0o755);
+		}
+	});
+
+	function run(command: string): Verdict {
+		return destructive.run(shell(command, active), {
+			...context(active),
+			env: { ASTACK_STATE_DIR: join(root, "active-hooks-state") },
+		});
+	}
+
+	test.each([
+		["git -c core.hooksPath=docs push", "a file with a hook name only"],
+		["git -c core.hooksPath=staged push", "hooks in the index only"],
+		["git config core.hooksPath plain", "hooks with no executable mode"],
+		["git -c core.hooksPath=partial push", "no pre-commit hook"],
+	])(
+		"%s skips the hooks that are active now, because its folder holds %s in HEAD",
+		(command) => {
+			const said = reason(run(command));
+			expect(said).toContain(`${command} skips the git hooks of the repo.`);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"git -c core.hooksPath=.githooks push",
+		"git config core.hooksPath .githooks",
+	])(
+		"%s passes, because HEAD holds each active hook in the folder as an executable file",
+		(command) => {
+			expect(run(command).kind).toBe("allow");
+		},
+	);
 });
 
 describe("the clean selection of the work-loss guard", () => {

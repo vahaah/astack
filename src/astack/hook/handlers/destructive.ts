@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { basename, isAbsolute, join, resolve } from "node:path";
 import { loadGateRecord } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
@@ -625,19 +626,62 @@ const HOOK_NAMES = [
 	"update",
 ];
 
+function isExecutable(path: string): boolean {
+	const stat = statSync(path, { throwIfNoEntry: false });
+	return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
+}
+
+function activeHooks(root: string): readonly string[] | undefined {
+	const folder = gitText(root, [
+		...READ_ONLY_GIT,
+		"rev-parse",
+		"--git-path",
+		"hooks",
+	]);
+	if (folder === undefined) return undefined;
+	const dir = resolve(root, folder);
+	return HOOK_NAMES.filter((name) => isExecutable(join(dir, name)));
+}
+
+const EXECUTABLE_BLOB = /^100755 blob [0-9a-f]+\t([\s\S]*)$/;
+
+function headHooks(root: string, path: string): ReadonlySet<string> {
+	const prefix = path === "" ? "" : `${path}/`;
+	const listed = runGit(root, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-z",
+		"--full-tree",
+		"HEAD",
+		"--",
+		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
+	]);
+	if (!listed.ok) return new Set();
+	return new Set(
+		listed.stdout
+			.toString("utf8")
+			.split("\0")
+			.flatMap((entry) => {
+				const tracked = EXECUTABLE_BLOB.exec(entry)?.[1];
+				const name = tracked?.slice(prefix.length);
+				return tracked === `${prefix}${name}` &&
+					name !== undefined &&
+					HOOK_NAMES.includes(name)
+					? [name]
+					: [];
+			}),
+	);
+}
+
 function tracksHooks(dir: string, folder: string): boolean {
 	const root = repoRoot(dir);
 	if (root === undefined || folder === "") return false;
 	const path = canonicalRelative(root, resolve(root, folder));
 	if (isAbsolute(path)) return false;
-	const prefix = path === "" ? "" : `${path}/`;
-	const listed = gitText(root, [
-		...READ_ONLY_GIT,
-		"ls-files",
-		"--",
-		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
-	]);
-	return (listed ?? "") !== "";
+	const active = activeHooks(root);
+	if (active === undefined) return false;
+	const tracked = headHooks(root, path);
+	return tracked.size > 0 && active.every((name) => tracked.has(name));
 }
 
 function turnsHooksOff(setting: string, dir: string): boolean {
