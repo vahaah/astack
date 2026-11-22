@@ -39,6 +39,11 @@
 			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "RejectPositive"]
 		},
 		{
+			"path": "tests/check-proof-script.test.ts",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
 			"path": "tests/fixtures/tlc/**",
 			"obligation": "CP-18",
 			"modelRefs": ["RejectPositive"]
