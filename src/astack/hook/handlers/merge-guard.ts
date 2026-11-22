@@ -313,11 +313,26 @@ function runsGhMerge(value: string): boolean {
 	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
 }
 
+function ghCommands(value: unknown): readonly string[] {
+	if (Array.isArray(value)) {
+		const items = value.filter(
+			(item): item is string => typeof item === "string",
+		);
+		const command = GH.test(items[0] ?? "")
+			? items.join(" ")
+			: `gh ${items.join(" ")}`;
+		return [command, ...value.flatMap(ghCommands)];
+	}
+	return typeof value === "object" && value !== null
+		? Object.values(value).flatMap(ghCommands)
+		: [];
+}
+
 function holdsMerge(input: unknown): boolean {
 	const values = inputStrings(input).map(decodedEscapes);
 	const text = values.join("\n");
 	return (
-		values.some(runsGhMerge) ||
+		[...values, ...ghCommands(input)].some(runsGhMerge) ||
 		MERGE_MUTATION_IN_INPUT.test(text) ||
 		(MERGE_PATH_IN_INPUT.test(text) &&
 			(WRITE_METHOD_IN_TEXT.test(text) ||

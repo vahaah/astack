@@ -121,7 +121,9 @@ So a read tool on a merge request, such as `list_merge_requests` and `get_merge_
 The guard also reads each key and each value of the input of an MCP call, because a generic API tool can post a merge.
 It reads the decoded values, not the JSON text, so a tab or a line break before a mutation name does not hide it.
 It also decodes each JSON escape in a value, because the body of a raw request can hold escapes that the forge decodes.
+
 An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
+The guard also reads each array of strings as the arguments of `gh`, because a `gh` tool can take `["pr", "merge", "12"]`.
 A tool with `click`, `press` or `tap` in its name gets a deny when its input holds a merge word, such as `Squash and merge`.
 A browser tool can click the merge button of the forge.
 

@@ -851,6 +851,18 @@ describe("MCP merge tools", () => {
 			{ command: "gh pr merge 12 --squash" },
 		],
 		[
+			"a gh argument list for pr merge",
+			"mcp__gh__gh",
+			true,
+			{ args: ["pr", "merge", "12", "--squash"] },
+		],
+		[
+			"a gh argument list for pr view",
+			"mcp__gh__gh",
+			false,
+			{ args: ["pr", "view", "12"] },
+		],
+		[
 			"a gh pr view command",
 			"mcp__desktop_commander__start_process",
 			false,
