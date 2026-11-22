@@ -8,6 +8,7 @@ import {
 	problemText,
 	reviewProfileState,
 } from "../../../pr-review-profile.ts";
+import { loadProfile } from "../../../profile.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 
@@ -23,8 +24,13 @@ function readText(path: string): string | undefined {
 
 function run(args: readonly string[], io: Io): number {
 	if (args.length > 0) return usageError(io, `${NAME}: takes no argument`);
-	const path = join(repoRoot(io.cwd) ?? io.cwd, MANAGED_PATHS.reviewProfile);
-	const state = reviewProfileState(path, readText(path));
+	const root = repoRoot(io.cwd) ?? io.cwd;
+	const path = join(root, MANAGED_PATHS.reviewProfile);
+	const state = reviewProfileState(
+		path,
+		readText(path),
+		loadProfile(root).commentKeep,
+	);
 	switch (state.kind) {
 		case "missing":
 			return usageError(

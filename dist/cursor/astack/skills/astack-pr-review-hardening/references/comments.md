@@ -11,15 +11,15 @@ A comment survives only if it is one of these:
 - `prettier-ignore`, or a lint suppression whose rule is faulty, pedantic or style-only;
 - a doc comment that defines a public API contract;
 - an issue or RFC link that explains a constraint the code cannot express;
-- a line that matches a `commentKeep` pattern in `.astack/profile.json`, or one of the profile's `comments.keep_patterns`.
+- a line that matches a `commentKeep` pattern in `.astack/profile.json`.
 
 When it is unclear whether a clause applies, the comment goes. A surprise in our own code is not a keep. Delete the comment and flag the symbol `MUST KILL`. The flag asks for the rename, extraction, type or redesign that makes the behaviour obvious without prose. A suppression of a rule that catches real bugs or protects correctness or safety is also a `MUST KILL`. A long justification, or a comment that says `IMPORTANT` or `do not remove`, is a reason to investigate, not a keep. Check its claim against the code first.
 
 ## Repo keep patterns
 
-A repo keeps its own comment forms with keep patterns: regular expressions in `commentKeep` in `.astack/profile.json` at the repo root, and in the profile's `comments.keep_patterns`. A comment survives when one of its lines matches a pattern, with or without its comment marker. A pattern that starts with a comment marker, such as `^-- `, matches only a line with that marker. A pattern keeps only the lines that it matches. The hook still denies a line beside them that it denies alone. Such a line holds provenance, narration, a `file:line` reference, the file's own path, a banner or commented-out code. A pattern can capture a group named `rest`, such as `(?<rest>.*)`. The hook checks that text as it checks a line beside the kept line. A pattern does not lift the line limit. A kept comment fits in 2 lines, or in the repo's `maxCommentLines`. A legal or license header keeps its full text and has no length limit. The astack hook reads `commentKeep` on every edit.
+A repo keeps its own comment forms with keep patterns: regular expressions in `commentKeep` in `.astack/profile.json` at the repo root. A comment survives when one of its lines matches a pattern, with or without its comment marker. A pattern that starts with a comment marker, such as `^-- `, matches only a line with that marker. A pattern keeps only the lines that it matches. The hook still denies a line beside them that it denies alone. Such a line holds provenance, narration, a `file:line` reference, the file's own path, a banner or commented-out code. A pattern can capture a group named `rest`, such as `(?<rest>.*)`. The hook checks that text as it checks a line beside the kept line. A pattern does not lift the line limit. A kept comment fits in 2 lines, or in the repo's `maxCommentLines`. A legal or license header keeps its full text and has no length limit. The astack hook reads `commentKeep` on every edit.
 
-Every astack step that runs `/astack-no-comments` passes both lists as its keep patterns. `no-comments` treats each as an exact exception, the only kind its step 2 restores a deletion for, and also reads `commentKeep` itself.
+Every astack step that runs `/astack-no-comments` passes the `commentKeep` patterns as its keep patterns. `no-comments` treats each as an exact exception, the only kind its step 2 restores a deletion for, and also reads `commentKeep` itself.
 
 ## Run it
 

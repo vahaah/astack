@@ -1,6 +1,5 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import {
-	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -583,22 +582,6 @@ describe("the project configs of each scanned companion", () => {
 		expect(configs.length).toBeGreaterThan(0);
 		for (const project of configs)
 			expect(project.adrNeeded.length > 0).toBe(project.mode === "report-only");
-	});
-
-	test("each hardening profile keeps the same patterns as its project config", async () => {
-		const entries = await scanned();
-		const withProfile = entries.filter((entry) => existsSync(entry.profile));
-		expect(withProfile.map((entry) => entry.project.name)).toEqual(
-			entries.map((entry) => entry.project.name),
-		);
-		for (const { project, profile } of withProfile)
-			expect({
-				name: project.name,
-				profile: parseProfile(readFileSync(profile, "utf8")).data,
-			}).toMatchObject({
-				name: project.name,
-				profile: { comments: { keep_patterns: project.keepPatterns } },
-			});
 	});
 
 	test("a decided keep form passes the hook only through the repo's keep patterns", async () => {

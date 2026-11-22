@@ -37,18 +37,51 @@ const proofGate = `  - name: change-proof
     rewrites: []
 `;
 
+const markerProfile = (extra: string) =>
+	[
+		"# Profile",
+		"",
+		"```yaml",
+		"version: 1",
+		"gates:",
+		"  - name: change-proof",
+		"    command: astack check proof --base origin/main",
+		"test:",
+		"  name: test",
+		"  command: bun test",
+		"typescript:",
+		"  rules: true",
+		'  boundary_cast_marker: "// BOUNDARY-CAST:"',
+		extra,
+		"```",
+		"",
+	].join("\n");
+const castKeep = "^\\s*// BOUNDARY-CAST: ";
+const markerProblem =
+	'typescript.boundary_cast_marker: no commentKeep pattern of the repo matches "// BOUNDARY-CAST:". Add a pattern that matches the marker to commentKeep in .astack/profile.json. Apply writes that list from keepPatterns of the project config';
+
 const dirs: string[] = [];
 afterAll(() => {
 	for (const dir of dirs) rmSync(dir, { recursive: true, force: true });
 });
 
-function repoWith(profile: string | undefined): string {
+function repoWith(
+	profile: string | undefined,
+	commentKeep?: readonly string[],
+): string {
 	const dir = realpathSync(mkdtempSync(join(tmpdir(), "astack-hp-")));
 	dirs.push(dir);
 	spawnSync("git", ["init", "-q", dir]);
 	if (profile !== undefined) {
 		mkdirSync(join(dir, ".claude"));
 		writeFileSync(join(dir, MANAGED_PATHS.reviewProfile), profile);
+	}
+	if (commentKeep !== undefined) {
+		mkdirSync(join(dir, ".astack"));
+		writeFileSync(
+			join(dir, MANAGED_PATHS.profile),
+			JSON.stringify({ commentKeep }),
+		);
 	}
 	return dir;
 }
@@ -117,3 +150,29 @@ test.each([
 		});
 	},
 );
+
+test.each([
+	["matches", [castKeep], 0, "ok"],
+	["does not match", ["^TODO"], 1, "problem"],
+] as const)(
+	"[control:rs-keep-command] a boundary cast marker whose commentKeep pattern %s",
+	async (_case, commentKeep, code, kind) => {
+		const repo = repoWith(markerProfile(""), commentKeep);
+		const path = join(repo, MANAGED_PATHS.reviewProfile);
+		expect(await check(repo)).toEqual({
+			code,
+			out:
+				kind === "ok"
+					? `ok: ${path} passes the hardening profile rules\n`
+					: `${path}: ${markerProblem}\n`,
+			err: "",
+		});
+	},
+);
+
+test("[control:rs-window-command] a profile that still sets comments.keep_patterns exits 0", async () => {
+	const repo = repoWith(markerProfile("comments:\n  keep_patterns: []"), [
+		castKeep,
+	]);
+	expect((await check(repo)).code).toBe(0);
+});

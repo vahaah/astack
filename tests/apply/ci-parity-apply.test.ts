@@ -593,15 +593,10 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 		"packages/db/src/schema.ts":
 			"// Money convention (ADR-0006): integer minor units.\nexport const money = 1;\n",
 	};
-	const keeping = (pattern: string) =>
-		fixtureProfile("after").replace(
-			"  keep_patterns: []\n",
-			`  keep_patterns:\n    - '${pattern}'\n`,
-		);
 
 	test("a decision citation in the repo fails the dry run until a keep pattern of the repo keeps its spelling", async () => {
 		const spaced = "\\bADR \\d{4}\\b";
-		const unkept = await dryRun(money, keeping(spaced), [spaced]);
+		const unkept = await dryRun(money, fixtureProfile("after"), [spaced]);
 		expect(unkept.code).toBe(1);
 		expect(unkept.lines).toContain("## Decision citations in the repo");
 		expect(
@@ -615,7 +610,7 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 			"FAIL: 1 decision citation(s) that the comment hook does not keep.",
 		);
 		const both = "\\bADR[- ]\\d{4}\\b";
-		const kept = await dryRun(money, keeping(both), [both]);
+		const kept = await dryRun(money, fixtureProfile("after"), [both]);
 		expect(kept.code).toBe(0);
 	});
 
@@ -713,7 +708,7 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 		const spaced = "\\bADR \\d{4}\\b";
 		const unkept = await dryRun(
 			money,
-			keeping(spaced),
+			fixtureProfile("after"),
 			[spaced],
 			"report-only",
 		);
@@ -722,7 +717,12 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 			"FAIL: 1 decision citation(s) that the comment hook does not keep.",
 		);
 		const both = "\\bADR[- ]\\d{4}\\b";
-		const kept = await dryRun(money, keeping(both), [both], "report-only");
+		const kept = await dryRun(
+			money,
+			fixtureProfile("after"),
+			[both],
+			"report-only",
+		);
 		expect(kept.code).toBe(0);
 	});
 });
