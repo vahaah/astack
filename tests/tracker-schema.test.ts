@@ -143,6 +143,21 @@ describe("plan recovery uses the recorded workflow state", () => {
 });
 
 describe("a session boundary rides in the next session PR", () => {
+	const upkeep = read(
+		"marketplace/plugins/astack/skills/plan/references/upkeep.md",
+	);
+	const part = (heading: string): string =>
+		upkeep.split(`\n## ${heading}\n`)[1]?.split("\n## ")[0] ?? "";
+
+	test("[control:boundary-not-last] the boundary promotes the next session, and the last session PR carries the close in place of a boundary", () => {
+		expect(part("Session boundary")).toContain(
+			"Promote the `next` session of the lane to `now`",
+		);
+		expect(part("Pause and close")).toContain(
+			"The last session PR carries the close.",
+		);
+	});
+
 	const planText = (dir: string): string[] =>
 		readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
 			.filter((path) => path.endsWith(".md"))
