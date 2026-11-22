@@ -672,18 +672,29 @@ describe("base branch authority", () => {
 	);
 
 	test("[control:sg-other-repo] a standing profile of this repo gives no grant for a PR of another repo", () => {
+		const reads: Reads = [];
 		const run = bash(
-			guard({
-				...GREEN,
-				number: 7,
-				url: "https://github.com/other/repo/pull/7",
-				authority: { kind: "absent", commit: "e".repeat(40) },
-			}),
+			guard(
+				{
+					...GREEN,
+					number: 7,
+					url: "https://github.com/other/repo/pull/7",
+					authority: { kind: "absent", commit: "e".repeat(40) },
+				},
+				reads,
+			),
 			"gh pr merge 7 --repo other/repo",
 			standing,
 			"other-repo",
 		);
-		expect(run.exit).toBe(2);
+		expect({ run, reads }).toEqual({
+			run: {
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- main at eeeeeee has no .astack/profile.json, so it gives no standing grant. The owner did not say to merge in this turn. Ask the owner before you merge #7.",
+			},
+			reads: [{ selector: "7", repo: "other/repo", dir: standing }],
+		});
 	});
 
 	test("[control:sg-absent-base] a base branch with no profile, an owner grant and green checks merge", () => {
