@@ -19,7 +19,7 @@ Changed source, models, controls, arbitrary docs, and tool versions remain block
 `CiRecordsSafe` states that every `ci_proof` result has eligible inputs.
 `CurrentProofRequired` states that delivery still requires independent current proof.
 `delivery` means only that these two prerequisites hold. Other review and merge checks remain outside the model.
-The finite cases include four diff classes and seven record checks, with one invalid record check at a time.
+The finite cases include four diff classes and eight record checks, with one invalid record check at a time.
 Tool equality, base movement, and proof success each have two values.
 The safety model claims no fairness, progress, eventual CI success, or full implementation refinement.
 

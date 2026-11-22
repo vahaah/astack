@@ -7,7 +7,7 @@
 				"config": "formal/CiProofRecords.cfg",
 				"dependencies": [],
 				"bounds": [
-					"Four diff classes and eight record cases: valid or one of seven failed guards.",
+					"Four diff classes and nine record cases: valid or one of eight failed guards.",
 					"Tool equality, moved base, and independent proof validity are Boolean.",
 					"One classification followed by one independent proof decision."
 				],
@@ -240,6 +240,7 @@
 				"bounds": [
 					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 					"Each failure kind maps to one section of the proof contract.",
+				"Six manifest observations: one, fallback, several, none, held and beside. Only a run with --base can find none.",
 					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
 					"Finite Result laws use two values, two errors and all total functions between them."
 				],
@@ -259,6 +260,7 @@
 					"MovedAuthorityStops",
 					"StaleStopNamesPaths",
 					"StopNamesSection",
+					"OneManifestPerChange",
 					"ResultLeftIdentity",
 					"ResultRightIdentity",
 					"ResultAssociativity"

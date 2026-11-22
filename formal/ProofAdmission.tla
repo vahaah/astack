@@ -41,7 +41,7 @@ AuthorityCases == {AcceptedAuthority, ProposalAuthority, LandingAuthority,
 LandingAllowed(a) == ~a.landingOptIn \/ (a.headerValid /\ a.outsideEqual)
 AuthorityEligible(a) == /\ a.regular
                        /\ a.decisions
-                       /\ a.proofRecord
+                       /\ (a.optIn => a.proofRecord)
                        /\ ((a.lifecycle = "accepted" /\ ~a.optIn)
                            \/ (a.lifecycle = "proposed" /\ a.optIn
                                /\ a.history /\ a.ancestor
@@ -49,16 +49,21 @@ AuthorityEligible(a) == /\ a.regular
                                /\ a.processAccepted /\ a.processWholeEqual))
 AuthorityAllowed(a) == AuthorityEligible(a) /\ LandingAllowed(a)
 
+Manifests == {"one", "fallback", "several", "none", "held", "beside"}
 BaseRecords == [relation : {"equal", "ancestor", "descendant", "unrelated"},
                 ref : BOOLEAN,
                 diffFrom : {"merge", "manifest"},
                 historyAt : {"merge", "manifest"},
-                moved : BOOLEAN]
-BaseCases == {b \in BaseRecords : ~b.ref => ~b.moved}
+                moved : BOOLEAN,
+                manifest : Manifests]
+BaseCases == {b \in BaseRecords : /\ ~b.ref => ~b.moved
+                                  /\ b.manifest = "none" => b.ref}
 BaseRelationAllowed(b) == b.relation \in {"equal", "ancestor"}
 BaseViewsAllowed(b) == /\ b.diffFrom = IF b.ref THEN "merge" ELSE "manifest"
                        /\ b.historyAt = "manifest"
 MoveAllowed(a, b) == ~(a.optIn /\ b.moved)
+ManifestAllowed(s, b) == /\ (s = "schema" => b.manifest \notin {"several", "none"})
+                         /\ (s = "base" => b.manifest \notin {"held", "beside"})
 
 VARIABLES stage, verified, positive, negative, restored, current, status, firstFailure, authority, base,
           changed, named, section
@@ -81,6 +86,7 @@ Init == /\ stage = 1
 
 ValidationPass == /\ status = "validating"
                   /\ stage <= Len(Stages)
+                  /\ ManifestAllowed(Stages[stage], base)
                   /\ (Stages[stage] # "base" \/ BaseRelationAllowed(base))
                   /\ (Stages[stage] # "base" \/ BaseViewsAllowed(base))
                   /\ (Stages[stage] # "domain" \/ AuthorityEligible(authority))
@@ -197,6 +203,7 @@ HistoryAtManifest == status = "admitted" => base.historyAt = "manifest"
 MovedAuthorityStops == status = "admitted" /\ authority.optIn => ~base.moved
 StaleStopNamesPaths == status = "rejected" /\ firstFailure = "stale" => named = changed /\ named # {}
 StopNamesSection == status = "rejected" => section = Sections[firstFailure]
+OneManifestPerChange == status = "admitted" => base.manifest \in {"one", "fallback"}
 EventuallyTerminal == <> (status \in {"admitted", "rejected"})
 
 Values == {0, 1}
