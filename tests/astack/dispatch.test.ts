@@ -446,7 +446,7 @@ describe("the captured prompt channels", () => {
 		["agent-message", false],
 		["print", true],
 	])(
-		"[control:sg-framed-prompt] in an attended session the %s prompt is a person's prompt: %p",
+		"[control:sg-framed-channel] in an attended session the %s prompt is a person's prompt: %p",
 		(channel, human) => {
 			expect(decodedPrompt(captured(channel))).toMatchObject({
 				kind: "prompt",

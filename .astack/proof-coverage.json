@@ -25,7 +25,9 @@
 		"tests/drift.test.ts",
 		"tests/budget.test.ts",
 		"tests/apply/duplicate-skills.test.ts",
-		"tests/validate.test.ts"
+		"tests/validate.test.ts",
+		"tests/astack/dispatch.test.ts",
+		"tests/astack/cursor-hook.test.ts"
 	],
 	"links": [
 		{
@@ -187,6 +189,32 @@
 				"sg-machine-prompt",
 				"sg-doctor-unattended"
 			]
+		},
+		{
+			"criterion": "SG-base-authority",
+			"controls": [
+				"sg-working-tree-profile",
+				"sg-base-authority",
+				"sg-absent-base",
+				"sg-other-repo"
+			]
+		},
+		{
+			"criterion": "SG-framed-prompt",
+			"controls": [
+				"sg-framed-prompt",
+				"sg-framed-channel",
+				"sg-frame-class",
+				"sg-cursor-attended"
+			]
+		},
+		{
+			"criterion": "SG-mcp-merge",
+			"controls": ["sg-mcp-merge"]
+		},
+		{
+			"criterion": "SG-guard-error",
+			"controls": ["sg-guard-error"]
 		},
 		{
 			"criterion": "SG-scratch",

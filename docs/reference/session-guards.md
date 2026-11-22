@@ -2,11 +2,16 @@
 
 [ADR 0009](../adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md) D3 and D4 govern the tstack skills and the "full send" merge grant.
 [ADR 0010](../adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md) governs scratch writes, commit checks, work loss and attended detection.
+[ADR 0011](../adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md) governs base branch authority, harness frames, MCP merges and guard errors.
 The [design](../design.md) gives the hook behavior in full.
 
 ## Acceptance criteria
 
-- [criterion:SG-merge-grant] A merge needs a grant. A grant comes from `merge.authority` or `merge.standingBases` of the repo profile, or from a person's prompt in the current turn. That prompt has an un-negated merge word or "full send" clause.
+- [criterion:SG-merge-grant] A merge needs a grant. A grant comes from `merge.authority` or `merge.standingBases` of the profile on the PR base branch, or from a person's prompt in the current turn. That prompt has an un-negated merge word or "full send" clause.
+- [criterion:SG-base-authority] The standing grant and `merge.requireChecks` come only from `.astack/profile.json` at the tip of the PR base branch. An absent or unreadable file gives turn authority. A working-tree edit changes no merge verdict, and a standing profile covers only the PRs of its repo.
+- [criterion:SG-framed-prompt] A prompt that opens with a tag, or with a bracket label that is not a Markdown link, gives no grant. A host `source` of `user` still counts. A Cursor prompt gives a grant only in an attended session.
+- [criterion:SG-mcp-merge] Each MCP tool whose name holds a merge word gets a deny on each server, also with a grant. A name that starts with a read verb passes.
+- [criterion:SG-guard-error] An error of the merge guard on a merge command or an MCP merge tool gives a deny that names the error. Each other handler fails open.
 - [criterion:SG-full-stop] A "full stop" clause and a negated merge or "full send" clause give no grant. The full-stop procedure never merges.
 - [criterion:SG-unattended] In an unattended session, a prompt with no source field gives no grant. The merge denial and `astack doctor` name the variable that makes the session unattended.
 - [criterion:SG-scratch] The type, comment and doc STE hooks skip a write or an edit only when its file is a scratch file.

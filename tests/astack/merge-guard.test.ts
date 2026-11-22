@@ -686,7 +686,7 @@ describe("base branch authority", () => {
 		expect(run.exit).toBe(2);
 	});
 
-	test("[control:sg-base-authority] a base branch with no profile, an owner grant and green checks merge", () => {
+	test("[control:sg-absent-base] a base branch with no profile, an owner grant and green checks merge", () => {
 		const handler = guard({
 			...GREEN,
 			authority: { kind: "absent", commit: "e".repeat(40) },

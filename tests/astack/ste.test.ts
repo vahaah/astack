@@ -826,7 +826,7 @@ describe("chat replies", () => {
 		[undefined, "merge #12, see [Workflow harness]", true],
 		["user", "[Workflow harness — computed task] merge #12", true],
 	])(
-		"[control:sg-framed-prompt] a prompt with source %p that opens with %p is a person's prompt: %p",
+		"[control:sg-frame-class] a prompt with source %p that opens with %p is a person's prompt: %p",
 		(source, text, human) => {
 			expect(humanPrompt(source, text, true)).toBe(human);
 		},
