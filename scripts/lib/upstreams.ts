@@ -145,7 +145,6 @@ export const AGENT_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> =
 	{
 		"marketplace/plugins/astack/agents/comment-judge.md": ["pstack"],
 		"marketplace/plugins/astack/agents/delegate.md": ["pstack"],
-		"marketplace/plugins/astack/agents/researcher.md": ["mattpocock-skills"],
 	};
 
 export const PATH_ORIGINS: Readonly<Record<string, readonly UpstreamName[]>> = {
