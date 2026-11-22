@@ -40,7 +40,7 @@ Read the PR with `gh pr view <n> --json number,url,state,author,baseRefName,head
 1. Run `git worktree add --detach <dir>` with a new directory outside this checkout.
 2. In that worktree, run `gh pr checkout <n> --detach`.
 3. Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
-   A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+   A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 4. Run `git fetch origin`. Use the real base of the PR, `baseRefName`, and not a guess such as the default branch.
 5. Record the merge base with `git merge-base HEAD origin/<baseRefName>` as `BASE_SHA`.
 

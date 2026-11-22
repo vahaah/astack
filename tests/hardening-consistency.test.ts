@@ -55,7 +55,7 @@ const fallbackPath = "templates/pr-review-hardening.stub.FALLBACK.md";
 const headLine =
 	"Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.";
 const failureLine =
-	"A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.";
+	"A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.";
 const repairSentence =
 	"After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again.";
 

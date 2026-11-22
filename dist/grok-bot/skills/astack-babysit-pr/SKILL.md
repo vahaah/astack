@@ -18,7 +18,7 @@ When a rule here goes against the playbook, the playbook wins.
 
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 ## Wait with one watcher
 

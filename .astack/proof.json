@@ -412,7 +412,7 @@
 			"Run astack check pr-head before you act on a PR, with --pr <n> for a named PR.",
 			"Go on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line.",
 			"After stop: HEAD does not hold PR_HEAD, pull the PR branch and run the command again.",
-			"A later failure of gh pr view is an error, not a missing PR."
+			"A failure of gh pr view is an error, not a missing PR."
 		],
 		"deletionTest": "Without the command, 15 texts hold the manual head check and the no-PR rule again.",
 		"alternatives": [

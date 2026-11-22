@@ -99,7 +99,7 @@ Read the result back with `gh pr view <pr> --json state,mergedAt,mergeCommit,bas
 
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 A review bot can ask for a human review.
 You can continue past that request only when all of these are true:

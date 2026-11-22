@@ -47,7 +47,7 @@ Watch for scope growth, and push back with evidence.
 
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 
-A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 The change runs from `BASE_SHA` to the working tree in the scoped paths, with the untracked files.
 Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths> > <out>/diff.txt`. Write `git status --short` to `<out>/status.txt`.

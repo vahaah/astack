@@ -50,7 +50,7 @@ astack check pr-head
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again. When `UNPUSHED` lists a commit, push it first.
 When the branch has a PR, read `gh pr view --json number,state,isDraft,reviewDecision,mergeStateStatus`.
-A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 Then take the first row that matches, and do that step. Do not only name it.
 

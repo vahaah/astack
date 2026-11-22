@@ -81,7 +81,7 @@ astack session checkpoint <plan> [<session>] --summary <file|-> [--steps 3,4 | -
 - The package holds the commits and the diffstat of the local `HEAD`.
   Push before you post.
   Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
-  A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+  A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
   Post only on a PR whose `headRefName` in `gh pr view <n> --json headRefName` is the session branch.
 - The output warns when a step of the scope has no commit whose subject says `S<n> step <k>`. Commit each step with that subject.
 - `report` mode continues at once. A step marked `approve ui` or `approve one-way`, or a plan with `checkpoints: approve`, waits for the owner.

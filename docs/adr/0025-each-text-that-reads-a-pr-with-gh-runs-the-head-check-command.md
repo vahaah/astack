@@ -30,8 +30,8 @@ Each astack text that reads a PR with gh holds this head line:
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 ```
 
-A text that keeps a later `gh pr view` or `gh pr status` read holds the failure line after the head line.
-The failure line says that a later failure of `gh pr view` is an error, not a missing PR.
+A text that keeps a `gh pr view` or `gh pr status` read holds the failure line after the head line.
+The failure line says that each failure of `gh pr view` is an error, not a missing PR.
 A `gh api` read gets no failure line, so the REST paths of file-pr and babysit-pr stay.
 
 The one step after `stop: HEAD does not hold PR_HEAD` is the repair sentence.
@@ -97,7 +97,7 @@ The normal test gate runs the scan controls and the pr-head tests.
 
 The consistency scan reads each Markdown file of the plugin, each rule and each companion profile.
 Each text that reads a PR with gh must hold the head line and must not hold the manual check.
-Each text with a later `gh pr view` or `gh pr status` read must hold the failure line after the head line.
+Each text with a `gh pr view` or `gh pr status` read must hold the failure line after the head line.
 Each text that runs the command names no other result than the two pairs that go on and the repair.
 create-pr keeps the list rule of `gh pr list`, which reads an empty list as no PR.
 Only the engine, the stub fallback and the setup seed keep their own forms, and each has its reason in the scan.

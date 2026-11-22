@@ -6,7 +6,7 @@ The [model](../../formal/PrHeadCheck.tla) examines 3 gh answers, a named PR or n
 ## Acceptance criteria
 
 - [criterion:PH-LINE] Each astack text and profile that reads a PR with gh holds the head line. No text keeps the manual head check, except the engine, the stub fallback and the setup seed.
-- [criterion:PH-LATER] Each text with a later `gh pr view` or `gh pr status` read holds the failure line after the head line. No text keeps the old no-PR rule.
+- [criterion:PH-LATER] Each text with a `gh pr view` or `gh pr status` read holds the failure line after the head line. No text keeps the old no-PR rule.
 - [criterion:PH-PAIR] A text that runs the command goes on only after one of two pairs. They are exit 0 with an `ok:` last line, and exit 3 with a `no_pr:` last line. After `stop: HEAD does not hold PR_HEAD`, the one next step is the repair sentence.
 - [criterion:PH-LIST] create-pr keeps the list rule. The scan finds a lookup through `gh pr list` that reads an empty list as no PR.
 - [criterion:PH-NOPR] The command gives `no_pr:` only for gh exit 1 with the no-PR message and no `--pr`. With `--pr`, the same answer stops the run. Each other failure of gh on the current branch stops the run with the original error.

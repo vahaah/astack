@@ -17,7 +17,7 @@ astack check pr-head
 
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
 When the branch has a PR, read `gh pr view --json number,url,state,isDraft,reviewDecision`.
-A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 1. Open the plan file that the brief names. Read its frontmatter keys `delegate`, `checkpoints` and `owner-gates`. `delegate: on` keeps the delegation grant of the last session.
 2. Read the status of the ticket and its last hand-off comment.
