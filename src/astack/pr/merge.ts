@@ -133,6 +133,7 @@ export type MergeInputs = {
 	readonly chained: boolean;
 	readonly setsEnv: boolean;
 	readonly grant: MergeGrant;
+	readonly fullStop: boolean;
 	readonly unattendedReason: string | undefined;
 };
 
@@ -155,6 +156,10 @@ function closingInCommitText(call: MergeCall): string[] {
 
 export function preflightReasons(inputs: MergeInputs): readonly string[] {
 	const reasons: string[] = [];
+	if (inputs.fullStop)
+		reasons.push(
+			"The last prompt of the owner starts the full-stop run, and the full-stop run never merges. Leave the merge to the owner, or wait for the next prompt of the owner.",
+		);
 	if (inputs.call.admin)
 		reasons.push(
 			"Do not merge with --admin. It skips the branch protection rules. This is an owner gate, so ask the owner.",

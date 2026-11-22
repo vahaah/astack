@@ -1,4 +1,5 @@
 import {
+	existsSync,
 	mkdirSync,
 	readFileSync,
 	renameSync,
@@ -132,6 +133,7 @@ const FULL_SEND_FILLER = new Set([
 	"yes",
 ]);
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
+const FULL_STOP_INVOKED = /^[/$](?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
 function withholdsFullSend(clause: Clause): boolean {
@@ -201,8 +203,8 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 	return { kind: "prs", numbers: [...new Set([...a.numbers, ...b.numbers])] };
 }
 
-export function mergeGrantIn(prompt: string): MergeGrant {
-	const clauses = prose(prompt)
+function clausesOf(prompt: string): readonly Clause[] {
+	return prose(prompt)
 		.split(/(?<=[!?\n])|(?<=[.:])(?=\s|$)/)
 		.flatMap((sentence) =>
 			sentence
@@ -214,10 +216,27 @@ export function mergeGrantIn(prompt: string): MergeGrant {
 		)
 		.filter(({ tokens }) => tokens.length > 0)
 		.map((clause, index) => ({ ...clause, opensPrompt: index === 0 }));
+}
+
+export function mergeGrantIn(prompt: string): MergeGrant {
+	const clauses = clausesOf(prompt);
 	const fullSendAllowed = !clauses.some(withholdsFullSend);
 	return clauses
 		.map((clause) => clauseGrant(clause, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
+}
+
+export function startsFullStop(prompt: string): boolean {
+	const [first, ...rest] = clausesOf(prompt);
+	if (first === undefined) return false;
+	if (FULL_STOP_INVOKED.test(first.tokens[0] ?? "")) return true;
+	return (
+		rest.length === 0 &&
+		!first.question &&
+		first.tokens.length === 2 &&
+		first.tokens[0] === "full" &&
+		first.tokens[1] === "stop"
+	);
 }
 
 export function grantCovers(grant: MergeGrant, number: number): boolean {
@@ -267,6 +286,31 @@ function parseGrant(value: unknown): MergeGrant {
 		return numbers.length > 0 ? { kind: "prs", numbers } : NO_GRANT;
 	}
 	return NO_GRANT;
+}
+
+function fullStopPath(env: Env, session: string): string | undefined {
+	const path = grantPath(env, session);
+	return path === undefined ? undefined : path.replace(/\.json$/, ".full-stop");
+}
+
+export function saveFullStop(
+	env: Env,
+	session: string,
+	fullStop: boolean,
+): void {
+	const path = fullStopPath(env, session);
+	if (!path) return;
+	if (!fullStop) {
+		rmSync(path, { force: true });
+		return;
+	}
+	mkdirSync(join(path, ".."), { recursive: true });
+	writeFileSync(path, "");
+}
+
+export function loadFullStop(env: Env, session: string | undefined): boolean {
+	const path = session === undefined ? undefined : fullStopPath(env, session);
+	return path !== undefined && existsSync(path);
 }
 
 export function loadGrant(env: Env, session: string | undefined): MergeGrant {

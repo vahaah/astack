@@ -456,6 +456,63 @@ describe("the merge guard", () => {
 		expect(run).toEqual({ exit: 0, stderr: "" });
 	});
 
+	const FULL_STOP_DENY: Run = {
+		exit: 2,
+		stderr:
+			"astack blocked gh pr merge:\n- The last prompt of the owner starts the full-stop run, and the full-stop run never merges. Leave the merge to the owner, or wait for the next prompt of the owner.",
+	};
+
+	describe("[control:sg-full-stop-merge] the full-stop run", () => {
+		const PASS: Run = { exit: 0, stderr: "" };
+		const standingPr = () =>
+			guard({ ...GREEN, authority: committed({ authority: "standing" }) });
+
+		test.each([
+			["/astack:full-stop", "denies", FULL_STOP_DENY],
+			["Full stop.", "denies", FULL_STOP_DENY],
+			["Merge #12. Full stop.", "passes", PASS],
+			["No full stop.", "passes", PASS],
+		])(
+			"with a standing profile, gh pr merge 12 after %p %s",
+			(text, _, run) => {
+				const handler = standingPr();
+				prompt(handler, text, "full-stop");
+				expect(bash(handler, "gh pr merge 12", project, "full-stop")).toEqual(
+					run,
+				);
+			},
+		);
+
+		test("a machine prompt keeps the deny, and the next prompt of the owner lifts it", () => {
+			const handler = standingPr();
+			prompt(handler, "Full stop.", "full-stop-lift");
+			handler.run(
+				{
+					kind: "prompt",
+					text: "Merge #12 now.",
+					human: false,
+					session: "full-stop-lift",
+				},
+				context(project, "full-stop-lift", "UserPromptSubmit"),
+			);
+			expect(
+				bash(handler, "gh pr merge 12", project, "full-stop-lift"),
+			).toEqual(FULL_STOP_DENY);
+			expect(
+				bash(
+					handler,
+					"gh pr merge 12 --disable-auto",
+					project,
+					"full-stop-lift",
+				),
+			).toEqual(PASS);
+			prompt(handler, "Fix the tests.", "full-stop-lift");
+			expect(
+				bash(handler, "gh pr merge 12", project, "full-stop-lift"),
+			).toEqual(PASS);
+		});
+	});
+
 	const V2_STANDS = committed({ standingBases: ["v2"] });
 
 	test("a PR into a standing base needs no grant in the turn", () => {
