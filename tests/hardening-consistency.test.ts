@@ -1721,16 +1721,38 @@ describe("the branch of the fix commits", () => {
 	const forkByName =
 		"`--head` matches a branch of any owner. So a PR with `isCrossRepository` true is the PR of this work only when `git merge-base --is-ancestor <headRefOid> HEAD` exits 0.";
 
-	test.each(playbooks)(
-		"%s reads the fork fields of the PR, and pushes nothing to a fork that does not allow edits from maintainers",
-		(_, text) => {
-			expect(text).toMatch(readsForkFields);
-			expect(text).toContain(playbookForkStop);
-			expect(text).toContain(
-				"Tell the owner that the fork does not allow edits from maintainers, so no fix can reach the PR.",
-			);
-		},
-	);
+	const forkRules = [
+		playbookForkStop,
+		"Tell the owner that the fork does not allow edits from maintainers, so no fix can reach the PR.",
+		forkPush,
+		headRepositoryUrl,
+	];
+	const forkLink =
+		"the fork rules of steps 1 and 7 of [`create-pr.md`](create-pr.md)";
+	const holdsForkRules = (text: string): boolean =>
+		text.includes(forkLink) || forkRules.every((rule) => text.includes(rule));
+
+	test.each(playbooks)("%s reads the fork fields of the PR", (_, text) => {
+		expect(text).toMatch(readsForkFields);
+	});
+
+	test("[control:fork-link] create-pr holds each fork rule, each other playbook holds them or links to create-pr, and a text with neither fails", () => {
+		expect(forkRules.filter((rule) => !createPr.includes(rule))).toEqual([]);
+		expect(
+			playbooks
+				.filter(([, text]) => !holdsForkRules(text))
+				.map(([name]) => name),
+		).toEqual([]);
+		const triage = read(`${mode}/comments-triage.md`);
+		expect(
+			holdsForkRules(
+				forkRules.reduce(
+					(text, rule) => text.replaceAll(rule, ""),
+					triage.replace(forkLink, ""),
+				),
+			),
+		).toBe(false);
+	});
 
 	test("the create-pr playbook takes a PR from a fork that gh pr list finds by the name of the branch only when the branch holds the head of that PR", () => {
 		expect(stepWith(createPr, "`gh pr list --head <branch>")).toContain(
@@ -1839,7 +1861,6 @@ describe("the branch of the fix commits", () => {
 	test.each([
 		["references/fix.md", fix],
 		["the stub fallback", fallback],
-		...playbooks,
 	])(
 		"%s pushes the fixes of a PR from a fork to the head branch in the head repository, never to origin",
 		(_, text) => {

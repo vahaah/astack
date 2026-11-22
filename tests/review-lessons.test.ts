@@ -28,21 +28,9 @@ type Guard = {
 	readonly file: string;
 	readonly locator: string;
 };
-type Target =
-	| { readonly kind: "class"; readonly classId: string }
-	| { readonly kind: "declined"; readonly reason: string }
-	| { readonly kind: "unreadable"; readonly cell: string };
-const STATUSES: readonly string[] = ["fixed", "open", "declined", "duplicate"];
-type Finding = {
-	readonly ref: string;
-	readonly round: string;
-	readonly target: Target;
-	readonly status: string;
-};
 type Lessons = {
 	readonly classes: readonly string[];
 	readonly guards: readonly Guard[];
-	readonly findings: readonly Finding[];
 	readonly problems: readonly string[];
 };
 
@@ -65,15 +53,6 @@ function sectionRows(text: string, heading: string): string[][] {
 
 const codeSpan = (cell: string): string | undefined =>
 	/^`([^`]+)`$/.exec(cell)?.[1];
-
-function targetOf(cell: string): Target {
-	if (cell.startsWith("declined: "))
-		return { kind: "declined", reason: cell.slice("declined: ".length) };
-	const classId = codeSpan(cell);
-	return classId === undefined
-		? { kind: "unreadable", cell }
-		: { kind: "class", classId };
-}
 
 function parseLessons(text: string): Lessons {
 	const classes: string[] = [];
@@ -105,21 +84,7 @@ function parseLessons(text: string): Lessons {
 		}
 		guards.push({ classId: current, kind, file, locator });
 	}
-	const findings: Finding[] = [];
-	for (const cells of sectionRows(text, "Findings")) {
-		const ref = codeSpan(cells[0] ?? "");
-		if (ref === undefined) {
-			problems.push(`a finding row has no ref: ${cells.join(" | ")}`);
-			continue;
-		}
-		findings.push({
-			ref,
-			round: cells[1] ?? "",
-			target: targetOf(cells[5] ?? ""),
-			status: codeSpan(cells[6] ?? "") ?? "",
-		});
-	}
-	return { classes, guards, findings, problems };
+	return { classes, guards, problems };
 }
 
 const CHECK_KINDS: readonly string[] = ["apply-check", "cli-check"];
@@ -144,19 +109,6 @@ function locatorGaps(
 	});
 }
 
-function statusGaps(lessons: Lessons): string[] {
-	return lessons.findings.flatMap(({ ref, target, status }) => {
-		if (!STATUSES.includes(status))
-			return [
-				`${ref} has the status ${status || "none"}, not one of ${STATUSES.join(", ")}`,
-			];
-		const declined = status === "declined" || status === "duplicate";
-		return declined === (target.kind === "declined")
-			? []
-			: [`${ref} has the status ${status}, which does not fit its class cell`];
-	});
-}
-
 const unknownKinds = (lessons: Lessons): string[] =>
 	lessons.guards
 		.filter((guard) => !KINDS.includes(guard.kind))
@@ -170,29 +122,6 @@ const unguardedClasses = (lessons: Lessons): string[] =>
 					guard.classId === classId && RUNNING_KINDS.includes(guard.kind),
 			),
 	);
-
-function findingsWithoutClass(lessons: Lessons): string[] {
-	return lessons.findings.flatMap(({ ref, target }) => {
-		switch (target.kind) {
-			case "class":
-				return lessons.classes.includes(target.classId)
-					? []
-					: [
-							`${ref} names the class ${target.classId}, which the classes table does not hold`,
-						];
-			case "declined":
-				return target.reason.trim() === ""
-					? [`${ref} is declined with no reason`]
-					: [];
-			case "unreadable":
-				return [`${ref} names no class and no reason: ${target.cell}`];
-			default: {
-				const unhandled: never = target;
-				return unhandled;
-			}
-		}
-	});
-}
 
 const checklistItems = (text: string): string[] =>
 	[...text.matchAll(/^### (.+)$/gm)].map((match) => match[1] ?? "");
@@ -213,35 +142,6 @@ const statedCounts = (text: string): string[] =>
 		.flatMap((line) =>
 			[...line.matchAll(COUNT_PHRASE)].map(([phrase]) => phrase),
 		);
-
-const SYNTHETIC_REF = /^(?:codex:r(\d+)-\d+|wf:r(\d+)(?::[a-z0-9-]+)+)$/;
-
-function unsyntheticRefs(lessons: Lessons): string[] {
-	return lessons.findings.flatMap(({ ref, round }) => {
-		const match = SYNTHETIC_REF.exec(ref);
-		if (match === null)
-			return [`${ref} is not codex:r<round>-<n> or wf:r<round>:<slug>`];
-		const named = match[1] ?? match[2];
-		return named === round
-			? []
-			: [`${ref} names the round ${named}, but its row is in round ${round}`];
-	});
-}
-
-const WHOLE_ROUND = /^[1-9]\d*$/;
-
-function roundGaps(lessons: Lessons): string[] {
-	const rounds = [...new Set(lessons.findings.map(({ round }) => round))];
-	const whole = rounds.filter((round) => WHOLE_ROUND.test(round)).map(Number);
-	return [
-		...rounds
-			.filter((round) => !WHOLE_ROUND.test(round))
-			.map((round) => `the round ${round} is not a whole number`),
-		...Array.from({ length: Math.max(0, ...whole) }, (_, index) => index + 1)
-			.filter((round) => !whole.includes(round))
-			.map((round) => `no finding is in round ${round}`),
-	];
-}
 
 const HEX_ID = /(?<![0-9a-z])(?=[a-f]*\d)[0-9a-f]{7,}(?![0-9a-z])/g;
 
@@ -264,19 +164,9 @@ describe("the checks of the review lessons find each broken row", () => {
 		"|  |  | `apply-check` | `lib.ts` | `importedOnly` |",
 		"| `pinned-only` | A rule. | `pinned-rule` | `a.test.ts` | `block one` |",
 		"|  |  | `tset` | `a.test.ts` | `block one` |",
-		"",
-		"## Findings",
+		"| `counted` | A rule of 3 classes and 6 findings. | `test` | `a.test.ts` | `block one` |",
 		"",
 		"The table holds each of the 6 findings.",
-		"",
-		"| Ref | Round | Origin | Severity | Title | Class | Status |",
-		"|---|---|---|---|---|---|---|",
-		'| `a:1` | 1 | codex | P1 | "One" | `guarded` | `fixed` |',
-		'| `a:2` | 1 | codex | P1 | "Two" | `renamed-class` | `open` |',
-		'| `a:3` | 2 | verify | minor | "Three" | declined: CI proves it. | `declined` |',
-		'| `a:4` | 2 | verify | minor | "Four" | guarded | `fixed` |',
-		'| `a:5` | 2 | verify | minor | "Five" | `guarded` | `declined` |',
-		'| `a:6` | 2 | verify | minor | "Six" | `guarded` | done |',
 	].join("\n");
 	const sample = parseLessons(sampleText);
 	const sampleFiles = (path: string) =>
@@ -286,8 +176,8 @@ describe("the checks of the review lessons find each broken row", () => {
 				? 'import { importedOnly } from "./other.ts";'
 				: undefined;
 
-	test("the parser reads each class, guard and finding row of the sample", () => {
-		expect(sample.classes).toEqual(["guarded", "pinned-only"]);
+	test("the parser reads each class and guard row of the sample", () => {
+		expect(sample.classes).toEqual(["guarded", "pinned-only", "counted"]);
 		expect(sample.guards.map((guard) => guard.kind)).toEqual([
 			"test",
 			"pinned-rule",
@@ -295,14 +185,7 @@ describe("the checks of the review lessons find each broken row", () => {
 			"apply-check",
 			"pinned-rule",
 			"tset",
-		]);
-		expect(sample.findings.map((finding) => finding.ref)).toEqual([
-			"a:1",
-			"a:2",
-			"a:3",
-			"a:4",
-			"a:5",
-			"a:6",
+			"test",
 		]);
 		expect(sample.problems).toEqual([]);
 	});
@@ -315,13 +198,6 @@ describe("the checks of the review lessons find each broken row", () => {
 		]);
 	});
 
-	test("a status outside the list, or a status that does not fit the class cell, is a gap", () => {
-		expect(statusGaps(sample)).toEqual([
-			"a:5 has the status declined, which does not fit its class cell",
-			"a:6 has the status none, not one of fixed, open, declined, duplicate",
-		]);
-	});
-
 	test("a guard kind outside the list is unknown", () => {
 		expect(unknownKinds(sample)).toEqual(["pinned-only: tset"]);
 	});
@@ -330,16 +206,12 @@ describe("the checks of the review lessons find each broken row", () => {
 		expect(unguardedClasses(sample)).toEqual(["pinned-only"]);
 	});
 
-	test("a finding that names a class outside the table, or no class, is a gap", () => {
-		expect(findingsWithoutClass(sample)).toEqual([
-			"a:2 names the class renamed-class, which the classes table does not hold",
-			"a:4 names no class and no reason: guarded",
-		]);
-	});
-
 	test("the checklist and the classes table must name the same classes", () => {
 		const items = checklistItems("# List\n\n### guarded\n\n### stale-item\n");
-		expect(classesWithoutItem(sample, items)).toEqual(["pinned-only"]);
+		expect(classesWithoutItem(sample, items)).toEqual([
+			"pinned-only",
+			"counted",
+		]);
 		expect(itemsWithoutClass(sample, items)).toEqual(["stale-item"]);
 	});
 
@@ -353,35 +225,12 @@ describe("the checks of the review lessons find each broken row", () => {
 	const idSampleText = [
 		"# Sample",
 		"",
-		"## Findings",
+		"A review comment 12345678 and run 0a1b2c3d-e4f broke it.",
 		"",
-		"| Ref | Round | Origin | Severity | Title | Class | Status |",
-		"|---|---|---|---|---|---|---|",
-		'| `codex:r1-1` | 1 | codex | P1 | "One" | `guarded` | `fixed` |',
-		'| `wf:r1:verify:slug-one` | 1 | verify | minor | "Two" | `guarded` | `fixed` |',
-		'| `codex:r1-2` | 2 | codex | P2 | "Three" | `guarded` | `fixed` |',
-		'| `codex:12345678` | 2 | codex | P2 | "Four" | `guarded` | `fixed` |',
-		'| `wf:wf_0a1b2c3d-e4f:verify:slug-two` | 2 | verify | minor | "Five" | `guarded` | `fixed` |',
-		'| `wf:r4:verify:slug-three` | 4 | verify | minor | "Commit 1a2b3c4 breaks it" | `guarded` | `fixed` |',
-		'| `codex:r5-1` | 5-1 | codex | P2 | "Six" | `guarded` | `fixed` |',
+		"| Class | Rule | Kind | File | Locator |",
+		"|---|---|---|---|---|",
+		"| `guarded` | Commit 1a2b3c4 breaks it. | `test` | `a.test.ts` | `block one` |",
 	].join("\n");
-	const idSample = parseLessons(idSampleText);
-
-	test("a ref that is not synthetic, or that names another round than its row, is a gap", () => {
-		expect(unsyntheticRefs(idSample)).toEqual([
-			"codex:r1-2 names the round 1, but its row is in round 2",
-			"codex:12345678 is not codex:r<round>-<n> or wf:r<round>:<slug>",
-			"wf:wf_0a1b2c3d-e4f:verify:slug-two is not codex:r<round>-<n> or wf:r<round>:<slug>",
-			"codex:r5-1 names the round 5, but its row is in round 5-1",
-		]);
-	});
-
-	test("a round that is not a whole number, or a missing round below the last, is a gap", () => {
-		expect(roundGaps(idSample)).toEqual([
-			"the round 5-1 is not a whole number",
-			"no finding is in round 3",
-		]);
-	});
 
 	test("a run of 7 or more hex digits, such as a review id, a run id or a commit, is a gap", () => {
 		expect(hexIds(idSampleText)).toEqual(["12345678", "0a1b2c3d", "1a2b3c4"]);
@@ -392,11 +241,8 @@ describe(lessonsPath, () => {
 	const lessons = parseLessons(read(lessonsPath));
 	const items = checklistItems(read(checklistPath));
 
-	test("the parser reads the classes table and the findings table", () => {
+	test("the parser reads the classes table", () => {
 		expect(lessons.classes).toContain("engine-stub-drift");
-		expect(lessons.findings.map((finding) => finding.ref)).toContain(
-			"codex:r1-1",
-		);
 		expect(items).toContain("engine-stub-drift");
 		expect(lessons.problems).toEqual([]);
 	});
@@ -413,14 +259,6 @@ describe(lessonsPath, () => {
 		expect(unguardedClasses(lessons)).toEqual([]);
 	});
 
-	test("each finding names a class of the classes table or a reason to decline it", () => {
-		expect(findingsWithoutClass(lessons)).toEqual([]);
-	});
-
-	test("each finding has a status that fits its class cell", () => {
-		expect(statusGaps(lessons)).toEqual([]);
-	});
-
 	test("each class has an item in the review checklist of the engine", () => {
 		expect(classesWithoutItem(lessons, items)).toEqual([]);
 	});
@@ -431,14 +269,6 @@ describe(lessonsPath, () => {
 
 	test("the prose states no count of findings, rounds or classes, because the next row makes it false", () => {
 		expect(statedCounts(read(lessonsPath))).toEqual([]);
-	});
-
-	test("each ref is synthetic and names the round of its row, so the doc holds no id of a review comment or a run", () => {
-		expect(unsyntheticRefs(lessons)).toEqual([]);
-	});
-
-	test("the rounds run from 1 with no gap, so no round holds the number of a PR", () => {
-		expect(roundGaps(lessons)).toEqual([]);
 	});
 
 	test("the doc holds no run of 7 or more hex digits, such as the id of a review comment, a run or a commit", () => {

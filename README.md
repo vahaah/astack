@@ -17,7 +17,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
-- The `astack` CLI for plan sessions and 13 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
+- The `astack` CLI for plan sessions and 14 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
 
 ## Contents
 
@@ -173,7 +173,7 @@ You land with a merge grant, then plan the next session.
 8. **Merge** only with a grant in the profile or in that turn.
 9. **Plan the next session.**
 
-The full guide is [docs/workflow.md](docs/workflow.md). The rule card routes each session. This page states the limits of each check. The card is [marketplace/plugins/astack/skills/mode/references/card.md](marketplace/plugins/astack/skills/mode/references/card.md).
+The rule card routes each session, and it wins where this page differs. This page states the limits of each check. The card is [marketplace/plugins/astack/skills/mode/references/card.md](marketplace/plugins/astack/skills/mode/references/card.md).
 
 ### One plan session is one pull request
 
@@ -552,9 +552,11 @@ bun run check
 
 Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so the proof stops on each path that a merge of main brings in.
 
+Each README chart is a `mermaid` block, and `docs/charts/<name>.mmd` keeps its source. When you change a chart, change the `.mmd` file and the README block together. `bun run charts` fails when they differ.
+
 `check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget and the change proof. It runs the tests last, in parallel.
 
-The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
+The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. `lines` of `scripts/lib/budget.json` caps the longest line of `AGENTS.md`, and the gate also fails over that cap. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
 
 `check:fast` gives a short answer while you work. It runs the type check, lint, build, bundle, the dist build without the external checks, STE precision gate and word budget. Then it runs the tests that `bun test --changed` selects from the merge base with `origin/HEAD`. It also runs each test file that starts the launcher or the bundle. Its fixed cap is 20 s. It does not fail on time, and it does not replace `check`.
 
@@ -569,7 +571,7 @@ The word budget of `check`, `bun run budget`, counts the words of the Markdown f
 | `dist/` | Generated builds, one folder per client |
 | `tests/` | Tests and synthetic fixtures |
 | `upstream/` | Frozen snapshots for licence evidence and tests |
-| `docs/` | Design, decisions, workflow and runbooks |
+| `docs/` | Design, decisions and runbooks |
 
 Change generated files at their source. `AGENTS.md` names each generated path and its build command. Private config stays in the [private companion](#private-companion).
 

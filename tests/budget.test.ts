@@ -5,6 +5,8 @@ import { dirname, join } from "node:path";
 import {
 	type Budget,
 	budgetReport,
+	type LineCounts,
+	lineCounts,
 	lowerBudget,
 	parseBudget,
 	skillWords,
@@ -37,6 +39,9 @@ const counts = () =>
 		}),
 	);
 
+const noLines: LineCounts = new Map();
+const agentsLine: LineCounts = new Map([["AGENTS.md", 880]]);
+
 describe("the skill word budget", () => {
 	test("counts the whitespace words of each *.md file in each skill tree", () => {
 		expect([...counts()]).toEqual([
@@ -47,32 +52,47 @@ describe("the skill word budget", () => {
 
 	test("[control:wb-skill-over] passes at each cap and fails one word over a cap with the skill name", () => {
 		expect(
-			budgetReport(counts(), { total: 10, skills: { alpha: 8, beta: 2 } }),
+			budgetReport(counts(), noLines, {
+				total: 10,
+				skills: { alpha: 8, beta: 2 },
+				lines: {},
+			}),
 		).toEqual({ problems: [], notes: [] });
 		expect(
-			budgetReport(counts(), { total: 10, skills: { alpha: 7, beta: 2 } })
-				.problems,
+			budgetReport(counts(), noLines, {
+				total: 10,
+				skills: { alpha: 7, beta: 2 },
+				lines: {},
+			}).problems,
 		).toEqual(["alpha: 8 words, over its cap of 7"]);
 	});
 
 	test("[control:wb-total-over] fails a total one word over its cap while each skill is under", () => {
 		expect(
-			budgetReport(counts(), { total: 9, skills: { alpha: 8, beta: 2 } })
-				.problems,
+			budgetReport(counts(), noLines, {
+				total: 9,
+				skills: { alpha: 8, beta: 2 },
+				lines: {},
+			}).problems,
 		).toEqual(["total: 10 words, over its cap of 9"]);
 	});
 
 	test("[control:wb-no-cap] fails a skill with no cap", () => {
 		expect(
-			budgetReport(counts(), { total: 10, skills: { alpha: 8 } }).problems,
+			budgetReport(counts(), noLines, {
+				total: 10,
+				skills: { alpha: 8 },
+				lines: {},
+			}).problems,
 		).toEqual(["beta: 2 words, and scripts/lib/budget.json gives it no cap"]);
 	});
 
 	test("[control:wb-slack-note] passes with a note on a cap above its count and a cap with no skill", () => {
 		expect(
-			budgetReport(counts(), {
+			budgetReport(counts(), noLines, {
 				total: 11,
 				skills: { alpha: 9, beta: 2, gamma: 4 },
+				lines: {},
 			}),
 		).toEqual({
 			problems: [],
@@ -88,21 +108,68 @@ describe("the skill word budget", () => {
 		const budget: Budget = {
 			total: 12,
 			skills: { alpha: 9, beta: 1, gamma: 4 },
+			lines: {},
 		};
-		expect(lowerBudget(counts(), budget)).toEqual({
+		expect(lowerBudget(counts(), noLines, budget)).toEqual({
 			total: 10,
 			skills: { alpha: 8, beta: 1 },
+			lines: {},
 		});
 	});
 
-	test("parses only a whole-number total and whole-number skill caps", () => {
-		expect(parseBudget({ total: 3, skills: { alpha: 3 } })).toEqual({
+	test("parses only a whole-number total, whole-number skill caps and whole-number line caps", () => {
+		expect(
+			parseBudget({
+				total: 3,
+				skills: { alpha: 3 },
+				lines: { "AGENTS.md": 900 },
+			}),
+		).toEqual({
 			ok: true,
-			value: { total: 3, skills: { alpha: 3 } },
+			value: { total: 3, skills: { alpha: 3 }, lines: { "AGENTS.md": 900 } },
 		});
-		expect(parseBudget({ total: 3, skills: { alpha: 2.5 } })).toEqual({
+		expect(
+			parseBudget({ total: 3, skills: { alpha: 2.5 }, lines: {} }),
+		).toEqual({
 			ok: false,
 			error: "scripts/lib/budget.json: skills.alpha must be a whole number",
 		});
+		expect(parseBudget({ total: 3, skills: { alpha: 3 } })).toEqual({
+			ok: false,
+			error: "scripts/lib/budget.json: expected { total, skills, lines }",
+		});
+	});
+
+	test("lineCounts reads the longest line of each path that the budget names", () => {
+		const root = skillsTree({ "AGENTS.md": "ab\nabcd\nabc\n" });
+		expect([
+			...lineCounts(root, { total: 0, skills: {}, lines: { "AGENTS.md": 9 } }),
+		]).toEqual([["AGENTS.md", 4]]);
+	});
+
+	test("[control:wb-line-over] passes at the line cap and fails one character over it with the path", () => {
+		const budget = (cap: number): Budget => ({
+			total: 10,
+			skills: { alpha: 8, beta: 2 },
+			lines: { "AGENTS.md": cap },
+		});
+		expect(budgetReport(counts(), agentsLine, budget(880))).toEqual({
+			problems: [],
+			notes: [],
+		});
+		expect(budgetReport(counts(), agentsLine, budget(879)).problems).toEqual([
+			"AGENTS.md: 880 characters in its longest line, over its cap of 879",
+		]);
+	});
+
+	test("[control:wb-line-lower] lowers a line cap to its count and never raises it", () => {
+		const lowered = (cap: number) =>
+			lowerBudget(counts(), agentsLine, {
+				total: 10,
+				skills: { alpha: 8, beta: 2 },
+				lines: { "AGENTS.md": cap },
+			}).lines;
+		expect(lowered(9099)).toEqual({ "AGENTS.md": 880 });
+		expect(lowered(700)).toEqual({ "AGENTS.md": 700 });
 	});
 });

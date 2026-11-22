@@ -1,33 +1,24 @@
 # Sequence work into verifiable units
 
-Order work as a sequence of small units.
+Do the work as a sequence of small units.
 End each unit in a state that you can check.
-Advance only when the current unit is green.
+Go to the next unit only when the current unit is green.
 
 ## Why
 
-A break caught in the unit that caused it is cheap to locate.
-A break caught after a batch is buried under more work on a broken base.
-A reviewer can replay the same units to verify the delivery.
-The sequence turns "trust me" into "watch it go red, then green."
+A break that you find in its own unit is cheap to locate.
+A break that you find after a batch is under more work.
 
 ## Execution
 
-In a sweep, migration, or run of similar edits, verify each change before you start the next one.
-Each unit starts from a known good state, makes one change, and runs the check before it proceeds.
-Rebase onto clean trunk first so every check uses the real baseline.
-Run the check even when a lever makes the edits and the check is almost free.
+In a sweep or a migration, examine each change before the next one.
+Rebase on a clean trunk first, so each check uses the real baseline.
 
 ## Delivery
 
-Stack commits and PRs in the order that proves the work.
-For a fix, run the failing check before you make the fix.
-Record its output.
-Commit the failing check together with the fix, so every commit is green.
-The PR's Verification shows the failing run first, then the passing run.
-Other story orders include subtraction before a reshape, baseline capture before treatment, and a scaffold before a feature.
-Each commit lands on its own, and the sequence reads as an argument.
+Put the commits in the order that proves the work.
+Then a reviewer can watch each unit go red, then green.
+`astack-coding-rules` gives the order for a fix.
+Other orders are a removal before a reshape and a scaffold before a feature.
 
-[Prove It Works](prove-it-works.md) keeps each check real.
-[Build the Lever](build-the-lever.md) makes the check of each unit cheap.
-This principle adds the sequence between units.
+You skipped this principle when one check covers a batch.

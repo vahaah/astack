@@ -1,6 +1,6 @@
 # Review lessons
 
-This file records the lessons of the first hardening reviews of astack. The review rounds examined the hardening engine, the review stub, the apply checks and the profiles of the owner's product repos. This file gives each product repo a synthetic name, such as `acme`, and each finding a synthetic ref and round. Codex found some findings on the PRs. Workflow passes found the rest, with the origins `verify`, `pre-review`, `hunt` and `other`.
+This file records the lessons of the first hardening reviews of astack. The review rounds examined the hardening engine, the review stub, the apply checks and the profiles of the owner's product repos. This file gives each product repo a synthetic name, such as `acme`.
 
 Each finding is in one class. A class has a rule and one or more guards. A guard is a test or a check that fails when a change breaks the rule. Read this file before you add a profile or change the engine.
 
@@ -9,8 +9,8 @@ Each finding is in one class. A class has a rule and one or more guards. A guard
 - Before you change a profile, the engine, the stub or an apply check, read the rule of each class that the change touches.
 - The hardening engine holds the question of each class in `marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md`. The reviewer and the fixer of each run of the engine go through it. The stub fallback runs without the astack plugin, so it has no checklist pass, and the counterpart table records that reason.
 - `bun run check` runs each guard of the kind `test` and `hook`. An `apply-check` guard runs in `bun run apply`, also with `--dry-run`, against the product repo. A `cli-check` guard runs in the gates of the product repo.
-- `tests/review-lessons.test.ts` examines this file. Each guard file must exist and hold each part of its locator, and a source file must define its check function. Each class must have a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. Each finding must name a class of the table or a reason to decline it, and a status that fits that cell. The checklist and the classes table must name the same classes. The prose states no count of findings, rounds or classes.
-- The test also makes sure that each ref has a synthetic form that names the round of its row. The rounds go from 1 with no gap. The file holds no run of 7 or more hex digits, such as the id of a review comment, a run or a commit.
+- `tests/review-lessons.test.ts` examines this file. Each guard file must exist and hold each part of its locator, and a source file must define its check function. Each class must have a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. The checklist and the classes table must name the same classes. The prose states no count of findings, rounds or classes.
+- The file holds no run of 7 or more hex digits, such as the id of a review comment, a run or a commit.
 
 ## Guard kinds
 
@@ -29,7 +29,7 @@ A locator names the text that the guard file holds. ` > ` separates its parts, s
 
 When a review finds a new problem, find its class in the classes table. When a class fits, add or extend a guard of that class, so that the guard fails on the finding. Run the guard before the fix. Record its failure. When no class fits, add a class with its rule and a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. Then add the item of the class to the checklist of the engine.
 
-Last, add a row for each finding to the findings table. Give each finding of a new review the next round and a synthetic ref of that round. Give each product repo a synthetic name. Never write the id of a review comment, a run, a commit or a PR. Then run `bun run check`.
+Give each product repo a synthetic name. Never write the id of a review comment, a run, a commit or a PR. Then run `bun run check`.
 
 ## Classes
 
@@ -83,7 +83,7 @@ The Class and Rule cells are empty on the second guard of a class and on each gu
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > %s sends no fix commit to origin, except the push of a run with no PR or a PR from the same repository` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the origin scan finds each push to origin that a run for a PR from a fork can follow` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the origin scan reads each astack text, such as the create-pr playbook of the mode, which pushes a PR` |
-|  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > %s reads the fork fields of the PR, and pushes nothing to a fork that does not allow edits from maintainers` |
+|  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > [control:fork-link] create-pr holds each fork rule, each other playbook holds them or links to create-pr, and a text with neither fails` |
 |  |  | `pinned-rule` | `tests/hardening-consistency.test.ts` | `the branch of the fix commits > the create-pr playbook takes a PR from a fork that gh pr list finds by the name of the branch only when the branch holds the head of that PR` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `a run that names a PR reviews that PR > %s takes no checkout of a PR by the name of its head branch, which a branch of a fork can share with a local branch such as main` |
 |  |  | `test` | `tests/hardening-consistency.test.ts` | `a run that names a PR reviews that PR > the name scan finds a checkout that a run takes by the name of the head branch of the PR` |
@@ -149,7 +149,7 @@ The Class and Rule cells are empty on the second guard of a class and on each gu
 |  |  | `apply-check` | `scripts/lib/flow-config.ts` | `domainProblems` |
 |  |  | `test` | `tests/apply/ci-parity-apply.test.ts` | `apply --dry-run checks what each gate reads from the tree > a context map that is no file of the repo fails the dry run until it names a tracked file` |
 |  |  | `test` | `tests/apply/flow-config.test.ts` | `renderDomain > tells a skill to name a missing file in its output, never to proceed silently` |
-| `restated-value` | A doc states no count that a table or another file holds, such as the number of findings, rounds or classes of this file. The next row makes such a count false, so the doc names the table instead. A doc of record in a product repo restates no astack rule and cites no line of a file that apply writes, because each apply update moves those lines. Apply fails on a tracked Markdown file outside the managed paths that cites a managed path with a line number. | `test` | `tests/review-lessons.test.ts` | `docs/review-lessons.md > the prose states no count of findings, rounds or classes, because the next row makes it false` |
+| `restated-value` | A doc states no count that a table or another file holds, such as the number of classes of this file. The next row makes such a count false, so the doc names the table instead. A doc of record in a product repo restates no astack rule and cites no line of a file that apply writes, because each apply update moves those lines. Apply fails on a tracked Markdown file outside the managed paths that cites a managed path with a line number. | `test` | `tests/review-lessons.test.ts` | `docs/review-lessons.md > the prose states no count of findings, rounds or classes, because the next row makes it false` |
 |  |  | `test` | `tests/review-lessons.test.ts` | `the checks of the review lessons find each broken row > a count of rounds or findings in the prose is a gap, and a number in a table row is not` |
 |  |  | `apply-check` | `scripts/lib/line-citations.ts` | `managedLineCitations` |
 |  |  | `test` | `tests/apply/line-citations.test.ts` | `managedLineCitations > a doc of the repo that cites a line of a file that apply writes is stale on the next update` |
@@ -389,173 +389,3 @@ The Class and Rule cells are empty on the second guard of a class and on each gu
 | `apply-copy-scope` | The dry run of apply copies the product repo with the files that git ignores, such as `node_modules`, because its gates need them. It copies no worktree that git records inside the repo, such as a worktree in `.claude/worktrees`. The copy uses the filesystem API and preserves modes and relative links. Writes to copied regular files leave the source unchanged. | `test` | `tests/apply/ci-parity-apply.test.ts` | `apply --dry-run copies the repo for its checks > the copy preserves tracked and ignored files, modes, and links, skips nested worktrees, and isolates writes` |
 | `terminal-control-text` | Each command prints a field from GitHub, such as a comment body, a check name or a query failure, with each C0 control character, DEL and C1 control character escaped. The JSON output escapes them too, and a parser reads the same value back. | `test` | `tests/astack/watch-pr/render.test.ts` | `control characters in GitHub text > pretty output escapes each control character of %s` |
 |  |  | `test` | `tests/astack/watch-pr/render.test.ts` | `control characters in GitHub text > JSON output escapes DEL and C1 characters, and parses back to the same verdict` |
-
-## Findings
-
-The table holds each finding of the review ledger. A Codex finding has two rows when the ledger gave it a second title. The ref of a Codex finding is `codex:r<round>-<n>`, and the ref of a workflow finding is `wf:r<round>:<slug>`. A declined finding and a duplicate have the reason in place of a class. The Status cell is `fixed` when the guards of the class hold the finding, and `open` when the owner still has a step. It is `declined` or `duplicate` for a finding with no class.
-
-| Ref | Round | Origin | Severity | Title | Class | Status |
-|---|---|---|---|---|---|---|
-| `codex:r1-1` | 1 | codex | P1 | "Preserve all blocking severity aliases" | `engine-stub-drift` | `fixed` |
-| `codex:r1-1` | 1 | codex | P1 | "The stub fallback counts only Critical and Important as blocking" | `engine-stub-drift` | `fixed` |
-| `codex:r1-2` | 1 | codex | P1 | "Migrate the slash-command entry point" | `managed-file-lifecycle` | `fixed` |
-| `codex:r1-2` | 1 | codex | P1 | "The stale /pr-review-hardening command wrapper and GOAL file contradict the stub" | `managed-file-lifecycle` | `fixed` |
-| `codex:r1-3` | 1 | codex | P2 | "Define the fallback's terminal policy" | `fallback-key-contract` | `fixed` |
-| `codex:r1-3` | 1 | codex | P2 | "The stub fallback reads profile keys that the rendered profile does not define" | `fallback-key-contract` | `fixed` |
-| `codex:r1-4` | 1 | codex | P2 | "Reconcile the failing-test commit requirement" | `contradicting-commit-rules` | `fixed` |
-| `codex:r1-4` | 1 | codex | P2 | "The commit-the-failing-test rule conflicts with one commit per finding" | `contradicting-commit-rules` | `fixed` |
-| `codex:r1-5` | 1 | codex | P2 | "Preserve required ADR annotations" | `comment-keep-forms` | `fixed` |
-| `codex:r1-5` | 1 | codex | P2 | "The comment keep list drops ADR citations that repo rules require" | `comment-keep-forms` | `fixed` |
-| `codex:r1-6` | 1 | codex | P2 | "Include the copied MIT license notice" | `upstream-licence` | `fixed` |
-| `codex:r1-6` | 1 | codex | P2 | "Copied upstream text ships with no MIT notice" | `upstream-licence` | `fixed` |
-| `wf:r1:verify:acme-adr-hyphen` | 1 | verify | minor | "The acme keep pattern misses the hyphen ADR form" | `comment-keep-forms` | `fixed` |
-| `wf:r1:verify:flat-licence-pstack` | 1 | verify | minor | "Flat dist skill licences omit pstack for derived astack skills" | `upstream-licence` | `fixed` |
-| `wf:r1:verify:managed-symlink` | 1 | verify | minor | "astack managed does not follow a symlink to a managed file" | `managed-file-lifecycle` | `fixed` |
-| `wf:r1:verify:astack-no-commit` | 1 | verify | minor | "The astack source repo has no commit, so a PR reply cannot cite an astack change" | `astack-provenance` | `open` |
-| `wf:r1:reapply:create-subject-removal` | 1 | other | minor | "The create-mode commit subject hides the files that apply deletes" | `managed-file-lifecycle` | `fixed` |
-| `codex:r2-1` | 2 | codex | P2 | "Detect tracked writes during the baseline" | `engine-stub-drift` | `fixed` |
-| `codex:r2-1` | 2 | codex | P2 | "The stub fallback baseline does not compare git status" | `engine-stub-drift` | `fixed` |
-| `codex:r2-2` | 2 | codex | P2 | "Use the supported labels field for Linear updates" | declined: the live Linear schema of the owner lists the label fields. The later fix is the entry in class `tracker-tool-schema`. | `declined` |
-| `codex:r2-2` | 2 | codex | P2 | "Linear label updates use addLabels and removeLabels that some servers lack" | `tracker-tool-schema` | `fixed` |
-| `codex:r2-3` | 2 | codex | P2 | "Replace the unsupported map patch operation" | declined: the live Linear schema of the owner lists the map field. The later fix is the entry in class `tracker-tool-schema`. | `declined` |
-| `codex:r2-3` | 2 | codex | P2 | "The wayfinder map update uses patch that some Linear servers lack" | `tracker-tool-schema` | `fixed` |
-| `codex:r2-4` | 2 | codex | P2 | "Keep each bug-fix commit green" | `contradicting-commit-rules` | `fixed` |
-| `codex:r2-4` | 2 | codex | P2 | "The commit rule makes a red commit against globex G1" | `contradicting-commit-rules` | `fixed` |
-| `codex:r2-5` | 2 | codex | P2 | "Parse the advertised --pr argument in the fallback" | `engine-stub-drift` | `fixed` |
-| `codex:r2-5` | 2 | codex | P2 | "The stub fallback does not parse --pr" | `engine-stub-drift` | `fixed` |
-| `wf:r2:verify:pstack-principle-red-commit` | 2 | verify | minor | "The pstack principle skill keeps the red-commit order with no astack override" | `contradicting-commit-rules` | `fixed` |
-| `codex:r3-1` | 3 | codex | P2 | "Run the repository's complete lint gate" | `ci-job-coverage` | `fixed` |
-| `codex:r3-1` | 3 | codex | P2 | "globex lint gate runs Biome directly and never runs manypkg check" | `ci-job-coverage` | `fixed` |
-| `codex:r3-2` | 3 | codex | P2 | "Exercise the blocking browser suite for layout changes" | `ci-job-coverage` | `fixed` |
-| `codex:r3-2` | 3 | codex | P2 | "globex has no Playwright browser-smoke gate for layout diffs" | `ci-job-coverage` | `fixed` |
-| `wf:r3:verify:gate-narrower-than-job` | 3 | verify | major | "globex browser-smoke and portal-build skip paths that CI tests, and parity ignores when_changed" | `ci-job-coverage` | `fixed` |
-| `wf:r3:verify:unproven-exclusion` | 3 | verify | major | "ci-parity accepts an exclusion of any job, so blocking globex visual had no gate" | `ci-job-coverage` | `fixed` |
-| `wf:r3:verify:foreign-dev-servers` | 3 | verify | major | "Browser gate prerequisites accept dev servers from another checkout" | `foreign-process-trust` | `fixed` |
-| `wf:r3:verify:untracked-env-files` | 3 | verify | minor | "hooli e2e and app-build need untracked .env files that no prerequisite names" | `ignored-file-prerequisites` | `fixed` |
-| `codex:r4-1` | 4 | codex | P1 | "Check out the pull request named by --pr" | `review-target-identity` | `fixed` |
-| `codex:r4-1` | 4 | codex | P1 | "--pr run never checks out or verifies the PR head" | `review-target-identity` | `fixed` |
-| `codex:r4-2` | 4 | codex | P2 | "Run the browser smoke gate in CI mode" | `gate-env-and-tools` | `fixed` |
-| `codex:r4-2` | 4 | codex | P2 | "Gates run without CI=true, so forbidOnly is off" | `gate-env-and-tools` | `fixed` |
-| `wf:r4:pre-review-1:stale-local-base` | 4 | pre-review | P1 | "The base is a bare local branch that is never fetched" | `review-target-identity` | `fixed` |
-| `wf:r4:pre-review-1:next-env-rewrite` | 4 | pre-review | P1 | "Next.js build gates rewrite the tracked next-env.d.ts and stop every run" | `tracked-file-writes` | `fixed` |
-| `wf:r4:pre-review-1:build-output-prereq` | 4 | pre-review | P2 | "BUILD_ID prerequisites run at preflight and turn a red build into NOT_STARTED" | `prerequisite-semantics` | `fixed` |
-| `wf:r4:pre-review-1:empty-diff-clean` | 4 | pre-review | P2 | "An empty diff reaches stop_clean" | `clean-stop-criteria` | `fixed` |
-| `wf:r4:pre-review-1:stub-glob-rule` | 4 | pre-review | P2 | "The stub does not define * and ** in when_changed globs" | `engine-stub-drift` | `fixed` |
-| `wf:r4:pre-review-1:red-gate-finding` | 4 | pre-review | P2 | "The stub never makes a red gate a finding or splits PR reds from pre-existing reds" | `engine-stub-drift` | `fixed` |
-| `wf:r4:pre-review-1:reviewer-cwd` | 4 | pre-review | P2 | "Reviewer subagents get only a cwd-relative diff in the --pr worktree path (PLAUSIBLE)" | `review-target-identity` | `fixed` |
-| `wf:r4:pre-review-1:unread-profile-keys` | 4 | pre-review | P2 | "The fallback ignores profile keys that change which findings block" | `fallback-key-contract` | `fixed` |
-| `wf:r4:pre-review-1:ledger-path` | 4 | pre-review | P3 | "ledger.carry_over true points to previous records, but the stub never says where the ledger is" | `fallback-key-contract` | `fixed` |
-| `wf:r4:pre-review-2:tool-pins` | 4 | pre-review | P1 | "Parity drops the bun and Supabase CLI pins of CI" | `gate-env-and-tools` | `fixed` |
-| `wf:r4:pre-review-2:merge-ref-base` | 4 | pre-review | P1 | "Gates test the PR head, but CI tests the merge into the base" | `review-target-identity` | `fixed` |
-| `wf:r4:pre-review-2:acme-seed-residue` | 4 | pre-review | P1 | "acme test gate runs on the lane stack after seed:e2e, so pgTAP access-matrix is red" | `long-lived-stack-state` | `fixed` |
-| `wf:r4:pre-review-2:stack-migrations` | 4 | pre-review | P1 | "Stack gates run on a long-lived stack that never applies the PR migrations" | `long-lived-stack-state` | `fixed` |
-| `wf:r4:pre-review-2:turbo-cache` | 4 | pre-review | P2 | "turbo replays a cached green for globex test and lint" | `workspace-state` | `fixed` |
-| `wf:r4:pre-review-2:smoke-dev-servers` | 4 | pre-review | P2 | "globex browser-smoke tests bun dev servers with real keys, not the built portal" | `ci-job-coverage` | `fixed` |
-| `wf:r4:pre-review-2:acme-draft-grep` | 4 | pre-review | P2 | "acme e2e gate always runs the draft lane grep, and the profile said a run cannot stop clean while CI fails" | `ci-job-coverage` | `fixed` |
-| `wf:r4:pre-review-2:initech-test-order` | 4 | pre-review | P2 | "initech runs bun run test after pgTAP and seed replay, unlike CI" | `ci-job-coverage` | `fixed` |
-| `wf:r4:verify:globex-env-prereq` | 4 | verify | minor | "globex portal-build and browser-smoke have no prerequisite for the ignored .env files" | `ignored-file-prerequisites` | `fixed` |
-| `wf:r4:verify:acme-session-db-url` | 4 | verify | minor | "acme lane prerequisite does not check a session DATABASE_PRIMARY_URL under CI=true" | `shared-resource-side-effects` | `fixed` |
-| `wf:r4:verify:next-env-apply-check` | 4 | verify | minor | "No apply check for a build gate whose app tracks next-env.d.ts" | `tracked-file-writes` | `fixed` |
-| `wf:r4:verify:container-step-env` | 4 | verify | minor | "Parity skips container.env and the step env of a whole-mapped job" | `gate-env-and-tools` | `fixed` |
-| `codex:r5-1` | 5 | codex | P1 | "Make the mandatory portal build read-only" | `tracked-file-writes` | `fixed` |
-| `codex:r5-1` | 5 | codex | P1 | "portal-build rewrites the tracked next-env.d.ts, so every run stops" | `tracked-file-writes` | `fixed` |
-| `codex:r5-2` | 5 | codex | P2 | "Refuse to certify gates with unpinned fallback tools" | declined: an owner decision. The run does not refuse a clean stop on an unpinned tool, because each merge path checks CI on the head. A profile that merges after a clean stop needs a merge condition that checks CI on the head, and the profile check refuses one without it. The later fix is the entry in class `gate-env-and-tools`. | `declined` |
-| `codex:r5-2` | 5 | codex | P2 | "Report does not say that a local version note is advisory" | `gate-env-and-tools` | `fixed` |
-| `codex:r5-3` | 5 | codex | P2 | "Rebuild the browser database from the checked-out migrations" | `long-lived-stack-state` | `fixed` |
-| `codex:r5-3` | 5 | codex | P2 | "Stack gate trusts a long-lived stack whose applied migration bodies changed" | `long-lived-stack-state` | `fixed` |
-| `wf:r5:p1-hunt:cd-moves-next-entry` | 5 | pre-review | P1 | "A cd in one gate entry moves the next entry" | `gate-shell-and-cwd` | `fixed` |
-| `wf:r5:p1-hunt:restore-pathspec-cwd` | 5 | pre-review | P1 | "Rewrites restore uses a pathspec relative to the current folder" | `gate-shell-and-cwd` | `fixed` |
-| `wf:r5:p1-hunt:zsh-word-split` | 5 | pre-review | P1 | "Gates run in zsh, which breaks the acme grep split and PIPESTATUS" | `gate-shell-and-cwd` | `fixed` |
-| `wf:r5:verify:restore-hides-earlier-write` | 5 | verify | minor | "Rewrites restore can hide a write of an earlier gate" | `tracked-file-writes` | `fixed` |
-| `wf:r5:fix:psql-enobufs` | 5 | other | unrated | "Migration check fails with ENOBUFS on a large stack" | `long-lived-stack-state` | `fixed` |
-| `codex:r6-1` | 6 | codex | P1 | "Verify the implicitly discovered PR head" | `review-target-identity` | `fixed` |
-| `codex:r6-1` | 6 | codex | P1 | "Run without --pr never compares HEAD with the PR head" | `review-target-identity` | `fixed` |
-| `codex:r6-2` | 6 | codex | P1 | "Require lsof before relying on smoke cleanup" | `prerequisite-semantics` | `fixed` |
-| `codex:r6-2` | 6 | codex | P1 | "lsof prerequisite passes when lsof is missing, and cleanup kills by port" | `foreign-process-trust` | `fixed` |
-| `codex:r6-3` | 6 | codex | P2 | "Install frozen dependencies in every selected worktree" | `workspace-state` | `fixed` |
-| `codex:r6-3` | 6 | codex | P2 | "Frozen install runs only in a new --pr worktree" | `workspace-state` | `fixed` |
-| `codex:r6-4` | 6 | codex | P1 | "Redact environment values from gate output" | `secret-output` | `fixed` |
-| `codex:r6-4` | 6 | codex | P1 | "Run prints session secret values in <NAME>_ENV" | `secret-output` | `fixed` |
-| `wf:r6:hunt:false-clean:rename-hides-old-path` | 6 | hunt | P1 | "when_changed hides the old path of a renamed file" | `ci-job-coverage` | `fixed` |
-| `wf:r6:hunt:false-clean:untracked-files` | 6 | hunt | P1 | "Gates run on the working tree, so an untracked file gives a false clean" | `workspace-state` | `fixed` |
-| `wf:r6:hunt:stale-state:untracked-files` | 6 | hunt | P1 | "Gates run on the working tree, not on HEAD (duplicate)" | declined: a duplicate of `wf:r6:hunt:false-clean:untracked-files`, which is in class `workspace-state`. | `duplicate` |
-| `wf:r6:hunt:false-clean:ci-change-parity` | 6 | hunt | P1 | "A PR that changes CI runs against gates that mirror the old CI" | `ci-job-coverage` | `fixed` |
-| `wf:r6:hunt:false-clean:stale-sim` | 6 | hunt | P1 | "hooli e2e accepts a sim and fake Trigger.dev of another checkout" | `foreign-process-trust` | `fixed` |
-| `wf:r6:hunt:stale-state:stale-sim` | 6 | hunt | P1 | "hooli e2e tests a sim of another tree or an older commit (duplicate)" | declined: a duplicate of `wf:r6:hunt:false-clean:stale-sim`, which is in class `foreign-process-trust`. | `duplicate` |
-| `wf:r6:hunt:false-clean:unseen-fix-commit` | 6 | hunt | P1 | "stop_clean can certify a step-4 fix commit that no reviewer saw" | `clean-stop-criteria` | `fixed` |
-| `wf:r6:hunt:stale-state:frozen-install-keeps-removed-dep` | 6 | hunt | P1 | "Frozen install keeps a removed dependency in node_modules" | `workspace-state` | `fixed` |
-| `wf:r6:hunt:stale-state:stale-stack-config` | 6 | hunt | P1 | "Long-lived Supabase stack keeps the config.toml of its start" | `long-lived-stack-state` | `fixed` |
-| `wf:r6:hunt:secrets-side-effects:acme-lane-reset` | 6 | hunt | P1 | "acme lane check lets bun run reset hit a stack this worktree does not own" | `shared-resource-side-effects` | `fixed` |
-| `wf:r6:hunt:shell-tools:gh-failure-means-no-pr` | 6 | hunt | P1 | "A failed gh lookup counts as no PR and skips the head check" | `review-target-identity` | `fixed` |
-| `wf:r6:verify:stack-config-compares-times` | 6 | verify | major | "check stack-config compares commit times, not the config the stack holds" | `long-lived-stack-state` | `fixed` |
-| `wf:r6:verify:gh-no-pr-case` | 6 | verify | minor | "No-PR rule matches only the lowercase gh message" | `review-target-identity` | `fixed` |
-| `wf:r6:verify:supabase-start-prints-keys` | 6 | verify | minor | "Secret sweep missed supabase start, which prints the stack keys" | `secret-output` | `fixed` |
-| `wf:r6:verify:node-modules-delete-owner-checkout` | 6 | verify | minor | "node_modules delete runs in the owner checkout with no owner gate" | `shared-resource-side-effects` | `fixed` |
-| `wf:r6:verify:globex-curl-prereq` | 6 | verify | minor | "globex smoke uses curl but checks only lsof" | `prerequisite-semantics` | `fixed` |
-| `wf:r6:fix-3:stack-start-hides-ci-step` | 6 | other | unrated | "astack stack start wrapper hid the CI start step from parity" | `ci-job-coverage` | `fixed` |
-| `codex:r7-1` | 7 | codex | P2 | "Provide Supabase to the test gate" | `gate-env-and-tools` | `fixed` |
-| `wf:r8:open:create-subject-kinds` | 8 | other | minor | "A follow-up create commit says add and names every kind that apply writes" | `managed-file-lifecycle` | `fixed` |
-| `wf:r9:design:stub-comment-fields` | 9 | other | unrated | "The stub fallback posts the Hardening comment with no list of its fields" | `engine-stub-drift` | `fixed` |
-| `wf:r9:critique-2:stub-unclean-trailers` | 9 | other | minor | "The stub fallback still leaves on_unclean, trailers and the database gates underspecified" | `engine-stub-drift` | `open` |
-| `wf:r9:critique-2:prepass-claims-audit` | 9 | other | minor | "Moving prepasses whole lets a claims-audit prepass pass apply while the stub ignores it" | `fallback-key-contract` | `fixed` |
-| `wf:r9:critique-2:claim-line` | 9 | other | major | "The session claim replaces the wayfinder Claim line, and a research claim by comment leaves the ticket on the frontier" | `flow-doc-register` | `fixed` |
-| `wf:r9:critique-1:flow-docs-register` | 9 | other | major | "The agent docs still send astack skills to a flow that is not the flow of the repo" | `flow-doc-register` | `fixed` |
-| `wf:r9:critique-1:commit-names-plugins` | 9 | other | major | "The apply commit names the plugins outside the paths that may name them" | `astack-provenance` | `fixed` |
-| `wf:r9:critique-2:merge-names-astack` | 9 | other | major | "The configured merge command puts the tool name into a squash commit on main" | `astack-provenance` | `fixed` |
-| `wf:r9:critique-2:keep-free-line` | 9 | other | major | "The keep patterns keep a second free line and free text, not only the three forms" | `comment-keep-forms` | `fixed` |
-| `wf:r10:keep-free-line` | 10 | verify | major | "The initech keep patterns keep a free second line with each of the 3 forms, so they keep more than the 3 forms" | `comment-keep-forms` | `fixed` |
-| `wf:r10:keep-free-text` | 10 | verify | minor | "The context and TODO patterns keep free narration on one line, and a TS comment that starts with `-- Context:`" | `comment-keep-forms` | `fixed` |
-| `wf:r10:stub-keep-marker` | 10 | verify | minor | "The stub fallback comment gate does not say 'with or without its comment marker', and initech now mixes the two anchors" | `fallback-key-contract` | `fixed` |
-| `wf:r10:flow-decision-frontier` | 10 | verify | minor | "The initech agent docs still let a frontier agent claim and close a decision sub-issue of the Map" | `flow-doc-register` | `fixed` |
-| `wf:r10:pin-test-weakened` | 10 | verify | minor | "A fix commit weakens the keep-pattern pin test of all projects" | `comment-keep-forms` | `fixed` |
-| `wf:r10:untested-claims` | 10 | verify | minor | "Three claims of the initech commits have no failing test" | `astack-provenance` | `fixed` |
-| `wf:r10:deny-upstream-name` | 10 | verify | minor | "initech denySubstrings do not hold the flow upstream name, so the product-file lint and the neutral-commit check miss it" | `astack-provenance` | `fixed` |
-| `wf:r10:deny-tooling-names` | 10 | verify | minor | "The initech deny list misses names that the five tooling paths hold" | declined: a duplicate of `wf:r10:deny-upstream-name`, which is in class `astack-provenance` | `duplicate` |
-| `wf:r10:commit-text-check` | 10 | verify | minor | "No automatic check keeps plugin names out of initech commit messages, the PR title and the PR body" | `astack-provenance` | `fixed` |
-| `codex:r11-1` | 11 | codex | P2 | "Define the fix branch when no PR exists" | `engine-stub-drift` | `fixed` |
-| `codex:r11-2` | 11 | codex | P2 | "Allow ledger entries for deleted files" | `ledger-continuity` | `fixed` |
-| `codex:r11-3` | 11 | codex | P2 | "Reset the ledger only once per hardening run" | `ledger-continuity` | `fixed` |
-| `wf:r11:verify:push-branch-without-pr` | 11 | verify | minor | "each-commit pushes to the branch of a PR that a run without --pr does not have, and a new branch has no upstream" | `engine-stub-drift` | `fixed` |
-| `wf:r11:verify:headrefname-scope-lexical` | 11 | verify | minor | "The headRefName scope check passes a sentence that names --pr anywhere, and headRefName with no backticks" | `engine-stub-drift` | `fixed` |
-| `wf:r11:verify:ledger-reset-forms` | 11 | verify | minor | "The ledger reset scan misses the gate run, other word forms and a reset through a reference" | `ledger-continuity` | `fixed` |
-| `wf:r11:verify:blob-scan-forms` | 11 | verify | minor | "The blob premise test reads English stderr, and the blob scan misses two other forms of the command" | `ledger-continuity` | `fixed` |
-| `codex:r12-1` | 12 | codex | P1 | "Make the e2e hardening command portable" | `prerequisite-semantics` | `fixed` |
-| `codex:r12-2` | 12 | codex | P2 | "Stop when local HEAD is ahead of the PR" | `clean-stop-criteria` | `fixed` |
-| `codex:r12-3` | 12 | codex | P2 | "Map CONTEXT.md to the context map" | `flow-doc-register` | `fixed` |
-| `codex:r12-4` | 12 | codex | P2 | "Exempt legal headers from the comment length limit" | `comment-keep-forms` | `fixed` |
-| `codex:r12-5` | 12 | codex | P2 | "Make metrics execution conditional" | `fallback-key-contract` | `fixed` |
-| `codex:r13-1` | 13 | codex | P1 | "Push fork PR fixes to the head repository" | `review-target-identity` | `fixed` |
-| `wf:r13:verify:lessons-count` | 13 | verify | minor | "docs/review-lessons.md states a findings count in prose that drifts" | `restated-value` | `fixed` |
-| `wf:r12:verify:context-map-check-test` | 12 | verify | minor | "A commit says that apply checks the context map path, but no test holds it" | `flow-doc-register` | `fixed` |
-| `wf:r12:verify:domain-proceed-silently` | 12 | verify | minor | "The domain doc says to proceed silently when the glossary or the context map is missing" | `flow-doc-register` | `fixed` |
-| `wf:r13:verify:profile-scan-overlays` | 13 | verify | minor | "The profile scans read only the top profile of each project, and skip the profile of a branch overlay" | `profile-scan-reach` | `fixed` |
-| `wf:r12:verify:stub-null-block-test` | 12 | verify | minor | "No test holds the stub sentence that keeps a run with metrics: null from a stop on a missing metrics.command" | `fallback-key-contract` | `fixed` |
-| `wf:r12:verify:goal-metrics-condition` | 12 | verify | major | "The /goal template asks for METRICS_EXIT 0 with no condition, so a run with metrics: null can never meet it" | `clean-stop-criteria` | `fixed` |
-| `wf:r11:verify:ledger-resume` | 11 | verify | minor | "No text defines resume, and with carry_over false the preflight archives the ledger of a run that was cut off" | `ledger-continuity` | `fixed` |
-| `wf:r13:verify:fork-checkout-by-name` | 13 | verify | minor | "The --pr lookup takes a checkout by the name of the head branch, so a PR from a fork with the head branch main runs in the local main checkout" | `review-target-identity` | `fixed` |
-| `wf:r13:verify:playbook-fork-push` | 13 | verify | minor | "The create-pr and comments triage playbooks push a PR from a fork with no read of its head repository, and create-pr finds a PR by a branch name of any owner" | `review-target-identity` | `fixed` |
-| `wf:r12:verify:license-header-forms` | 12 | verify | minor | "The hook denies a license header that blank lines split, and a license header with a line that a keep pattern matches" | `comment-keep-forms` | `fixed` |
-| `wf:r10:verify:copied-from-beside-kept` | 10 | verify | minor | "A copied-from line beside a line that a keep pattern keeps gets no verdict, and the same line alone gets judge" | `comment-keep-forms` | `fixed` |
-| `wf:r13:verify:dry-run-copy-worktrees` | 13 | verify | minor | "The apply dry run copies the whole product repo with its nested worktrees, so a dry run of globex took 30 minutes" | `apply-copy-scope` | `fixed` |
-| `wf:r12:verify:platform-tool-any-test` | 12 | verify | major | "The platform tool guard passes any test for the tool, also a gate with no portable form, and any prerequisite that only names the tool" | `prerequisite-semantics` | `fixed` |
-| `wf:r12:verify:platform-tool-apply-test` | 12 | verify | minor | "The platform tool check has no test through apply, and no test runs it over each profile under projects/, the profile of each branch overlay included" | `prerequisite-semantics` | `fixed` |
-| `wf:r13:verify:profile-commit-label` | 13 | verify | minor | "The apply writer names a commit that changes only the hardening profile as a change of the review stub" | `managed-file-lifecycle` | `fixed` |
-| `wf:r14:lesson:managed-line-citation` | 14 | other | minor | "An ADR of initech cited lines of files that apply writes, and each apply update moved those lines, so the PR needed 4 hardening runs" | `restated-value` | `fixed` |
-| `wf:r12:verify:license-patterns-in-prose` | 12 | verify | major | "The wider license patterns run before every deny rule, so prose with one license-like line passes silently" | `comment-keep-forms` | `fixed` |
-| `wf:r12:verify:license-header-mpl-isc` | 12 | verify | major | "The hook still blocks two common license headers, MPL-2.0 and a split ISC header" | `comment-keep-forms` | `fixed` |
-| `wf:r12:verify:platform-tool-guard-scope` | 12 | verify | major | "One guarded if exempts the whole gate, so an unguarded lockf call in the same gate passes" | `prerequisite-semantics` | `fixed` |
-| `wf:r11:verify:ledger-null-at-load` | 11 | verify | major | "No test holds the step that marks a run in progress, so the sentence that sets stopped to null at the load can go with every test green" | `ledger-continuity` | `fixed` |
-| `wf:r12:verify:context-map-apply-test` | 12 | verify | major | "No test holds that apply runs domainProblems or fails on its result, so apply can only log a wrong context map with every test green" | `flow-doc-register` | `fixed` |
-| `wf:r14:verify:line-citation-report-only` | 14 | verify | major | "No test covers the line citation check of the report-only path, which initech uses" | `restated-value` | `fixed` |
-| `wf:r15:preflight:version-file-stop` | 15 | other | major | "Preflight step 8 stops a PR that changes only a dependency in package.json, because a workflow reads the bun version from that file" | `ci-job-coverage` | `fixed` |
-| `wf:r16:ci-pins:node-property` | 16 | other | major | "An anchor or a tag before a key under with or inputs gives no key, so the scan misses a version-file input" | `ci-job-coverage` | `fixed` |
-| `wf:r16:ci-pins:quoted-key-escape` | 16 | other | major | "The scan does not decode the escapes of a double-quoted key, so it misses a version-file input" | `ci-job-coverage` | `fixed` |
-| `wf:r16:ci-pins:merge-key` | 16 | other | major | "The check of a merge key under with never runs, because the key pattern never matches the merge key" | `ci-job-coverage` | `fixed` |
-| `wf:r16:ci-pins:reader-truthiness` | 16 | other | major | "The setup-node reader falls through on a field that is present but is not a string, where setup-node reads it by truthiness" | `ci-job-coverage` | `fixed` |
-| `wf:r16:ci-pins:adversarial-round-1` | 16 | other | major | "An adversarial run finds 38 more YAML forms and reader paths that hide a CI tool version from the line scan" | `ci-job-coverage` | `fixed` |
-| `wf:r17:ci-pins:adversarial-round-2` | 17 | other | major | "A second adversarial run finds 13 more ways to hide a CI tool version and 4 false stops, most of them in the line scan" | `ci-job-coverage` | `fixed` |
-| `wf:r17:ci-pins:flow-inputs` | 17 | other | major | "An inputs block in flow style gives no defaults to the line scan, so a version file that a default names is missed" | `ci-job-coverage` | `fixed` |
-| `wf:r17:ci-pins:pnpm-alias` | 17 | other | minor | "A pnpm-lock.yaml with many nested aliases makes the check crash with a stack trace" | `ci-job-coverage` | `fixed` |
-| `wf:r18:watch-pr:stack-walk-cycle` | 18 | other | unrated | "The stack walk of watch-pr has no visited set, so a cycle of open PRs makes it loop forever" | declined: watch-pr now watches one PR and has no stack walk. | `declined` |
-| `wf:r18:watch-pr:stack-fork-identity` | 18 | other | unrated | "Stack discovery keys PRs by the head branch name only and takes PRs from forks, so a PR from a fork with a matching branch name joins the stack" | declined: watch-pr now watches one PR and has no stack walk. | `declined` |
-| `wf:r18:watch-pr:pretty-control-characters` | 18 | other | unrated | "renderPretty prints GitHub fields with their C0 and C1 control characters, so a crafted comment can send terminal escapes" | `terminal-control-text` | `fixed` |

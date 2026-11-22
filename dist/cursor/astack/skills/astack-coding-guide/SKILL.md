@@ -131,7 +131,7 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    After a merge or a session that needed corrections, the user runs `/astack-retro` in the same session.
    Or the user runs `/astack-reflect` to turn its lessons into skill edits.
 
-The `astack-mode` Opening a PR playbook runs steps 4 to 6 at the end of every playbook.
+`astack-mode` Create PR steps 1 to 8 run steps 4 to 6 after every playbook.
 Step 5 runs after `/astack-deslop` and before `gh pr create`.
 An Autopilot playbook opens the PR early.
 There, step 5 runs before the code-ready report.
