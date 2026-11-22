@@ -4,7 +4,11 @@ import {
 	recordOf,
 	runGates,
 } from "../../src/astack/gates.ts";
-import { type GitRead, readGit } from "../../src/astack/git-command.ts";
+import {
+	type GitRead,
+	madeRepoTarget,
+	readGit,
+} from "../../src/astack/git-command.ts";
 import type {
 	Context,
 	Handler,
@@ -21,6 +25,13 @@ import {
 	readPullRequestWithGh,
 } from "../../src/astack/pr/github.ts";
 import { type MergeGrant, mergeGrantIn } from "../../src/astack/pr/grant.ts";
+import {
+	type RepoIdentity,
+	type RepoProbe,
+	type SessionRepos,
+	sessionRepoAt,
+	settleRepos,
+} from "../../src/astack/session-repos.ts";
 import { type ShellStep, shellSteps } from "../../src/astack/shell.ts";
 
 export type GuardArrow = (event: HookEvent, context: Context) => Verdict;
@@ -33,6 +44,20 @@ export const plainFormArrow: (command: string, cwd: string) => ShellStep[] =
 	shellSteps;
 
 export const gitReadArrow: (step: ShellStep) => GitRead = readGit;
+
+export const madeRepoArrow: (step: ShellStep) => string | undefined =
+	madeRepoTarget;
+
+export const settleArrow: (
+	repos: SessionRepos,
+	probes: ReadonlyMap<string, RepoProbe>,
+) => SessionRepos = settleRepos;
+
+export const sessionRepoArrow: (
+	repos: SessionRepos,
+	root: string,
+	identity: RepoIdentity,
+) => boolean = sessionRepoAt;
 
 export const gatesRunArrow: (
 	...args: Parameters<typeof runGates>

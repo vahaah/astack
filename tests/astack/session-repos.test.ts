@@ -72,7 +72,7 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 	});
 });
 
-describe("[control:sg-session-repo-store] the match of a session repo", () => {
+describe("[control:sg-session-repo-match] the match of a session repo", () => {
 	const repos: SessionRepos = [
 		{ kind: "bound", path: "/w/made", identity: IDENTITY },
 		{ kind: "pending", path: "/w/later" },
@@ -111,7 +111,7 @@ describe("[control:sg-session-repo-store] the match of a session repo", () => {
 	});
 });
 
-describe("[control:sg-session-repo-store] the edge of the session repo record", () => {
+describe("[control:sg-session-repo-edge] the edge of the session repo record", () => {
 	let root = "";
 	const session = "session-1";
 	const record: SessionRepos = [

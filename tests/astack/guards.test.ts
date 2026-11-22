@@ -968,7 +968,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("[control:sg-session-repo] git reset --hard passes in a repo that git clone made in this session", () => {
+	test("[control:sg-session-repo-clone] git reset --hard passes in a repo that git clone made in this session", () => {
 		const { dir, state } = fresh("clone");
 		const parent = join(dir, "..");
 		expect(sessionRun(`git clone ${repo} clone`, parent, state).kind).toBe(
@@ -979,7 +979,7 @@ describe("a repo that this session made", () => {
 		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
 	});
 
-	test("[control:sg-session-repo] git reset --hard passes in a worktree that git worktree add made in this session", () => {
+	test("[control:sg-session-repo-worktree] git reset --hard passes in a worktree that git worktree add made in this session", () => {
 		const { dir, state } = fresh("main");
 		dirtyRepoAt(dir);
 		const worktree = join(dir, "..", "wt");
@@ -997,7 +997,7 @@ describe("a repo that this session made", () => {
 		["supabase db reset", "deletes the database data"],
 		['git commit --no-verify -m "x"', "--no-verify"],
 	])(
-		"[control:sg-session-repo] %s keeps its owner gate in a session repo",
+		"[control:sg-session-repo-gates] %s keeps its owner gate in a session repo",
 		(command, text) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
@@ -1005,7 +1005,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("[control:sg-session-repo] git clean -ffd is denied for a nested repo with no bound record", () => {
+	test("[control:sg-session-repo-nested] git clean -ffd is denied for a nested repo with no bound record", () => {
 		const { dir, state } = fresh("made");
 		initedRepo(state, dir);
 		const nested = join(dir, "vendor/lib");
@@ -1032,7 +1032,7 @@ describe("a repo that this session made", () => {
 		],
 		["a new dirty repo", (dir: string) => dirtyRepoAt(dir)],
 	])(
-		"[control:sg-session-repo-identity] a reset is denied at the path of a bound record that now holds %s",
+		"[control:sg-session-repo-replaced] a reset is denied at the path of a bound record that now holds %s",
 		(_, replace) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
@@ -1049,7 +1049,7 @@ describe("a repo that this session made", () => {
 		"git init --separate-git-dir=OTHER/.git NEW",
 		"git init --separate-git-dir OTHER/.git NEW",
 	])(
-		"[control:sg-session-repo-identity] after %s a reset in the new folder is denied",
+		"[control:sg-session-repo-separate] after %s a reset in the new folder is denied",
 		(command) => {
 			const { dir, state } = fresh("new");
 			const other = join(dir, "..", "other");
@@ -1075,7 +1075,7 @@ describe("a repo that this session made", () => {
 		"export GIT_DIR=REPO/.git && git reset --hard",
 		"GIT_DIR=REPO/.git; export GIT_DIR; git reset --hard",
 	])(
-		"[control:sg-session-repo-identity] %s gets the deny of main in a dirty session repo",
+		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
 		(command) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
@@ -1085,7 +1085,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("[control:sg-session-repo-identity] a place variable in the env of the hook gives no exemption", () => {
+	test("[control:sg-session-repo-hook-env] a place variable in the env of the hook gives no exemption", () => {
 		const { dir, state } = fresh("made");
 		initedRepo(state, dir);
 		const verdict = destructive.run(shell("git reset --hard", dir), {
@@ -1124,7 +1124,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("[control:sg-session-repo-closed] a pending entry that binds in a call whose save fails passes the discard of that call", () => {
+	test("[control:sg-session-repo-save-fails] a pending entry that binds in a call whose save fails passes the discard of that call", () => {
 		const { dir, state } = fresh("made");
 		initedRepo(state, dir);
 		const folder = join(state, "session-repos");

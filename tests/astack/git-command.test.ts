@@ -67,7 +67,7 @@ describe("the folder that a git step makes", () => {
 		"git worktree remove wt",
 		"git status",
 		"git clone",
-	])("[control:sg-session-repo-target] %s gives no folder", (command) => {
+	])("[control:sg-session-repo-place-target] %s gives no folder", (command) => {
 		expect(target(command)).toBeUndefined();
 	});
 });
@@ -107,7 +107,7 @@ describe("the folder that git clone names from a URL", () => {
 		"../up/proj/.git/",
 		"UP/proj",
 	])(
-		"[control:sg-session-repo-target] git clone %s takes the folder that git names",
+		"[control:sg-session-repo-clone-name] git clone %s takes the folder that git names",
 		(url) => {
 			const written = url.replace("UP", join(root, "up"));
 			const name = gitName(written);
