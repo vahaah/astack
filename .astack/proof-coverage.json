@@ -326,7 +326,6 @@
 		{
 			"criterion": "BOUNDARY-ONCE",
 			"controls": ["boundary-once"]
-
 		},
 		{
 			"criterion": "DT-TRUST",
