@@ -824,6 +824,28 @@ describe("integrated ADR ratification", () => {
 	);
 
 	test(
+		"[control:cp-record-decision] a record whose D1 and D2 each hold a Category composition admits a manifest that cites D2, and each title that D2 lacks comes from the whole file",
+		() => {
+			const repo = candidate(
+				`${PROPOSAL}\n### D2. Admit only parsed input\n\nThe gate parses input first.\n`,
+			);
+			repo.manifest.domain.adrs = [{ ...reference(repo), decision: "D2" }];
+			save(repo);
+			writeFileSync(
+				join(repo.root, RECORD),
+				`${existingRecord.replace("parseGate >=> admitGate preserves rejection.", "An older composition.")}\n### D2. Admit only parsed input\n\n#### Category composition\n\nparseGate >=> admitGate preserves rejection.\n`,
+			);
+			const result = run(repo.root);
+			expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+				`ok: proof gate-admission admitted at ${git(repo.root, "rev-parse", "HEAD")}`,
+			);
+			expect(result.err).toBe("");
+			expect(result.code).toBe(0);
+		},
+		heavyTestTimeout,
+	);
+
+	test(
 		"[control:proof-ratification-binds-history-availability-again-after-model-execution] binds history availability again after model execution",
 		async () => {
 			const repo = candidate();

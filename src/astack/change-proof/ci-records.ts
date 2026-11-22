@@ -8,13 +8,12 @@ export function ciProofRecords(
 	manifestPath: string,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<readonly string[], string> {
-	const records = [
-		...new Set(
-			proof.domain.adrs.flatMap((adr) =>
-				adr.ratification === undefined ? [] : [adr.ratification.proofRecord],
-			),
-		),
-	];
+	const cited = proof.domain.adrs.flatMap((adr) =>
+		adr.ratification === undefined
+			? []
+			: [{ path: adr.ratification.proofRecord, decision: adr.decision }],
+	);
+	const records = [...new Set(cited.map((record) => record.path))];
 	const inputs = new Set([
 		proof.domain.glossary,
 		proof.domain.aggregate.path,
@@ -45,10 +44,11 @@ export function ciProofRecords(
 	const sources = new Set([...matrix.value.specs, ...matrix.value.tests]);
 	for (const path of paths)
 		if (sources.has(path)) return err(`${path} also supplies a matrix source`);
-	for (const path of records) {
+	for (const path of records)
 		if (!path.startsWith("formal/") || !path.endsWith(".md"))
 			return err(`${path} is not a Markdown proof record under formal/`);
-		const checked = proofSections(proof, files, path);
+	for (const { path, decision } of cited) {
+		const checked = proofSections(proof, files, path, decision);
 		if (!checked.ok) return checked;
 	}
 	return ok(paths);

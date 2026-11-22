@@ -1,4 +1,4 @@
-import { adrProse, decisionHeading } from "../adr.ts";
+import { adrProse, decisionSpan } from "../adr.ts";
 import { anyGlob, globMatches } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
@@ -209,7 +209,6 @@ function adrMetadata(
 	file: string,
 	decision: string,
 	expected: "Accepted" | "Proposed",
-	requireBody = false,
 ): Check {
 	const prose = adrProse(text);
 	const statuses = [
@@ -224,41 +223,47 @@ function adrMetadata(
 		return fail(
 			`${file} has status ${JSON.stringify(status)}, not ${expected}`,
 		);
-	const heading = decisionHeading(text, decision);
-	if (heading === undefined)
+	const span = decisionSpan(text, decision);
+	if (span === undefined)
 		return fail(`${file} has no ### ${decision}. decision heading`);
-	if (requireBody) {
-		const lineEnd = prose.indexOf("\n", heading);
-		const tail = lineEnd < 0 ? "" : prose.slice(lineEnd + 1);
-		const end = tail.search(/^#{1,6}[ \t]+/m);
-		if ((end < 0 ? tail : tail.slice(0, end)).trim() === "")
-			return fail(`${file} has no nonempty ${decision} decision text`);
-	}
-	return PASS;
+	return adrProse(span).trim() === ""
+		? fail(`${file} has no nonempty ${decision} decision text`)
+		: PASS;
+}
+
+const PROOF_TITLES = [
+	"Formal claim",
+	"Category composition",
+	"Implementation correspondence",
+	"Verification",
+] as const;
+
+function sectionBodies(text: string, title: string): readonly string[] {
+	const prose = adrProse(text);
+	return [
+		...prose.matchAll(new RegExp(`^#{3,6} ${title}[ \\t]*\\r?$`, "gm")),
+	].map((heading) => {
+		const start = heading.index + heading[0].length;
+		const next = prose.slice(start).search(/^#{1,6}[ \t]+/m);
+		return text.slice(start, next < 0 ? undefined : start + next).trim();
+	});
 }
 
 export function proofSections(
 	proof: ChangeProof,
 	files: ReadonlyMap<string, FileRead>,
 	file: string,
+	decision: string,
 ): Check {
 	const text = textOf(files, file);
 	if (!text.ok) return fail(text.error);
-	const prose = adrProse(text.value);
+	const span = decisionSpan(text.value, decision);
 	const sections = new Map<string, string>();
-	for (const title of [
-		"Formal claim",
-		"Category composition",
-		"Implementation correspondence",
-		"Verification",
-	]) {
-		const heading = new RegExp(`^#{3,6} ${title}[ \\t]*\\r?$`, "m").exec(prose);
-		const start = heading === null ? 0 : heading.index + heading[0].length;
-		const next = prose.slice(start).search(/^#{1,6}[ \t]+/m);
-		const body =
-			heading === null
-				? ""
-				: text.value.slice(start, next < 0 ? undefined : start + next).trim();
+	for (const title of PROOF_TITLES) {
+		const own = span === undefined ? [] : sectionBodies(span, title);
+		const body = (own.length > 0 ? own : sectionBodies(text.value, title))
+			.join("\n")
+			.trim();
 		if (body === "")
 			return fail(`${file} has no nonempty ${title} proof section`);
 		sections.set(title, body);
@@ -316,7 +321,7 @@ function adrCheck(
 			adr.decision,
 			"Accepted",
 		);
-		return metadata.ok ? proofSections(proof, view.files, adr.file) : metadata;
+		return metadata;
 	}
 	const history = view.ratifications?.get(ratification.integratedAt);
 	if (history === undefined)
@@ -400,7 +405,6 @@ function adrCheck(
 			reference.file,
 			reference.decision,
 			reference === adr ? "Proposed" : "Accepted",
-			true,
 		);
 		if (!metadata.ok) return metadata;
 	}
@@ -408,7 +412,12 @@ function adrCheck(
 		return fail(
 			"ratification proofRecord must be separate from its governing and process ADRs",
 		);
-	return proofSections(proof, view.files, ratification.proofRecord);
+	return proofSections(
+		proof,
+		view.files,
+		ratification.proofRecord,
+		adr.decision,
+	);
 }
 
 function domainCheck(proof: ChangeProof, view: RepoView): Check {
