@@ -81,4 +81,4 @@ Verify installed capability, the current head, required CI, and the effective pr
 Confirm that the ledger, cap use, and fixed growth baseline were preserved.
 Do not create historical proof receipts or reset a baseline.
 Keep unrelated past tests outside a new matrix unless the change needs them.
-Each new change still supplies a relevant model or explicit preservation relation.
+Each new change still supplies a ChangeProof. With no registry, each change runs its manifest model at R4.
