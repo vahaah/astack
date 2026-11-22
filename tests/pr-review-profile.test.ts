@@ -142,6 +142,32 @@ describe("extractProfileBlock", () => {
 		const markdown = ["```json", JSON.stringify(minimal), "```"].join("\n");
 		expect(parseProfile(markdown).issues).toEqual([]);
 	});
+
+	test("[control:hp-merge-key] a yaml merge key fills the gate as Bun.YAML did", () => {
+		const markdown = [
+			"```yaml",
+			"version: 1",
+			"gates:",
+			"  - &plain {name: types, command: bun run tsc, setup: [], after: []}",
+			"  - <<: *plain",
+			"    name: lint",
+			"    command: bun run lint",
+			"    after: [types]",
+			"test: {name: test, command: bun run test}",
+			"```",
+		].join("\n");
+		const parsed = parseProfile(markdown);
+		expect(Reflect.get(Object(parsed.data), "gates")).toEqual([
+			{ name: "types", command: "bun run tsc", setup: [], after: [] },
+			{
+				name: "lint",
+				command: "bun run lint",
+				setup: [],
+				after: ["types"],
+			},
+		]);
+		expect(parsed.issues).toEqual([]);
+	});
 });
 
 describe("validateProfile", () => {

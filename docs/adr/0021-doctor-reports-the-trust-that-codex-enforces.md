@@ -102,7 +102,7 @@ The command exits 1 on a problem, and 2 for a missing profile or a profile with 
 The hardening skill runs the command when it loads the profile.
 
 The profile parser uses the bundled `yaml` package, because the CLI bundle runs on node.
-A repeated key keeps its last value, as `Bun.YAML` did.
+A repeated key keeps its last value, and a merge key such as `<<: *gate` fills its map, as `Bun.YAML` did.
 
 ### D4. A base counts as protected only with a rule that blocks an unreviewed push
 

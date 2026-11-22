@@ -58,7 +58,7 @@ function parseBlock(block: ProfileBlock): ParsedBlock {
 			data:
 				block.language === "json"
 					? JSON.parse(block.source)
-					: parseYaml(block.source, { uniqueKeys: false }),
+					: parseYaml(block.source, { merge: true, uniqueKeys: false }),
 		};
 	} catch (error) {
 		return {

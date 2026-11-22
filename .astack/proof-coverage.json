@@ -32,7 +32,8 @@
 		"tests/astack/hardening-profile.test.ts",
 		"tests/astack/managed.test.ts",
 		"tests/astack/watch-pr/policy.test.ts",
-		"tests/dist/external.test.ts"
+		"tests/dist/external.test.ts",
+		"tests/pr-review-profile.test.ts"
 	],
 	"links": [
 		{
@@ -296,7 +297,8 @@
 				"hp-missing",
 				"hp-no-block",
 				"dt-review-missing",
-				"dt-review-drift"
+				"dt-review-drift",
+				"hp-merge-key"
 			]
 		},
 		{
