@@ -1,42 +1,64 @@
 {
 	"version": 1,
-	"change": "fixture-isolation",
-	"base": "310ad7cf2a802f5062dd3292f2d445df4f0f0770",
+	"change": "wrapper-skill-fold",
+	"base": "605610cc26c0b65ca9a5b3451d2ab01477a5c573",
 	"scope": [
 		{
-			"path": ".astack/**",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
 		},
 		{
-			"path": "CONTEXT.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged"]
+			"path": "marketplace/plugins/astack/agents/**",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
 		},
 		{
-			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
-			"obligation": "FX-ISOLATE",
+			"path": "scripts/lib/duplicate-skills.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
+		},
+		{
+			"path": "tests/apply/duplicate-skills.test.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit", "Check"]
+		},
+		{
+			"path": "scripts/lib/upstreams.ts",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
+		},
+		{
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "WB-cut",
+			"modelRefs": ["Edit"]
+		},
+		{
+			"path": "docs/adr/0013-*.md",
+			"obligation": "WB-cut",
 			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
+				"Edit",
+				"Check",
+				"Lower",
+				"PassWithinCaps",
+				"FailNamesOverrun",
+				"CapsNeverRise"
 			]
 		},
 		{
-			"path": "docs/adr/README.md",
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["Lower", "CapsNeverRise"]
+		},
+		{
+			"path": "README.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/reference/test-fixtures.md",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
+			"path": "docs/workflow.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "docs/plans/review-roadmap/**",
@@ -44,140 +66,23 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/adr-numbers.test.ts",
+			"path": ".astack/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/review-lessons.md",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "formal/FixtureIsolation.tla",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
-		},
-		{
-			"path": "formal/FixtureIsolation.cfg",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate"
-			]
-		},
-		{
-			"path": "package.json",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-companion.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-fast.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/git-template.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"RewriteConfig",
-				"RefreshIndex",
-				"FinishBuild"
-			]
-		},
-		{
-			"path": "tests/git-template.test.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": [
-				"TemplateUnchanged",
-				"CopiesDisjoint",
-				"CopyIndexClean",
-				"NoPartialTemplate",
-				"Push"
-			]
-		},
-		{
-			"path": "tests/astack/ci-pins.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
-		},
-		{
-			"path": "tests/astack/ci-pins-adversarial.test.ts",
-			"obligation": "FX-TREE",
-			"modelRefs": ["Commit", "CopiesDisjoint"]
-		},
-		{
-			"path": "tests/astack/pr-head-harness.ts",
-			"obligation": "FX-ISOLATE",
-			"modelRefs": ["TemplateUnchanged", "Push"]
-		},
-		{
-			"path": "tests/apply/worktree.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
-		},
-		{
-			"path": "tests/apply/ci-parity-apply.test.ts",
-			"obligation": "FX-INDEX",
-			"modelRefs": ["CopyIndexClean", "RefreshIndex"]
-		},
-		{
-			"path": "tests/check-companion.test.ts",
-			"obligation": "FX-REAL-SCAN",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/heavy-test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/neutral.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/validate.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/check-fast.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/drift.test.ts",
+			"path": "marketplace/plugins/astack/NOTICE",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/change-proof-cli.test.ts",
-			"obligation": "CP-02",
+			"path": "NOTICE",
+			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/astack/change-proof-ratification.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/check-proof-script.test.ts",
-			"obligation": "CP-02",
+			"path": "dist/**",
+			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		}
 	],
@@ -185,57 +90,49 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "tests/git-template.ts",
-			"symbol": "Template"
+			"path": "scripts/budget.ts",
+			"symbol": "Budget"
 		},
 		"terms": [
-			"Fixture template",
-			"ChangeProof",
-			"Model control",
-			"Session guard"
+			"Skill word budget",
+			"Zero-use part",
+			"Session guard",
+			"ChangeProof"
 		],
 		"invariants": [
 			{
-				"name": "A write or a push in a copy never changes the template or its origin",
-				"modelRef": "TemplateUnchanged"
+				"name": "A pass has each skill and the total at or under their caps",
+				"modelRef": "PassWithinCaps"
 			},
 			{
-				"name": "A write or a push in a copy never changes another copy",
-				"modelRef": "CopiesDisjoint"
+				"name": "A fail names a skill or a total over its cap",
+				"modelRef": "FailNamesOverrun"
 			},
 			{
-				"name": "Each ready copy has a clean index",
-				"modelRef": "CopyIndexClean"
-			},
-			{
-				"name": "A template at its final path is a complete build",
-				"modelRef": "NoPartialTemplate"
+				"name": "The lower step never raises a cap",
+				"modelRef": "CapsNeverRise"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
 				"decision": "D3"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"FX-ISOLATE",
-				"FX-INDEX",
-				"FX-TREE",
-				"FX-ATOMIC",
-				"FX-OWN-DIR",
-				"FX-REAL-SCAN",
-				"CP-02",
+				"WB-cap",
+				"WB-ratchet",
+				"WB-cut",
 				"SG-preserve",
 				"SG-generated"
 			]
@@ -244,255 +141,201 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow maps a fixture folder to a fixture folder. A ready copy is a new repo with the template commits, its own origin and a clean index, and no write in it reaches the template or another copy."
+			"contract": "The gate maps the word counts of the skill trees and one budget to one report. A count over its cap is a problem that names the skill, and a count under its cap is a note."
 		},
 		"objects": [
 			{
-				"name": "FixtureSpec",
+				"name": "SkillTrees",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "FixtureSpec"
+					"path": "scripts/budget.ts",
+					"symbol": "SKILLS_DIR"
 				}
 			},
 			{
-				"name": "Template",
+				"name": "WordCounts",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "Template"
+					"path": "scripts/budget.ts",
+					"symbol": "WordCounts"
 				}
 			},
 			{
-				"name": "RepoCopy",
+				"name": "Budget",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "RepoCopy"
+					"path": "scripts/budget.ts",
+					"symbol": "Budget"
 				}
 			},
 			{
-				"name": "BranchSpec",
+				"name": "BudgetReport",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "BranchSpec"
+					"path": "scripts/budget.ts",
+					"symbol": "BudgetReport"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "buildTemplate",
-				"from": "FixtureSpec",
-				"to": "Template",
+				"name": "skillWords",
+				"from": "SkillTrees",
+				"to": "WordCounts",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
 				},
-				"effects": ["fs-read", "fs-write", "spawn", "env"]
+				"effects": ["fs-read"]
 			},
 			{
-				"name": "copyTemplate",
-				"from": "Template",
-				"to": "RepoCopy",
+				"name": "budgetReport",
+				"from": "WordCounts",
+				"to": "BudgetReport",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
-				"effects": ["fs-read", "fs-write"]
+				"effects": []
 			},
 			{
-				"name": "rewriteConfig",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
+				"name": "lowerBudget",
+				"from": "WordCounts",
+				"to": "Budget",
 				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
-				"effects": ["fs-read", "fs-write"]
-			},
-			{
-				"name": "refreshIndex",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
-				},
-				"effects": ["fs-read", "spawn", "env"]
-			},
-			{
-				"name": "commitTree",
-				"from": "RepoCopy",
-				"to": "RepoCopy",
-				"link": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"effects": ["fs-write", "spawn", "env"]
+				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two templates are equal when their folders hold the same refs, objects and git config. Two copies are equal when their refs, their remote URLs and the state of their index are equal.",
+		"equality": "Two reports are equal when their problem lists and their note lists are equal in order. Two budgets are equal when their total caps and their skill caps are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "copyRepo calls copyTemplate, rewriteConfig and refreshIndex as plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "The gate runs three arrows side by side from one main function, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "tests/git-template.ts"
+		"typedWitness": "tests/budget.test.ts"
 	},
 	"abstraction": {
-		"hides": "The git object layout, the fast-import stream, the config path rewrite and the index refresh of each copied repo.",
+		"hides": "The walk of each skill tree, the word split of each Markdown file and the format of the cap file.",
 		"callersKnow": [
-			"A copy is a new folder with the template commits, and each copied repo has its own origin.",
-			"A write or a push in a copy never reaches the template or another copy.",
-			"A new copy passes git diff-index --quiet HEAD.",
-			"commitTree writes each branch at fixed past dates, so two copies of one template get the same commit ids.",
-			"A build that throws leaves no folder, and removeTemplate removes the folder of a template."
+			"A skill or the total over its cap fails the gate, and the failure names it.",
+			"A skill with no cap fails the gate.",
+			"A cap above its count passes with a note, and the lower step sets it to the count.",
+			"A cap rises only in a PR that moves text into that skill while the total falls by more, and review enforces that rule."
 		],
-		"deletionTest": "Without the helper, each of the 5 files keeps its own chain of init, add, commit and push calls for each test.",
+		"deletionTest": "Deleting budgetReport puts the cap comparison and the problem text in main and in each test. Deleting lowerBudget makes each cut PR edit the cap file by hand.",
 		"alternatives": [
 			{
-				"name": "git clone --shared or --reference",
-				"rejectedBecause": "The copies then share objects with the template."
+				"name": "A lint warning for skill size",
+				"rejectedBecause": "A warning does not stop growth."
 			},
 			{
-				"name": "One repo for each file",
-				"rejectedBecause": "The tests then share commits."
+				"name": "A total cap only",
+				"rejectedBecause": "One skill can then grow while another shrinks."
 			},
 			{
-				"name": "An add and a commit for each branch",
-				"rejectedBecause": "A repo then costs 53 to 71 ms, from 17 to 24 ms with one fast-import stream."
-			},
-			{
-				"name": "Object writes in process",
-				"rejectedBecause": "They need a git library."
+				"name": "Fail a cap above its count",
+				"rejectedBecause": "Each commit of a cut PR then needs a cap edit."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "scripts/budget.ts",
+					"symbol": "budgetReport"
 				},
-				"modelAction": "FinishBuild"
+				"modelAction": "Check"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "buildTemplate"
+					"path": "scripts/budget.ts",
+					"symbol": "lowerBudget"
 				},
-				"modelAction": "StopBuild"
+				"modelAction": "Lower"
 			},
 			{
 				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "copyTemplate"
+					"path": "scripts/budget.ts",
+					"symbol": "skillWords"
 				},
-				"modelAction": "CopyTemplate"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "rewriteConfig"
-				},
-				"modelAction": "RewriteConfig"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "refreshIndex"
-				},
-				"modelAction": "RefreshIndex"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.ts",
-					"symbol": "commitTree"
-				},
-				"modelAction": "Commit"
-			},
-			{
-				"concrete": {
-					"path": "tests/git-template.test.ts",
-					"symbol": "commitAndPush"
-				},
-				"modelAction": "Push"
+				"modelAction": "Edit"
 			}
 		],
 		"omitted": [
-			"The git objects, the files and the index are abstracted to one commit count for each repo and one clean flag for each copy.",
-			"removeTemplate and the template cache of each file are not in the model. The fx-own-dir control and the pr-head order runs examine them.",
-			"The scan runner of check:companion and the timeout budget are not in the model. The fx-real-scan control and the timed runs examine them."
+			"The notes of the report and the cap of a gone skill have no model state. The unit tests examine them.",
+			"The model takes the word count of each skill tree as a true observation.",
+			"The duplicate map and its cut rule are outside the model. The wb-successor control examines each cut name from mattpocock/skills and with no lock entry."
 		]
 	},
 	"model": {
-		"module": "formal/FixtureIsolation.tla",
-		"config": "formal/FixtureIsolation.cfg",
+		"module": "formal/WordBudget.tla",
+		"config": "formal/WordBudget.cfg",
 		"dependencies": [],
-		"bounds": [
-			"One template, two copies and at most 2 commits in each copy.",
-			"A build of 2 steps that can stop before its end and start again.",
-			"Each order of the copy, rewrite, refresh, commit and push steps of each copy."
-		],
-		"fairness": [],
 		"invariants": [
 			"TypeOK",
-			"TemplateUnchanged",
-			"CopiesDisjoint",
-			"CopyIndexClean",
-			"NoPartialTemplate"
+			"PassWithinCaps",
+			"FailNamesOverrun",
+			"CapsNeverRise"
 		],
-		"properties": []
+		"properties": [],
+		"bounds": [
+			"Two skills, counts from 0 to 2, a start cap of 1 for each skill and a start total cap of 2.",
+			"Each order of the edit, check and lower steps."
+		],
+		"fairness": []
 	},
 	"negative": {
-		"file": "formal/FixtureIsolation.tla",
-		"action": "RewriteConfig",
-		"original": "/\\ remote' = [remote EXCEPT ![c] = c]",
-		"replacement": "/\\ remote' = remote",
-		"defect": "A copy that keeps the origin URL of the template pushes into the origin of the template, as a copy with no config rewrite does.",
+		"file": "formal/WordBudget.tla",
+		"action": "Check",
+		"original": "\\A s \\in Skills : counts[s] <= caps[s]",
+		"replacement": "TRUE",
+		"defect": "A gate that reads only the total passes a skill over its cap while the total stays under its cap.",
 		"expect": {
 			"kind": "invariant",
-			"name": "TemplateUnchanged"
+			"name": "PassWithinCaps"
 		}
 	},
 	"limits": [
-		"The finite model takes git, the file copy and the index refresh as true observations. The fx-isolate, fx-index, fx-tree and fx-atomic controls examine them.",
-		"The model does not check the git spawn counts, the timeout budget or the suite times. The timed runs in the PR Verification give them.",
-		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
-		"Exact-head CI, review and every ordinary gate stay required."
+		"The finite model takes the word counts as true observations and covers two skills only.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The rule that a cap rises only while the total falls by more has no check, because the gate cannot see a PR. The PR body gives the rise of 1,152 words and the fall of 4,288 words.",
+		"The model does not check the words of the moved rules, the routes or the ADR notes. Review, validate and the STE gates examine them.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
 	]
 }

@@ -45,12 +45,12 @@ For the 24 execution playbooks in `playbooks/`, read `references/playbooks.md`.
 
 - A small ask that the agent can misread: `astack:sharpen`.
 - Issues and requests that someone else wrote: `astack:write-ticket`. A bug report takes the Bug fix playbook.
-- How our code works: `astack:how`. Why it has this shape: `astack:why`. Facts outside the repo: `astack:research`.
-- A question that talk cannot settle: `astack:prototype` when a person judges the result. The `astack:mode` Prototype playbook when the agent can see the result.
+- How our code works: `astack:how`. Why it has this shape: `astack:why`. Facts outside the repo: the S1 research brief of `astack:plan references/stages.md`.
+- A question that talk cannot settle: the Prototype playbook, `playbooks/prototype.md`. When a person judges the result, follow its "Person-judged prototype" section.
 - A question or a step that only a person can settle: name it to the owner and stop.
 - A behavior that you build test-first with no plan: `astack:tdd`.
 - A ticket or a document outside a plan: `astack:write-ticket` or `astack:write-docs`.
-- Codebase upkeep: `astack:improve-codebase-architecture`. Then take the selected candidate into `/astack:plan`.
+- Codebase upkeep: the Survey of `astack:codebase-design`. Then take the selected candidate into `/astack:plan`.
 - Work that moves to another agent tool, folder or person: `astack session handoff`.
 - Setup: `astack:setup` for the tracker and the labels, `astack:setup-models` for the astack model roles.
 
