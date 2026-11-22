@@ -30,6 +30,11 @@
 			"modelRefs": ["Merge", "MergeNeedsAuthority", "McpMergeDenied"]
 		},
 		{
+			"path": "src/astack/pr/merge.ts",
+			"obligation": "SG-plain-form",
+			"modelRefs": ["Merge", "MergeNeedsAuthority"]
+		},
+		{
 			"path": "src/astack/hook/handlers/turn.ts",
 			"obligation": "SG-unattended",
 			"modelRefs": ["Prompt", "GrantFromPerson"]
@@ -392,7 +397,7 @@
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their kind and their text are equal. Two plain steps are equal when their env words, their words, their folder and their unreadable mark are equal. Two gate records are equal when their head, base, base commit and gate names are equal.",
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two plain steps are equal when their env words, their env unset mark, their words, their folder and their unreadable mark are equal. Two gate records are equal when their head, base, base commit and gate names are equal.",
 		"laws": [
 			{
 				"law": "id-left",
@@ -441,7 +446,7 @@
 		"hides": "The shell grammar of reserved words, wrappers and bodies, the flag grammar of each guarded git verb, the GraphQL body reader of gh api, the hook-skip forms and the gate run of the hardening profile.",
 		"callersKnow": [
 			"Both guards judge the plain form of each shell step, so a known wrapper gives the verdict of the command that it runs.",
-			"A guarded verb that a variable hides gets a deny, and a work-loss verb gets it only on a changed tree.",
+			"A guarded verb that a variable hides gets a deny, and a work-loss verb gets it only on a changed tree in a folder that astack can read.",
 			"A hook skip on a push passes only for a source that astack gates run recorded as green. A hook skip on a commit or a config write is an owner gate.",
 			"A GraphQL merge body that astack cannot read gets a deny."
 		],
