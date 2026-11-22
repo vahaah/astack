@@ -40,6 +40,7 @@ const SHELL_STATE = new Set([
 	"set",
 	"setopt",
 	"source",
+	"trap",
 	"typeset",
 	"unsetopt",
 ]);

@@ -1107,6 +1107,7 @@ describe("a repo that this session made", () => {
 			DISCARDED,
 		],
 		["git $'--git\\x2ddir=REPO/.git' reset --hard", DISCARDED],
+		["trap '. ./env.sh' DEBUG; git reset --hard", DISCARDED],
 	])(
 		"[control:sg-session-repo-place] %s gets the deny of main in a dirty session repo",
 		(command, text) => {
