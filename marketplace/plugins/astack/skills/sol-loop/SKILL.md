@@ -7,7 +7,6 @@ disable-model-invocation: true
 # Sol loop
 
 Use this loop to make a change more correct before you file a PR, or after.
-One reviewer from another model family reviews the change in rounds.
 Make the smallest changes that satisfy the reviewer.
 Watch for scope growth, and push back with evidence.
 
@@ -20,7 +19,7 @@ Watch for scope growth, and push back with evidence.
 - When the CLI is missing or signed out, report the blocker and stop. Never put another model in its place.
 - Use one reviewer only. The reviewer never starts subagents or other reviewers.
 - Make no edit to the scoped files while a round runs.
-- Do not poll. Do not start a second reviewer. Wait for the exit of the background Bash call.
+- Do not poll. Wait for the exit of the background Bash call.
 - A timeout, an error or no reply is not an approval.
 - On a failure, stop the process and make sure that it stopped. Then start the round again with the ledger.
 
@@ -50,7 +49,9 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
 A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 The change runs from `BASE_SHA` to the working tree in the scoped paths, with the untracked files.
+`<out>` is a new folder from `mktemp -d`, outside the checkout.
 Use one diff command for all rounds, `git diff <BASE_SHA> -- <paths> > <out>/diff.txt`. Write `git status --short` to `<out>/status.txt`.
+
 State the intent and what is out of scope in 1 or 2 sentences.
 Run the checks that cover the change.
 Do not send code that this change breaks.
@@ -77,8 +78,6 @@ S1 [blocker|should|nit] <file>:<line> <claim>. Fix: <suggestion>
 Keep each id stable across rounds.
 ```
 
-Read the result after the process exits.
-
 ## 3. Answer the findings
 
 Examine each finding and its severity yourself.
@@ -103,7 +102,8 @@ Start a next round only when budget remains and one of these is true:
 - Behavior code changed.
 - The approval does not cover the current behavior diff.
 
-Send the round 1 brief, the ledger and the same base diff.
+Write `<out>/diff.txt` and `<out>/status.txt` again with the commands of step 1.
+Send the round 1 brief and the ledger.
 Mark each ledger item `fixed:`, `disagree:` or `declined:` with its evidence.
 Add the change since the last round.
 Tell the reviewer to examine only the open ids and the changed code.

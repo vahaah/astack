@@ -1,5 +1,5 @@
 {
-	"total": 133801,
+	"total": 133795,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -37,7 +37,7 @@
 		"setup-models": 1085,
 		"sharpen": 128,
 		"show-me-your-work": 985,
-		"sol-loop": 1224,
+		"sol-loop": 1218,
 		"swarm": 515,
 		"takeover": 667,
 		"tdd": 1007,

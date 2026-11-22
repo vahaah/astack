@@ -121,6 +121,16 @@ describe("the seats of the sol-loop reviewer", () => {
 		expect(families.get(otherwise ?? "")).toBe(familyModel);
 	});
 
+	test("each sol-loop round reads a diff of the current tree, because the next round writes the diff and status files again into one named folder", () => {
+		const outFolder =
+			"`<out>` is a new folder from `mktemp -d`, outside the checkout.";
+		const rewrite =
+			"Write `<out>/diff.txt` and `<out>/status.txt` again with the commands of step 1.";
+		expect(solLoop.indexOf(outFolder)).toBeGreaterThan(-1);
+		expect(solLoop.indexOf(outFolder)).toBeLessThan(solLoop.indexOf("<out>/"));
+		expect(section(solLoop, "4. Start the next round")).toContain(rewrite);
+	});
+
 	test("[control:sl-block] sol-loop reports a blocker when no seat of another family can run, and never puts another model in its place", () => {
 		const reviewer = section(solLoop, "The reviewer");
 		expect(reviewer).toContain(blocker);
