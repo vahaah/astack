@@ -302,6 +302,7 @@ PR and ticket rules come from the repo profile.
 ## 7. Comments and other guards
 
 `astack:comment-judge` stays the ruler. The comment handler uses its classes, keep list, "added means new", and fail-open behavior. A kept comment has at most 2 lines. A legal or license header keeps its full text and has no length limit.
+- `src/astack/types/scan.ts` is the one lexer of TS and JS for the comment hook and the type hook. The comment hook keeps its lexers of the other languages in `src/astack/comments/lexer.ts`.
 - A plan handle in code or a code comment is a provenance tag, so the hook denies it. A TODO cites an issue key.
 - `@ts-expect-error` is legal only in `*.test-d.ts` type-test files, because type tests need it.
 - The hook also denies a `biome-ignore` of `noNonNullAssertion`, `noEnum`, `noBannedTypes` or `useExhaustiveSwitchCases` [fp-types].
@@ -332,7 +333,7 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 ### 8.1 The type hook
 
 - Files are `.ts`, `.tsx`, `.mts` and `.cts`. The hook skips `*.d.ts`, `*.gen.ts`, files marked `@generated` or "DO NOT EDIT" in their first 5 lines, the comment hook skip paths and the profile `types.skip` globs. It also skips a write or an edit of a scratch file (section 7).
-- The lexer masks strings, comments, templates and JSX text first. A lexer failure allows.
+- The lexer `src/astack/types/scan.ts` masks strings, comments, templates and JSX text first. The comment hook reads the TS and JS comments from the same scan. A lexer failure allows.
 - The hook denies new `any`, new unsafe `as` and new `!`. Unsafe `as` includes `as unknown as T` and angle-bracket casts in `.ts` and `.mts` files. `as const`, `satisfies` and a bare `as unknown` are legal. `!` includes `let x!: T`.
 - The type hook denies a new `@ts-ignore`, `@ts-nocheck` and `@ts-expect-error` by count. The type hook checks Edits, Writes, shell writes and commits of its files. The comment hook leaves these directives to it there. So each one gets one report. The comment hook still denies them in a JavaScript file.
 - The type hook advises on an `enum` declaration and a `class X extends Y` outside the allowlist. The default allowlist holds `Error` subclasses, `Component`, `PureComponent`, `Data.TaggedError`, `Data.TaggedClass`, `Data.Class`, `Schema.TaggedError`, `Schema.Class`, `Context.Tag`, `Context.Reference`, `Effect.Tag` and `Effect.Service`. It also holds the Effect 4 helpers `Context.Service` and `<Module>.Service` of the middleware, layer and atom modules.
