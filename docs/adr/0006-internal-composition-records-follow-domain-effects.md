@@ -92,6 +92,8 @@ Result composition must reject a missing applicable law witness.
 Async composition must state both its observation and rejection policies.
 The admission control still requires its named negative model and a restored-positive run.
 
+> Amended 2026-11-22: D2 said that the model checks `ResultLeftIdentity`, `ResultRightIdentity`, and `ResultAssociativity`. Those invariants never read `result.ts`, so they left ProofAdmission. The property control `result-monad-laws` now examines the three laws on the real `andThen` and `ok`. D2 said "This policy introduces no runtime map or bind helper." `result.ts` now exports `map`, `andThen` and `all`. The admission checks and the typed witness chain with them. The parser and `admitChangeProof` keep early return. The matrix links law controls, and a `model:` law witness is deprecated. [ADR 0017](0017-law-claims-run-on-code.md) D1, D4 and D5 hold these decisions.
+
 ### D3. Domain names stay in production interfaces
 
 Category notation belongs in the internal contract, tests, models, and review evidence.

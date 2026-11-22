@@ -69,6 +69,13 @@ _Avoid_: Same name means same behavior
 A test or probe that checks an observable implementation contract.
 _Avoid_: Model result
 
+### Law control
+
+An implementation control that examines a claimed law on the real function with generated inputs.
+A manifest cites it as the witness of the law.
+_Avoid_: Model law, sample loop
+_Code_: `tests/property/`
+
 ### ReviewRun
 
 A bounded review whose ledger owns findings, recurrence, and iteration use.

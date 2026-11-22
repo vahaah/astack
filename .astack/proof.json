@@ -1,319 +1,203 @@
 {
 	"version": 1,
-	"change": "proof-ladder",
-	"base": "e7c33214340fa6faea4fc3d030beb9f995c54f6a",
+	"change": "review-roadmap-b26-result-laws",
+	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
 	"scope": [
 		{
-			"path": ".astack/**",
-			"obligation": "RL-REGISTRY"
-		},
-		{
-			"path": "AGENTS.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "README.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "CONTEXT.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "docs/runbooks/**",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "docs/adr/**",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "docs/reference/proof-ladder.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "docs/reference/change-proof-contract.md",
-			"obligation": "CP-02"
-		},
-		{
-			"path": "docs/plans/review-roadmap/**",
-			"obligation": "RL-R0"
-		},
-		{
-			"path": "formal/ProofAdmission.tla",
-			"obligation": "RL-STAGE-ORDER"
-		},
-		{
-			"path": "formal/ProofLadder.tla",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "formal/ProofLadder.cfg",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "formal/models.json",
-			"obligation": "RL-REGISTRY"
-		},
-		{
-			"path": "dist/**",
-			"obligation": "SG-generated"
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
-			"obligation": "SG-generated"
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/**",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "rules/astack.md",
-			"obligation": "RL-RUNG"
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md",
-			"obligation": "CP-21"
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-example.json",
-			"obligation": "RL-SCHEMA"
-		},
-		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "OWN-ZERO"
-		},
-		{
-			"path": "scripts/lib/ste-own.ts",
-			"obligation": "OWN-ZERO"
-		},
-		{
-			"path": "scripts/lib/projects.ts",
-			"obligation": "RL-FLOOR"
-		},
-		{
-			"path": "scripts/lib/render.ts",
-			"obligation": "RL-FLOOR"
+			"path": "src/astack/result.ts",
+			"obligation": "RL-MONAD",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		},
 		{
 			"path": "src/astack/change-proof/admission.ts",
-			"obligation": "RL-ADMIT-R4"
-		},
-		{
-			"path": "src/astack/change-proof/candidate.ts",
-			"obligation": "RL-REGISTRY-GONE"
+			"obligation": "ADMIT-ORDER",
+			"modelRefs": [
+				"ValidationPass",
+				"ValidationFail",
+				"FailureIsTerminal",
+				"StopNamesSection"
+			]
 		},
 		{
 			"path": "src/astack/change-proof/contract.ts",
-			"obligation": "RL-SCHEMA"
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
 		},
 		{
-			"path": "src/astack/change-proof/registry.ts",
-			"obligation": "RL-REGISTRY"
+			"path": "tests/property/result-laws.test.ts",
+			"obligation": "RL-ALL",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		},
 		{
-			"path": "src/astack/change-proof/rung.ts",
-			"obligation": "RL-RUNG"
+			"path": "tests/property/verdict-monoid.test.ts",
+			"obligation": "VM-MONOID",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "src/astack/cli/commands/check/proof.ts",
-			"obligation": "RL-SELECT"
-		},
-		{
-			"path": "src/astack/profile.ts",
-			"obligation": "RL-FLOOR"
-		},
-		{
-			"path": "tests/apply/projects.test.ts",
-			"obligation": "RL-FLOOR"
-		},
-		{
-			"path": "tests/apply/render.test.ts",
-			"obligation": "RL-FLOOR"
-		},
-		{
-			"path": "tests/astack/profile.test.ts",
-			"obligation": "RL-FLOOR"
-		},
-		{
-			"path": "tests/astack/change-proof-cli.test.ts",
-			"obligation": "RL-SELECT"
-		},
-		{
-			"path": "tests/astack/change-proof-fixture.ts",
-			"obligation": "RL-SELECT"
+			"path": "tests/astack/verdict.test.ts",
+			"obligation": "VM-MONOID",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "tests/astack/change-proof.test.ts",
-			"obligation": "RL-ADMIT-R4"
+			"obligation": "LAW-MONOID",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
 		},
 		{
-			"path": "tests/astack/dispatch.test.ts",
-			"obligation": "RL-UNMODELLED"
-		},
-		{
-			"path": "tests/astack/model-registry.test.ts",
-			"obligation": "RL-REGISTRY"
+			"path": "tests/astack/proof-composition.ts",
+			"obligation": "ADMIT-ORDER",
+			"modelRefs": ["ValidationPass", "Admit"]
 		},
 		{
 			"path": "tests/astack/proof-contract-doc.test.ts",
-			"obligation": "CP-21"
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
 		},
 		{
-			"path": "tests/astack/proof-ladder.test.ts",
-			"obligation": "RL-RUNG"
+			"path": "formal/ProofAdmission.*",
+			"obligation": "RL-MONAD",
+			"modelRefs": [
+				"TypeOK",
+				"AdmitSafe",
+				"FailureIsTerminal",
+				"StopNamesSection",
+				"EventuallyTerminal"
+			]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "RL-MONAD",
+			"modelRefs": ["TypeOK", "AdmitSafe"]
 		},
 		{
 			"path": "tests/formal-registry.test.ts",
-			"obligation": "RL-COVERS"
+			"obligation": "VM-MONOID",
+			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "tests/ste-own.test.ts",
-			"obligation": "OWN-ZERO"
+			"path": "docs/**",
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["ValidationFail", "AdmitSafe"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "LAW-CLAIMED",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "README.md",
+			"obligation": "RL-MONAD",
+			"modelRefs": ["ValidationPass", "Admit"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "LAW-MONOID",
+			"modelRefs": ["ValidationFail", "StopNamesSection"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["ValidationPass", "Admit"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["ValidationPass", "Admit"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "ADMIT-ORDER",
+			"modelRefs": ["ValidationPass", "ValidationFail"]
 		}
 	],
 	"domain": {
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/change-proof/rung.ts",
-			"symbol": "Ladder"
+			"path": "src/astack/change-proof/contract.ts",
+			"symbol": "ChangeProof"
 		},
-		"terms": ["ChangeProof", "Proof rung", "Model registry", "Model control"],
+		"terms": [
+			"ChangeProof",
+			"Proof admission",
+			"Composition record",
+			"Implementation control",
+			"Law control"
+		],
 		"invariants": [
 			{
-				"name": "A model run starts only at R4",
-				"modelRef": "TlcOnlyAtR4"
+				"name": "Admission requires current complete evidence",
+				"modelRef": "AdmitSafe"
 			},
 			{
-				"name": "An admission at R4 needs one passed triple for each selected model",
-				"modelRef": "AdmitNeedsEachTriple"
+				"name": "A failure stops admission at its first failed stage",
+				"modelRef": "FailureIsTerminal"
 			},
 			{
-				"name": "An uncovered fail-closed path stops before a rung",
-				"modelRef": "FailClosedStops"
-			},
-			{
-				"name": "The rung is the highest of the path rung and both floors",
-				"modelRef": "FloorOnlyRaises"
-			},
-			{
-				"name": "Each model starts at most one triple",
-				"modelRef": "OneTriplePerModel"
-			},
-			{
-				"name": "A selected model starts only after the manifest model passed",
-				"modelRef": "ManifestFirst"
-			},
-			{
-				"name": "A registry diff runs each model of both sides",
-				"modelRef": "RegistryRunsAll"
-			},
-			{
-				"name": "A registry at the diff base with none in the tree stops",
-				"modelRef": "DeletedRegistryStops"
+				"name": "Each stop names the proof contract section of its stage",
+				"modelRef": "StopNamesSection"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D2"
 			},
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D3"
 			},
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D4"
 			},
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"file": "docs/adr/0017-law-claims-run-on-code.md",
 				"decision": "D5"
 			},
 			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
-				"decision": "D6"
-			},
-			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
-				"decision": "D7"
-			},
-			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
-				"decision": "D8"
-			},
-			{
-				"file": "docs/adr/0015-change-proof-follows-risk.md",
-				"decision": "D9"
+				"file": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+				"decision": "D2"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"RL-R0",
-				"RL-FLOOR",
-				"RL-SELECT",
-				"RL-COVERS",
-				"RL-FAIL-CLOSED",
-				"RL-REGISTRY-GONE",
-				"RL-STAGE-ORDER",
-				"RL-ONE-RUN",
-				"RL-STOP-ORDER",
-				"RL-ADMIT-R4",
-				"RL-STALE",
-				"RL-SCHEMA",
-				"RL-RUNG",
-				"RL-REGISTRY",
-				"RL-UNMODELLED",
-				"RL-LEGACY",
-				"CP-02",
-				"CP-09",
+				"RL-MONAD",
+				"RL-FUNCTOR",
+				"RL-ALL",
+				"VM-MONOID",
+				"LAW-CLAIMED",
+				"LAW-MONOID",
+				"ADMIT-ORDER",
+				"CP-07",
 				"CP-21",
-				"OWN-ZERO",
 				"SG-generated"
 			]
 		}
 	},
 	"category": {
 		"carrier": {
-			"kind": "pure"
+			"kind": "result",
+			"error": "Rejection"
 		},
 		"objects": [
 			{
-				"name": "LadderInput",
+				"name": "ProofText",
 				"link": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "LadderInput"
+					"path": "tests/astack/proof-composition.ts",
+					"symbol": "ProofText"
 				}
 			},
 			{
-				"name": "Ladder",
+				"name": "ChangeProof",
 				"link": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "Ladder"
-				}
-			},
-			{
-				"name": "LadderRun",
-				"link": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "LadderRun"
-				}
-			},
-			{
-				"name": "AdmissionFacts",
-				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "AdmissionFacts"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "ChangeProof"
 				}
 			},
 			{
@@ -326,28 +210,18 @@
 		],
 		"arrows": [
 			{
-				"name": "deriveLadder",
-				"from": "LadderInput",
-				"to": "Ladder",
+				"name": "parse",
+				"from": "ProofText",
+				"to": "ChangeProof",
 				"link": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "deriveLadder"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
 				},
 				"effects": []
 			},
 			{
-				"name": "modelRuns",
-				"from": "Ladder",
-				"to": "LadderRun",
-				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "modelRuns"
-				},
-				"effects": []
-			},
-			{
-				"name": "admitChangeProof",
-				"from": "AdmissionFacts",
+				"name": "admit",
+				"from": "ChangeProof",
 				"to": "Admitted",
 				"link": {
 					"path": "src/astack/change-proof/admission.ts",
@@ -356,108 +230,116 @@
 				"effects": []
 			}
 		],
-		"composites": [],
-		"equality": "Two ladders are equal when their rung, their cause and their runs are equal, with each run compared by name, model contract and negative control.",
+		"composites": [
+			{
+				"arrows": ["parse", "admit"],
+				"op": ">=>"
+			}
+		],
+		"equality": "Two results are equal when both are ok with equal values, or both are errors with an equal stage and an equal message.",
 		"laws": [
 			{
 				"law": "id-left",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "id-right",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "assoc",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "functor-id",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-functor-laws"
 			},
 			{
 				"law": "functor-comp",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-functor-laws"
 			},
 			{
 				"law": "monad-left",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-right",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			},
 			{
 				"law": "monad-assoc",
-				"status": "not_applicable",
-				"reason": "deriveLadder, modelRuns and admitChangeProof are plain calls in prove, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"status": "witnessed",
+				"witness": "control:result-monad-laws"
 			}
 		],
-		"typedWitness": "src/astack/cli/commands/check/proof.ts"
+		"typedWitness": "tests/astack/proof-composition.ts"
 	},
 	"abstraction": {
-		"hides": "The glob match of each changed path, the registry and profile reads at the diff base and in the tree, and the order of the model runs.",
+		"hides": "The short circuit of a Result chain, the order of the admission stages and the reads of the model files.",
 		"callersKnow": [
-			"check proof prints the rung and the path or floor that set it, when a registry exists.",
-			"Below R4 no Java process starts, and the receipt names no jar.",
-			"At R4 the manifest model runs first, then each other selected model, one triple each.",
-			"An uncovered fail-closed path and a deleted registry stop at rung.",
-			"A repo with no registry runs only the manifest model and prints no rung line."
+			"A chain of andThen returns the first error and calls no later arrow after it.",
+			"all returns the values in input order, or the first error in input order.",
+			"Admission stops at the first failed stage in the order domain, category, controls, model.",
+			"A manifest lists each law that it claims or needs, and a functor or monoid claim needs both of its witnesses."
 		],
-		"deletionTest": "Without the ladder, each change runs the manifest model only, so a docs change starts Java and a guard change can merge with no guard model run.",
+		"deletionTest": "Deleting andThen, map and all puts 9 early returns back into admission.ts and the typed witness. Deleting the law controls leaves each law claim with no check on the code.",
 		"alternatives": [
 			{
-				"name": "TLC on each change",
-				"rejectedBecause": "TLC cannot see a code change, and a docs change pays for 3 Java processes."
+				"name": "Keep the TLA+ Result model as the only law witness",
+				"rejectedBecause": "It never reads result.ts, so a code defect cannot make it fail."
 			},
 			{
-				"name": "A verdict cache",
-				"rejectedBecause": "It saves at most 3.51 s and stores state that an agent can write."
+				"name": "A Result class with methods",
+				"rejectedBecause": "Types bound 3 forbids a class with one implementation."
 			},
 			{
-				"name": "A sync commit for each model",
-				"rejectedBecause": "15 of 20 pull requests then edit the registry and conflict."
+				"name": "Curried helpers",
+				"rejectedBecause": "They need a pipe, and types bound 6 forbids it."
 			},
 			{
-				"name": "A rung that the author picks",
-				"rejectedBecause": "The author is the party that the gate checks."
+				"name": "One monoid row",
+				"rejectedBecause": "It hides a missing identity witness."
+			},
+			{
+				"name": "Keep eight law rows",
+				"rejectedBecause": "154 of 202 manifest versions filled most rows with not applicable."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "deriveLadder"
+					"path": "src/astack/result.ts",
+					"symbol": "andThen"
 				},
-				"modelAction": "Derive"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/rung.ts",
-					"symbol": "deriveLadder"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "checkReferences"
 				},
-				"modelAction": "DeriveStop"
+				"modelAction": "ValidationPass"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/cli/commands/check/proof.ts",
-					"symbol": "runTriple"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "checkReferences"
 				},
-				"modelAction": "Start"
+				"modelAction": "ValidationFail"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/cli/commands/check/proof.ts",
-					"symbol": "runTriple"
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "parseChangeProof"
 				},
-				"modelAction": "Judge"
+				"modelAction": "ValidationFail"
 			},
 			{
 				"concrete": {
@@ -468,48 +350,54 @@
 			}
 		],
 		"omitted": [
-			"The glob syntax, the registry schema and the profile parse are not in the model. The rl-rung, rl-registry and rl-floor-profile controls examine them.",
-			"The model joins the three runs of a triple in one start and one judge step. ProofAdmission and the CP-02 controls examine the judge order.",
-			"The stale snapshot of the registry, the profile and each selected model is not in the model. The rl-stale control examines it."
+			"The model abstracts each stage check to one pass or fail step, and it holds no Result value.",
+			"The law controls examine the Result helpers on generated cases. The model holds no law of them.",
+			"The monoid of the hook verdicts is outside the record, because the record declares no combine arrow."
 		]
 	},
 	"model": {
-		"module": "formal/ProofLadder.tla",
-		"config": "formal/ProofLadder.cfg",
+		"module": "formal/ProofAdmission.tla",
+		"config": "formal/ProofAdmission.cfg",
 		"dependencies": [],
 		"bounds": [
-			"Two models, seven path kinds, a base registry that can be absent, and the floors R0, R1 and R4 on each side.",
-			"A diff of one or two path kinds, and each order of the derive, start, judge and admit steps."
+			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
+			"Each failure kind maps to one section of the proof contract.",
+			"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 		],
-		"fairness": [],
+		"fairness": ["WF_vars(Next)"],
 		"invariants": [
 			"TypeOK",
-			"TlcOnlyAtR4",
-			"AdmitNeedsEachTriple",
-			"FailClosedStops",
-			"FloorOnlyRaises",
-			"OneTriplePerModel",
-			"ManifestFirst",
-			"RegistryRunsAll",
-			"DeletedRegistryStops"
+			"AdmitSafe",
+			"FailureIsTerminal",
+			"StrictDefault",
+			"LandingAuthoritySafe",
+			"ProcessAuthoritySafe",
+			"HistoryBound",
+			"RatifiedAuthority",
+			"BaseAncestry",
+			"ScopeFromMergeBase",
+			"HistoryAtManifest",
+			"MovedAuthorityStops",
+			"StaleStopNamesPaths",
+			"StopNamesSection"
 		],
-		"properties": []
+		"properties": ["EventuallyTerminal"]
 	},
 	"negative": {
-		"file": "formal/ProofLadder.tla",
-		"action": "Derive",
-		"original": "/\\ \"failGap\" \\notin changed",
-		"replacement": "",
-		"defect": "A rung rule that drops the fail-closed guard gives a rung to a guard file that no model covers, so a guard change merges with no model run.",
+		"file": "formal/ProofAdmission.tla",
+		"action": "ValidationFail",
+		"original": "/\\ section' = Sections[firstFailure']",
+		"replacement": "/\\ section' = \"Required records\"",
+		"defect": "A stop at stage domain or category names the Required records section, so the agent reads the wrong rule.",
 		"expect": {
 			"kind": "invariant",
-			"name": "FailClosedStops"
+			"name": "StopNamesSection"
 		}
 	},
 	"limits": [
-		"The finite model takes the glob match, the registry parse and the TLC verdict as true observations. The rl-rung, rl-registry and CLI controls examine them.",
-		"The model does not check that a covers glob names each file that a model claim depends on. Review of each registry diff and the rl-covers control examine it.",
-		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
+		"The finite model takes the TLC output and the Git reads as true. It does not model TLC, SANY or Git.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"Each law control examines 100 generated cases. A pass is evidence, and it is not a proof for each value.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

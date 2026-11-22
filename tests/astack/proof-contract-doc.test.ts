@@ -132,7 +132,7 @@ describe("the proof contract reference", () => {
 		const causes: Readonly<Record<Stage, readonly string[]>> = {
 			schema: ["Unknown fields"],
 			domain: ["glossary", "integratedAt"],
-			category: ["must compose"],
+			category: ["must compose", "monoid"],
 			controls: ["no row is idle", "spec-links.md"],
 			rung: ["uncovered fail-closed path", "deleted registry"],
 			model: ["A positive result needs"],
