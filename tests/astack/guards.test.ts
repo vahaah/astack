@@ -290,6 +290,32 @@ describe("the plain form of a git step", () => {
 		},
 	);
 
+	test.each([
+		[
+			'bash -c "$(which git) reset --hard"',
+			"because a variable or a command substitution is in its shell body.",
+		],
+		[
+			'G=git; bash -c "$G reset --hard"',
+			"because a variable or a command substitution is in its shell body.",
+		],
+		[
+			"env -Z $(which git) reset --hard",
+			"because a wrapper before it has a flag that astack does not know.",
+		],
+		[
+			"G=git; env -Z $G reset --hard",
+			"because a wrapper before it has a flag that astack does not know.",
+		],
+	])(
+		"%s is denied from a clean folder, because a substitution or a variable can give the program git",
+		(command, cause) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(cause);
+			expect(said).toContain("owner gate");
+		},
+	);
+
 	test.each(["yarn commit -n", "echo reset --hard && git status"])(
 		"%s passes on a dirty tree, because its program is not git",
 		(command) => {

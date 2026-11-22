@@ -173,15 +173,8 @@ function hiddenVerb(step: ShellStep): string | undefined {
 	const tokens = [...step.values, ...(step.simple.substitutions ?? [])]
 		.flatMap((value) => value.split(/\s+/))
 		.filter(Boolean);
-	const git = tokens.findIndex((token) => basename(token) === "git");
-	const searched =
-		step.unreadable === "program"
-			? tokens
-			: git < 0
-				? []
-				: tokens.slice(git + 1);
 	const hooksPath = tokens.some((token) => HOOKS_PATH_KEY.test(token));
-	return searched.find(
+	return tokens.find(
 		(token) => GUARDED_VERBS.has(token) || (token === "config" && hooksPath),
 	);
 }
