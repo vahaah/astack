@@ -47,13 +47,13 @@ Read the state. Run each command as its own Bash call, in parallel. Never chain 
 astack check-plan --brief
 git status --short --branch
 git log --oneline -5
-git rev-parse HEAD
-gh pr view --json number,state,isDraft,reviewDecision,mergeStateStatus,headRefOid
+astack check pr-head
 ```
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
-
-The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR. When they differ, the first step is a push of the local commits or a pull of the remote ones. Then read the state again.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
+After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again. When `UNPUSHED` lists a commit, push it first.
+When the branch has a PR, read `gh pr view --json number,state,isDraft,reviewDecision,mergeStateStatus`.
+A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 Then take the first row that matches, and do that step. Do not only name it.
 

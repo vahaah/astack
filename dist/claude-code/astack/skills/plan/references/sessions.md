@@ -79,11 +79,10 @@ astack session checkpoint <plan> [<session>] --summary <file|-> [--steps 3,4 | -
   - the commits and the diffstat.
 - The first checkpoint opens a draft PR for the session branch, then posts the package on it. Its body starts with `Part of <keys>` when the plan names tickets. Each later checkpoint posts the package on the PR of the branch, or on `--pr <n>`. It never opens a second PR, and the duplicate-PR hook refuses one. Never post a checkpoint on the issue.
 - The package holds the commits and the diffstat of the local `HEAD`.
-  The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR.
-  Read both from `gh pr view <n> --json headRefName,headRefOid`.
-  There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop.
   Push before you post.
-  Post only on a PR whose `headRefName` is the session branch.
+  Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
+  A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+  Post only on a PR whose `headRefName` in `gh pr view <n> --json headRefName` is the session branch.
 - The output warns when a step of the scope has no commit whose subject says `S<n> step <k>`. Commit each step with that subject.
 - `report` mode continues at once. A step marked `approve ui` or `approve one-way`, or a plan with `checkpoints: approve`, waits for the owner.
 - Compare the work with the D rows that the scope covers. A step that breaks a row stops for a round, or for a `delegated` row under a grant.

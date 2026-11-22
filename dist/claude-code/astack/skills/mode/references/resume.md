@@ -12,11 +12,12 @@ git status --porcelain
 git stash list
 git worktree list
 git log --oneline -10
-git rev-parse HEAD
-gh pr view --json number,url,state,isDraft,headRefOid,reviewDecision
+astack check pr-head
 ```
 
-There is no PR only when gh exits 1 and its standard error matches `grep -qi 'no pull requests found for branch'`. Each other failure of `gh pr view` is an error, not a missing PR. Print the error of gh, and stop. The state and the diff of a PR hold for its `headRefOid` only. Compare `git rev-parse HEAD` with `headRefOid` before you act on the PR. When they differ, say so before you build on the branch.
+Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
+When the branch has a PR, read `gh pr view --json number,url,state,isDraft,reviewDecision`.
+A later failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
 
 1. Open the plan file that the brief names. Read its frontmatter keys `delegate`, `checkpoints` and `owner-gates`. `delegate: on` keeps the delegation grant of the last session.
 2. Read the status of the ticket and its last hand-off comment.

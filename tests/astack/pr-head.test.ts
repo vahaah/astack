@@ -165,7 +165,7 @@ describe("astack check pr-head", () => {
 		});
 	});
 
-	test("an explicit PR never gives no_pr: the same gh answer stops the run", () => {
+	test("[control:ph-nopr-named] an explicit PR never gives no_pr: the same gh answer stops the run", () => {
 		const world = createWorld();
 		const message = 'no pull requests found for branch "feature"\n';
 		script(world, 1, { code: 1, out: "", err: message });
@@ -195,7 +195,7 @@ describe("astack check pr-head", () => {
 			},
 		],
 	])(
-		"%s on the current branch stops the run with the original gh error",
+		"[control:ph-nopr-error] %s on the current branch stops the run with the original gh error",
 		(_, reply) => {
 			const world = createWorld();
 			script(world, 1, reply);
