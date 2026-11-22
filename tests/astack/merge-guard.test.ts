@@ -837,6 +837,12 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"gh api with a joined -XPUT flag on the merge path",
+			"mcp__gh__gh",
+			true,
+			{ args: ["api", "-XPUT", "repos/o/r/pulls/12/merge"] },
+		],
+		[
 			"a GET on the REST merge path",
 			"mcp__forge__call_api",
 			false,
