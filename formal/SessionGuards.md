@@ -21,9 +21,12 @@ A person's prompt whose only clause is "full stop" starts the full-stop run. Tha
 The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
 
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
+The temp-folder fact changes no verdict, so a git work tree in the temp folder keeps each write check.
+
 The git group covers 16 git commands.
 It covers each set of tracked, staged, mixed and untracked changes in a named file, a folder and the rest of the tree.
 It also covers one repo that the session makes, the record of its path, the settle window and a repo of another process.
+
 The push group covers a HEAD whose gates pass or fail, a gate run and one push or commit.
 The push or commit skips the hooks or keeps them. It goes to a head, to refs that a record cannot cover, or into a new commit.
 

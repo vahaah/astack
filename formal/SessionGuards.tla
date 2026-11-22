@@ -31,7 +31,7 @@ ModeOf(p) == IF p = {"fullStop"} THEN "fullStop"
 
 Files == [inProject : BOOLEAN, inTemp : BOOLEAN, git : BOOLEAN, marked : BOOLEAN]
 IdleFile == [inProject |-> TRUE, inTemp |-> FALSE, git |-> TRUE, marked |-> FALSE]
-Scratch(f) == ~f.inProject /\ (f.inTemp \/ ~(f.git \/ f.marked))
+Scratch(f) == ~f.inProject /\ ~(f.git \/ f.marked)
 
 Kinds == {"unstaged", "staged", "both", "untracked"}
 Places == {"named", "folder", "other"}
@@ -293,10 +293,8 @@ MergeNeedsAuthority == ~unauthorized
 McpMergeDenied == ~mcpMerged
 GuardErrorDenies == ~faultMerged
 FullStopNeverMerges == ~stopMerged
-WriteChecksKept == step # "new" /\ (file.inProject \/ (~file.inTemp /\ (file.git \/ file.marked)))
-                   => writeChecked
-ScratchSkipped == step # "new" /\ ~file.inProject /\ (file.inTemp \/ ~(file.git \/ file.marked))
-                  => ~writeChecked
+WriteChecksKept == step # "new" /\ (file.inProject \/ file.git \/ file.marked) => writeChecked
+ScratchSkipped == step # "new" /\ ~file.inProject /\ ~(file.git \/ file.marked) => ~writeChecked
 CommitSurfaceChecked == step = "committed" => commitChecked
 BroadLossDenied == ~broadLoss
 DenialNeedsLoss == ~falseDenial

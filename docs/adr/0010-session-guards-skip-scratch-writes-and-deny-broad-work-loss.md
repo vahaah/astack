@@ -25,6 +25,8 @@ A file in the OS temp folder outside the project is a scratch file too, also in 
 The type, comment and doc STE hooks skip a write or an edit of a scratch file.
 A file in the project, in a sibling work tree or in a folder with an astack profile keeps each check.
 
+> Amended 2026-11-22: D1 said "A file in the OS temp folder outside the project is a scratch file too, also in a git work tree." A 0.2.0 fix of `isScratchPath` removed that rule, and a test keeps the fix. A file in a git work tree or under a profile in the temp folder keeps each check, as `[control:sg-scratch-write]` says. A file in the temp folder outside each work tree stays a scratch file. The model `Scratch`, `WriteChecksKept` and `ScratchSkipped` have no temp-folder term.
+
 ### D2. Each path that a commit can include keeps its checks
 
 The comment and type hooks examine the staged diff of each commit, also for a file that was a scratch file at write time.
