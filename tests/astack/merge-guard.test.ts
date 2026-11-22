@@ -75,6 +75,10 @@ const GREEN: PullRequestState = {
 	authority: committed({}),
 };
 
+const MUTATION =
+	'mutation { mergePullRequest(input: {pullRequestId: "x"}) { clientMutationId } }';
+const READ = "query { viewer { login } }";
+
 const NO_STANDING_GRANT =
 	".astack/profile.json on main at 9f3c1a2 gives no standing grant.";
 
@@ -696,6 +700,51 @@ describe("the merge guard", () => {
 	] as const)(
 		"a gh api merge passes only when its method is provably GET: %s",
 		(command, run) => {
+			expect(bash(guard(GREEN), command)).toEqual(run);
+		},
+	);
+
+	test.each(
+		BYPASS.filter(
+			(form) => form.group === "rest-merge" || form.group === "graphql-merge",
+		).map((form) => form.command),
+	)(
+		"[control:sg-api-merge] the API merge %s gets the gh api deny",
+		(command) => {
+			writeFileSync(join(project, "merge.graphql"), MUTATION);
+			writeFileSync(
+				join(project, "body.json"),
+				JSON.stringify({ query: MUTATION }),
+			);
+			expect(bash(guard(GREEN), command)).toEqual(API_DENY);
+		},
+	);
+
+	test.each([
+		["gh api graphql --input read.json", PASSES],
+		["gh api graphql -F query=@read.graphql", PASSES],
+		[
+			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: READ })}\nEOF`,
+			PASSES,
+		],
+		["gh api graphql --input merge.json", API_DENY],
+		[
+			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: MUTATION })}\nEOF`,
+			API_DENY,
+		],
+		[`gh api graphql -f query='${READ}' -F owner="$OWNER"`, API_DENY],
+	] as const)(
+		"a GraphQL body that astack reads passes only with no merge mutation: %s",
+		(command, run) => {
+			writeFileSync(
+				join(project, "read.json"),
+				JSON.stringify({ query: READ }),
+			);
+			writeFileSync(join(project, "read.graphql"), READ);
+			writeFileSync(
+				join(project, "merge.json"),
+				JSON.stringify({ query: MUTATION }),
+			);
 			expect(bash(guard(GREEN), command)).toEqual(run);
 		},
 	);

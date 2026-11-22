@@ -1,4 +1,6 @@
+import { resolve } from "node:path";
 import { unattendedReason } from "../../attended.ts";
+import { readOptional } from "../../paths.ts";
 import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
@@ -22,7 +24,6 @@ import {
 	type Verdict,
 } from "../events.ts";
 
-const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
 const GRAPHQL = /graphql/i;
 const PERCENT = /%/;
 
@@ -62,14 +63,101 @@ type MergeCommand = { readonly kind: "none" | "api" | "unreadable" } | GhMerge;
 const NONE: MergeCommand = { kind: "none" };
 const UNREADABLE: MergeCommand = { kind: "unreadable" };
 
-function isApiMerge(args: readonly string[]): boolean {
-	if (args[0] !== "api") return false;
-	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
-	if (args.some(namesGraphql) && args.some((value) => UNREAD_QUERY.test(value)))
+type ReadFile = (path: string) => string | undefined;
+
+const READS_NO_FILE: ReadFile = () => undefined;
+
+type GraphqlInput = {
+	readonly kind: "field" | "typed" | "input";
+	readonly word: Word;
+};
+
+const API_SHORT_VALUES = "XfFHpqt";
+const API_LONG_VALUES = [
+	"--cache",
+	"--header",
+	"--hostname",
+	"--jq",
+	"--method",
+	"--preview",
+	"--template",
+];
+const INPUT_FLAG = /^--(input|field|raw-field)(?:=([\s\S]*))?$/;
+
+function shortInput(letter: string, word: Word): GraphqlInput | undefined {
+	if (letter === "f") return { kind: "field", word };
+	if (letter === "F") return { kind: "typed", word };
+	return undefined;
+}
+
+function graphqlInputs(args: readonly Word[]): GraphqlInput[] {
+	const inputs: GraphqlInput[] = [];
+	for (let index = 1; index < args.length; index++) {
+		const word = args[index];
+		if (word === undefined) continue;
+		const attached = (value: string): Word => ({
+			value,
+			dynamic: word.dynamic,
+		});
+		const long = INPUT_FLAG.exec(word.value);
+		if (long) {
+			const value = long[2] === undefined ? args[++index] : attached(long[2]);
+			const kind =
+				long[1] === "input" ? "input" : long[1] === "field" ? "typed" : "field";
+			if (value) inputs.push({ kind, word: value });
+		} else if (API_LONG_VALUES.includes(word.value)) index++;
+		else if (/^-[A-Za-z]/.test(word.value)) {
+			const at = [...word.value.slice(1)].findIndex((letter) =>
+				API_SHORT_VALUES.includes(letter),
+			);
+			if (at < 0) continue;
+			const rest = word.value.slice(at + 2);
+			const value = rest === "" ? args[++index] : attached(rest);
+			const input = value && shortInput(word.value.charAt(at + 1), value);
+			if (input) inputs.push(input);
+		}
+	}
+	return inputs;
+}
+
+function inputText(
+	input: GraphqlInput,
+	step: ShellStep,
+	readFile: ReadFile,
+): string | undefined {
+	const { kind, word } = input;
+	if (word.dynamic) return undefined;
+	if (kind === "field") return word.value;
+	const value = word.value.slice(word.value.indexOf("=") + 1);
+	const path =
+		kind === "input"
+			? word.value
+			: value.startsWith("@")
+				? value.slice(1)
+				: undefined;
+	if (path === undefined) return word.value;
+	return path === "-" ? step.simple.stdin : readFile(path);
+}
+
+function isApiMerge(
+	step: ShellStep,
+	args: readonly Word[],
+	readFile: ReadFile,
+): boolean {
+	const values = args.map((word) => word.value);
+	if (values[0] !== "api") return false;
+	if (values.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
+	if (
+		values.some((value) => MERGE_PATH.test(value)) &&
+		values.some((value) => METHOD_CHANGING_FLAG.test(value))
+	)
 		return true;
 	return (
-		args.some((value) => MERGE_PATH.test(value)) &&
-		args.some((value) => METHOD_CHANGING_FLAG.test(value))
+		values.some(namesGraphql) &&
+		graphqlInputs(args).some((input) => {
+			const text = inputText(input, step, readFile);
+			return text === undefined || MERGE_MUTATION_IN_INPUT.test(text);
+		})
 	);
 }
 
@@ -98,12 +186,16 @@ function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
 	return NONE;
 }
 
-function mergeCommand(step: ShellStep): MergeCommand {
+function fileReader(step: ShellStep): ReadFile {
+	return (path) => readOptional(resolve(step.dir, path));
+}
+
+function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
 	if (step.unreadable !== undefined && step.unreadable !== "folder")
 		return UNREADABLE;
 	const [program, ...args] = step.words;
 	if (program === undefined || !GH.test(program.value)) return NONE;
-	if (isApiMerge(args.map((word) => word.value))) return { kind: "api" };
+	if (isApiMerge(step, args, readFile)) return { kind: "api" };
 	return prMerge(args, step.env.length > 0);
 }
 
@@ -138,8 +230,8 @@ function holdsMergeWord(step: ShellStep): boolean {
 	);
 }
 
-function examinesMerge(step: ShellStep): boolean {
-	const merge = mergeCommand(step);
+function examinesMerge(step: ShellStep, readFile: ReadFile): boolean {
+	const merge = mergeCommand(step, readFile);
 	switch (merge.kind) {
 		case "none":
 			return false;
@@ -157,7 +249,7 @@ function stepVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	const merge = mergeCommand(step);
+	const merge = mergeCommand(step, fileReader(step));
 	switch (merge.kind) {
 		case "none":
 			return ALLOW;
@@ -300,7 +392,10 @@ function decodedEscapes(text: string): string {
 }
 
 function runsGhMerge(value: string): boolean {
-	return MAY_MERGE.test(value) && shellSteps(value, "").some(examinesMerge);
+	return (
+		MAY_MERGE.test(value) &&
+		shellSteps(value, "").some((step) => examinesMerge(step, READS_NO_FILE))
+	);
 }
 
 function quotedWord(item: string): string {
@@ -364,7 +459,9 @@ function failedVerdict(
 ): Verdict | undefined {
 	const merges =
 		(event.kind === "shell" &&
-			shellSteps(event.command, event.cwd).some(examinesMerge)) ||
+			shellSteps(event.command, event.cwd).some((step) =>
+				examinesMerge(step, fileReader(step)),
+			)) ||
 		(event.kind === "mcp" && isMcpMerge(event));
 	if (!merges) return undefined;
 	const cause = error instanceof Error ? error.message : String(error);
