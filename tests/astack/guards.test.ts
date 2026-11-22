@@ -240,6 +240,32 @@ describe("the plain form of a git step", () => {
 		expect(destructive.run(shell(command), context(repo)).kind).toBe("allow");
 	});
 
+	test.each([
+		[
+			"env -C ../dirty git reset --hard",
+			"astack cannot read env -C ../dirty git reset --hard, because a wrapper before it has a flag that astack does not know.",
+		],
+		[
+			'bash -c "cd $D && git reset --hard"',
+			"because a variable or a command substitution is in its shell body.",
+		],
+		[
+			'G="git -C ../dirty"; $G reset --hard',
+			"astack cannot read $G reset --hard, because a variable gives the program.",
+		],
+		[
+			'D=../dirty; git -C "$D" reset --hard',
+			"astack cannot read git -C $D reset --hard, because a variable or a command substitution gives the -C, -c, --git-dir or --work-tree value.",
+		],
+	])(
+		"%s is denied from a clean folder, because astack cannot read the folder it runs in",
+		(command, text) => {
+			expect(reason(destructive.run(shell(command), context(repo)))).toContain(
+				text,
+			);
+		},
+	);
+
 	test.each(["yarn commit -n", "echo reset --hard && git status"])(
 		"%s passes on a dirty tree, because its program is not git",
 		(command) => {

@@ -202,7 +202,7 @@ export function readGit(step: ShellStep): GitRead {
 		const verb = hiddenVerb(step);
 		return verb === undefined
 			? NONE
-			: unreadable(verb, CAUSES[step.unreadable], step.dir);
+			: unreadable(verb, CAUSES[step.unreadable], undefined);
 	}
 	const git = gitWords(step.words, step.dir);
 	if (git === undefined) return NONE;
@@ -221,7 +221,7 @@ export function readGit(step: ShellStep): GitRead {
 		return unreadable(
 			verb,
 			"a variable or a command substitution gives the -C, -c, --git-dir or --work-tree value",
-			git.dir,
+			undefined,
 		);
 	if (hasDynamicWord(verb, git.args))
 		return unreadable(

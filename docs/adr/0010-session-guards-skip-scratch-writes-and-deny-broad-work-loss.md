@@ -46,7 +46,8 @@ Amended 2026-11-22. Both guards read the plain form of each shell step.
 `shellSteps` drops reserved words and braces, and it unwraps a fixed list of wrappers.
 It also parses static `sh -c`, `eval` and substitution bodies as steps.
 A guarded verb that a variable hides is unreadable.
-An unreadable work-loss command gets a deny on a changed tree, and each other unreadable guarded verb gets a deny at once.
+An unreadable work-loss command gets a deny on a changed tree when astack can read its folder.
+Each other unreadable guarded verb gets a deny at once.
 `git apply -R` from stdin or a substitution, `git read-tree -u --reset` and `git checkout-index -a -f` are work-loss commands.
 So is `git archive` piped to `tar -x`. A named-file form still passes.
 
