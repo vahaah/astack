@@ -383,6 +383,35 @@ describe("the Claude Code decoder", () => {
 	});
 });
 
+describe("the captured prompt channels", () => {
+	test.each([
+		["workflow-brief", "[Workflow harness — computed task] "],
+		["cocode-relay", '[CoCode: the agent in CoCode thread "'],
+		["agent-message", '<agent-message from="'],
+		["print", "Merge #12 when green."],
+	])(
+		"[premise] the %s channel sends no source field, so only its opening text marks it",
+		(channel, opening) => {
+			const raw: unknown = JSON.parse(
+				readFileSync(
+					join(FIXTURES, `hook-input-UserPromptSubmit-${channel}.json`),
+					"utf8",
+				),
+			);
+			const [event] =
+				decode("claude-code", "UserPromptSubmit", raw, {
+					env: {},
+					cwd: project,
+					readText: () => undefined,
+				})?.events ?? [];
+			expect({
+				source: typeof raw === "object" && raw !== null && "source" in raw,
+				opening: event?.kind === "prompt" && event.text.startsWith(opening),
+			}).toEqual({ source: false, opening: true });
+		},
+	);
+});
+
 describe("tool and event names", () => {
 	test("parse only the known names", () => {
 		for (const tool of TOOLS) expect(parseTool(tool)).toBe(tool);
