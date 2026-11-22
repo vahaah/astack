@@ -19,7 +19,7 @@ Read only the in-scope records needed for that brief.
 Chat history holds the user's goals, your actions, and decisions.
 The shared record holds user reports, prior fixes, reverts, incidents, and current errors around the same code.
 Do not reconstruct a feature with recurring bugs from your transcripts alone.
-Read `../astack-why/SKILL.md` for shared-record searches across git, tickets, chat, docs, and error tracking.
+Read `../astack-why/SKILL.md` for the code anchor and the sources of the shared record.
 
 ## Locate transcripts
 
@@ -79,15 +79,16 @@ Return only their findings to the main thread.
 ### 4. Search the shared record
 
 Do this whenever the topic names a feature, file, subsystem, area, or bug.
-A request about the user's work on that topic still needs the search.
+A request about the user's own work also needs it.
 Skip it only for activity recall without a named target, such as a weekly work summary.
 
-Read `why` and use its source investigators and per-source playbooks.
-Ask about current state, failed earlier attempts, and continuing user reports.
-Do not ask only for design reasons.
-Spawn the investigators with the chat readers in the same message.
-Keep one investigator per source.
-Treat empty results as findings and report unavailable MCP sources.
+Collect the code anchor as `why` says.
+Start one general-purpose investigator for each available source, with the chat readers.
+It needs MCP tools, so do not use `Explore`.
+Give each one the anchor and one source, with no write access.
+Ask about current state, failed attempts, and open user reports.
+
+Report empty results and missing MCP sources.
 Combine their findings with the chat results.
 
 ### 5. Check live state
