@@ -55,6 +55,11 @@
 			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
 		},
 		{
+			"path": "src/astack/cli/commands/doctor.ts",
+			"obligation": "SG-unattended",
+			"modelRefs": ["GrantFromPerson", "MergeNeedsAuthority"]
+		},
+		{
 			"path": "tests/astack/merge-guard.test.ts",
 			"obligation": "SG-base-authority",
 			"modelRefs": [
