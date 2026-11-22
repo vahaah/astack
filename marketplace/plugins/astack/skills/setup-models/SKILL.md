@@ -19,7 +19,6 @@ Its role values override the astack skill defaults.
   Follow `${CLAUDE_SKILL_DIR}/../arena/references/external-seats.md` for that CLI.
 
 External seats are valid only for `arena runners`, `architect runners`, `interrogate reviewers`, `council members`, `sol-loop reviewer`, and `arena cross-judge pool`.
-The `sol-loop reviewer` role takes only a list of external seats, or no line.
 Every other role runs as a Claude subagent with the session's tools.
 The `why` and `reflect` roles need MCP access.
 Code roles need the astack agents.
@@ -127,7 +126,7 @@ Replace the whole file on each run so repeated runs stay idempotent.
 # astack model configuration. astack skills read these lines; nothing else does.
 # One line per role. Delete a line to fall back to the skill default.
 # `inherit-parent` or `auto` as a value: the role runs on the parent chat model (omit Agent `model`). Alias entries in a panel list still count toward its fan-out.
-# External seats (codex, codex:<model>, cursor-agent:<model>) are valid only on the panel lines, the sol-loop reviewer and the cross-judge pool.
+# External seats (codex, codex:<model>, cursor-agent:<model>) are valid only on the panel lines, the sol-loop reviewer and the cross-judge pool. The sol-loop reviewer also takes claude and claude:<model>.
 # budget: large (xhigh)
 feature, refactoring: sonnet
 bug-fix: sonnet

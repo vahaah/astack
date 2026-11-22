@@ -121,6 +121,18 @@ describe("the seats of the sol-loop reviewer", () => {
 		expect(families.get(otherwise ?? "")).toBe(familyModel);
 	});
 
+	test("the rule header of setup-models and the cross-family row of the mode name each value that setup-models accepts for the reviewer", () => {
+		const subagents = read("mode/references/subagents.md");
+		const header = lineWith(setupModels, "# External seats (");
+		const row = lineWith(subagents, "| Cross-family reviewer |");
+		const values = setupValues();
+		expect(values).toEqual(expect.arrayContaining(["claude", "claude:<model>"]));
+		expect(values.filter((value) => !header.includes(value))).toEqual([]);
+		expect(values.filter((value) => !valuesIn(row).includes(value))).toEqual(
+			[],
+		);
+	});
+
 	test("each sol-loop round reads a diff of the current tree, because the next round writes the diff and status files again into one named folder", () => {
 		const outFolder =
 			"`<out>` is a new folder from `mktemp -d`, outside the checkout.";
