@@ -19,6 +19,27 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 - The `astack` CLI for sessions, the board, `doctor` and 13 repository checks.
 - A change proof: in a repo that applies astack, each change needs a domain contract, its ADRs and a TLA+ model check that passes.
 
+## Contents
+
+- [What is checked, and where](#what-is-checked-and-where)
+- [Quickstart](#quickstart)
+- [How it works](#how-it-works)
+- [Why astack](#why-astack)
+- [Foundations](#foundations)
+- [Install by client](#install-by-client)
+- [The CLI](#the-cli)
+- [Hooks in detail](#hooks-in-detail)
+- [Applying astack to a repo](#applying-astack-to-a-repo)
+- [Runtimes, files and environment](#runtimes-files-and-environment)
+- [Releases](#releases)
+- [Hook profiles](#hook-profiles)
+- [Language review packs](#language-review-packs)
+- [Build and verify](#build-and-verify)
+- [Source layout](#source-layout)
+- [Private companion](#private-companion)
+- [Contribute](#contribute)
+- [Licence and credits](#licence-and-credits)
+
 ## What is checked, and where
 
 | Layer | What runs | Where | What it guarantees |
@@ -63,30 +84,9 @@ Hooks watch the build, the PR and the merge in clients that support hooks.
 
 </details>
 
-## Contents
-
-- [Quickstart](#quickstart)
-- [What is checked, and where](#what-is-checked-and-where)
-- [How it works](#how-it-works)
-- [Why astack](#why-astack)
-- [Foundations](#foundations)
-- [Install by client](#install-by-client)
-- [The CLI](#the-cli)
-- [Hooks in detail](#hooks-in-detail)
-- [Applying astack to a repo](#applying-astack-to-a-repo)
-- [Runtimes, files and environment](#runtimes-files-and-environment)
-- [Releases](#releases)
-- [Hook profiles](#hook-profiles)
-- [Language review packs](#language-review-packs)
-- [Build and verify](#build-and-verify)
-- [Source layout](#source-layout)
-- [Private companion](#private-companion)
-- [Contribute](#contribute)
-- [Licence and credits](#licence-and-credits)
-
 ## Quickstart
 
-Install the signed release `v0.3.0`. See [the release list](https://github.com/vahaah/astack/releases).
+Install the signed release `v0.3.0`. Use that tag only after it is on [the release list](https://github.com/vahaah/astack/releases).
 
 The CLI runs on Node 22 or later, or on Bun. `bun run check` and `bun run apply` need Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
 
