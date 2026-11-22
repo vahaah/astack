@@ -58,6 +58,7 @@ The model has no action that makes a graduated row live, and the `--base` test e
 ```text
 readAdr         : CheckEnv  -> AdrText       effects: fs-read
 decisionHeading : AdrText   -> HeadingOffset effects: none
+planFileState   : PlanTarget -> PlanFileState effects: fs-read, spawn
 planStateFor    : PlanTarget -> PlanState    effects: fs-read, spawn
 parseTrailBatch : StdinRows -> TrailCells    effects: none
 appendTrail     : TrailCells -> TrailFile    effects: fs-write
@@ -66,7 +67,9 @@ appendTrail     : TrailCells -> TrailFile    effects: fs-write
 `readAdr` finds the ADR file of a number in the ADR folder of the plan, and reads it.
 `decisionHeading` is pure. It masks the fences and returns the offset of the titled heading, or nothing.
 
-`planStateFor` reads the plan file and asks git for the root and the common dir of the plan folder.
+`planFileState` reads the real path of the plan file and asks git for the root and the common dir of its folder.
+It returns the plan path from that root, and it refuses an invalid slug.
+`planStateFor` uses `planFileState` for a plan path, and the git root of the cwd for a slug.
 `parseTrailBatch` is pure. It returns all rows, or the first problem with its line.
 `appendTrail` writes all rows in one append call.
 A batch with a problem never reaches `appendTrail`.
