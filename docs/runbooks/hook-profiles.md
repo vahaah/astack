@@ -74,10 +74,6 @@ Required records stay active under both profiles.
 Deleted files resolve active records.
 An unreadable file or unavailable handler produces a verification-limit report.
 
-Old string-only reports have no file, workspace, handler, or baseline.
-Cursor delivers each once as an unverified report.
-The minimal profile does not classify or suppress them.
-
 The state folder can hold before text from blocked source files.
 Keep that folder private.
 By default, it lives outside the checkout under the astack local state folder.

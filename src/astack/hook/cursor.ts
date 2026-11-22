@@ -57,7 +57,6 @@ export type CursorStore = {
 		workspace: string,
 	) => readonly DeferredProblem[];
 	readonly removeProblem: (problem: DeferredProblem) => void;
-	readonly takeLegacy: (session: string) => readonly string[];
 	readonly addNote: (session: string, text: string) => void;
 	readonly takeNotes: (session: string) => readonly string[];
 };
@@ -70,7 +69,6 @@ const NO_STORE: CursorStore = {
 	saveProblem: () => {},
 	problems: () => [],
 	removeProblem: () => {},
-	takeLegacy: () => [],
 	addNote: () => {},
 	takeNotes: () => [],
 };
@@ -203,7 +201,6 @@ export function fileStore(root: string): CursorStore {
 				join(dir(problem.session), "problems", `${problemKey(problem)}.json`),
 				{ force: true },
 			),
-		takeLegacy: (session) => takeList(session, "problems.json"),
 		addNote: (session, text) =>
 			write(
 				session,
@@ -231,17 +228,6 @@ export function problemsVerdict(problems: readonly string[]): Verdict {
 	return problems.length === 0
 		? ALLOW
 		: continueWith([EDIT_FOLLOWUP, ...new Set(problems)].join("\n\n"));
-}
-
-function legacyVerdict(problems: readonly string[]): Verdict {
-	return problems.length === 0
-		? ALLOW
-		: continueWith(
-				[
-					"astack has unverified reports from an older cache. Their file, workspace and handler are unknown. Check each report against the current files:",
-					...new Set(problems),
-				].join("\n\n"),
-			);
 }
 
 export const NOTES_HEADING = "astack advice from this turn:";
@@ -569,8 +555,6 @@ function outcome(
 					: contextFor(event, decoded, env, deps, session);
 			const problems =
 				context === undefined ? [] : refreshProblems(context, deps);
-			const legacy =
-				session === undefined ? [] : deps.store.takeLegacy(session);
 			const notes = session === undefined ? [] : deps.store.takeNotes(session);
 			const edits = combineAll([
 				problemsVerdict(
@@ -581,7 +565,6 @@ function outcome(
 				...problems
 					.filter((problem) => problem.kind === "limited")
 					.map((problem) => continueWith(problem.reason)),
-				legacyVerdict(legacy),
 			]);
 			const replyVerdict =
 				decoded === undefined || context === undefined

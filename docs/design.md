@@ -450,7 +450,6 @@ A partial comment check retains its baseline while nested STE is disabled.
 A suppression handoff carries that baseline to the active type checker and respects its current permissions.
 Deleted targets resolve active records.
 Unreadable files and unavailable checks report a verification limit.
-Old string-only records appear once as unverified reports.
 The state folder can contain source baselines and must stay private.
 
 ## 10. Per-target capability and degradation
