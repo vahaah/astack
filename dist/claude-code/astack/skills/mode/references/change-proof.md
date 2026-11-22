@@ -24,19 +24,21 @@ Use a change-specific model or an explicit preservation relation.
 For docs, model the changed procedure or selected contract data.
 An unrelated example never satisfies the requirement.
 
-Before implementation, state these facts in the internal brief:
-
-- Domain context, aggregate, terms, and invariants.
-- Objects and typed arrows that model the actual contract.
-- Identity, composition, effects, equality, applicable laws, and witnesses.
-- The hidden rule, caller facts, abstraction relation, alternatives, and deletion test.
-- Governing ADR decisions with their formal and category explanations.
-- TLA+ obligations, bounds, assumptions, fairness, negative control, and implementation controls.
+Before implementation, state each record of the contract in the internal brief.
+[Category and abstraction](../../pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the composition rules.
 
 This is an inspectable contract, not a private reasoning transcript.
 Keep production names in the domain language.
 Category notation belongs in the internal record, ADR, model, and law evidence.
 Do not add a runtime FP framework or another layer to repeat the notation.
+
+## Faithful models
+
+Map each indivisible code step to one model action.
+Never weaken an invariant, a bound, fairness or an assumption to get a pass.
+A positive failure on current code is a finding. Report it with its counterexample.
+State each invariant and its harm in one sentence.
+A progress claim needs a temporal property.
 
 ## Internal messages
 
@@ -56,12 +58,12 @@ Keep user-facing progress short and in plain language.
 Run the existing implementation and document gates.
 Run `astack check proof` on the candidate inputs.
 Require exit 0 and a final line that starts with `ok: proof `.
-The checker runs the positive model, named negative control, and unchanged positive model.
-It rejects unsupported inputs, wrong violations, incomplete runs, warnings, stale inputs, and cleanup failures.
+[TLC execution](../../pr-review-hardening/references/proof-contract.md#tlc-execution) gives the three runs and their stops.
 A saved receipt never replaces execution.
 
-Run it again after any change to candidate inputs.
-Keep its states and temporary copies outside the checkout.
+Hold the tree still during the proof. Stop dev servers and restore gate rewrites first.
+Run the proof again after any change to candidate inputs.
+
 Keep the existing tests, static checks, removal controls, review cap, and owner gates.
 A model result does not establish implementation correspondence.
 Semantic review still checks domain meaning, abstraction suitability, and the model relation.

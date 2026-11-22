@@ -7,6 +7,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { staleInputs } from "../../src/astack/change-proof/admission.ts";
 import {
 	changedPaths,
 	snapshot,
@@ -153,6 +154,7 @@ test.each<[string, (repo: Fixture) => void, (repo: Fixture) => void, number]>([
 		expect(after.head).toBe(repo.base);
 		expect(git(repo.parent, "ls-files", "--stage", "-z")).toBe(index);
 		expect(after.digest).not.toBe(before.digest);
+		expect(staleInputs(before, after)).toEqual(["deps/module"]);
 		expect(after.files).toBe(files);
 	},
 );
@@ -181,5 +183,6 @@ test("[control:proof-submodule-explicit] an ignored proof input inside a nested 
 	const after = candidate(repo, explicit);
 	expect(after.head).toBe(repo.base);
 	expect(after.digest).not.toBe(before.digest);
+	expect(staleInputs(before, after)).toEqual(["deps/module"]);
 	expect(after.files).toBe(9);
 });

@@ -1,186 +1,101 @@
 {
 	"version": 1,
-	"change": "fast-gates",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"change": "b05-proof-stops-name-their-cause",
+	"base": "16f6cb81083189e5b1f939fd7534df6e200b7129",
 	"scope": [
 		{
+			"path": "src/astack/change-proof/tlc.ts",
+			"obligation": "CP-19",
+			"modelRefs": ["RejectPositive", "RunNegative"]
+		},
+		{
+			"path": "src/astack/change-proof/runner.ts",
+			"obligation": "CP-20",
+			"modelRefs": ["RejectPositive"]
+		},
+		{
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "CP-20",
+			"modelRefs": ["RejectEvidence", "StaleStopNamesPaths"]
+		},
+		{
+			"path": "src/astack/change-proof/candidate.ts",
+			"obligation": "CP-20",
+			"modelRefs": ["InputChange", "StaleStopNamesPaths"]
+		},
+		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "src/astack/cli/commands/check/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection", "RejectPositive"]
+		},
+		{
+			"path": "tests/astack/**",
+			"obligation": "CP-20",
+			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "RejectPositive"]
+		},
+		{
+			"path": "tests/check-proof-script.test.ts",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "tests/fixtures/tlc/**",
+			"obligation": "CP-18",
+			"modelRefs": ["RejectPositive"]
+		},
+		{
+			"path": "formal/**",
+			"obligation": "CP-20",
+			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection", "AdmitSafe"]
+		},
+		{
 			"path": ".astack/**",
-			"obligation": "CP-02",
-			"modelRefs": ["AdmitSafe"]
+			"obligation": "CP-21",
+			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
 		},
 		{
-			"path": ".github/workflows/check.yml",
-			"obligation": "SG-generated",
+			"path": "docs/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StaleStopNamesPaths", "StopNamesSection"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "marketplace/plugins/astack/agents/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "rules/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "research_notes/**",
+			"obligation": "CP-21",
+			"modelRefs": ["StopNamesSection"]
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "AGENTS.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "CONTRIBUTING.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/design.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/plans/review-roadmap/**",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
-			"obligation": "CP-02",
-			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
-		},
-		{
-			"path": "docs/reference/change-proof-contract.md",
-			"obligation": "CP-02",
-			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
-		},
-		{
-			"path": "docs/reference/session-guards.md",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/README.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
+			"path": "marketplace/plugins/astack/bin/**",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "dist/**",
 			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "package.json",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/build.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-fast.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/check-fast.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/pr-head.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/drift.test.ts",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/generated-tree.ts",
-			"obligation": "SG-generated",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/source-install.test.ts",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "scripts/check-proof.ts",
-			"obligation": "CP-16",
-			"modelRefs": ["ScopeFromMergeBase", "BaseAncestry"]
-		},
-		{
-			"path": "tests/check-proof-script.test.ts",
-			"obligation": "CP-16",
-			"modelRefs": ["ScopeFromMergeBase", "BaseAncestry"]
-		},
-		{
-			"path": "src/astack/change-proof/runner.ts",
-			"obligation": "CP-10",
-			"modelRefs": [
-				"RunPositive",
-				"RunNegative",
-				"RunRestored",
-				"FailureIsTerminal"
-			]
-		},
-		{
-			"path": "src/astack/cli/commands/check/proof.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
-		},
-		{
-			"path": "tests/astack/change-proof-cli.test.ts",
-			"obligation": "CP-02",
-			"modelRefs": ["RunPositive", "RunNegative", "RunRestored", "AdmitSafe"]
-		},
-		{
-			"path": "src/astack/cli/bin.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/cli/floor.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/cli/commands/doctor.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/doctor.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/doctor.test.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/hook.test.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/launcher.test.ts",
-			"obligation": "SG-runtime",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/ste-hook.test.ts",
-			"obligation": "SG-runtime",
 			"modelRefs": ["TypeOK"]
 		}
 	],
@@ -194,42 +109,46 @@
 		"terms": [
 			"ChangeProof",
 			"Proof admission",
-			"Model control",
-			"Diff base",
-			"Session guard"
+			"Candidate inputs",
+			"Model control"
 		],
 		"invariants": [
 			{
-				"name": "Admission requires a passed positive run, the expected negative run and a passed restored run",
+				"name": "A stale stop names each changed candidate input",
+				"modelRef": "StaleStopNamesPaths"
+			},
+			{
+				"name": "Each stop names the proof contract section of its stage",
+				"modelRef": "StopNamesSection"
+			},
+			{
+				"name": "Admission requires current complete evidence",
 				"modelRef": "AdmitSafe"
-			},
-			{
-				"name": "A failed run stops the proof",
-				"modelRef": "FailureIsTerminal"
-			},
-			{
-				"name": "A proof with a base ref reads its diff from the merge base",
-				"modelRef": "ScopeFromMergeBase"
-			},
-			{
-				"name": "An admitted proof has a manifest base that is an ancestor of the diff target",
-				"modelRef": "BaseAncestry"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0005-every-change-carries-domain-and-formal-proof.md",
+				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0014-each-proof-stop-names-its-cause.md",
 				"decision": "D3"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"CP-02",
-				"CP-10",
-				"CP-16",
-				"SG-runtime",
-				"SG-preserve",
+				"CP-17",
+				"CP-18",
+				"CP-19",
+				"CP-20",
+				"CP-21",
+				"WB-ratchet",
 				"SG-generated"
 			]
 		}
@@ -237,23 +156,9 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "runModel writes only its own temp root and removes it when the run ends or a stop kills it. Each judge maps one RunEnd to a Result and writes nothing."
+			"contract": "Each arrow returns a Result. The judges and snapshot give a refusal text, and admitChangeProof gives a Rejection with its stage. No arrow writes a file."
 		},
 		"objects": [
-			{
-				"name": "ModelFile",
-				"link": {
-					"path": "src/astack/change-proof/tla.ts",
-					"symbol": "ModelFile"
-				}
-			},
-			{
-				"name": "ModelRun",
-				"link": {
-					"path": "src/astack/change-proof/runner.ts",
-					"symbol": "ModelRun"
-				}
-			},
 			{
 				"name": "RunEnd",
 				"link": {
@@ -274,29 +179,37 @@
 					"path": "src/astack/change-proof/tlc.ts",
 					"symbol": "Violation"
 				}
+			},
+			{
+				"name": "ChangedPath",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "ChangedPath"
+				}
+			},
+			{
+				"name": "Snapshot",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "Snapshot"
+				}
+			},
+			{
+				"name": "AdmissionFacts",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "AdmissionFacts"
+				}
+			},
+			{
+				"name": "Admitted",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "Admitted"
+				}
 			}
 		],
 		"arrows": [
-			{
-				"name": "runModel",
-				"from": "ModelFile",
-				"to": "ModelRun",
-				"link": {
-					"path": "src/astack/change-proof/runner.ts",
-					"symbol": "runModel"
-				},
-				"effects": ["fs-write", "spawn", "env"]
-			},
-			{
-				"name": "ended",
-				"from": "ModelRun",
-				"to": "RunEnd",
-				"link": {
-					"path": "src/astack/cli/commands/check/proof.ts",
-					"symbol": "ended"
-				},
-				"effects": []
-			},
 			{
 				"name": "judgePositive",
 				"from": "RunEnd",
@@ -316,75 +229,101 @@
 					"symbol": "judgeNegative"
 				},
 				"effects": []
+			},
+			{
+				"name": "snapshot",
+				"from": "ChangedPath",
+				"to": "Snapshot",
+				"link": {
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "snapshot"
+				},
+				"effects": ["fs-read", "spawn", "env"]
+			},
+			{
+				"name": "admitChangeProof",
+				"from": "AdmissionFacts",
+				"to": "Admitted",
+				"link": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"effects": []
 			}
 		],
 		"composites": [],
-		"equality": "Two run ends are equal when their kind and fields are equal. Two judged results are equal when their counts, violation or refusal text are equal.",
+		"equality": "Two results are equal when their values are equal. Two refusals are equal when their stage and text are equal.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change runs three arrows together and judges their results in a fixed order. It adds no composition operator, map, functor or monad."
+				"reason": "This change adds no composition operator, map, functor or monad. prove calls the arrows in order and stops at the first refusal."
 			}
 		],
 		"typedWitness": "src/astack/cli/commands/check/proof.ts"
 	},
 	"abstraction": {
-		"hides": "The start of three TLC processes at once, the kill of the live runs after a stop, and the wait for the cleanup of each temp root.",
+		"hides": "The TLC record protocol, the SANY text outside the records, the state records of a trace, the progress records of a run past the deadline and the entry lines of each snapshot.",
 		"callersKnow": [
-			"check proof judges the runs in the order positive, negative, restored, so its first stop is the same as in a run in sequence.",
-			"A stop kills the runs that are still live and removes each temp root before the command exits.",
-			"A local run of scripts/check-proof.ts reads origin/HEAD and passes HEAD^ or origin/<default> as its base.",
-			"With no origin/HEAD that resolves, or no HEAD^, the local run keeps the manifest base."
+			"The last stdout line of a stop names its stage and its cause.",
+			"One stderr line names the proof contract section of the stage.",
+			"A SANY stop names the module, the line, the column and the message.",
+			"A failed run names its invariant or property and prints at most 20 steps.",
+			"A stale stop names at most 10 changed paths, the index or the ratification history.",
+			"A run past the deadline names the distinct state count and the time of its last progress record."
 		],
-		"deletionTest": "Deleting stopRuns puts the abort and the cleanup wait at each stop of prove, so one stop can return while a run still owns a temp root.",
+		"deletionTest": "Deleting the judges puts the TLC record protocol, the SANY text and the trace format into prove, and the fixtures can then test them only with Java. Deleting staleInputs puts the entry comparison into admitChangeProof and into each snapshot test.",
 		"alternatives": [
 			{
-				"name": "Runs in sequence",
-				"rejectedBecause": "Three runs in sequence took 8.0 s on this tree, and together they took 3.5 s."
+				"name": "A new --explain flag",
+				"rejectedBecause": "It only repeats the reference."
 			},
 			{
-				"name": "A wait for all three runs",
-				"rejectedBecause": "A fast positive failure waits for the slowest run, up to the 60 s deadline."
+				"name": "Leave gate rewrite paths out of the digest",
+				"rejectedBecause": "It goes against ADR 0005 D3, which binds each candidate file."
 			},
 			{
-				"name": "A stop at the first run to end",
-				"rejectedBecause": "A wrong negative that ends first can hide the positive failure, so the first stop can change."
+				"name": "A second stdout line for the section",
+				"rejectedBecause": "It changes 28 pinned stop lines, and scripts read the last stdout line."
+			},
+			{
+				"name": "Print only the state count of a trace",
+				"rejectedBecause": "The agent cannot see the path to the broken claim."
 			}
 		],
 		"relation": [
@@ -393,7 +332,7 @@
 					"path": "src/astack/change-proof/tlc.ts",
 					"symbol": "judgePositive"
 				},
-				"modelAction": "RunPositive"
+				"modelAction": "RejectPositive"
 			},
 			{
 				"concrete": {
@@ -404,17 +343,24 @@
 			},
 			{
 				"concrete": {
-					"path": "src/astack/cli/commands/check/proof.ts",
-					"symbol": "stopRuns"
+					"path": "src/astack/change-proof/candidate.ts",
+					"symbol": "snapshot"
 				},
-				"modelAction": "RejectPositive"
+				"modelAction": "InputChange"
 			},
 			{
 				"concrete": {
-					"path": "scripts/check-proof.ts",
-					"symbol": "localBase"
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "staleInputs"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "RejectEvidence"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/contract.ts",
+					"symbol": "STAGE_SECTIONS"
+				},
+				"modelAction": "ValidationFail"
 			},
 			{
 				"concrete": {
@@ -425,10 +371,10 @@
 			}
 		],
 		"omitted": [
-			"The processes, their start order and the kill signal are abstracted to one judged result for each run.",
-			"The model sees the judged results in the order positive, negative, restored, and not the order in which the runs end.",
-			"Git, origin/HEAD and the merge base algorithm are abstracted to one base observation for each run.",
-			"The launcher, the node floor and check:fast are not in the model. Their tests and the gates examine them."
+			"TLC, SANY and their output text are abstracted to the bounded positive, negative and restored results.",
+			"Git and the file system are abstracted to three input kinds that can change during the runs.",
+			"The limit of 10 named paths and 20 trace steps is not modelled. Unit controls examine both limits.",
+			"The earlier authority, base, evidence and Result law parts of the model stay as they were."
 		]
 	},
 	"model": {
@@ -436,8 +382,9 @@
 		"config": "formal/ProofAdmission.cfg",
 		"dependencies": [],
 		"bounds": [
-			"One base observation for each run from 48 cases: four relations, a ref or none, two diff bases, two history views and an authority move that needs a ref.",
-			"The authority cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model.",
+			"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
+			"Nine failure kinds map to five sections of the proof contract.",
+			"The authority and base cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model.",
 			"Finite Result laws use two values, two errors and all total functions between them."
 		],
 		"fairness": ["WF_vars(Next)"],
@@ -454,6 +401,8 @@
 			"ScopeFromMergeBase",
 			"HistoryAtManifest",
 			"MovedAuthorityStops",
+			"StaleStopNamesPaths",
+			"StopNamesSection",
 			"ResultLeftIdentity",
 			"ResultRightIdentity",
 			"ResultAssociativity"
@@ -462,19 +411,19 @@
 	},
 	"negative": {
 		"file": "formal/ProofAdmission.tla",
-		"action": "Admit",
-		"original": "/\\ restored = \"passed\"",
-		"replacement": "/\\ TRUE",
-		"defect": "Dropping the restored check admits a proof whose restored run did not pass, as a judge that stops after the first two runs would.",
+		"action": "RejectEvidence",
+		"original": "/\\ named' = IF firstFailure' = \"stale\" THEN changed ELSE {}",
+		"replacement": "/\\ named' = {}",
+		"defect": "Dropping the changed inputs from the stale stop hides which file changed during the runs, so the agent cannot repair the stop.",
 		"expect": {
 			"kind": "invariant",
-			"name": "AdmitSafe"
+			"name": "StaleStopNamesPaths"
 		}
 	},
 	"limits": [
-		"The finite model takes each judged run result as true. It does not model processes, signals or temp roots. The CP-02 and CP-10 controls examine them.",
-		"The model does not check the launcher, the node floor, check:fast or the CI trigger. Their tests, check:drift and the CI step examine them.",
-		"The model does not check the words of the docs and the ADR notes. Review and the STE, chart, budget and drift gates examine them.",
+		"The finite model takes the TLC output and the Git reads as true. It does not model TLC, SANY or Git.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"The TLC fixtures come from tla2tools 1.7.4. Another TLC version can print other text.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

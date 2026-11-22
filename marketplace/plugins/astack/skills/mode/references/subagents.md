@@ -3,7 +3,7 @@
 ## Internal contract
 
 Every change brief includes the [ChangeProof record](change-proof.md), assigned scope, and permitted effects.
-Use the shared summary for domain terms, typed arrows, laws, abstraction, and ADR references.
+The [proof contract](../../pr-review-hardening/references/proof-contract.md#category-and-abstraction) gives the fields of that record.
 Every handoff states current proof and implementation evidence, with unfinished obligations.
 The summary remains unverified until the actual gate succeeds.
 Do not request or emit a private reasoning transcript.
