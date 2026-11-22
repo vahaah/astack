@@ -1,5 +1,4 @@
 import { unattendedReason } from "../../attended.ts";
-import { originSlug, repoRoot } from "../../git.ts";
 import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
@@ -11,7 +10,6 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
-import { loadPrProfile } from "../../pr/profile.ts";
 import {
 	ENV_ASSIGNMENT,
 	type ShellStep,
@@ -26,7 +24,6 @@ import {
 	deny,
 	type EventOf,
 	type Handler,
-	projectDirOf,
 	type Verdict,
 } from "../events.ts";
 
@@ -121,13 +118,10 @@ function mergeVerdict(
 ): Verdict {
 	const call = parseMergeCall(step.simple, merge.args, step.dir);
 	if (call.disableAuto) return ALLOW;
-	const root = repoRoot(step.dir);
 	const inputs = {
 		call,
 		chained,
 		setsEnv: merge.setsEnv,
-		profile: loadPrProfile(root ?? projectDirOf(context)),
-		profileRepo: root === undefined ? undefined : originSlug(root),
 		grant: loadGrant(context.env, context.session),
 		unattendedReason: unattendedReason(context.env),
 	};

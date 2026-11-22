@@ -19,6 +19,7 @@ import type {
 } from "../../src/astack/hook/events.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import {
+	type BaseAuthority,
 	type PrTarget,
 	type PullRequestState,
 	pullRequestFrom,
@@ -30,15 +31,27 @@ import {
 	mergeGrantIn,
 } from "../../src/astack/pr/grant.ts";
 import { parseMergeCall } from "../../src/astack/pr/merge.ts";
+import {
+	DEFAULT_MERGE_PROFILE,
+	type MergeProfile,
+} from "../../src/astack/pr/profile.ts";
 import { commandWords, parseShell } from "../../src/astack/shell.ts";
 
 let root = "";
 let project = "";
 let standing = "";
-let bases = "";
 let state = "";
 
 const HEAD = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+const BASE_TIP = "9f3c1a2b4d5e6f708192a3b4c5d6e7f8091a2b3c";
+
+function committed(merge: Partial<MergeProfile>): BaseAuthority {
+	return {
+		kind: "committed",
+		commit: BASE_TIP,
+		profile: { ...DEFAULT_MERGE_PROFILE, ...merge },
+	};
+}
 
 const GREEN: PullRequestState = {
 	number: 12,
@@ -51,7 +64,11 @@ const GREEN: PullRequestState = {
 	threadsListed: true,
 	checks: "success",
 	checkedHead: HEAD,
+	authority: committed({}),
 };
+
+const NO_STANDING_GRANT =
+	".astack/profile.json on main at 9f3c1a2 gives no standing grant.";
 
 function git(dir: string, ...args: string[]): void {
 	spawnSync("git", args, { cwd: dir });
@@ -61,21 +78,14 @@ beforeAll(() => {
 	root = mkdtempSync(join(tmpdir(), "astack-merge-"));
 	project = join(root, "plain");
 	standing = join(root, "standing");
-	bases = join(root, "bases");
 	state = join(root, "state");
 	mkdirSync(project);
 	mkdirSync(join(standing, ".astack"), { recursive: true });
 	git(standing, "init", "-q");
+	git(standing, "remote", "add", "origin", "https://github.com/o/r.git");
 	writeFileSync(
 		join(standing, ".astack/profile.json"),
 		JSON.stringify({ merge: { authority: "standing", requireChecks: false } }),
-	);
-	mkdirSync(join(bases, ".astack"), { recursive: true });
-	git(bases, "init", "-q");
-	git(bases, "remote", "add", "origin", "https://github.com/o/r.git");
-	writeFileSync(
-		join(bases, ".astack/profile.json"),
-		JSON.stringify({ merge: { authority: "turn", standingBases: ["v2"] } }),
 	);
 });
 
@@ -296,8 +306,7 @@ describe("machine prompts never change the grant", () => {
 			});
 			expect(bash(guard(GREEN), "gh pr merge 12", project, session)).toEqual({
 				exit: 2,
-				stderr:
-					"astack blocked gh pr merge:\n- Nobody gave a merge grant. The owner did not say to merge in this turn. .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+				stderr: `astack blocked gh pr merge:\n- ${NO_STANDING_GRANT} The owner did not say to merge in this turn. Ask the owner before you merge #12.`,
 			});
 		},
 	);
@@ -344,17 +353,12 @@ describe("the gh pr merge call", () => {
 });
 
 describe("the merge guard", () => {
-	test("[control:sg-merge-needs-grant] denies a merge with no grant, before it reads GitHub", () => {
-		const reads: Reads = [];
-		const run = bash(
-			guard(GREEN, reads),
-			"gh pr merge 12 --squash",
-			project,
-			"none",
-		);
-		expect(run.exit).toBe(2);
-		expect(run.stderr).toContain("Nobody gave a merge grant");
-		expect(reads).toEqual([]);
+	test("[control:sg-merge-needs-grant] denies a merge with no grant when the base profile gives no standing grant", () => {
+		const run = bash(guard(GREEN), "gh pr merge 12 --squash", project, "none");
+		expect(run).toEqual({
+			exit: 2,
+			stderr: `astack blocked gh pr merge:\n- ${NO_STANDING_GRANT} The owner did not say to merge in this turn. Ask the owner before you merge #12.`,
+		});
 	});
 
 	test("[control:sg-turn-grant-merges] allows a merge that the owner granted in this turn on a green PR", () => {
@@ -379,7 +383,7 @@ describe("the merge guard", () => {
 		prompt(handler, "merge when green");
 		prompt(handler, "now update the ticket");
 		expect(bash(handler, "gh pr merge 12").stderr).toContain(
-			"Nobody gave a merge grant",
+			"The owner did not say to merge in this turn.",
 		);
 	});
 
@@ -414,58 +418,77 @@ describe("the merge guard", () => {
 		);
 	});
 
-	test("a PR with no CI check needs merge.requireChecks false", () => {
+	test("a PR with no CI check needs merge.requireChecks false on its base branch", () => {
 		const handler = guard({ ...GREEN, checks: "none", checkedHead: HEAD });
 		prompt(handler, "merge it");
 		expect(bash(handler, "gh pr merge 12").stderr).toContain(
 			"GitHub shows no CI check",
 		);
-		expect(bash(handler, "gh pr merge 12", standing).exit).toBe(0);
+		const noCi = guard({
+			...GREEN,
+			checks: "none",
+			authority: committed({ requireChecks: false }),
+		});
+		prompt(noCi, "merge it");
+		expect(bash(noCi, "gh pr merge 12").exit).toBe(0);
 	});
 
-	test("[control:sg-standing-grant] a standing grant in the profile needs no grant in the turn", () => {
-		const run = bash(guard(GREEN), "gh pr merge 12", standing, "fresh");
-		expect(run.exit).toBe(0);
+	test("[control:sg-standing-grant] a standing grant in the base branch profile needs no grant in the turn", () => {
+		const run = bash(
+			guard({ ...GREEN, authority: committed({ authority: "standing" }) }),
+			"gh pr merge 12",
+			project,
+			"fresh",
+		);
+		expect(run).toEqual({ exit: 0, stderr: "" });
 	});
+
+	const V2_STANDS = committed({ standingBases: ["v2"] });
 
 	test("a PR into a standing base needs no grant in the turn", () => {
 		const run = bash(
-			guard({ ...GREEN, base: "v2" }),
+			guard({ ...GREEN, base: "v2", authority: V2_STANDS }),
 			"gh pr merge 12",
-			bases,
+			project,
 			"bases",
 		);
 		expect(run).toEqual({ exit: 0, stderr: "" });
 	});
 
 	test("a PR into another base needs the owner's grant, and the denial names both bases", () => {
-		const run = bash(guard(GREEN), "gh pr merge 12", bases, "bases");
+		const run = bash(
+			guard({ ...GREEN, authority: V2_STANDS }),
+			"gh pr merge 12",
+			project,
+			"bases",
+		);
 		expect(run).toEqual({
 			exit: 2,
 			stderr:
-				"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. The owner did not say to merge in this turn. Ask the owner before you merge #12.",
+				"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases in .astack/profile.json on main at 9f3c1a2 covers only v2. The owner did not say to merge in this turn. Ask the owner before you merge #12.",
 		});
 	});
 
 	test.each([
 		[
-			"plain",
+			"no profile grant",
+			committed({}),
 			{ CLAUDE_CODE_SESSION_ATTENDED: "0" },
-			"astack blocked gh pr merge:\n- Nobody gave a merge grant. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_SESSION_ATTENDED=0 makes this session unattended. .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+			`astack blocked gh pr merge:\n- ${NO_STANDING_GRANT} astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_SESSION_ATTENDED=0 makes this session unattended. Ask the owner before you merge #12.`,
 		],
 		[
-			"bases",
+			"standing base",
+			V2_STANDS,
 			{ CLAUDE_CODE_ENTRYPOINT: "sdk-ts" },
-			"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases covers only v2. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_ENTRYPOINT=sdk-ts makes this session unattended. Ask the owner before you merge #12.",
+			"astack blocked gh pr merge:\n- #12 goes into main, and merge.standingBases in .astack/profile.json on main at 9f3c1a2 covers only v2. astack records no merge grant from prompts in an unattended session. CLAUDE_CODE_ENTRYPOINT=sdk-ts makes this session unattended. Ask the owner before you merge #12.",
 		],
 	])(
 		"[control:sg-unattended-denial] in an unattended session the %s denial names the setting, not a missing owner word",
-		(name, env, stderr) => {
-			const cwd = join(root, name);
-			const verdict = guard(GREEN).run(
-				{ kind: "shell", command: "gh pr merge 12", cwd },
+		(_, authority, env, stderr) => {
+			const verdict = guard({ ...GREEN, authority }).run(
+				{ kind: "shell", command: "gh pr merge 12", cwd: project },
 				{
-					...context(cwd, "unattended", "PreToolUse"),
+					...context(project, "unattended", "PreToolUse"),
 					env: { ASTACK_STATE_DIR: state, ...env },
 				},
 			);
@@ -473,30 +496,11 @@ describe("the merge guard", () => {
 		},
 	);
 
-	test("a PR into a standing base of another repo needs the owner's grant", () => {
-		const run = bash(
-			guard({
-				...GREEN,
-				number: 7,
-				url: "https://github.com/other/repo/pull/7",
-				base: "v2",
-			}),
-			"gh pr merge 7 --repo other/repo",
-			bases,
-			"bases",
-		);
-		expect(run).toEqual({
-			exit: 2,
-			stderr:
-				"astack blocked gh pr merge:\n- #7 is https://github.com/other/repo/pull/7, and merge.standingBases covers only the PRs of o/r. The owner did not say to merge in this turn. Ask the owner before you merge #7.",
-		});
-	});
-
 	test("a PR into a standing base still needs green CI", () => {
 		const run = bash(
-			guard({ ...GREEN, base: "v2", checks: "failure" }),
+			guard({ ...GREEN, base: "v2", checks: "failure", authority: V2_STANDS }),
 			"gh pr merge 12",
-			bases,
+			project,
 			"bases",
 		);
 		expect(run).toEqual({
@@ -513,8 +517,10 @@ describe("the merge guard", () => {
 		"gh pr merge 12 -sdRother/repo",
 	])("%p reads #12 in the repo that the short flag names", (command) => {
 		const reads: Reads = [];
-		bash(guard({ ...GREEN, base: "v2" }, reads), command, bases, "bases");
-		expect(reads).toEqual([{ selector: "12", repo: "other/repo", dir: bases }]);
+		bash(guard({ ...GREEN, base: "v2" }, reads), command, project, "bases");
+		expect(reads).toEqual([
+			{ selector: "12", repo: "other/repo", dir: project },
+		]);
 	});
 
 	test.each([
@@ -527,8 +533,8 @@ describe("the merge guard", () => {
 		"%p is a merge, so the guard reads #12 in the repo it names first",
 		(command, repo) => {
 			const reads: Reads = [];
-			bash(guard({ ...GREEN, base: "v2" }, reads), command, bases, "bases");
-			expect(reads).toEqual([{ selector: "12", repo, dir: bases }]);
+			bash(guard({ ...GREEN, base: "v2" }, reads), command, project, "bases");
+			expect(reads).toEqual([{ selector: "12", repo, dir: project }]);
 		},
 	);
 
@@ -540,7 +546,7 @@ describe("the merge guard", () => {
 		const run = bash(
 			guard({ ...GREEN, base: "v2" }, reads),
 			command,
-			bases,
+			project,
 			"bases",
 		);
 		expect(run).toEqual({
@@ -558,7 +564,7 @@ describe("the merge guard", () => {
 			const run = bash(
 				guard({ ...GREEN, base: "v2" }, reads),
 				command,
-				bases,
+				project,
 				"bases",
 			);
 			expect(run).toEqual({
@@ -617,9 +623,79 @@ describe("the merge guard", () => {
 	});
 
 	test("an --admin merge is an owner gate, also with a standing grant", () => {
-		const run = bash(guard(GREEN), "gh pr merge 12 --admin", standing, "adm");
+		const run = bash(
+			guard({ ...GREEN, authority: committed({ authority: "standing" }) }),
+			"gh pr merge 12 --admin",
+			project,
+			"adm",
+		);
 		expect(run.exit).toBe(2);
 		expect(run.stderr).toContain("Do not merge with --admin");
+	});
+});
+
+describe("base branch authority", () => {
+	test.each([
+		["merge.authority", { authority: "standing" }, GREEN, false],
+		["merge.standingBases", { standingBases: ["main"] }, GREEN, false],
+		[
+			"merge.requireChecks",
+			{ requireChecks: false },
+			{ ...GREEN, checks: "none" as const },
+			true,
+		],
+	])(
+		"[control:sg-working-tree-profile] a working-tree edit of %s changes no merge verdict",
+		(key, merge, pr, granted) => {
+			const dir = join(root, "edited");
+			mkdirSync(dir, { recursive: true });
+			git(dir, "init", "-q");
+			git(dir, "remote", "add", "origin", "https://github.com/o/r.git");
+			const session = `edited-${key.replace(/\W/g, "-")}`;
+			const run = (): Run => {
+				const handler = guard(pr);
+				if (granted) prompt(handler, "merge #12 when green", session);
+				return bash(handler, "gh pr merge 12", dir, session);
+			};
+			rmSync(join(dir, ".astack"), { recursive: true, force: true });
+			const clean = run();
+			mkdirSync(join(dir, ".astack"));
+			writeFileSync(
+				join(dir, ".astack/profile.json"),
+				JSON.stringify({ merge }),
+			);
+			expect({ clean: clean.exit, edited: run() }).toEqual({
+				clean: 2,
+				edited: clean,
+			});
+		},
+	);
+
+	test("[control:sg-other-repo] a standing profile of this repo gives no grant for a PR of another repo", () => {
+		const run = bash(
+			guard({
+				...GREEN,
+				number: 7,
+				url: "https://github.com/other/repo/pull/7",
+				authority: { kind: "absent", commit: "e".repeat(40) },
+			}),
+			"gh pr merge 7 --repo other/repo",
+			standing,
+			"other-repo",
+		);
+		expect(run.exit).toBe(2);
+	});
+
+	test("[control:sg-base-authority] a base branch with no profile, an owner grant and green checks merge", () => {
+		const handler = guard({
+			...GREEN,
+			authority: { kind: "absent", commit: "e".repeat(40) },
+		});
+		prompt(handler, "merge #12 when green", "absent-base");
+		expect(bash(handler, "gh pr merge 12", project, "absent-base")).toEqual({
+			exit: 0,
+			stderr: "",
+		});
 	});
 });
 
@@ -679,10 +755,22 @@ describe("the GitHub read", () => {
 		baseRefName: "v2",
 		headRefOid: HEAD,
 	};
-	const graph = (state: string | null, threads: boolean[]) => ({
+	const PROFILE_BLOB = {
+		text: JSON.stringify({ merge: { standingBases: ["v2"] } }),
+		isBinary: false,
+		isTruncated: false,
+	};
+	const graph = (
+		state: string | null,
+		threads: boolean[],
+		object: unknown = PROFILE_BLOB,
+		baseOid: string | null = BASE_TIP,
+	) => ({
 		data: {
 			repository: {
+				object,
 				pullRequest: {
+					baseRef: { target: { oid: baseOid } },
 					reviewThreads: {
 						pageInfo: { hasNextPage: false },
 						nodes: threads.map((isResolved) => ({ isResolved })),
@@ -714,6 +802,7 @@ describe("the GitHub read", () => {
 			threadsListed: true,
 			checks: "success",
 			checkedHead: HEAD,
+			authority: committed({ standingBases: ["v2"] }),
 		});
 		expect(pullRequestFrom(view, graph("EXPECTED", []))?.checks).toBe(
 			"pending",
@@ -725,7 +814,60 @@ describe("the GitHub read", () => {
 	test("a reply of the wrong shape gives no state", () => {
 		expect(pullRequestFrom(view, { data: null })).toBeUndefined();
 		expect(pullRequestFrom({}, graph("SUCCESS", []))).toBeUndefined();
+		expect(
+			pullRequestFrom(
+				{ ...view, baseRefName: undefined },
+				graph("SUCCESS", []),
+			),
+		).toBeUndefined();
 	});
+
+	test.each([
+		["an absent file", null, BASE_TIP, { kind: "absent", commit: BASE_TIP }],
+		[
+			"a file that is not JSON",
+			{ ...PROFILE_BLOB, text: "{" },
+			BASE_TIP,
+			{
+				kind: "unread",
+				reason: ".astack/profile.json at 9f3c1a2 is not valid JSON",
+			},
+		],
+		[
+			"a truncated file",
+			{ ...PROFILE_BLOB, isTruncated: true },
+			BASE_TIP,
+			{
+				kind: "unread",
+				reason: ".astack/profile.json at 9f3c1a2 is not a readable text file",
+			},
+		],
+		[
+			"a tree",
+			{},
+			BASE_TIP,
+			{
+				kind: "unread",
+				reason: ".astack/profile.json at 9f3c1a2 is not a readable text file",
+			},
+		],
+		[
+			"no base commit",
+			PROFILE_BLOB,
+			null,
+			{
+				kind: "unread",
+				reason: "the PR read gives no commit for the base branch v2",
+			},
+		],
+	] as const)(
+		"[control:sg-base-authority] %s at the base tip gives the authority %p",
+		(_, object, baseOid, authority) => {
+			expect(
+				pullRequestFrom(view, graph("SUCCESS", [], object, baseOid))?.authority,
+			).toEqual(authority);
+		},
+	);
 
 	test("reads the PR through gh view and gh api graphql", () => {
 		const bin = join(root, "bin");
@@ -759,6 +901,8 @@ describe("the GitHub read", () => {
 		expect(log).toContain(
 			"pr view 12 --repo o/r --json number,url,title,body,baseRefName,headRefOid",
 		);
-		expect(log).toContain("owner=o -f name=r -F number=12");
+		expect(log).toContain(
+			"owner=o -f name=r -F number=12 -f profile=refs/heads/v2:.astack/profile.json",
+		);
 	});
 });
