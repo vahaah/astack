@@ -35,7 +35,7 @@ The mode playbooks are in `references/` and `playbooks/`:
 - `references/comments-triage.md` for "comments" and "check github comments".
 - `references/resume.md` for "resume" and a new session on old work.
 - `references/create-pr.md` for "create pr".
-- `references/playbooks.md` for the 24 execution playbooks in `playbooks/`. The router reads it when a route row or a state row names an execution playbook.
+- For the 23 playbooks that `references/playbooks.md` lists, read that file. The router reads it when a route row or a state row names an execution playbook.
 
 ## With no argument, do the next step
 
