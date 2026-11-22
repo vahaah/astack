@@ -32,7 +32,7 @@ const lock = {
 	skills: {
 		grilling: { source: "mattpocock/skills" },
 		tdd: { source: "mattpocock/skills" },
-		prototype: { source: "someone/skills" },
+		"domain-modeling": { source: "someone/skills" },
 		"setup-matt-pocock-skills": { source: "mattpocock/skills" },
 	},
 };
@@ -43,7 +43,7 @@ const skillsTxt = [
 	"mattpocock/skills setup-matt-pocock-skills",
 	"mattpocock/skills tdd",
 	"other/skills tdd",
-	"someone/skills#v2 prototype",
+	"someone/skills#v2 domain-modeling",
 	"anthropics/claude-code Agent Development",
 	"",
 ].join("\n");
@@ -62,6 +62,7 @@ describe("flowSupersedes", () => {
 		"implement",
 		"implement-spec",
 		"improve-codebase-architecture",
+		"prototype",
 		"research",
 		"to-questionnaire",
 		"to-spec",
@@ -100,6 +101,7 @@ describe("flowSupersedes", () => {
 					"astack:codebase-design",
 					"not-in-flow",
 				],
+				["prototype", "astack:mode", "not-in-flow"],
 				["research", "astack:plan", "not-in-flow"],
 				["to-questionnaire", "astack:to-questionnaire", "not-in-flow"],
 				["to-spec", "astack:write-ticket", "not-in-flow"],
@@ -156,9 +158,9 @@ describe("parseSkillsTxt", () => {
 			},
 			{
 				line: 6,
-				text: "someone/skills#v2 prototype",
+				text: "someone/skills#v2 domain-modeling",
 				source: "someone/skills",
-				name: "prototype",
+				name: "domain-modeling",
 			},
 			{
 				line: 7,
@@ -197,14 +199,14 @@ describe("findDuplicateSkills", () => {
 	});
 
 	test("marks a different skill with an astack name as a name collision only", () => {
-		const [prototype] = findDuplicateSkills({
-			entries: [link("prototype")],
+		const [collision] = findDuplicateSkills({
+			entries: [link("domain-modeling")],
 			lock,
 			skillsTxt,
 		});
-		expect(prototype?.verdict).toBe("name-only");
-		expect(prototype?.skillsTxt).toEqual([
-			{ line: 6, text: "someone/skills#v2 prototype" },
+		expect(collision?.verdict).toBe("name-only");
+		expect(collision?.skillsTxt).toEqual([
+			{ line: 6, text: "someone/skills#v2 domain-modeling" },
 		]);
 	});
 
@@ -300,7 +302,7 @@ describe("removalCommands quoting", () => {
 describe("duplicateReportLines", () => {
 	test("says it removes nothing, groups by verdict and lists skills.txt lines", () => {
 		const found = findDuplicateSkills({
-			entries: [link("grilling"), link("prototype")],
+			entries: [link("grilling"), link("domain-modeling")],
 			lock,
 			skillsTxt,
 		});
@@ -317,12 +319,14 @@ describe("duplicateReportLines", () => {
 			"- ~/.claude/skills/grilling -> ~/.agents/skills/grilling, from mattpocock/skills; astack ships /astack:grilling",
 		);
 		expect(text).toContain("  $ npx skills remove --global -y grilling\n");
-		expect(text).toContain("  $ npx skills remove --global -y prototype\n");
+		expect(text).toContain(
+			"  $ npx skills remove --global -y domain-modeling\n",
+		);
 		expect(text).toContain(
 			"Either way, delete these lines from ~/config/claude/skills.txt, or its bootstrap installs them again:",
 		);
 		expect(text).toContain("  2: mattpocock/skills grilling");
-		expect(text).toContain("  6: someone/skills#v2 prototype");
+		expect(text).toContain("  6: someone/skills#v2 domain-modeling");
 		expect(text.indexOf("grilling")).toBeLessThan(
 			text.indexOf("from another or an unknown source"),
 		);

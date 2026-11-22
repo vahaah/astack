@@ -55,7 +55,7 @@ Without astack, run the matched playbook as written.
 - Trace forensics. Diagnose a captured profiling artifact supplied after the event. Examples include a cpuprofile, trace, spindump, or heap snapshot. Deliver a diagnosis, not a fix.
 - Feature. Build new or changed behavior from a named data shape.
 - Refactoring. Preserve behavior while you change structure or shape, such as a rename, extraction, inline, dedupe, or move.
-- Prototype. Make a throwaway sketch to settle a design or behavior decision cheaply. Use observation instead of a human question for an empirical fork. Typical requests are "prototype", "mock it up", "try this layout", or "sketch it to decide".
+- Prototype. Make a throwaway sketch to settle a design or behavior decision cheaply. Use observation instead of a human question for an empirical fork. Its "Person-judged prototype" section covers a result that a person must judge. Typical requests are "prototype", "mock it up", "try this layout", or "sketch it to decide".
 - Visual parity. Match the pixels of two implementations or migrate a styling system with exact UI equivalence.
 - Authoring or modifying a skill. Write or edit a SKILL.md. File: `playbooks/authoring-a-skill.md`.
 - Eval. Test how a skill, structure, or prompt change affects agent behavior before you promote it.

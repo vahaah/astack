@@ -128,7 +128,7 @@ The lead follows these steps:
 1. Read `astack-architect` by path and run phases A and B with checkpoint. Phase C builds, so the lead stops after Phase B.
 2. Read `astack-arena` by path. Follow it only on forks with no precedent in the repo and on one-way doors.
 3. Screen each candidate against `references/design-red-flags.md` of architect. Compare them in the depth terms of `astack-codebase-design`.
-4. Send forks that a test can settle to a `prototype/<slug>-<topic>` branch. A fork that a person must judge comes back to the main thread for `astack-prototype`.
+4. Send forks that a test can settle to a `prototype/<slug>-<topic>` branch. A fork that a person must judge comes back to the main thread for the "Person-judged prototype" section of `astack-mode playbooks/prototype.md`.
 5. Leave a sketch branch whose types and `not implemented` bodies compile, and a rationale.
 
 End the brief of the lead with this line: "Run every nested agent and command in the foreground, never end your turn to wait, and make your final message the report."

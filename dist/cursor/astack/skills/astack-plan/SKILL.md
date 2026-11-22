@@ -185,7 +185,7 @@ When a stage runs inline with no subagent, the main thread reads the skills of t
 | S0 | `astack-write-docs`, for the prose of the plan. ASD-STE100 takes priority over its other prose rules | `astack-in-your-own-words`, `astack-sharpen`. `astack-show-me-your-work` before the first trail row |
 | S1 | None | The S1 subagents read `astack-how`, `astack-why` and `astack-recall`. A fact outside the repo takes the research brief of `references/stages.md` |
 | S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
-| S4 | `astack-codebase-design` for the depth words. `astack-prototype` when a person must judge a prototype | The S4 lead reads `astack-architect` and `astack-arena`. A fork that a test settles reads `astack-mode playbooks/prototype.md` |
+| S4 | `astack-codebase-design` for the depth words | The S4 lead reads `astack-architect` and `astack-arena`. A prototype fork reads `astack-mode playbooks/prototype.md`, with its "Person-judged prototype" section when a person must judge it |
 | S5 | None | `astack-principles` and each reference that its index says applies. The slicing rules of `astack-to-tickets`. `astack-figure-it-out` for a large migration or an unattended run. The charting rules of `astack-wayfinder`, in a programme |
 | S6 | None | The S6 lead reads `references/spec-review.md`. It reads `astack-principles references/attack-the-premise.md` when needed |
 | S7 | `astack-write-ticket` for each ticket | Its umbrella template, when the owner asks for a spec |

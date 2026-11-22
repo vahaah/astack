@@ -1,6 +1,6 @@
 # astack for Cursor
 
-This plugin holds 48 skills, the astack rules and the astack hooks. One astack plugin supplies each item.
+This plugin holds 47 skills, the astack rules and the astack hooks. One astack plugin supplies each item.
 
 ## Install
 

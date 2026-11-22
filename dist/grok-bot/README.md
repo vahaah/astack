@@ -1,6 +1,6 @@
 # astack for Grok Bot
 
-This folder holds 51 skills for Grok Bot: the astack skills, `astack-rules` and `astack-sync`.
+This folder holds 50 skills for Grok Bot: the astack skills, `astack-rules` and `astack-sync`.
 
 Grok Bot gets no hooks. Grok Bot has no hook support, and this plan has no team marketplace. So nothing enforces the astack rules in Grok Bot. Git hooks and CI that run the astack CLI are the only gates for its work.
 

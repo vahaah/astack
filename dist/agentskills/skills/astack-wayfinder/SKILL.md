@@ -172,7 +172,7 @@ The facts must settle a prerequisite for a decision.
 A prototype is HITL.
 Create a cheap, rough artifact that makes a question concrete enough for the user to answer.
 Examples include an outline, draft, stub, UI or logic code.
-Load `astack-prototype`.
+Follow the "Person-judged prototype" section of `astack-mode playbooks/prototype.md`.
 Link the prototype as an asset.
 Use this type when appearance or behavior is the deciding question.
 
