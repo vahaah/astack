@@ -119,6 +119,7 @@ It reads the decoded values, not the JSON text, so a tab or a line break before 
 It also decodes each JSON escape in a value, because the body of a raw request can hold escapes that the forge decodes.
 An input that holds `mergePullRequest` or `enablePullRequestAutoMerge` gets a deny.
 An input with a `pulls/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
+The `<n>` part can be any path segment, such as the route template `{pull_number}`.
 An input value that holds a `gh pr merge` command gets a deny, because a shell tool can run it with no check of the guard.
 
 ### D5. An error of the merge guard on a merge gives a deny

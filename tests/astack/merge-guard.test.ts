@@ -828,6 +828,15 @@ describe("MCP merge tools", () => {
 			{ method: "PUT", path: "/repos/o/r/pulls/12/merge" },
 		],
 		[
+			"an Octokit route template of the REST merge",
+			"mcp__forge__github_request",
+			true,
+			{
+				route: "PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge",
+				params: { owner: "o", repo: "r", pull_number: 12 },
+			},
+		],
+		[
 			"a GET on the REST merge path",
 			"mcp__forge__call_api",
 			false,
