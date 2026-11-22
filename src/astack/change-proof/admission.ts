@@ -55,6 +55,9 @@ export type Snapshot = {
 	readonly head: string;
 	readonly digest: string;
 	readonly files: number;
+	readonly index: string;
+	readonly history: string;
+	readonly entries: ReadonlyMap<string, string>;
 };
 
 export type ModelEvidence = {
@@ -598,6 +601,24 @@ export function checkReferences(
 	return stageOf("model", modelCheck(proof, view.modelFiles));
 }
 
+const STALE_NAMES = 10;
+
+export function staleInputs(
+	before: Snapshot,
+	after: Snapshot,
+): readonly string[] {
+	const paths = [
+		...new Set([...before.entries.keys(), ...after.entries.keys()]),
+	]
+		.sort()
+		.filter((path) => before.entries.get(path) !== after.entries.get(path));
+	return [
+		...(before.history === after.history ? [] : ["the ratification history"]),
+		...(before.index === after.index ? [] : ["the index"]),
+		...paths,
+	];
+}
+
 export function admitChangeProof(
 	proof: ChangeProof,
 	facts: AdmissionFacts,
@@ -622,11 +643,14 @@ export function admitChangeProof(
 			"stale",
 			`HEAD moved from ${before.head} to ${after.head} during the proof`,
 		);
-	if (before.digest !== after.digest)
+	const stale = staleInputs(before, after);
+	if (stale.length > 0) {
+		const rest = stale.length - STALE_NAMES;
 		return rejection(
 			"stale",
-			`the candidate inputs changed during the proof: digest ${before.digest} became ${after.digest}`,
+			`the candidate inputs changed during the proof: ${stale.slice(0, STALE_NAMES).join(", ")}${rest > 0 ? ` and ${rest} more` : ""}`,
 		);
+	}
 	return ok({
 		change: proof.change,
 		base: proof.base,

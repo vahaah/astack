@@ -60,7 +60,9 @@ Require exit 0 and a final line that starts with `ok: proof `.
 [TLC execution](../../astack-pr-review-hardening/references/proof-contract.md#tlc-execution) gives the three runs and their stops.
 A saved receipt never replaces execution.
 
-Run it again after any change to candidate inputs.
+Hold the tree still during the proof. Stop dev servers and restore gate rewrites first.
+A stale stop names each changed path. Run it again after any change to candidate inputs.
+
 Keep the existing tests, static checks, removal controls, review cap, and owner gates.
 A model result does not establish implementation correspondence.
 Semantic review still checks domain meaning, abstraction suitability, and the model relation.

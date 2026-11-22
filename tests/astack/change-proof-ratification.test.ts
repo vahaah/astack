@@ -837,15 +837,9 @@ describe("integrated ADR ratification", () => {
 		expect(removed).toBe(true);
 		expect(result.code).toBe(1);
 		expect(result.err).toBe("");
-		const last = result.out.trimEnd().split("\n").at(-1) ?? "";
-		expect(last).toMatch(
-			/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: the ratification history",
 		);
-		const hashes = [...last.matchAll(/sha256:([0-9a-f]{64})/g)].map(
-			(match) => match[1],
-		);
-		expect(hashes).toHaveLength(2);
-		expect(hashes[0]).not.toBe(hashes[1]);
 	});
 
 	test("[control:proof-ratification-binds-an-ignored-proof-record-across-model-execution] binds an ignored proof record across model execution", async () => {
@@ -884,8 +878,8 @@ describe("integrated ADR ratification", () => {
 		expect(changed).toBe(true);
 		expect(result.code).toBe(1);
 		expect(result.err).toBe("");
-		expect(result.out.trimEnd().split("\n").at(-1)).toMatch(
-			/^stop: proof stale: the candidate inputs changed during the proof: digest sha256:[0-9a-f]{64} became sha256:[0-9a-f]{64}$/,
+		expect(result.out.trimEnd().split("\n").at(-1)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: ignored/proof.md",
 		);
 	});
 });

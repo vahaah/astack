@@ -217,8 +217,8 @@ describe("astack check proof", () => {
 		expect(changed).toBe(true);
 		expect(run.err).toBe("");
 		expect(run.code).toBe(1);
-		expect(run.out).toContain(
-			"stop: proof stale: the candidate inputs changed during the proof",
+		expect(lastLine(run.out)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: the index",
 		);
 		expect(readFileSync(path, "utf8")).toBe(original);
 		expect(
@@ -270,8 +270,8 @@ describe("astack check proof", () => {
 		);
 		const blocked = spawnSync(launcher, [], { encoding: "utf8" });
 		expect(blocked.error?.message).toContain("EACCES");
-		expect(lastLine(run.out)).toStartWith(
-			"stop: proof stale: the candidate inputs changed during the proof",
+		expect(lastLine(run.out)).toBe(
+			"stop: proof stale: the candidate inputs changed during the proof: src/launcher.sh",
 		);
 		expect(run.code).toBe(1);
 	});

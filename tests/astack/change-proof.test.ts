@@ -116,7 +116,22 @@ const SNAPSHOT: Snapshot = {
 	head: "b".repeat(40),
 	digest: `sha256:${"c".repeat(64)}`,
 	files: 13,
+	index: "1".repeat(64),
+	history: "2".repeat(64),
+	entries: new Map(
+		Array.from({ length: 13 }, (_, at) => [
+			`src/file-${String(at).padStart(2, "0")}.ts`,
+			`file 100644 ${"3".repeat(64)}`,
+		]),
+	),
 };
+
+function changedEntries(count: number): Snapshot {
+	const entries = new Map(SNAPSHOT.entries);
+	for (const path of [...entries.keys()].slice(0, count))
+		entries.set(path, `file 100644 ${"4".repeat(64)}`);
+	return { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}`, entries };
+}
 
 function facts(
 	after: Snapshot,
@@ -238,16 +253,57 @@ describe("admitChangeProof", () => {
 		);
 	});
 
-	test("[control:proof-stale-digest] rejects evidence when the input digest changed during the runs", () => {
-		const stale = { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}` };
-		expect(admitChangeProof(validChangeProof(), facts(stale))).toEqual({
+	test("[control:proof-stale-digest] rejects evidence when an input file changed during the runs, and names it", () => {
+		expect(
+			admitChangeProof(validChangeProof(), facts(changedEntries(1))),
+		).toEqual({
 			ok: false,
 			error: {
 				stage: "stale",
-				message: `the candidate inputs changed during the proof: digest ${SNAPSHOT.digest} became ${stale.digest}`,
+				message:
+					"the candidate inputs changed during the proof: src/file-00.ts",
 			},
 		});
 	});
+
+	test.each<[string, Snapshot, string]>([
+		[
+			"eleven changed paths",
+			changedEntries(11),
+			"src/file-00.ts, src/file-01.ts, src/file-02.ts, src/file-03.ts, src/file-04.ts, src/file-05.ts, src/file-06.ts, src/file-07.ts, src/file-08.ts, src/file-09.ts and 1 more",
+		],
+		[
+			"ten changed paths",
+			changedEntries(10),
+			"src/file-00.ts, src/file-01.ts, src/file-02.ts, src/file-03.ts, src/file-04.ts, src/file-05.ts, src/file-06.ts, src/file-07.ts, src/file-08.ts, src/file-09.ts",
+		],
+		[
+			"a removed path",
+			{
+				...SNAPSHOT,
+				entries: new Map(
+					[...SNAPSHOT.entries].filter(([path]) => path !== "src/file-12.ts"),
+				),
+			},
+			"src/file-12.ts",
+		],
+		[
+			"the index and the ratification history",
+			{ ...SNAPSHOT, index: "5".repeat(64), history: "6".repeat(64) },
+			"the ratification history, the index",
+		],
+	])(
+		"[control:proof-stale-paths] a stale stop names %s",
+		(_name, after, names) => {
+			expect(admitChangeProof(validChangeProof(), facts(after))).toEqual({
+				ok: false,
+				error: {
+					stage: "stale",
+					message: `the candidate inputs changed during the proof: ${names}`,
+				},
+			});
+		},
+	);
 
 	test("[control:proof-restored-run] rejects a restored run whose counts differ from the positive run", () => {
 		const evidence = { ...EVIDENCE, restored: ok({ ...COUNTS, distinct: 5 }) };
