@@ -37,6 +37,14 @@ import {
 } from "../../src/astack/pr/profile.ts";
 import { shellSteps } from "../../src/astack/shell.ts";
 
+const BYPASS: readonly { readonly group: string; readonly command: string }[] =
+	JSON.parse(
+		readFileSync(
+			join(import.meta.dir, "../fixtures/guard-bypass.json"),
+			"utf8",
+		),
+	).forms;
+
 let root = "";
 let project = "";
 let standing = "";
@@ -558,22 +566,45 @@ describe("the merge guard", () => {
 		expect(reads).toEqual([]);
 	});
 
-	test.each(["env -C ../other gh pr merge 12", "gh --subject x pr merge 12"])(
-		"%p cannot be read, so it is denied before the read",
+	test.each([
+		"env -C ../other gh pr merge 12",
+		"gh --subject x pr merge 12",
+		"sudo -X gh pr merge 12",
+		'bash -c "gh pr merge $PR"',
+		'"$GH" pr merge 12',
+		"echo $(echo $(echo $(echo $(echo $(gh pr merge 12)))))",
+	])("%p cannot be read, so it is denied before the read", (command) => {
+		const reads: Reads = [];
+		const run = bash(
+			guard({ ...GREEN, base: "v2" }, reads),
+			command,
+			project,
+			"bases",
+		);
+		expect(run).toEqual({
+			exit: 2,
+			stderr:
+				"astack blocked gh pr merge:\n- astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
+		});
+		expect(reads).toEqual([]);
+	});
+
+	test.each(
+		BYPASS.filter((form) => form.group === "wrapped-merge").map(
+			(form) => form.command,
+		),
+	)("the wrapped merge %p is denied", (command) => {
+		const handler = guard(GREEN);
+		prompt(handler, "merge 12 when green");
+		expect(bash(handler, command).stderr).toContain(
+			"Do not merge with --admin",
+		);
+	});
+
+	test.each(['cd "$dir" && git merge main', "$GIT merge main"])(
+		"%p is no PR merge, so it passes",
 		(command) => {
-			const reads: Reads = [];
-			const run = bash(
-				guard({ ...GREEN, base: "v2" }, reads),
-				command,
-				project,
-				"bases",
-			);
-			expect(run).toEqual({
-				exit: 2,
-				stderr:
-					"astack blocked gh pr merge:\n- astack cannot read this merge command. Run gh pr merge <number> as its own Bash call.",
-			});
-			expect(reads).toEqual([]);
+			expect(bash(guard(GREEN), command).exit).toBe(0);
 		},
 	);
 

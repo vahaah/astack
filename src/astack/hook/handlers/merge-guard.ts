@@ -10,12 +10,7 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
-import {
-	ENV_ASSIGNMENT,
-	type ShellStep,
-	shellSteps,
-	type Word,
-} from "../../shell.ts";
+import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
 	type Context,
@@ -50,9 +45,8 @@ const WRITE_METHOD_IN_TEXT = /(?:\b|-X|_)(?:PUT|POST|PATCH|DELETE)\b/;
 const WRITE_METHOD_VALUE =
 	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
-const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
-const GH_WORD = /\bgh\b/;
+const MAY_MERGE = /\bgh\b|\bpr\s+merge\b/;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -105,23 +99,12 @@ function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
 }
 
 function mergeCommand(step: ShellStep): MergeCommand {
-	let words = step.words;
-	let setsEnv = words.length < step.simple.words.length;
-	let wrapper = WRAPPER.exec(words[0]?.value ?? "")?.[1];
-	while (wrapper !== undefined) {
-		words = words.slice(1);
-		while (wrapper === "env" && ENV_ASSIGNMENT.test(words[0]?.value ?? "")) {
-			setsEnv = true;
-			words = words.slice(1);
-		}
-		const next = words[0];
-		if (next?.dynamic || next?.value.startsWith("-")) return UNREADABLE;
-		wrapper = WRAPPER.exec(next?.value ?? "")?.[1];
-	}
-	const [program, ...args] = words;
+	if (step.unreadable !== undefined && step.unreadable !== "folder")
+		return UNREADABLE;
+	const [program, ...args] = step.words;
 	if (program === undefined || !GH.test(program.value)) return NONE;
 	if (isApiMerge(args.map((word) => word.value))) return { kind: "api" };
-	return prMerge(args, setsEnv);
+	return prMerge(args, step.env.length > 0);
 }
 
 function mergeVerdict(
@@ -150,7 +133,9 @@ function mergeVerdict(
 }
 
 function holdsMergeWord(step: ShellStep): boolean {
-	return step.values.some((value) => value.includes("merge"));
+	return [...step.values, ...(step.simple.substitutions ?? [])].some((value) =>
+		value.includes("merge"),
+	);
 }
 
 function examinesMerge(step: ShellStep): boolean {
@@ -200,7 +185,7 @@ function shellVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	if (!GH_WORD.test(event.command)) return ALLOW;
+	if (!MAY_MERGE.test(event.command)) return ALLOW;
 	const steps = shellSteps(event.command, event.cwd);
 	const chained = steps.length > 1;
 	return combineAll(
@@ -315,7 +300,7 @@ function decodedEscapes(text: string): string {
 }
 
 function runsGhMerge(value: string): boolean {
-	return GH_WORD.test(value) && shellSteps(value, "").some(examinesMerge);
+	return MAY_MERGE.test(value) && shellSteps(value, "").some(examinesMerge);
 }
 
 function quotedWord(item: string): string {
