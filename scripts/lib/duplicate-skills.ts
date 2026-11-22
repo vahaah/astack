@@ -21,10 +21,10 @@ export const flowSupersedes: Readonly<Record<string, readonly string[]>> = {
 	teach: ["teach"],
 	"to-questionnaire": ["to-questionnaire"],
 	"to-spec": ["write-ticket"],
-	"to-tickets": ["to-tickets"],
+	"to-tickets": ["plan"],
 	triage: ["write-ticket"],
 	"wait-what": ["wait-what"],
-	wayfinder: ["wayfinder"],
+	wayfinder: ["plan"],
 	wizard: ["wizard"],
 	"writing-for-agents": ["mode"],
 };
@@ -38,8 +38,10 @@ const cutSkills: ReadonlySet<string> = new Set([
 	"retro",
 	"to-questionnaire",
 	"to-spec",
+	"to-tickets",
 	"triage",
 	"wait-what",
+	"wayfinder",
 	"wizard",
 	"writing-for-agents",
 ]);

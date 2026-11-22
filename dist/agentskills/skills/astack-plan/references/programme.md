@@ -3,9 +3,7 @@
 A programme is a destination that needs more than one milestone.
 It has an index and one brief for each block.
 Write a brief at most two sessions before its first session starts.
-Read the charting rules of wayfinder through `astack skill-path astack:wayfinder`.
-Follow those rules with one change.
-Keep the decisions in the index instead of the map issue.
+Keep the decisions in the index, not in a map issue.
 
 ## The index
 
@@ -69,6 +67,42 @@ It blocks the units that the question binds.
 7. Write the brief of each block that can start in the next two sessions.
 8. Start one background subagent with the S1 research brief of `stages.md` for each research question. Each one pushes a `research/<slug>-<topic>` branch and opens no PR.
 9. Stop. Charting settles no decision by hand.
+
+## The map
+
+A map is one tracker issue with the label `wayfinder:map`.
+Its body uses the Map template of `astack-write-ticket`, and its children are decision issues.
+The tracker doc of the repo gives each command.
+
+| Label | Who answers | Work |
+|---|---|---|
+| `wayfinder:grilling` | A person. This is the default | `astack-grilling` and `astack-domain-modeling` |
+| `wayfinder:prototype` | A person | The prototype playbook of `astack-mode` |
+| `wayfinder:research` | An agent alone | The S1 research brief of `stages.md` |
+| `wayfinder:task` | An agent alone, or a person with a checklist | The manual work that a decision needs first, such as an account |
+
+Never answer for a person.
+
+- Name each map and issue by its title as a link, also under Decisions so far.
+- Add the dependencies after the real issue numbers exist. Never write a placeholder such as `#<n>`, because it can link another issue.
+- A claim is an assignee. Assign the issue before any work, so that a parallel session skips it.
+- The frontier holds each open child with no assignee and no open blocker.
+- Do not cut fog into guessed issues. When an answer makes it precise, file its issue.
+- Write work past the destination under Scope with its reason. It never becomes an issue of this map.
+- Close an issue that is out of scope, with no line under Decisions so far.
+
+## Work through a map
+
+Use this loop for a `wayfinder:map` issue that no plan holds.
+When its Notes name a plan, run `/astack-plan <slug>` instead.
+
+1. Read the map body, but not each child.
+2. Take the issue that the owner names, or the first issue of the frontier. Claim it.
+3. Do the work that its label names.
+4. Post the answer as a comment. Close the issue. Add one line to Decisions so far.
+5. File each issue that the answer makes precise. Remove its fog line.
+
+Take one decision issue in each session. Research issues are the exception.
 
 ## Run the board
 

@@ -31,6 +31,8 @@ The report never calls a cut skill superseded, so it never prints a command that
 
 > Amended 2026-11-22: A wrapper skill with at most 3 uses in 30 days can also fold into the skill or playbook that already routes its work. Rows 15 to 18 of the refocus cut list give this fold rule, and the owner accepted that list. The home takes the rules that the routes need, and each route points to the home. `scripts/lib/duplicate-skills.ts` lists each cut name. The report gives a cut name the verdict not-in-flow from any source, so it prints no removal command for it.
 
+> Note 2026-11-22: to-tickets and wayfinder fold into plan under the fold rule above. In 30 days, Claude read neither skill. The control is 158 Claude sessions that read the plan skill by path. Codex read to-tickets 2 times and wayfinder 0 times. The control is 240 Codex rollouts that read the hardening checklist. Plan read both skills by path, so plan was their live dependent. Plan stage S5 now holds the slice rules, and the programme reference of plan holds the map rules and a map loop. The duplicate map sends both names to plan, and the map label stays `wayfinder:map`. Under D2, the plan cap rises from 14,278 to 14,701 words, and the total falls from 133,781 to 131,412 words.
+
 ### D2. A word budget caps each skill and the total
 
 `bun run budget` counts the words of each `*.md` file in each skill tree under `marketplace/plugins/astack/skills/`.

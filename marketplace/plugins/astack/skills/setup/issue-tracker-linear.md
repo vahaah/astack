@@ -34,11 +34,11 @@ Accept a key such as `<TEAM>-123` or a Linear URL.
 
 ## Wayfinding operations
 
-`/astack:wayfinder` uses one map issue and child issues for its tickets.
+`/astack:plan` uses one map issue and child issues for its tickets.
 
 ### Map
 
-Use one issue labelled `wayfinder:map` with the map template from `astack:wayfinder`.
+Use one issue labelled `wayfinder:map` with the Map template of `astack:write-ticket`.
 
 ### Child ticket
 
