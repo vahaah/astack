@@ -384,7 +384,7 @@ describe("astack plan attended, trail, draft and delegate", () => {
 		).toEqual(rows);
 	});
 
-	test("[control:cwd-free] draft and delegate take a brief path from outside the repo and use the state folder of its programme", () => {
+	test("[control:cwd-free-plan] draft and delegate take a brief path from outside the repo and use the state folder of its programme", () => {
 		const outside = tempDir("astack-outside-");
 		const brief = join(repo, BRIEF);
 		const original = readFileSync(brief, "utf8");

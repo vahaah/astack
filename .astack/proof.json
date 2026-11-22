@@ -1,70 +1,162 @@
 {
 	"version": 1,
-	"change": "release-0.3.0-docs",
-	"base": "5dfee73ed4dedf18b5d04afc4f0a600f37fd78cf",
+	"change": "plan-boundary-and-plan-tools",
+	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
 	"scope": [
 		{
-			"path": "README.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "src/astack/adr.ts",
+			"obligation": "ADR-HEADING",
+			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
 		},
 		{
-			"path": "docs/design.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "ADR-HEADING",
+			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
 		},
 		{
-			"path": "docs/runbooks/formal-models.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "tests/astack/adr.test.ts",
+			"obligation": "ADR-HEADING",
+			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
 		},
 		{
-			"path": "docs/runbooks/change-proof-migration.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "src/astack/plan/check.ts",
+			"obligation": "GRAD-ONCE",
+			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
 		},
 		{
-			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/profile.md",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "src/astack/plan/parse.ts",
+			"obligation": "GRAD-ONCE",
+			"modelRefs": ["Graduate"]
 		},
 		{
-			"path": "examples/companion/projects/acme/**",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase"]
+			"path": "src/astack/plan/types.ts",
+			"obligation": "GRAD-ONCE",
+			"modelRefs": ["Graduate"]
 		},
 		{
-			"path": "CONTRIBUTING.md",
+			"path": "src/astack/plan/units.ts",
+			"obligation": "GRAD-ONCE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/plan-check.test.ts",
+			"obligation": "GRAD-ONCE",
+			"modelRefs": ["Graduate", "RowLeavesWithAuthority"]
+		},
+		{
+			"path": "src/astack/plan/trail.ts",
+			"obligation": "TRAIL-BATCH",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/cli/commands/plan.ts",
+			"obligation": "TRAIL-BATCH",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/astack/plan-cli.test.ts",
+			"obligation": "TRAIL-BATCH",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/plan/files.ts",
+			"obligation": "CWD-FREE",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "src/astack/cli/commands/session.ts",
+			"obligation": "CWD-FREE",
+			"modelRefs": ["Boundary"]
+		},
+		{
+			"path": "src/astack/plan/session.ts",
+			"obligation": "CWD-FREE",
+			"modelRefs": ["Boundary"]
+		},
+		{
+			"path": "tests/astack/plan-session.test.ts",
+			"obligation": "CWD-FREE",
+			"modelRefs": ["Boundary"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/**",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": [
+				"Merge",
+				"Boundary",
+				"Resume",
+				"OneBoundaryPerMerge",
+				"LastPrDeletesPlan"
+			]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/coding-guide/SKILL.md",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": ["Boundary", "OneBoundaryPerMerge"]
+		},
+		{
+			"path": "rules/coding.md",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": ["Boundary", "OneBoundaryPerMerge"]
+		},
+		{
+			"path": "tests/tracker-schema.test.ts",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": ["Resume", "OneBoundaryPerMerge"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": ["Boundary", "EachMergeCarriesItsBoundary"]
+		},
+		{
+			"path": "formal/PlanBoundary.*",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": [
+				"Merge",
+				"Boundary",
+				"Resume",
+				"WriteAdr",
+				"Graduate",
+				"OneBoundaryPerMerge",
+				"NoBoundaryAfterLast",
+				"EachMergeCarriesItsBoundary",
+				"RowLeavesWithAuthority",
+				"LastPrDeletesPlan"
+			]
+		},
+		{
+			"path": "docs/adr/0021-*.md",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": [
+				"Boundary",
+				"Graduate",
+				"OneBoundaryPerMerge",
+				"RowLeavesWithAuthority"
+			]
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/reference/plan-boundary.md",
+			"obligation": "BOUNDARY-ONCE",
+			"modelRefs": ["Boundary", "Graduate"]
+		},
+		{
+			"path": "CONTEXT.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": ".astack/**",
-			"obligation": "CP-13",
-			"modelRefs": ["BaseAncestry", "ScopeFromMergeBase", "AdmitSafe"]
-		},
-		{
-			"path": "CHANGELOG.md",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "docs/runbooks/install-*.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/runbooks/publish.md",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/.claude-plugin/plugin.json",
-			"obligation": "SG-preserve",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "package.json",
+			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
@@ -78,245 +170,333 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/change-proof/contract.ts",
-			"symbol": "ChangeProof"
+			"path": "src/astack/plan/types.ts",
+			"symbol": "DecisionRow"
 		},
-		"terms": ["ChangeProof", "Proof admission", "Manifest base", "Diff base"],
+		"terms": [
+			"Session boundary",
+			"Graduated row",
+			"Plan state folder",
+			"Effective decision"
+		],
 		"invariants": [
 			{
-				"name": "An admitted proof has a manifest base that is an ancestor of the diff target",
-				"modelRef": "BaseAncestry"
+				"name": "Each merged session gets at most one boundary",
+				"modelRef": "OneBoundaryPerMerge"
 			},
 			{
-				"name": "A proof with a base ref reads its diff from the merge base",
-				"modelRef": "ScopeFromMergeBase"
+				"name": "Each later merge carries the boundary of the session before it",
+				"modelRef": "EachMergeCarriesItsBoundary"
 			},
 			{
-				"name": "Admission requires current complete evidence",
-				"modelRef": "AdmitSafe"
+				"name": "A decision row leaves the live rows only with a resolving ADR heading",
+				"modelRef": "RowLeavesWithAuthority"
+			},
+			{
+				"name": "The last session PR deletes the plan",
+				"modelRef": "LastPrDeletesPlan"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
+				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0012-change-proof-accepts-an-older-base.md",
+				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0021-plan-tools-share-one-adr-reader.md",
+				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
-			"criteria": ["CP-13", "SG-preserve", "SG-generated"]
+			"criteria": [
+				"ADR-HEADING",
+				"TRAIL-BATCH",
+				"CWD-FREE",
+				"GRAD-ONCE",
+				"BOUNDARY-ONCE",
+				"SG-preserve",
+				"SG-generated"
+			]
 		}
 	},
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow reads Git through historyGit and returns a Result. A refusal names the commits, and no arrow writes a file."
+			"contract": "Each arrow reads or writes one plan artifact. A heading read returns an offset or nothing, a state read returns the paths of the plan state folder or a usage problem, and a batch reaches the trail file only when each row parses."
 		},
 		"objects": [
 			{
-				"name": "DiffTarget",
+				"name": "CheckEnv",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "DiffTarget"
+					"path": "src/astack/plan/types.ts",
+					"symbol": "CheckEnv"
 				}
 			},
 			{
-				"name": "ProofBase",
+				"name": "AdrText",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "ProofBase"
+					"path": "src/astack/adr.ts",
+					"symbol": "adrProse"
 				}
 			},
 			{
-				"name": "IntegrationHistory",
+				"name": "HeadingOffset",
 				"link": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "IntegrationHistory"
+					"path": "src/astack/adr.ts",
+					"symbol": "decisionHeading"
+				}
+			},
+			{
+				"name": "PlanTarget",
+				"link": {
+					"path": "src/astack/cli/commands/plan.ts",
+					"symbol": "stateFor"
+				}
+			},
+			{
+				"name": "PlanState",
+				"link": {
+					"path": "src/astack/plan/files.ts",
+					"symbol": "PlanState"
+				}
+			},
+			{
+				"name": "StdinRows",
+				"link": {
+					"path": "src/astack/cli/io.ts",
+					"symbol": "Io"
+				}
+			},
+			{
+				"name": "TrailCells",
+				"link": {
+					"path": "src/astack/plan/trail.ts",
+					"symbol": "TrailCells"
+				}
+			},
+			{
+				"name": "TrailFile",
+				"link": {
+					"path": "src/astack/plan/trail.ts",
+					"symbol": "TRAIL_HEADER"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "proofBase",
-				"from": "DiffTarget",
-				"to": "ProofBase",
+				"name": "readAdr",
+				"from": "CheckEnv",
+				"to": "AdrText",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "proofBase"
+					"path": "src/astack/plan/check.ts",
+					"symbol": "readAdr"
 				},
-				"effects": ["spawn", "env"]
+				"effects": ["fs-read"]
 			},
 			{
-				"name": "readIntegrationHistory",
-				"from": "ProofBase",
-				"to": "IntegrationHistory",
+				"name": "decisionHeading",
+				"from": "AdrText",
+				"to": "HeadingOffset",
 				"link": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "readIntegrationHistory"
+					"path": "src/astack/adr.ts",
+					"symbol": "decisionHeading"
 				},
-				"effects": ["spawn", "env"]
+				"effects": []
+			},
+			{
+				"name": "planStateFor",
+				"from": "PlanTarget",
+				"to": "PlanState",
+				"link": {
+					"path": "src/astack/plan/files.ts",
+					"symbol": "planStateFor"
+				},
+				"effects": ["fs-read", "spawn"]
+			},
+			{
+				"name": "parseTrailBatch",
+				"from": "StdinRows",
+				"to": "TrailCells",
+				"link": {
+					"path": "src/astack/plan/trail.ts",
+					"symbol": "parseTrailBatch"
+				},
+				"effects": []
+			},
+			{
+				"name": "appendTrail",
+				"from": "TrailCells",
+				"to": "TrailFile",
+				"link": {
+					"path": "src/astack/plan/trail.ts",
+					"symbol": "appendTrail"
+				},
+				"effects": ["fs-write"]
 			}
 		],
 		"composites": [],
-		"equality": "Two base pairs are equal when their manifest and diff commits are equal. Two refusals are equal when their text is equal.",
+		"equality": "Two heading results are equal when both are absent or both name the same offset. Two plan states are equal when their root, slug, trail and drafts paths are equal. Two batches are equal when their rows are equal cell by cell.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "This change edits docs, the version and generated files. It adds no arrow, composition operator, map, functor or monad."
+				"reason": "This change adds no composite arrow. Each arrow runs on its own from its command, so no composition operator, map, functor or monad law applies."
 			}
 		],
-		"typedWitness": "src/astack/cli/commands/check/proof.ts"
+		"typedWitness": "docs/adr/0021-plan-tools-share-one-adr-reader.md"
 	},
 	"abstraction": {
-		"hides": "The Git reads of the merge base, the ancestry test that ignores replace objects and grafts, and the merge base view of each ratified record.",
+		"hides": "The fence mask of an ADR, the git calls that find the common dir of a plan folder, the tab split of a batch and the one append call of the trail file.",
 		"callersKnow": [
-			"The diff base is the merge base of the ref and HEAD, or the manifest base when no ref is given.",
-			"A manifest base that is not an ancestor of the diff target stops, and the stop names both commits.",
-			"Ratification history stays at the manifest base.",
-			"Each CI run of scripts/check-proof.ts passes a base."
+			"A titled ADR heading with a full stop or a long dash resolves in check-plan and in change proof, and a fenced or untitled heading does not.",
+			"A plan path finds the plan state folder from any folder, and a slug needs a folder of the repo.",
+			"A batch writes all rows or none, and a problem names its line and the nearest phase.",
+			"A boundary runs once and commits first on the next session branch, and a resume that finds that branch continues it.",
+			"A graduated row needs a resolving heading, and its handle never becomes live again."
 		],
-		"deletionTest": "Deleting the base paragraphs leaves the README and the runbooks with the old rule that the manifest base must equal the base ref. Deleting proofBase puts the ancestor rule into check proof and check ci-pins, so the two commands can drift apart.",
+		"deletionTest": "Deleting decisionHeading puts two heading readers back in check-plan and change proof, and they disagree again. Deleting planStateFor puts a cwd lookup back in each plan and session command.",
 		"alternatives": [
 			{
-				"name": "Keep the long opening of the README",
-				"rejectedBecause": "A newcomer cannot read six detailed bullets in 20 seconds, and each detail repeats a later section."
+				"name": "A separate plan PR after each session merge",
+				"rejectedBecause": "It costs one CI run and one review for each session."
 			},
 			{
-				"name": "Copy the full base rule into each doc",
-				"rejectedBecause": "The proof contract is the one home of the rule, so each other doc states the rule in short and links to it."
+				"name": "A --repo flag on the plan commands",
+				"rejectedBecause": "It is a second form for one fact that the plan path already gives."
 			},
 			{
-				"name": "Keep the state counts of the repository proof in the README",
-				"rejectedBecause": "Each new manifest changes the model and its counts, so the README goes stale at the next PR."
+				"name": "A delete of a graduated row",
+				"rejectedBecause": "The base check reads only the base, so a deleted top row frees its number."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "proofBase"
+					"path": "src/astack/adr.ts",
+					"symbol": "decisionHeading"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Graduate"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/candidate.ts",
-					"symbol": "readIntegrationHistory"
+					"path": "src/astack/plan/check.ts",
+					"symbol": "checkAgainstBase"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Graduate"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "authorityMoved"
+					"path": "src/astack/plan/check.ts",
+					"symbol": "graduationProblem"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Graduate"
 			},
 			{
 				"concrete": {
-					"path": "scripts/check-proof.ts",
-					"symbol": "baseRef"
+					"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
+					"symbol": "Resume"
 				},
-				"modelAction": "ValidationPass"
+				"modelAction": "Resume"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/change-proof/admission.ts",
-					"symbol": "admitChangeProof"
+					"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
+					"symbol": "boundary"
 				},
-				"modelAction": "Admit"
+				"modelAction": "Boundary"
+			},
+			{
+				"concrete": {
+					"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
+					"symbol": "Finish"
+				},
+				"modelAction": "Merge"
 			}
 		],
 		"omitted": [
-			"Git itself, its object store and the merge base algorithm are abstracted to one base observation for each run.",
-			"The CI event payload and the remote refs of the checkout are taken as true.",
-			"The earlier authority, landing, evidence and Result law parts of the model stay as they were."
+			"The model takes the push of a branch and the result of git fetch as true observations.",
+			"The trail batch, the nearest phase and the plan state folder have no model state. The tests examine them.",
+			"The skill text tells an agent what to do. Review and the boundary control examine that text, and the model does not show that an agent follows it."
 		]
 	},
 	"model": {
-		"module": "formal/ProofAdmission.tla",
-		"config": "formal/ProofAdmission.cfg",
+		"module": "formal/PlanBoundary.tla",
+		"config": "formal/PlanBoundary.cfg",
 		"dependencies": [],
-		"bounds": [
-			"One base observation for each run from 48 cases: four relations, a ref or none, two diff bases, two history views and an authority move that needs a ref.",
-			"The authority cases, five validation stages and the bounded positive, negative, restored and freshness results of the earlier model.",
-			"Finite Result laws use two values, two errors and all total functions between them."
-		],
-		"fairness": ["WF_vars(Next)"],
 		"invariants": [
 			"TypeOK",
-			"AdmitSafe",
-			"FailureIsTerminal",
-			"StrictDefault",
-			"LandingAuthoritySafe",
-			"ProcessAuthoritySafe",
-			"HistoryBound",
-			"RatifiedAuthority",
-			"BaseAncestry",
-			"ScopeFromMergeBase",
-			"HistoryAtManifest",
-			"MovedAuthorityStops",
-			"ResultLeftIdentity",
-			"ResultRightIdentity",
-			"ResultAssociativity"
+			"OneBoundaryPerMerge",
+			"NoBoundaryAfterLast",
+			"EachMergeCarriesItsBoundary",
+			"RowLeavesWithAuthority",
+			"LastPrDeletesPlan"
 		],
-		"properties": ["EventuallyTerminal"]
+		"properties": [],
+		"bounds": [
+			"Three sessions, two decision rows and four heading forms.",
+			"Each order of the merge, boundary, resume, ADR write and graduate steps."
+		],
+		"fairness": []
 	},
 	"negative": {
-		"file": "formal/ProofAdmission.tla",
-		"action": "ValidationPass",
-		"original": "/\\ (Stages[stage] # \"base\" \\/ BaseRelationAllowed(base))",
-		"replacement": "/\\ TRUE",
-		"defect": "Dropping the base relation guard admits a manifest base that is not an ancestor of the merge base, so the scope check can miss paths of the PR.",
+		"file": "formal/PlanBoundary.tla",
+		"action": "Graduate",
+		"original": "Resolves(heading[r])",
+		"replacement": "TRUE",
+		"defect": "A check that drops the heading test lets a row leave the live rows with an ADR heading that does not resolve.",
 		"expect": {
 			"kind": "invariant",
-			"name": "BaseAncestry"
+			"name": "RowLeavesWithAuthority"
 		}
 	},
 	"limits": [
-		"The finite model takes the Git ancestry, diff and history observations as true. It does not model Git.",
-		"The model does not check the words of the docs. Review and the STE, chart, budget and drift gates examine them.",
-		"The skill, agent, rules, handler and check counts in the README are observations of the tree at this commit.",
+		"The finite model covers three sessions and two rows, and it takes git observations as true.",
+		"The model does not show that the TypeScript code or an agent refines it. The linked controls and review examine that relation.",
+		"The span function of B13 step 4 is not part of this change, because it waits for B09/S1.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }

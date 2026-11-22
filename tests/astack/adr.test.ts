@@ -32,7 +32,7 @@ const ADR = [
 	"",
 ].join("\n");
 
-test("check-plan reads ADR decision headings as change proof reads them", () => {
+test("[control:adr-heading] check-plan reads ADR decision headings as change proof reads them", () => {
 	const root = mkdtempSync(join(tmpdir(), "astack-adr-"));
 	dirs.push(root);
 	mkdirSync(join(root, "docs/adr"), { recursive: true });

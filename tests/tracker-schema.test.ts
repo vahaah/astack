@@ -141,3 +141,31 @@ describe("plan recovery uses the recorded workflow state", () => {
 		);
 	});
 });
+
+describe("a session boundary rides in the next session PR", () => {
+	const planText = (dir: string): string[] =>
+		readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
+			.filter((path) => path.endsWith(".md"))
+			.map((path) => read(join(dir, path)));
+
+	test("[control:boundary-once] a resume continues the next session branch first, and no plan text opens a plan-only PR", () => {
+		const resume =
+			read("marketplace/plugins/astack/skills/plan/references/upkeep.md")
+				.split("## Resume")[1]
+				?.split("## Session boundary")[0] ?? "";
+		const branches = resume.split(/^7\. /m)[1] ?? "";
+		expect(branches.split("\n   - ")[1]).toContain(
+			"a next session branch exists. Continue that branch, with no second boundary.",
+		);
+		const texts = [
+			...planText("marketplace/plugins/astack/skills/plan"),
+			...planText("marketplace/plugins/astack/skills/coding-guide"),
+			read("rules/coding.md"),
+		];
+		expect(
+			texts.flatMap(
+				(text) => text.match(/closing PR|docs commit|plan PR/g) ?? [],
+			),
+		).toEqual([]);
+	});
+});
