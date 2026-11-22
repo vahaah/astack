@@ -11,6 +11,7 @@ This release keeps the proof of a PR valid when main moves, when the proof run g
 - `astack check ci-pins` applies the same ancestor rule to the CI proof records.
 - Each base read and each diff read ignores replace objects and grafts.
 - A move of main that changes the authority of a ratified ADR stops the proof. The stop names the ADR, both commits and the repair.
+- In the CI of this repo, `scripts/check-proof.ts` passes a base on each push and release run too. A branch push whose event payload has no default branch fails.
 - The proof contract names the base of each CI run. The refresh playbook and the modernize skill do not set the manifest base by hand.
 - The `change-proof` gate of the profile template and of the example companion passes `--base origin/<base>`.
 
@@ -21,7 +22,7 @@ This release keeps the proof of a PR valid when main moves, when the proof run g
 
 ### Removed parts
 
-ADR 0013 records the keep rule. A part stays only with measured use or a live dependent. Each part below had 0 use in 30 days.
+ADR 0013 records the keep rule. A part stays only with measured use or a live dependent. Each part below had 0 use in 30 days, or no caller.
 
 - The skills `wait-what`, `wizard`, `blast-radius`, `correct`, `create-verification-skill`, `maintain-verification-skill`, `to-spec`, `to-questionnaire`, `implement`, `implement-spec` and `triage`. Each route that named one points to its successor. The plugin now holds 50 skills.
 - The `researcher` agent. The research skill starts a background general-purpose agent with the same brief.
