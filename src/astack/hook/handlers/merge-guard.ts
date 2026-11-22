@@ -32,6 +32,7 @@ const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
 const AUTO_MERGE_MUTATION = /\benablePullRequestAutoMerge\b/;
 const MERGE_PATH_IN_INPUT = /\bpulls\/\d+\/merge\b/;
 const WRITE_METHOD_IN_INPUT = /\b(?:PUT|POST|PATCH|DELETE)\b/i;
+const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
 const REPO_FLAG = /^(?:-R|--repo)$/;
@@ -282,8 +283,14 @@ function inputStrings(value: unknown): readonly string[] {
 	return value === undefined || value === null ? [] : [String(value)];
 }
 
+function decodedEscapes(text: string): string {
+	return text.replace(JSON_ESCAPE, (escape) =>
+		String(JSON.parse(`"${escape}"`)),
+	);
+}
+
 function holdsApiMerge(input: unknown): boolean {
-	const text = inputStrings(input).join("\n");
+	const text = decodedEscapes(inputStrings(input).join("\n"));
 	return (
 		PR_MERGE_MUTATION.test(text) ||
 		AUTO_MERGE_MUTATION.test(text) ||

@@ -800,6 +800,16 @@ describe("MCP merge tools", () => {
 			},
 		],
 		[
+			"a GraphQL merge with a unicode escape in a raw JSON body",
+			"mcp__http__http_request",
+			true,
+			{
+				method: "POST",
+				url: "https://api.github.com/graphql",
+				body: String.raw`{"query":"mutation { \u006dergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }"}`,
+			},
+		],
+		[
 			"a PUT on the REST merge path",
 			"mcp__forge__call_api",
 			true,

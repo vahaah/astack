@@ -116,6 +116,7 @@ The rule also denies a merge that is not a PR merge, such as a database branch m
 
 The guard also reads each key and each value of the input of an MCP call, because a generic API tool can post a merge.
 It reads the decoded values, not the JSON text, so a tab or a line break before a mutation name does not hide it.
+It also decodes each JSON escape in a value, because the body of a raw request can hold escapes that the forge decodes.
 An input that holds `mergePullRequest` or `enablePullRequestAutoMerge` gets a deny.
 An input with a `pulls/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
 
