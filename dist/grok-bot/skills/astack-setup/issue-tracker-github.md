@@ -3,8 +3,8 @@
 This repo keeps issues and specs in GitHub Issues.
 Use `gh` for tracker operations.
 Run `gh repo set-default --view` before the first `gh` command.
-If it does not print the repo of `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command.
-In each `gh api` path, use that name for `{owner}/{repo}`.
+If it does not print the repo of `origin`, add `--repo <owner>/<name>` of `origin` to each `gh` command except `gh api`.
+`gh api` paths take that name for `{owner}/{repo}`.
 
 ## Conventions
 

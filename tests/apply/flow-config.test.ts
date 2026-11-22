@@ -176,6 +176,10 @@ describe("renderIssueTracker", () => {
 			...(/inside a clone/i.test(doc)
 				? [`the ${name} says that gh finds the repo inside a clone`]
 				: []),
+			...(doc.includes("`gh api") &&
+			!doc.includes("to each `gh` command except `gh api`")
+				? [`the ${name} adds --repo to gh api, which has no --repo flag`]
+				: []),
 			...(/prints nothing/i.test(doc)
 				? [
 						`the ${name} waits for no output, but gh prints a message when no default is set`,
