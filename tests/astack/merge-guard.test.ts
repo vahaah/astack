@@ -723,6 +723,20 @@ describe("MCP merge tools", () => {
 		"mcp__plugin_linear_linear__merge_diff",
 		"mcp__plugin_supabase_supabase__merge_branch",
 	]);
+	const MCP_DENY: Verdict = {
+		kind: "deny",
+		reason:
+			"astack blocked gh pr merge:\n- astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
+	};
+
+	function mcpVerdict(name: string, input: unknown): Verdict {
+		const handler = guard(GREEN);
+		prompt(handler, "merge #12 when green", "mcp");
+		return handler.run(
+			{ kind: "mcp", ...mcpParts(name), input },
+			context(project, "mcp", "PreToolUse"),
+		);
+	}
 
 	test.each([
 		...captured.map((name) => [name, merges.has(name)] as const),
@@ -742,24 +756,49 @@ describe("MCP merge tools", () => {
 	])(
 		"[control:sg-mcp-merge] %s is denied, also after the owner's grant: %p",
 		(name, denied) => {
-			const handler = guard(GREEN);
-			prompt(handler, "merge #12 when green", "mcp");
-			const verdict = handler.run(
-				{
-					kind: "mcp",
-					...mcpParts(name),
-					input: { number: 12, expectedHeadSha: HEAD },
-				},
-				context(project, "mcp", "PreToolUse"),
+			expect(mcpVerdict(name, { number: 12, expectedHeadSha: HEAD })).toEqual(
+				denied ? MCP_DENY : { kind: "allow" },
 			);
-			expect(verdict).toEqual(
-				denied
-					? {
-							kind: "deny",
-							reason:
-								"astack blocked gh pr merge:\n- astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
-						}
-					: { kind: "allow" },
+		},
+	);
+
+	test.each([
+		[
+			"a GraphQL merge",
+			true,
+			{
+				query:
+					'mutation { mergePullRequest(input: {pullRequestId: "x"}) { clientMutationId } }',
+			},
+		],
+		[
+			"a GraphQL auto-merge",
+			true,
+			{
+				query:
+					'mutation { enablePullRequestAutoMerge(input: {pullRequestId: "x"}) { clientMutationId } }',
+			},
+		],
+		[
+			"a PUT on the REST merge path",
+			true,
+			{ method: "PUT", path: "/repos/o/r/pulls/12/merge" },
+		],
+		[
+			"a GET on the REST merge path",
+			false,
+			{ method: "GET", path: "/repos/o/r/pulls/12/merge" },
+		],
+		[
+			"a PUT on another PR path",
+			false,
+			{ method: "PUT", path: "/repos/o/r/pulls/12/requested_reviewers" },
+		],
+	] as const)(
+		"[control:sg-mcp-merge] a generic API tool with %s in its input is denied: %p",
+		(_, denied, input) => {
+			expect(mcpVerdict("mcp__forge__call_api", input)).toEqual(
+				denied ? MCP_DENY : { kind: "allow" },
 			);
 		},
 	);

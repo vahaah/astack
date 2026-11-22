@@ -28,6 +28,10 @@ import {
 } from "../events.ts";
 
 const API_MERGE = /(?:^|\/)pulls\/\d+\/merge$/;
+const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
+const AUTO_MERGE_MUTATION = /\benablePullRequestAutoMerge\b/;
+const MERGE_PATH_IN_INPUT = /\bpulls\/\d+\/merge\b/;
+const WRITE_METHOD_IN_INPUT = /\b(?:PUT|POST|PATCH|DELETE)\b/i;
 const WRAPPER = /(?:^|\/)(env|command)$/;
 const GH = /(?:^|\/)gh$/;
 const REPO_FLAG = /^(?:-R|--repo)$/;
@@ -57,7 +61,7 @@ function apiMethod(values: readonly string[]): string | undefined {
 
 function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
-	if (args.some((value) => /\bmergePullRequest\b/.test(value))) return true;
+	if (args.some((value) => PR_MERGE_MUTATION.test(value))) return true;
 	return (
 		apiMethod(args)?.toUpperCase() === "PUT" &&
 		args.some((value) => API_MERGE.test(value))
@@ -267,8 +271,21 @@ function isMcpMergeTool(tool: string): boolean {
 	);
 }
 
+function holdsApiMerge(input: unknown): boolean {
+	const text = JSON.stringify(input ?? null);
+	return (
+		PR_MERGE_MUTATION.test(text) ||
+		AUTO_MERGE_MUTATION.test(text) ||
+		(MERGE_PATH_IN_INPUT.test(text) && WRITE_METHOD_IN_INPUT.test(text))
+	);
+}
+
+function isMcpMerge(event: EventOf<"mcp">): boolean {
+	return isMcpMergeTool(event.tool) || holdsApiMerge(event.input);
+}
+
 function mcpVerdict(event: EventOf<"mcp">): Verdict {
-	if (!isMcpMergeTool(event.tool)) return ALLOW;
+	if (!isMcpMerge(event)) return ALLOW;
 	return deny(
 		mergeDenial([
 			"astack cannot examine a merge through an MCP tool. Merge a PR with gh pr merge, or ask the owner.",
@@ -283,7 +300,7 @@ function failedVerdict(
 	const merges =
 		(event.kind === "shell" &&
 			shellSteps(event.command, event.cwd).some(examinesMerge)) ||
-		(event.kind === "mcp" && isMcpMergeTool(event.tool));
+		(event.kind === "mcp" && isMcpMerge(event));
 	if (!merges) return undefined;
 	const cause = error instanceof Error ? error.message : String(error);
 	return deny(

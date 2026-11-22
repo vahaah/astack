@@ -78,7 +78,7 @@ This change adds no composition operator, map, functor or monad.
 | `ProfileCovers` | `grantReasons` with `mergeProfileOf` in `src/astack/pr/merge.ts` |
 | `workingAuthority` and `EditProfile` | A write of `.astack/profile.json` in the working tree, which no merge code reads |
 | `frame` source | `opensWithHarnessFrame` in `humanPrompt` in `src/astack/ste/session.ts` |
-| `channel` | `isMcpMergeTool` in `src/astack/hook/handlers/merge-guard.ts` |
+| `channel` | `isMcpMerge` in `src/astack/hook/handlers/merge-guard.ts`, which reads the tool name and the input |
 | `fault` | `failed` of the merge guard, which `judgeEach` in `src/astack/hook/dispatch.ts` calls |
 
 These links describe the abstraction relation.
@@ -114,10 +114,14 @@ So `get_and_merge_pr` and `mark_merged` get a deny, and `show_merged_prs` passes
 A read tool on an exact list, such as `list_merge_requests` and `get_merge_request`, passes.
 The rule also denies a merge that is not a PR merge, such as a database branch merge. Such a merge is an owner gate.
 
+The guard also reads the input of each MCP call as JSON text, because a generic API tool can post a merge.
+An input that holds `mergePullRequest` or `enablePullRequestAutoMerge` gets a deny.
+An input with a `pulls/<n>/merge` path and a write method, such as `PUT`, gets a deny too.
+
 ### D5. An error of the merge guard on a merge gives a deny
 
 A handler can name a failure verdict, and the dispatcher uses it when the handler throws.
-When the merge guard throws, it denies each MCP merge tool and each merge command that its shell parse finds. The deny names the error.
+When the merge guard throws, it denies each MCP merge call and each merge command that its shell parse finds. The deny names the error.
 Each other handler still fails open.
 
 ### D6. The merge guard guards against mistakes
