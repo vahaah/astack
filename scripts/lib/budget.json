@@ -1,5 +1,5 @@
 {
-	"total": 128940,
+	"total": 126571,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -27,7 +27,7 @@
 		"mode": 24222,
 		"modernize": 1013,
 		"no-comments": 492,
-		"plan": 14278,
+		"plan": 14701,
 		"pr-review-hardening": 22790,
 		"principles": 3755,
 		"recall": 765,
@@ -41,12 +41,10 @@
 		"swarm": 515,
 		"takeover": 667,
 		"tdd": 1007,
-		"to-tickets": 919,
 		"types": 4992,
-		"wayfinder": 1872,
 		"why": 6420,
 		"write-docs": 5825,
-		"write-ticket": 4055
+		"write-ticket": 4054
 	},
 	"lines": {
 		"AGENTS.md": 879

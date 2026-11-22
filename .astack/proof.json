@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "duplicate-text-cut",
-	"base": "0c409b8be7212a1ee3dee1c1a91d197c729c1a87",
+	"base": "e3ef246d7e9f94f65a1b19c0d400b133f4dd70ae",
 	"scope": [
 		{
 			"path": "scripts/budget.ts",
