@@ -158,6 +158,27 @@ describe("profileProblems", () => {
 		expect(profileProblems([])).toEqual(["the profile must be a JSON object"]);
 	});
 
+	test.each<[string, unknown, readonly string[]]>([
+		["the lowest floor", { minRung: "R0" }, []],
+		["the highest floor", { minRung: "R4" }, []],
+		[
+			"a floor above R4",
+			{ minRung: "R5" },
+			["proof.minRung must be one of R0, R1, R2, R3, R4"],
+		],
+		[
+			"an unknown key",
+			{ minRung: "R1", models: [] },
+			["proof.models is not a known key"],
+		],
+		["a list", ["R4"], ["proof must be an object"]],
+	])(
+		"[control:rl-floor-profile] the proof section with %s",
+		(_, proof, problems) => {
+			expect(profileProblems({ proof })).toEqual(problems);
+		},
+	);
+
 	test("accepts standing bases with a merge grant per turn", () => {
 		expect(
 			profileProblems({

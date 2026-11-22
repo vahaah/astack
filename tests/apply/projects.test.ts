@@ -343,6 +343,16 @@ describe("merge and STE settings", () => {
 		expect(errors).toContain("ste.technicalNouns is not a string array");
 	});
 
+	test("[control:rl-floor-config] accepts a proof floor from R0 to R4 and names another value", () => {
+		expect(errorsOf({ ...valid, proof: { minRung: "R4" } })).toBe("");
+		expect(errorsOf({ ...valid, proof: { minRung: "R5" } })).toBe(
+			"projects/acme.json:\n  proof.minRung must be one of R0, R1, R2, R3, R4",
+		);
+		expect(
+			errorsOf({ ...valid, proof: { minRung: "R1", ceiling: "R4" } }),
+		).toBe("projects/acme.json:\n  proof.ceiling is not a known key");
+	});
+
 	test("refuses standing bases with a standing merge grant", () => {
 		expect(
 			errorsOf({

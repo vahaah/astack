@@ -3,12 +3,16 @@ import { relative, resolve } from "node:path";
 import {
 	type AdmissionFacts,
 	admitChangeProof,
+	type ChangedPath,
 	checkReferences,
 	type FileRead,
 	type IntegrationHistory,
+	type ModelEvidence,
 	matrixSourcePaths,
 	modelPaths,
+	modelRuns,
 	type ProofBase,
+	planModelFiles,
 	type RepoView,
 	referencedPaths,
 	type Snapshot,
@@ -18,6 +22,7 @@ import {
 	type DiffTarget,
 	mergeBase,
 	proofBase,
+	readCommittedFile,
 	readIntegrationHistory,
 	readRepoFile,
 	snapshot,
@@ -30,6 +35,16 @@ import {
 	STAGE_SECTIONS,
 	type Stage,
 } from "../../../change-proof/contract.ts";
+import { parseRegistry } from "../../../change-proof/registry.ts";
+import {
+	deriveLadder,
+	type Ladder,
+	type LadderRun,
+	type ModelRegistry,
+	modelFiles,
+	REGISTRY_PATH,
+	type Rung,
+} from "../../../change-proof/rung.ts";
 import {
 	type Checker,
 	DEADLINE_CAP_MS,
@@ -40,7 +55,7 @@ import {
 	runModel,
 	TLC_PIN,
 } from "../../../change-proof/runner.ts";
-import type { ModelFile } from "../../../change-proof/tla.ts";
+import type { ModelFile, ModelPlan } from "../../../change-proof/tla.ts";
 import {
 	type Counts,
 	judgeNegative,
@@ -50,6 +65,7 @@ import {
 	type Violation,
 } from "../../../change-proof/tlc.ts";
 import { repoRoot } from "../../../git.ts";
+import { PROFILE_PATH, proofFloor } from "../../../profile.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
@@ -88,12 +104,15 @@ function options(args: readonly string[]): Result<Options, string> {
 
 const LINE_BREAKING = /[\p{Cc}\u2028\u2029]/gu;
 
-function stop(io: Io, rejection: Rejection): number {
-	const message = rejection.message.replace(
+function oneLine(text: string): string {
+	return text.replace(
 		LINE_BREAKING,
 		(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`,
 	);
-	io.out(`stop: proof ${rejection.stage}: ${message}\n`);
+}
+
+function stop(io: Io, rejection: Rejection): number {
+	io.out(`stop: proof ${rejection.stage}: ${oneLine(rejection.message)}\n`);
 	io.err(
 		`rule: read the section "${STAGE_SECTIONS[rejection.stage]}" of the file that "astack skill-path astack:pr-review-hardening references/proof-contract.md" prints\n`,
 	);
@@ -258,6 +277,154 @@ async function stopRuns(
 	return stopAt(io, stage, [...lines].join("; "));
 }
 
+function registryAt(
+	read: FileRead,
+	where: string,
+): Result<ModelRegistry | undefined, string> {
+	if (read.kind === "problem")
+		return read.problem === "missing"
+			? ok(undefined)
+			: err(`${REGISTRY_PATH} ${where} cannot be read`);
+	const parsed = parseRegistry(read.text);
+	return parsed.ok ? parsed : err(`${REGISTRY_PATH} ${where}: ${parsed.error}`);
+}
+
+function floorAt(read: FileRead, where: string): Result<Rung, string> {
+	if (read.kind === "problem")
+		return read.problem === "missing"
+			? ok("R0")
+			: err(`${PROFILE_PATH} ${where} cannot be read`);
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(read.text);
+	} catch {
+		return err(`${PROFILE_PATH} ${where} is not valid JSON`);
+	}
+	const floor = proofFloor(parsed);
+	return floor.ok ? floor : err(`${PROFILE_PATH} ${where}: ${floor.error}`);
+}
+
+const AT_BASE = "at the diff base";
+const IN_TREE = "in the tree";
+
+const LADDER_FILES = [REGISTRY_PATH, PROFILE_PATH] as const;
+type LadderReads = Readonly<Record<(typeof LADDER_FILES)[number], FileRead>>;
+
+function ladderReads(root: string): LadderReads {
+	return {
+		[REGISTRY_PATH]: readRepoFile(root, REGISTRY_PATH),
+		[PROFILE_PATH]: readRepoFile(root, PROFILE_PATH),
+	};
+}
+
+function sameRead(read: FileRead, again: FileRead): boolean {
+	if (read.kind === "text")
+		return again.kind === "text" && read.text === again.text;
+	return again.kind === "problem" && read.problem === again.problem;
+}
+
+function readLadder(
+	root: string,
+	diffBase: string,
+	changed: readonly ChangedPath[],
+	proof: ChangeProof,
+	reads: LadderReads,
+): Result<Ladder, string> {
+	const tree = registryAt(reads[REGISTRY_PATH], IN_TREE);
+	if (!tree.ok) return tree;
+	const base = registryAt(
+		readCommittedFile(root, diffBase, REGISTRY_PATH),
+		AT_BASE,
+	);
+	if (!base.ok) return base;
+	if (tree.value === undefined && base.value === undefined)
+		return ok({ kind: "legacy" });
+	const baseFloor = floorAt(
+		readCommittedFile(root, diffBase, PROFILE_PATH),
+		AT_BASE,
+	);
+	if (!baseFloor.ok) return baseFloor;
+	const treeFloor = floorAt(reads[PROFILE_PATH], IN_TREE);
+	if (!treeFloor.ok) return treeFloor;
+	return deriveLadder({
+		changed,
+		registry: { base: base.value, tree: tree.value },
+		floor: { base: baseFloor.value, tree: treeFloor.value },
+		manifest: proof,
+		inTree: (path) => readRepoFile(root, path).kind === "text",
+	});
+}
+
+function rungLine(ladder: Extract<Ladder, { kind: "ladder" }>): string {
+	const { rung, cause } = ladder;
+	const by =
+		cause.kind === "path"
+			? `the changed path ${oneLine(cause.path)}`
+			: `proof.minRung ${rung} of ${PROFILE_PATH} ${cause.side === "base" ? AT_BASE : IN_TREE}`;
+	return `rung: ${rung} by ${by}\n`;
+}
+
+function planRun(root: string, run: LadderRun): Result<ModelPlan, string> {
+	const files = new Map(
+		modelFiles(run.model).map((path) => [path, readRepoFile(root, path)]),
+	);
+	const plan = planModelFiles(run.model, run.negative, files);
+	return plan.ok ? plan : err(`model ${run.name}: ${plan.error}`);
+}
+
+async function runTriple(
+	io: Io,
+	checker: Checker,
+	plan: ModelPlan,
+	run: LadderRun,
+	timeoutMs: number,
+): Promise<Result<ModelEvidence, number>> {
+	const { properties } = plan.config;
+	const cancel = new AbortController();
+	const start = (label: RunLabel, files: readonly ModelFile[]): StartedRun => ({
+		label,
+		run: runModel(
+			io.env,
+			checker,
+			files,
+			plan.moduleFile,
+			plan.configFile,
+			timeoutMs,
+			cancel.signal,
+		),
+	});
+	const positiveRun = start("positive", plan.positive);
+	const negativeRun = start("negative", plan.negative);
+	const restoredRun = start("restored", plan.positive);
+	const runs = [positiveRun, negativeRun, restoredRun];
+	const halt = async (stage: Stage, message: string) =>
+		err(await stopRuns(io, cancel, runs, stage, message));
+
+	const positiveEnd = await ended(positiveRun);
+	const positive = positiveEnd.ok
+		? judgePositive("positive", positiveEnd.value, properties)
+		: positiveEnd;
+	if (!positive.ok) return halt("model", positive.error);
+	io.out(countsLine("positive", positive.value));
+
+	const negativeEnd = await ended(negativeRun);
+	const negative: Result<Violation, string> = negativeEnd.ok
+		? judgeNegative(negativeEnd.value, run.negative.expect)
+		: negativeEnd;
+	if (!negative.ok) return halt("countermodel", negative.error);
+	io.out(
+		`negative: ${run.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states: ${negative.value.trace}\n`,
+	);
+
+	const restoredEnd = await ended(restoredRun);
+	const restored = restoredEnd.ok
+		? judgePositive("restored", restoredEnd.value, properties)
+		: restoredEnd;
+	if (!restored.ok) return halt("model", restored.error);
+	io.out(countsLine("restored", restored.value));
+	return ok({ positive, negative, restored });
+}
+
 async function prove(
 	io: Io,
 	root: string,
@@ -269,12 +436,22 @@ async function prove(
 	if (!base.ok) return stopAt(io, "stale", base.error);
 	const changed = changedPaths(root, base.value.diff);
 	if (!changed.ok) return stopAt(io, "controls", changed.error);
+	const reads = ladderReads(root);
+	const ladder = readLadder(root, base.value.diff, changed.value, proof, reads);
+	const runs = ladder.ok ? modelRuns(proof, ladder.value) : [];
 	const matrix = readRepoFile(root, proof.domain.controls.matrix);
 	const inputs = [
 		manifest.path,
 		...referencedPaths(proof),
 		...modelPaths(proof),
 		...(matrix.kind === "text" ? matrixSourcePaths(matrix.text) : []),
+		...(ladder.ok && ladder.value.kind === "legacy"
+			? []
+			: [
+					REGISTRY_PATH,
+					PROFILE_PATH,
+					...runs.flatMap((run) => modelFiles(run.model)),
+				]),
 	];
 	const histories = ratificationHistories(root, proof, base.value);
 	const before = snapshot(
@@ -286,62 +463,42 @@ async function prove(
 	);
 	if (!before.ok) return stopAt(io, "stale", before.error);
 	const view = repoView(root, proof, base.value, changed.value, histories);
-	const plan = checkReferences(proof, view);
-	if (!plan.ok) return stop(io, plan.error);
+	const references = checkReferences(proof, view);
+	if (!references.ok) return stop(io, references.error);
+	if (!ladder.ok) return stopAt(io, "rung", ladder.error);
+	if (ladder.value.kind === "ladder") io.out(rungLine(ladder.value));
+	const [manifestRun, ...selectedRuns] = runs;
+	const planned: { readonly run: LadderRun; readonly plan: ModelPlan }[] =
+		manifestRun === undefined
+			? []
+			: [{ run: manifestRun, plan: references.value }];
+	for (const run of selectedRuns) {
+		const plan = planRun(root, run);
+		if (!plan.ok) return stopAt(io, "model", plan.error);
+		planned.push({ run, plan: plan.value });
+	}
 	const timeoutMs = deadlineMs(io.env);
 	if (!timeoutMs.ok) return usageError(io, `${NAME}: ${timeoutMs.error}`);
-	const jar = await pinnedJar(io.env, root);
-	if (!jar.ok) return stopAt(io, "model", jar.error);
-	const java = javaRuntime(io.env);
-	if (!java.ok) return stopAt(io, "model", java.error);
-	const checker: Checker = {
-		jar: jar.value,
-		java: java.value.java,
-		javaVersion: java.value.version,
-	};
-	const { properties } = plan.value.config;
-
-	const cancel = new AbortController();
-	const start = (label: RunLabel, files: readonly ModelFile[]): StartedRun => ({
-		label,
-		run: runModel(
-			io.env,
-			checker,
-			files,
-			plan.value.moduleFile,
-			plan.value.configFile,
-			timeoutMs.value,
-			cancel.signal,
-		),
-	});
-	const positiveRun = start("positive", plan.value.positive);
-	const negativeRun = start("negative", plan.value.negative);
-	const restoredRun = start("restored", plan.value.positive);
-	const runs = [positiveRun, negativeRun, restoredRun];
-
-	const positiveEnd = await ended(positiveRun);
-	const positive = positiveEnd.ok
-		? judgePositive("positive", positiveEnd.value, properties)
-		: positiveEnd;
-	if (!positive.ok) return stopRuns(io, cancel, runs, "model", positive.error);
-	io.out(countsLine("positive", positive.value));
-
-	const negativeEnd = await ended(negativeRun);
-	const negative: Result<Violation, string> = negativeEnd.ok
-		? judgeNegative(negativeEnd.value, proof.negative.expect)
-		: negativeEnd;
-	if (!negative.ok)
-		return stopRuns(io, cancel, runs, "countermodel", negative.error);
-	io.out(
-		`negative: ${proof.negative.action} violates ${negative.value.name} with a counterexample of ${negative.value.states} states: ${negative.value.trace}\n`,
-	);
-
-	const restoredEnd = await ended(restoredRun);
-	const restored = restoredEnd.ok
-		? judgePositive("restored", restoredEnd.value, properties)
-		: restoredEnd;
-	if (!restored.ok) return stopRuns(io, cancel, runs, "model", restored.error);
-	io.out(countsLine("restored", restored.value));
+	let checker: Checker | undefined;
+	const evidence: ModelEvidence[] = [];
+	if (planned.length > 0) {
+		const jar = await pinnedJar(io.env, root);
+		if (!jar.ok) return stopAt(io, "model", jar.error);
+		const java = javaRuntime(io.env);
+		if (!java.ok) return stopAt(io, "model", java.error);
+		checker = {
+			jar: jar.value,
+			java: java.value.java,
+			javaVersion: java.value.version,
+		};
+		for (const { run, plan } of planned) {
+			if (ladder.value.kind === "ladder")
+				io.out(`model: ${oneLine(run.name)} ${oneLine(run.model.module)}\n`);
+			const triple = await runTriple(io, checker, plan, run, timeoutMs.value);
+			if (!triple.ok) return triple.error;
+			evidence.push(triple.value);
+		}
+	}
 
 	const changedAfter = changedPaths(root, base.value.diff);
 	if (!changedAfter.ok) return stopAt(io, "stale", changedAfter.error);
@@ -356,17 +513,32 @@ async function prove(
 	const currentManifest = readRepoFile(root, manifest.path);
 	if (currentManifest.kind !== "text" || currentManifest.text !== manifest.text)
 		return stopAt(io, "stale", "the manifest changed during the proof");
+	const current = ladderReads(root);
+	const moved = LADDER_FILES.filter(
+		(path) => !sameRead(reads[path], current[path]),
+	);
+	if (moved.length > 0)
+		return stopAt(
+			io,
+			"stale",
+			`the candidate inputs changed during the proof: ${moved.join(", ")}`,
+		);
 	const facts: AdmissionFacts = {
 		view,
+		ladder,
 		before: before.value,
 		after: after.value,
-		evidence: { positive, negative, restored },
+		evidence,
 	};
 	const admitted = admitChangeProof(proof, facts);
 	if (!admitted.ok) return stop(io, admitted.error);
 	const proved = admitted.value;
+	const tool =
+		checker === undefined
+			? ""
+			: `, tla2tools ${TLC_PIN.version} sha256:${TLC_PIN.sha256} on Java ${checker.javaVersion}`;
 	io.out(
-		`receipt: change ${proved.change} base ${proved.base} diff base ${proved.diffBase} head ${proved.head} digest ${proved.digest} over ${proved.files} files, tla2tools ${TLC_PIN.version} sha256:${TLC_PIN.sha256} on Java ${checker.javaVersion}\n`,
+		`receipt: change ${proved.change} base ${proved.base} diff base ${proved.diffBase} head ${proved.head} digest ${proved.digest} over ${proved.files} files${tool}\n`,
 	);
 	io.out(`ok: proof ${proved.change} admitted at ${proved.head}\n`);
 	return 0;
@@ -399,7 +571,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 
 export const command: Command<Promise<number>> = {
 	name: "proof",
-	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it starts the pinned tla2tools.jar ${TLC_PIN.version} three times together in owned temporary copies: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
+	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it reads formal/models.json and the proof.minRung floor of ${PROFILE_PATH} at the diff base and in the tree, and prints the proof rung and its cause. Below R4 it starts no Java process. At R4 it runs the manifest model first and then each other selected model, one after another. For each model it starts the pinned tla2tools.jar ${TLC_PIN.version} in three owned temporary copies at once: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live and starts no later model. A repo with no registry runs only the manifest model and prints no rung line. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
 	usage: "check proof [manifest.json] [--base <ref>] [--summary]",
 	run,
 };

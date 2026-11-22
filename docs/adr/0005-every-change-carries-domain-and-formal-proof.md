@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-03
 Ticket: none
 Supersedes: none
-Amended by: 0008 D3 for checked integrated proposals, and 0012 for an older proof base
+Amended by: 0008 D3 for integrated proposals, 0012 for an older proof base, and 0015 for rungs
 
 ## Context
 
@@ -24,6 +24,8 @@ Code, configuration, docs, hotfixes, review fixes, and migration changes require
 Read-only questions have no delivery change to prove.
 Missing tools or evidence block delivery.
 No profile flag or minimal hook preset disables this requirement.
+
+> Amended 2026-11-22: D1 said "Code, configuration, docs, hotfixes, review fixes, and migration changes require the same gate before delivery." Each change still runs `astack check proof`. [ADR 0015](0015-change-proof-follows-risk.md) D1 and D4 give each change a proof rung, and only a change at R4 runs TLC. A docs-only change admits at R0 with the reference, scope and control checks.
 
 ### D2. Domain ownership defines the proof contract
 
@@ -47,6 +49,8 @@ An unrelated example and a stored receipt do not satisfy this duty.
 Model checking does not establish implementation correspondence.
 Existing tests, static checks, and removal controls remain required.
 Editorial docs need an explicit preservation relation for their selected contract data.
+
+> Amended 2026-11-22: D3 said "The checker verifies a pinned TLC jar and runs current model inputs in owned temporary copies." That duty now applies at R4. [ADR 0015](0015-change-proof-follows-risk.md) D3 and D5 run one triple for each selected model, the manifest model first. Below R4 the checker starts no Java process and needs no jar.
 
 #### Formal claim
 

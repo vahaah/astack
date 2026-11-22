@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { PUBLIC_REPO } from "../../scripts/dist/build.ts";
 import {
 	type AdmissionFacts,
+	type Admitted,
 	admitChangeProof,
 	type FileRead,
 	type ModelEvidence,
@@ -138,9 +139,29 @@ function changedEntries(count: number): Snapshot {
 	return { ...SNAPSHOT, digest: `sha256:${"d".repeat(64)}`, entries };
 }
 
+const ADMITTED: Admitted = {
+	change: "gate-admission",
+	base: BASE,
+	diffBase: DIFF_BASE,
+	head: SNAPSHOT.head,
+	digest: SNAPSHOT.digest,
+	files: 13,
+	rung: undefined,
+	models: [
+		{
+			name: "Gate",
+			positive: COUNTS,
+			negative: VIOLATION,
+			action: "Admit",
+			restored: COUNTS,
+		},
+	],
+};
+
 function facts(
 	after: Snapshot,
-	evidence: ModelEvidence = EVIDENCE,
+	evidence: readonly ModelEvidence[] = [EVIDENCE],
+	ladder: AdmissionFacts["ladder"] = ok({ kind: "legacy" }),
 ): AdmissionFacts {
 	return {
 		view: {
@@ -149,6 +170,7 @@ function facts(
 			modelFiles: VIEW_FILES,
 			changed: CHANGED,
 		},
+		ladder,
 		before: SNAPSHOT,
 		after,
 		evidence,
@@ -179,20 +201,7 @@ describe("ADR format admission", () => {
 					"parseGate >=> admitGate preserves rejection.",
 					"```text\nparseGate >=> admitGate preserves rejection.\n```",
 				);
-			expect(admitAdr(native)).toEqual(
-				ok({
-					change: "gate-admission",
-					base: BASE,
-					diffBase: DIFF_BASE,
-					head: SNAPSHOT.head,
-					digest: SNAPSHOT.digest,
-					files: 13,
-					positive: COUNTS,
-					negative: VIOLATION,
-					action: "Admit",
-					restored: COUNTS,
-				}),
-			);
+			expect(admitAdr(native)).toEqual(ok(ADMITTED));
 		},
 	);
 
@@ -243,18 +252,25 @@ describe("ADR format admission", () => {
 describe("admitChangeProof", () => {
 	test("admits fresh evidence with unchanged inputs", () => {
 		expect(admitChangeProof(validChangeProof(), facts(SNAPSHOT))).toEqual(
-			ok({
-				change: "gate-admission",
-				base: BASE,
-				diffBase: DIFF_BASE,
-				head: SNAPSHOT.head,
-				digest: SNAPSHOT.digest,
-				files: 13,
-				positive: COUNTS,
-				negative: VIOLATION,
-				action: "Admit",
-				restored: COUNTS,
-			}),
+			ok(ADMITTED),
+		);
+	});
+
+	test("[control:rl-schema] a scope row may omit modelRefs, and a modelRefs name that no model defines still admits", () => {
+		const proof = parsed((p) => {
+			p.scope[0] = {
+				path: ".astack/**",
+				obligation: "P1",
+				modelRefs: ["Gone"],
+			};
+		});
+		if (!proof.ok) throw new Error(proof.error.message);
+		expect(proof.value.scope[1]).toEqual({
+			path: "CONTEXT.md",
+			obligation: "P1",
+		});
+		expect(admitChangeProof(proof.value, facts(SNAPSHOT))).toEqual(
+			ok(ADMITTED),
 		);
 	});
 
@@ -313,7 +329,7 @@ describe("admitChangeProof", () => {
 	test("[control:proof-restored-run] rejects a restored run whose counts differ from the positive run", () => {
 		const evidence = { ...EVIDENCE, restored: ok({ ...COUNTS, distinct: 5 }) };
 		expect(
-			admitChangeProof(validChangeProof(), facts(SNAPSHOT, evidence)),
+			admitChangeProof(validChangeProof(), facts(SNAPSHOT, [evidence])),
 		).toEqual({
 			ok: false,
 			error: {
@@ -322,6 +338,91 @@ describe("admitChangeProof", () => {
 					"the restored run found other state counts than the positive run",
 			},
 		});
+	});
+});
+
+describe("rung admission", () => {
+	const proof = validChangeProof();
+	const gate = { name: "Gate", model: proof.model, negative: proof.negative };
+	const lock = {
+		name: "Lock",
+		model: { ...proof.model, module: "formal/Lock.tla" },
+		negative: { ...proof.negative, action: "Close" },
+	};
+	const twoModels = ok({
+		kind: "ladder" as const,
+		rung: "R4" as const,
+		cause: { kind: "path" as const, path: "src/lock.ts" },
+		runs: [gate, lock],
+	});
+
+	test("[control:rl-stage-order] a domain error stops before a rung stop, and a rung stop comes before the model evidence", () => {
+		const original = facts(SNAPSHOT, [], { ok: false, error: "lost" });
+		const files = new Map(original.view.files);
+		files.set("CONTEXT.md", { kind: "text", text: "# Other\n" });
+		expect([
+			admitChangeProof(proof, {
+				...original,
+				view: { ...original.view, files },
+			}),
+			admitChangeProof(proof, original),
+		]).toEqual([
+			{
+				ok: false,
+				error: {
+					stage: "domain",
+					message: 'CONTEXT.md has no heading for the context "Gate admission"',
+				},
+			},
+			{ ok: false, error: { stage: "rung", message: "lost" } },
+		]);
+	});
+
+	test("[control:rl-admit-r4] at R4 each selected model needs a full triple, and a failed restored run of the second model stops", () => {
+		const failed = {
+			...EVIDENCE,
+			restored: { ok: false as const, error: "the restored run exited 12" },
+		};
+		expect([
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE, failed], twoModels)),
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE], twoModels)),
+			admitChangeProof(proof, facts(SNAPSHOT, [EVIDENCE, EVIDENCE], twoModels)),
+		]).toEqual([
+			{
+				ok: false,
+				error: { stage: "model", message: "the restored run exited 12" },
+			},
+			{
+				ok: false,
+				error: { stage: "model", message: "model Lock has no triple" },
+			},
+			ok({
+				...ADMITTED,
+				rung: "R4",
+				models: [
+					...ADMITTED.models,
+					{
+						name: "Lock",
+						positive: COUNTS,
+						negative: VIOLATION,
+						action: "Close",
+						restored: COUNTS,
+					},
+				],
+			}),
+		]);
+	});
+
+	test("[control:rl-tlc-only-r4] below R4 the rung admits with no triple", () => {
+		const ladder = ok({
+			kind: "ladder" as const,
+			rung: "R0" as const,
+			cause: { kind: "path" as const, path: "docs/a.md" },
+			runs: [],
+		});
+		expect(admitChangeProof(proof, facts(SNAPSHOT, [], ladder))).toEqual(
+			ok({ ...ADMITTED, rung: "R0", models: [] }),
+		);
 	});
 });
 

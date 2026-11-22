@@ -160,7 +160,8 @@ The hardening iteration cap remains binding.
 `check spec-drift` reads criterion and control inventories independently from explicit source files.
 It checks links and exemptions without claiming test execution or semantic coverage.
 [The review checks runbook](runbooks/review-checks.md) defines their use and limits.
-[ChangeProof](adr/0005-every-change-carries-domain-and-formal-proof.md) requires current TLA+ evidence for every change workflow.
+[ChangeProof](adr/0005-every-change-carries-domain-and-formal-proof.md) requires a contract and a proof rung for every change workflow.
+The registry `formal/models.json` selects the models of each changed path, and only the rung R4 runs TLC.
 [ADR 0012](adr/0012-change-proof-accepts-an-older-base.md) lets a PR proof keep an older manifest base.
 With `--base <ref>`, the diff starts at the merge base, and the manifest base must be an ancestor of it.
 It links DDD contracts, internal category notation, effective ADRs, formal models, and implementation controls.

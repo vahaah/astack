@@ -520,6 +520,17 @@ describe("renderAstackProfile", () => {
 		});
 	});
 
+	test("[control:rl-floor-render] writes the proof floor of the project config, and profile.ts accepts it", () => {
+		const content = JSON.parse(
+			renderAstackProfile({ ...linear, proof: { minRung: "R4" } }).content,
+		);
+		expect({
+			proof: content.proof,
+			problems: profileProblems(content),
+			plain: "proof" in JSON.parse(renderAstackProfile(linear).content),
+		}).toEqual({ proof: { minRung: "R4" }, problems: [], plain: false });
+	});
+
 	test("writes the header field globs of the STE settings, and profile.ts accepts them", () => {
 		const content = JSON.parse(
 			renderAstackProfile({

@@ -9,6 +9,7 @@
 		"docs/reference/doctor.md",
 		"docs/reference/finding-telemetry.md",
 		"docs/reference/test-fixtures.md",
+		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md"
 	],
 	"tests": [
@@ -56,6 +57,12 @@
 		"tests/dist/render.test.ts",
 		"tests/git-template.test.ts",
 		"tests/check-companion.test.ts",
+		"tests/astack/proof-ladder.test.ts",
+		"tests/astack/model-registry.test.ts",
+		"tests/formal-registry.test.ts",
+		"tests/astack/profile.test.ts",
+		"tests/apply/projects.test.ts",
+		"tests/apply/render.test.ts",
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
 		"tests/old-names.test.ts"
@@ -191,7 +198,8 @@
 				"proof-stop-heading",
 				"proof-example-parses",
 				"proof-example-keys",
-				"proof-carrier-forms"
+				"proof-carrier-forms",
+				"proof-model-sections"
 			]
 		},
 		{
@@ -477,7 +485,7 @@
 		},
 		{
 			"criterion": "OWN-ZERO",
-			"controls": ["own-zero"]
+			"controls": ["own-zero", "ste-own-formal"]
 		},
 		{
 			"criterion": "UNIT-ONE",
@@ -540,6 +548,88 @@
 		{
 			"criterion": "FX-REAL-SCAN",
 			"controls": ["fx-real-scan"]
+		},
+		{
+			"criterion": "RL-R0",
+			"controls": ["rl-r0", "rl-tlc-only-r4"]
+		},
+		{
+			"criterion": "RL-FLOOR",
+			"controls": [
+				"rl-floor",
+				"rl-floor-profile",
+				"rl-floor-config",
+				"rl-floor-render"
+			]
+		},
+		{
+			"criterion": "RL-SELECT",
+			"controls": ["rl-select", "rl-registry-diff", "rl-hidden-registry"]
+		},
+		{
+			"criterion": "RL-COVERS",
+			"controls": ["rl-covers-guard", "rl-covers"]
+		},
+		{
+			"criterion": "RL-FAIL-CLOSED",
+			"controls": ["rl-fail-closed", "rl-fail-closed-new"]
+		},
+		{
+			"criterion": "RL-REGISTRY-GONE",
+			"controls": ["rl-registry-gone"]
+		},
+		{
+			"criterion": "RL-STAGE-ORDER",
+			"controls": ["rl-stage-order", "rl-stage-order-cli"]
+		},
+		{
+			"criterion": "RL-ONE-RUN",
+			"controls": ["rl-one-run"]
+		},
+		{
+			"criterion": "RL-STOP-ORDER",
+			"controls": ["rl-stop-order"]
+		},
+		{
+			"criterion": "RL-ADMIT-R4",
+			"controls": ["rl-admit-r4"]
+		},
+		{
+			"criterion": "RL-STALE",
+			"controls": ["rl-stale", "rl-ladder-window"]
+		},
+		{
+			"criterion": "RL-SCHEMA",
+			"controls": ["rl-schema"]
+		},
+		{
+			"criterion": "RL-RUNG",
+			"controls": ["rl-rung", "rl-deleted-path"]
+		},
+		{
+			"criterion": "RL-REGISTRY",
+			"controls": [
+				"rl-registry",
+				"rl-registry-stops",
+				"rl-registry-json",
+				"rl-registry-line",
+				"rl-registry-negatives",
+				"rl-records"
+			]
+		},
+		{
+			"criterion": "RL-UNMODELLED",
+			"controls": [
+				"rl-fail-closed-tree",
+				"rl-unmodelled-control",
+				"rl-stale-glob",
+				"hook-registry",
+				"hook-fail-open"
+			]
+		},
+		{
+			"criterion": "RL-LEGACY",
+			"controls": ["rl-legacy"]
 		},
 		{
 			"criterion": "WP-ONE-PR",
