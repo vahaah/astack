@@ -67,8 +67,10 @@ The 10 defects are review `C1a`, `C3`, `C2`, `E2` with `E3`, `J2`, `A1`, `A5`, `
 | D7 | decision | `astack orch` and its store go away. The Orchestrate playbook keeps supervision rules over the plan, `astack board` and the tracker. A catch-up route lists each item that waits on the owner | Keep orch and fix its PR lookup. No change | two-way | user R1 | plan |
 | D8 | decision | The multi-phase-plan playbook goes away, opening-a-pr folds into create-pr, the long AGENTS.md bullet moves to a runbook, and size caps only go down. Model routing and sharpen stay | Caps only. Cut to the upstream size. No change | two-way | user R1 | plan |
 | D9 | decision | The bundled CLI gets `astack update`, dry run by default, with backups. It prints the Codex re-trust step and never writes trust | Extend `bun run apply --global`. Keep the README steps | two-way | user R1 | plan |
-| D10 | decision | M1 holds the authority fix, the proof base, doctor trust and the shell normaliser, and B02 merges first, because each PR pays a stale proof stop until B02 lands | The review order, with the proof base as the fifth PR | two-way | default | plan |
-| D11 | decision | B11 starts after one week of B09 telemetry, because the ledger records no exact-rule denies today | Soften the hooks now from the ledger counts | two-way | default | plan |
+| D10 | decision | M1 holds the authority fix, the proof base, doctor trust and the shell normaliser, and B02 merges first, because each PR pays a stale proof stop until B02 lands | The review order, with the proof base as the fifth PR | two-way | user R2 | plan |
+| D11 | decision | B11 starts after one week of B09 telemetry, because the ledger records no exact-rule denies today | Soften the hooks now from the ledger counts | two-way | user R2 | plan |
+| D12 | decision | The owner files the host request for `source` set to `user` on each prompt that a person types. B04 owns the astack side | astack infers the source from the prompt text alone | two-way | user R2 | plan |
+| D13 | decision | Branch protection is the control when a session pushes a profile edit to the base branch. B03 adds a doctor note for an unprotected base | A guard that denies such a push, which needs a parser for each remote form | two-way | user R2 | plan |
 
 ## Milestones
 
@@ -155,6 +157,4 @@ Blocks.
 
 ## Unresolved questions
 
-1. Ship M1 as the authority fix, the proof base, doctor trust and the shell normaliser, before the TLC diagnostics? Recommended. Yes, because each PR pays a stale proof stop until B02 lands, and the guard bypasses leak the owner gates (principle sequence-verifiable-units). Rejected. The review order, which puts the proof base fifth and costs four more re-proofs. Settles. D10.
-2. Will you file the host request that sends `source` set to `user` on each prompt that a person types? Recommended. Yes, you file it, because astack cannot set the host payload and D5 rests on it (principle fix-root-causes). Rejected. An astack attended override, which D5 rejects. Binds. B04. Decide by. M1.
-3. Start B11 only after one week of B09 telemetry? Recommended. Yes, because the ledger records no exact-rule denies today, so its counts are too low (principle explain-the-number). Rejected. Soften now from the ledger counts. Settles. D11. Binds. B11. Decide by. M3.
+None.
