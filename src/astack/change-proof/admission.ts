@@ -1,4 +1,11 @@
 import { adrProse, decisionSpan } from "../adr.ts";
+import type { DomainBlock } from "../domain/notation.ts";
+import {
+	type ContextsCard,
+	domainFindings,
+	type FilesCell,
+} from "../domain/rules.ts";
+import type { WitnessStop, WitnessVerdict } from "../domain/witness-run.ts";
 import { anyGlob, globMatches } from "../glob.ts";
 import { all, andThen, err, map, ok, type Result } from "../result.ts";
 import { checkDrift, parseMatrix, type Source } from "../spec-drift.ts";
@@ -17,8 +24,10 @@ import { compareLandedAuthority } from "./governing-authority.ts";
 import {
 	type Ladder,
 	type LadderRun,
+	type ModelRegistry,
 	modelFiles,
 	moduleName,
+	REGISTRY_PATH,
 	type Rung,
 } from "./rung.ts";
 import { type ModelPlan, planModel } from "./tla.ts";
@@ -37,6 +46,31 @@ export type FileRead =
 
 export type ChangedPath = { readonly path: string; readonly present: boolean };
 
+export type PlanRecord = {
+	readonly block: DomainBlock;
+	readonly cells: readonly FilesCell[];
+	readonly card: ContextsCard;
+};
+
+export type PlanEvidence = {
+	readonly record: Result<PlanRecord, Rejection>;
+	readonly registry: ModelRegistry | undefined;
+	readonly witness: Result<WitnessVerdict, WitnessStop> | undefined;
+};
+
+export function compositionNames(
+	proof: ChangeProof,
+	plan: PlanEvidence | undefined,
+): Result<readonly string[], string> {
+	const { composition } = proof;
+	if (composition.kind === "category")
+		return ok(composition.category.arrows.map((arrow) => arrow.link.symbol));
+	if (plan === undefined) return err("the plan record was not read");
+	return plan.record.ok
+		? ok(plan.record.value.block.steps.map((step) => step.name))
+		: err(plan.record.error.message);
+}
+
 export type ProofBase = {
 	readonly manifest: string;
 	readonly diff: string;
@@ -47,6 +81,7 @@ export type RepoView = {
 	readonly files: ReadonlyMap<string, FileRead>;
 	readonly modelFiles: ReadonlyMap<string, FileRead>;
 	readonly changed: readonly ChangedPath[];
+	readonly plan?: PlanEvidence;
 	readonly ratifications?: ReadonlyMap<
 		string,
 		Result<IntegrationHistory, string>
@@ -112,19 +147,28 @@ const PROBLEM_TEXT: Readonly<Record<FileProblem, string>> = {
 	unreadable: "cannot be read",
 };
 
+export function compositionPaths(proof: ChangeProof): readonly string[] {
+	const { composition } = proof;
+	if (composition.kind === "plan") return [composition.plan];
+	const { category } = composition;
+	return [
+		category.typedWitness,
+		...category.objects.map((object) => object.link.path),
+		...category.arrows.map((arrow) => arrow.link.path),
+	];
+}
+
 export function referencedPaths(proof: ChangeProof): readonly string[] {
-	const { domain, category, abstraction } = proof;
+	const { domain, abstraction } = proof;
 	const links: readonly FileLink[] = [
 		domain.aggregate,
-		...category.objects.map((object) => object.link),
-		...category.arrows.map((arrow) => arrow.link),
 		...abstraction.relation.map((row) => row.concrete),
 	];
 	return [
 		...new Set([
 			domain.glossary,
 			domain.controls.matrix,
-			category.typedWitness,
+			...compositionPaths(proof),
 			...domain.adrs.map((adr) => adr.file),
 			...domain.adrs.flatMap((adr) =>
 				adr.ratification === undefined
@@ -255,6 +299,7 @@ function sectionBodies(text: string, title: string): readonly string[] {
 
 export function proofSections(
 	proof: ChangeProof,
+	names: readonly string[],
 	files: ReadonlyMap<string, FileRead>,
 	file: string,
 	decision: string,
@@ -273,11 +318,9 @@ export function proofSections(
 		sections.set(title, body);
 	}
 	const category = sections.get("Category composition") ?? "";
-	for (const arrow of proof.category.arrows)
-		if (!mentions(category, arrow.link.symbol))
-			return fail(
-				`${file} does not explain ${arrow.link.symbol} in Category composition`,
-			);
+	for (const name of names)
+		if (!mentions(category, name))
+			return fail(`${file} does not explain ${name} in Category composition`);
 	for (const path of [
 		proof.model.module,
 		proof.model.config,
@@ -416,12 +459,37 @@ function adrCheck(
 		return fail(
 			"ratification proofRecord must be separate from its governing and process ADRs",
 		);
+	const names = compositionNames(proof, view.plan);
+	if (!names.ok) return names;
 	return proofSections(
 		proof,
+		names.value,
 		view.files,
 		ratification.proofRecord,
 		adr.decision,
 	);
+}
+
+function cardContext(
+	proof: ChangeProof,
+	plan: PlanEvidence | undefined,
+): Check {
+	if (plan === undefined) return fail("the plan record was not read");
+	if (!plan.record.ok)
+		return plan.record.error.stage === "domain"
+			? fail(plan.record.error.message)
+			: PASS;
+	const { card, block } = plan.record.value;
+	const { context } = proof.domain;
+	if (!card.contexts.some((one) => one.name === context))
+		return fail(
+			`the contexts card in ${card.path} has no context "${context}"; it holds ${card.contexts.map((one) => one.name).join(", ")}`,
+		);
+	return block.context.name === context
+		? PASS
+		: fail(
+				`domain.context "${context}" is not the context ${block.context.name} of the plan block`,
+			);
 }
 
 function domainCheck(proof: ChangeProof, view: RepoView): Check {
@@ -435,11 +503,13 @@ function domainCheck(proof: ChangeProof, view: RepoView): Check {
 	);
 	return first([
 		() =>
-			titles.includes(domain.context)
-				? PASS
-				: fail(
-						`${domain.glossary} has no heading for the context "${domain.context}"`,
-					),
+			proof.composition.kind === "plan"
+				? cardContext(proof, view.plan)
+				: titles.includes(domain.context)
+					? PASS
+					: fail(
+							`${domain.glossary} has no heading for the context "${domain.context}"`,
+						),
 		() =>
 			domain.terms
 				.filter((term) => !titles.includes(term) && !bold.includes(term))
@@ -492,12 +562,63 @@ function linkedControls(
 	return ok(new Set(matrix.value.links.flatMap((link) => link.controls)));
 }
 
-function categoryCheck(
+function planCheck(
 	proof: ChangeProof,
-	files: ReadonlyMap<string, FileRead>,
+	plan: PlanEvidence | undefined,
 	controls: Result<ReadonlySet<string>, string>,
 ): Check {
-	const { category, abstraction, model } = proof;
+	if (plan === undefined) return fail("the plan record was not read");
+	if (!plan.record.ok) return fail(plan.record.error.message);
+	const { block, cells, card } = plan.record.value;
+	const path = proof.composition.kind === "plan" ? proof.composition.plan : "";
+	const [finding] = domainFindings(block, {
+		card,
+		cells,
+		registry: plan.registry,
+	});
+	if (finding !== undefined)
+		return fail(`${path}:${finding.line}: ${finding.message}`);
+	const { witness } = plan;
+	if (witness === undefined) return fail("the tsc witness did not run");
+	if (!witness.ok)
+		return fail(`the tsc witness stopped: ${witness.error.message}`);
+	if (witness.value.kind === "fail")
+		return fail(
+			`the tsc witness fails: ${witness.value.findings.map((one) => `${path}:${one.line}: ${one.message}`).join("; ")}`,
+		);
+	for (const law of block.laws) {
+		const { check } = law;
+		if (
+			check?.kind === "prop" &&
+			controls.ok &&
+			!controls.value.has(check.control)
+		)
+			return fail(
+				`${path}:${law.line}: law ${law.id} cites control:${check.control}, which no matrix links row lists`,
+			);
+		if (check?.kind === "tla" && plan.registry === undefined)
+			return fail(
+				`${path}:${law.line}: law ${law.id} checks tla ${check.model}.${check.invariant}, but the repo has no ${REGISTRY_PATH}`,
+			);
+	}
+	return PASS;
+}
+
+function categoryCheck(
+	proof: ChangeProof,
+	view: RepoView,
+	controls: Result<ReadonlySet<string>, string>,
+): Check {
+	const { files } = view;
+	const { composition, abstraction, model } = proof;
+	if (composition.kind === "plan")
+		return first([
+			() => planCheck(proof, view.plan, controls),
+			...abstraction.relation.map(
+				(row) => () => linkCheck(files, row.concrete),
+			),
+		]);
+	const { category } = composition;
 	const checked = [...model.invariants, ...model.properties];
 	const witness = textOf(files, category.typedWitness);
 	return first([
@@ -614,7 +735,7 @@ export function checkReferences(
 	return andThen(
 		first([
 			() => stageOf("domain", domainCheck(proof, view)),
-			() => stageOf("category", categoryCheck(proof, view.files, linked)),
+			() => stageOf("category", categoryCheck(proof, view, linked)),
 			() => stageOf("controls", linked),
 			() => stageOf("controls", scopeCheck(proof, view)),
 		]),

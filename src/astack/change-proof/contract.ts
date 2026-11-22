@@ -216,13 +216,19 @@ export type NegativeControl = {
 	readonly expect: Expectation;
 };
 
+export const PLAN_ANCHOR = "#domain-and-effects";
+
+export type Composition =
+	| { readonly kind: "category"; readonly category: CompositionRecord }
+	| { readonly kind: "plan"; readonly plan: string };
+
 export type ChangeProof = {
 	readonly version: 1;
 	readonly change: string;
 	readonly base: string;
 	readonly scope: readonly ScopeRow[];
 	readonly domain: DomainContract;
-	readonly category: CompositionRecord;
+	readonly composition: Composition;
 	readonly abstraction: AbstractionRelation;
 	readonly model: ModelContract;
 	readonly negative: NegativeControl;
@@ -230,6 +236,17 @@ export type ChangeProof = {
 };
 
 const FULL_SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+const PLAN_REF = /^[^#]+\.md(?:#domain-and-effects)?$/;
+const DOMAIN_KEYS = [
+	"context",
+	"glossary",
+	"plan",
+	"aggregate",
+	"terms",
+	"invariants",
+	"adrs",
+	"controls",
+] as const;
 const SYMBOL = /^[A-Za-z_$][\w$]*$/;
 export const TLA_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const CRITERION = /^[A-Za-z][A-Za-z0-9._-]*$/;
@@ -572,6 +589,82 @@ export function readNegative(negative: Fields): NegativeControl {
 	};
 }
 
+function readCategory(fields: Fields): CompositionRecord {
+	return fields.object(
+		"category",
+		[
+			"carrier",
+			"objects",
+			"arrows",
+			"composites",
+			"equality",
+			"laws",
+			"typedWitness",
+		],
+		(category) => ({
+			carrier: readCarrier(category),
+			objects: category.objects("objects", 1, ["name", "link"], (row) => ({
+				name: row.text("name"),
+				link: row.object("link", ["path", "symbol"], readLink),
+			})),
+			arrows: category.objects(
+				"arrows",
+				1,
+				["name", "from", "to", "link", "effects"],
+				(row) => ({
+					name: row.text("name"),
+					from: row.text("from"),
+					to: row.text("to"),
+					link: row.object("link", ["path", "symbol"], readLink),
+					effects: row.items("effects", 0, (value, where) => {
+						const found = EFFECTS.find((effect) => effect === value);
+						if (found === undefined)
+							row.report(where, `must be one of ${EFFECTS.join(", ")}`);
+						return found ?? "env";
+					}),
+				}),
+			),
+			composites: category.objects(
+				"composites",
+				0,
+				["arrows", "op"],
+				(row) => ({
+					arrows: row.texts("arrows", 2),
+					op: row.oneOf("op", ["o", ">=>"] as const),
+				}),
+			),
+			equality: category.text("equality"),
+			laws: category.items("laws", 0, (value, where) =>
+				readLaw(category, value, where),
+			),
+			typedWitness: category.path("typedWitness"),
+		}),
+	);
+}
+
+function readComposition(fields: Fields): Composition {
+	const plan = fields.child(fields.value("domain"), "domain", DOMAIN_KEYS);
+	const cited = plan.value("plan");
+	const category = fields.value("category");
+	if ((cited === undefined) === (category === undefined)) {
+		fields.fail(
+			"category",
+			cited === undefined
+				? "or domain.plan must be present"
+				: "must be absent, because domain.plan cites a plan record",
+		);
+		return { kind: "plan", plan: "" };
+	}
+	if (cited === undefined)
+		return { kind: "category", category: readCategory(fields) };
+	const path = plan.text(
+		"plan",
+		PLAN_REF,
+		`a repository path to a Markdown plan, with an optional ${PLAN_ANCHOR}`,
+	);
+	return { kind: "plan", plan: path.replace(PLAN_ANCHOR, "") };
+}
+
 function readProof(fields: Fields): ChangeProof {
 	if (fields.value("version") !== 1) fields.fail("version", "must be 1");
 	return {
@@ -587,154 +680,88 @@ function readProof(fields: Fields): ChangeProof {
 				obligation: row.text("obligation", CRITERION, "a criterion ID"),
 			}),
 		),
-		domain: fields.object(
-			"domain",
-			[
-				"context",
-				"glossary",
-				"aggregate",
-				"terms",
+		domain: fields.object("domain", DOMAIN_KEYS, (domain) => ({
+			context: domain.text("context"),
+			glossary: domain.path("glossary"),
+			aggregate: domain.object("aggregate", ["path", "symbol"], readLink),
+			terms: domain.texts("terms", 1),
+			invariants: domain.objects(
 				"invariants",
+				1,
+				["name", "modelRef"],
+				(row) => ({
+					name: row.text("name"),
+					modelRef: row.text("modelRef", TLA_NAME, "a TLA+ name"),
+				}),
+			),
+			adrs: domain.objects(
 				"adrs",
-				"controls",
-			],
-			(domain) => ({
-				context: domain.text("context"),
-				glossary: domain.path("glossary"),
-				aggregate: domain.object("aggregate", ["path", "symbol"], readLink),
-				terms: domain.texts("terms", 1),
-				invariants: domain.objects(
-					"invariants",
-					1,
-					["name", "modelRef"],
-					(row) => ({
-						name: row.text("name"),
-						modelRef: row.text("modelRef", TLA_NAME, "a TLA+ name"),
-					}),
-				),
-				adrs: domain.objects(
-					"adrs",
-					1,
-					["file", "decision", "ratification"],
-					(row) => {
-						const reference = {
-							file: row.path("file"),
-							decision: row.text(
-								"decision",
-								DECISION,
-								"a decision ID such as D1",
-							),
-						};
-						if (row.value("ratification") === undefined) return reference;
-						return {
-							...reference,
-							ratification: row.object(
-								"ratification",
-								[
-									"kind",
+				1,
+				["file", "decision", "ratification"],
+				(row) => {
+					const reference = {
+						file: row.path("file"),
+						decision: row.text(
+							"decision",
+							DECISION,
+							"a decision ID such as D1",
+						),
+					};
+					if (row.value("ratification") === undefined) return reference;
+					return {
+						...reference,
+						ratification: row.object(
+							"ratification",
+							[
+								"kind",
+								"process",
+								"integratedAt",
+								"proofRecord",
+								"governingMetadata",
+							],
+							(value) => ({
+								kind: value.oneOf("kind", ["integrated-proposal"]),
+								process: value.object(
 									"process",
+									["file", "decision"],
+									(process) => ({
+										file: process.path("file"),
+										decision: process.text(
+											"decision",
+											DECISION,
+											"a decision ID such as D1",
+										),
+									}),
+								),
+								integratedAt: value.text(
 									"integratedAt",
-									"proofRecord",
-									"governingMetadata",
-								],
-								(value) => ({
-									kind: value.oneOf("kind", ["integrated-proposal"]),
-									process: value.object(
-										"process",
-										["file", "decision"],
-										(process) => ({
-											file: process.path("file"),
-											decision: process.text(
-												"decision",
-												DECISION,
-												"a decision ID such as D1",
+									FULL_SHA,
+									"a full lowercase commit SHA",
+								),
+								proofRecord: value.path("proofRecord"),
+								...(value.value("governingMetadata") === undefined
+									? {}
+									: {
+											governingMetadata: value.oneOf(
+												"governingMetadata",
+												GOVERNING_METADATA,
 											),
 										}),
-									),
-									integratedAt: value.text(
-										"integratedAt",
-										FULL_SHA,
-										"a full lowercase commit SHA",
-									),
-									proofRecord: value.path("proofRecord"),
-									...(value.value("governingMetadata") === undefined
-										? {}
-										: {
-												governingMetadata: value.oneOf(
-													"governingMetadata",
-													GOVERNING_METADATA,
-												),
-											}),
-								}),
-							),
-						};
-					},
-				),
-				controls: domain.object(
-					"controls",
-					["matrix", "criteria"],
-					(controls) => ({
-						matrix: controls.path("matrix"),
-						criteria: controls.texts(
-							"criteria",
-							1,
-							CRITERION,
-							"a criterion ID",
+							}),
 						),
-					}),
-				),
-			}),
-		),
-		category: fields.object(
-			"category",
-			[
-				"carrier",
-				"objects",
-				"arrows",
-				"composites",
-				"equality",
-				"laws",
-				"typedWitness",
-			],
-			(category) => ({
-				carrier: readCarrier(category),
-				objects: category.objects("objects", 1, ["name", "link"], (row) => ({
-					name: row.text("name"),
-					link: row.object("link", ["path", "symbol"], readLink),
-				})),
-				arrows: category.objects(
-					"arrows",
-					1,
-					["name", "from", "to", "link", "effects"],
-					(row) => ({
-						name: row.text("name"),
-						from: row.text("from"),
-						to: row.text("to"),
-						link: row.object("link", ["path", "symbol"], readLink),
-						effects: row.items("effects", 0, (value, where) => {
-							const found = EFFECTS.find((effect) => effect === value);
-							if (found === undefined)
-								row.report(where, `must be one of ${EFFECTS.join(", ")}`);
-							return found ?? "env";
-						}),
-					}),
-				),
-				composites: category.objects(
-					"composites",
-					0,
-					["arrows", "op"],
-					(row) => ({
-						arrows: row.texts("arrows", 2),
-						op: row.oneOf("op", ["o", ">=>"] as const),
-					}),
-				),
-				equality: category.text("equality"),
-				laws: category.items("laws", 0, (value, where) =>
-					readLaw(category, value, where),
-				),
-				typedWitness: category.path("typedWitness"),
-			}),
-		),
+					};
+				},
+			),
+			controls: domain.object(
+				"controls",
+				["matrix", "criteria"],
+				(controls) => ({
+					matrix: controls.path("matrix"),
+					criteria: controls.texts("criteria", 1, CRITERION, "a criterion ID"),
+				}),
+			),
+		})),
+		composition: readComposition(fields),
 		abstraction: fields.object(
 			"abstraction",
 			[
@@ -1016,7 +1043,13 @@ export function parseChangeProof(text: string): Result<ChangeProof, Rejection> {
 	const proof = read.value;
 	const checks: readonly [Stage, string | undefined][] = [
 		["domain", domainProblem(proof)],
-		["category", arrowProblem(proof.category) ?? lawProblem(proof.category)],
+		[
+			"category",
+			proof.composition.kind === "category"
+				? (arrowProblem(proof.composition.category) ??
+					lawProblem(proof.composition.category))
+				: undefined,
+		],
 		["controls", scopeProblem(proof)],
 		["model", modelProblem(proof.model, proof.negative)],
 	];

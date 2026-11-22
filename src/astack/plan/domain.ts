@@ -14,7 +14,8 @@ import {
 	type FilesCell,
 } from "../domain/rules.ts";
 import { anyGlob } from "../glob.ts";
-import { sectionByTitle } from "./parse.ts";
+import { err, ok, type Result } from "../result.ts";
+import { parsePlan, sectionByTitle } from "./parse.ts";
 import type { CheckEnv, Line, Plan } from "./types.ts";
 
 export const DOMAIN_SECTION = "Domain and effects";
@@ -138,6 +139,33 @@ export function planDomain(plan: Plan, env: CheckEnv): PlanDomain {
 		block: parsed.value,
 		facts,
 	};
+}
+
+export type PlanBlock = {
+	readonly block: DomainBlock;
+	readonly cells: readonly FilesCell[];
+};
+
+export function readPlanBlock(
+	path: string,
+	text: string,
+): Result<PlanBlock, string> {
+	const plan = parsePlan(path, text);
+	const section = sectionByTitle(plan, DOMAIN_SECTION);
+	const fences = section === undefined ? [] : domainFences(section.body);
+	const [fence] = fences;
+	if (fence === undefined || fences.length > 1)
+		return err(
+			`${path} needs one domain fence under ## ${DOMAIN_SECTION}, not ${fences.length}`,
+		);
+	const parsed = parseDomainBlock(fence.lines);
+	if (!parsed.ok)
+		return err(
+			parsed.error
+				.map((problem) => `${path}:${problem.line}: ${problem.message}`)
+				.join("; "),
+		);
+	return ok({ block: parsed.value, cells: filesCells(plan) });
 }
 
 export function domainSummary(found: PlanDomain): DomainSummary | undefined {

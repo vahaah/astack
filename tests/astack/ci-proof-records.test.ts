@@ -14,7 +14,9 @@ import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
 import {
 	git,
 	marker,
+	PLAN_RECORD,
 	PROOF_FILES,
+	planRecordProof,
 	scratchDir,
 	validProof,
 	writeFiles,
@@ -257,6 +259,27 @@ describe("CI changes with required proof records", () => {
 			repo,
 			`${RECORD} has no nonempty Category composition proof section`,
 		);
+	});
+
+	test("[control:ci-proof-record-role] a proof record cannot also supply the plan record of the manifest", () => {
+		const ratification = {
+			kind: "integrated-proposal",
+			process: { file: PROCESS, decision: "D1" },
+			integratedAt: "a".repeat(40),
+			proofRecord: PLAN_RECORD,
+		};
+		const text = JSON.stringify(
+			planRecordProof(validProof("a".repeat(40))),
+		).replace(
+			'"decision":"D1"}',
+			`"decision":"D1","ratification":${JSON.stringify(ratification)}}`,
+		);
+		const parsed = parseChangeProof(text);
+		if (!parsed.ok) throw new Error(parsed.error.message);
+		expect(ciProofRecords(parsed.value, MANIFEST, new Map())).toEqual({
+			ok: false,
+			error: `${PLAN_RECORD} also supplies another proof input`,
+		});
 	});
 
 	test.each(["glossary", "typed witness"])(

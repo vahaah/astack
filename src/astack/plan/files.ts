@@ -56,7 +56,7 @@ export function planProfileFor(root: string): PlanProfile {
 }
 
 const GLOSSARY_FILES = ["CONTEXT.md", "GLOSSARY.md"];
-const GLOSSARY_MAPS = ["CONTEXT-MAP.md", "GLOSSARY-MAP.md"];
+export const GLOSSARY_MAPS = ["CONTEXT-MAP.md", "GLOSSARY-MAP.md"];
 
 export function loadGlossary(
 	root: string,

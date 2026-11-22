@@ -132,6 +132,12 @@ function proofRecordsAt(
 	const matrix = proofFileAt(root, matrixPath);
 	if (!matrix.ok) return matrix;
 	files.set(matrixPath, { kind: "text", text: matrix.value });
+	const { composition } = parsed.value;
+	if (composition.kind === "plan") {
+		const plan = proofFileAt(root, composition.plan);
+		if (!plan.ok) return plan;
+		files.set(composition.plan, { kind: "text", text: plan.value });
+	}
 	const records = ciProofRecords(parsed.value, choice.value.path, files);
 	return records.ok ? ok([...records.value, ...deleted]) : records;
 }
