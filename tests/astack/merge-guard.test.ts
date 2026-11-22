@@ -753,6 +753,8 @@ describe("MCP merge tools", () => {
 		["mcp__forge__show_merged_prs", false],
 		["mcp__forge__get_and_merge_pr", true],
 		["mcp__forge__mark_merged", true],
+		["mcp__gateway__merge__pull_request", true],
+		["mcp__automerge__enable", true],
 	])(
 		"[control:sg-mcp-merge] %s is denied, also after the owner's grant: %p",
 		(name, denied) => {

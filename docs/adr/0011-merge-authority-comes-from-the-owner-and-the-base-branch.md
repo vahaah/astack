@@ -104,7 +104,8 @@ A person's prompt that opens with a bracket label, such as a pasted `[Image #1]`
 
 ### D4. Each MCP tool with a merge word gets a deny
 
-The guard splits a tool name on `_`, `-`, `.`, each case change and each change between a letter and a digit.
+The guard splits the server name and the tool name on `_`, `-`, `.`, each case change and each change between a letter and a digit.
+It reads the server name too, because an aggregator can put the merge word before the last `__`.
 An acronym is one token, so `createPRMerge` holds the token `merge`.
 A token that holds `merg` is a merge token.
 A merge token that ends in `merged`, `mergeable` or `mergeability` names a state. Each other merge token is a merge word, such as `prmerge` or `automerge`.

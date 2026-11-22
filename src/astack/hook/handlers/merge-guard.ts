@@ -266,8 +266,8 @@ function isMergeWord(token: string): boolean {
 	return token.includes(MERGE_STEM) && !MERGE_STATE.test(token);
 }
 
-function isMcpMergeTool(tool: string): boolean {
-	const tokens = nameTokens(tool);
+function isMcpMergeTool({ server, tool }: EventOf<"mcp">): boolean {
+	const tokens = [server, tool].flatMap(nameTokens);
 	return (
 		tokens.some((token) => token.includes(MERGE_STEM)) &&
 		!READ_ONLY_TOOLS.has(tool) &&
@@ -307,7 +307,7 @@ function holdsMerge(input: unknown): boolean {
 }
 
 function isMcpMerge(event: EventOf<"mcp">): boolean {
-	return isMcpMergeTool(event.tool) || holdsMerge(event.input);
+	return isMcpMergeTool(event) || holdsMerge(event.input);
 }
 
 function mcpVerdict(event: EventOf<"mcp">): Verdict {
