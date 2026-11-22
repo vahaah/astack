@@ -25,7 +25,7 @@ export interface SimpleCommand {
 
 const EXPANDS_IN_HEREDOC = /[$`]/;
 
-const UNQUOTED_EXPANSION = /[*?[]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
+const UNQUOTED_EXPANSION = /[*?]|\[[^\]]*\]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
 
 const HEREDOC_SUBSTITUTION =
 	/^\$\(\s*cat\s*<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2[ \t]*\n([\s\S]*?)\n[ \t]*\3[ \t]*\n?\s*\)/;

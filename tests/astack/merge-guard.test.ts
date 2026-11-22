@@ -591,11 +591,7 @@ describe("the merge guard", () => {
 		"Y=merge; gh pr $Y 12",
 		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
 		'bash -c "gh pr view $N --json mergeable"',
-		"gh pr merg* 12",
 		"{ echo 'gh pr merge 12'; echo x; } | sh",
-		"gh p? merge 12",
-		"g? pr merge 12",
-		"gh pr merge 1?",
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -623,6 +619,36 @@ describe("the merge guard", () => {
 			"Do not merge with --admin",
 		);
 	});
+
+	test.each([
+		"gh pr merg* 12",
+		"gh p? merge 12",
+		"g? pr merge 12",
+		"gh pr merge 1?",
+		"gh p* m*rge 12",
+		"gh pr m*",
+		"g* pr m*rge 12",
+		"gh -R o/* pr m*",
+		"gh p? view 12",
+	])(
+		"%p has a glob or a brace at or before the subcommand, or after pr merge, so it is denied with no text check",
+		(command) => {
+			const reads: Reads = [];
+			expect(bash(guard(GREEN, reads), command)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- astack cannot read this gh command, because the shell can expand a glob or a brace in a word up to its subcommand or after pr merge. Quote that word.",
+			});
+			expect(reads).toEqual([]);
+		},
+	);
+
+	test.each(["gh pr view 1*", "gh issue list -l bug?"])(
+		"%p has a glob only after a static subcommand that is not merge, so it passes",
+		(command) => {
+			expect(bash(guard(GREEN), command).exit).toBe(0);
+		},
+	);
 
 	test.each(['cd "$dir" && git merge main', "$GIT merge main"])(
 		"%p is no PR merge, so it passes",

@@ -49,7 +49,7 @@ const WRITE_METHOD_VALUE =
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const GH = /(?:^|\/)gh$/;
 const MERGE_TEXT = /merg/i;
-const MAY_MERGE = /\bgh\b|\bpr\s+merge\b/i;
+const MAY_MERGE = /\bgh\b|\bpr\s+merge\b|[*?[{]/i;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
 const PR_MERGE = ["pr", "merge"];
@@ -61,13 +61,14 @@ type GhMerge = {
 };
 
 type MergeCommand =
-	| { readonly kind: "none" | "api" | "endpoint" | "unreadable" }
+	| { readonly kind: "none" | "api" | "endpoint" | "glob" | "unreadable" }
 	| GhMerge;
 
 const NONE: MergeCommand = { kind: "none" };
 const UNREADABLE: MergeCommand = { kind: "unreadable" };
 const API: MergeCommand = { kind: "api" };
 const ENDPOINT: MergeCommand = { kind: "endpoint" };
+const GLOB: MergeCommand = { kind: "glob" };
 
 type ReadFile = (path: string) => string | undefined;
 
@@ -231,16 +232,35 @@ function fileReader(step: ShellStep): ReadFile {
 	};
 }
 
+function expandsUpToSubcommand(args: readonly Word[]): boolean {
+	const named: string[] = [];
+	let ambiguous = false;
+	for (let at = 0; at < args.length; at++) {
+		const word = args[at];
+		if (word === undefined) continue;
+		const settled = !ambiguous && (named.length === 2 || named[0] === "api");
+		if (word.expands === true)
+			return !settled || (named[0] === "pr" && named[1] === "merge");
+		if (settled) continue;
+		if (REPO_FLAG.test(word.value)) {
+			if (args[at + 1]?.expands === true) return true;
+			at++;
+		} else if (MAY_TAKE_NEXT_WORD.test(word.value)) ambiguous = true;
+		else if (!word.value.startsWith("-")) named.push(word.value);
+	}
+	return false;
+}
+
 function mergeCommand(step: ShellStep, readFile: ReadFile): MergeCommand {
 	if (step.unreadable !== undefined && step.unreadable !== "folder")
 		return UNREADABLE;
 	const [program, ...args] = step.words;
-	if (program?.expands === true) return UNREADABLE;
+	if (program?.expands === true) return GLOB;
 	if (program === undefined || !GH.test(program.value)) return NONE;
 	const api = apiCall(step, args, readFile);
 	if (api.kind !== "none") return api;
-	return args.some((word) => word.expands === true)
-		? UNREADABLE
+	return expandsUpToSubcommand(args)
+		? GLOB
 		: prMerge(args, step.env.length > 0 || step.unsetsEnv);
 }
 
@@ -288,6 +308,7 @@ function examinesMerge(
 			return mayMerge(step, source);
 		case "api":
 		case "endpoint":
+		case "glob":
 		case "merge":
 			return true;
 	}
@@ -314,6 +335,12 @@ function stepVerdict(
 			return deny(
 				mergeDenial([
 					"astack cannot read the endpoint or a flag of this gh api call, because a variable or a command substitution gives it. Write the endpoint and each flag with static words. For a read, put -X GET after the last variable. Merge a PR with gh pr merge.",
+				]),
+			);
+		case "glob":
+			return deny(
+				mergeDenial([
+					"astack cannot read this gh command, because the shell can expand a glob or a brace in a word up to its subcommand or after pr merge. Quote that word.",
 				]),
 			);
 		case "unreadable":
