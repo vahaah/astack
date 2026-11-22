@@ -11,9 +11,7 @@ export function decode(
 	switch (tool) {
 		case "claude-code":
 			return decodeClaudeCode(event, raw, deps);
-		case "codex":
 		case "cursor":
-		case "grok-build":
 			return undefined;
 	}
 }

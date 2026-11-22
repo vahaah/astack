@@ -266,18 +266,16 @@ describe("events with no handler and other tools", () => {
 		expect(chain({})).toEqual([undefined]);
 	});
 
-	test("tools without a decoder yet allow every payload", () => {
+	test("cursor has no decoder in runHook, so it allows every payload", () => {
 		const { handler, seen } = recorder(["shell"]);
-		for (const tool of ["codex", "cursor", "grok-build"] as const) {
-			const output = runHook(
-				tool,
-				"PreToolUse",
-				payload({ tool_name: "Bash", tool_input: { command: "ls" } }),
-				{},
-				deps([handler]),
-			);
-			expect(output).toEqual(SILENT);
-		}
+		const output = runHook(
+			"cursor",
+			"PreToolUse",
+			payload({ tool_name: "Bash", tool_input: { command: "ls" } }),
+			{},
+			deps([handler]),
+		);
+		expect(output).toEqual(SILENT);
 		expect(seen).toEqual([]);
 	});
 

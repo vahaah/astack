@@ -93,7 +93,7 @@ It is a source metric, not a token, call, time or cost figure, and `docs/runbook
 One pure core serves every tool. Decoders and encoders sit at the edge.
 
 ```ts
-type Tool = "claude-code" | "codex" | "cursor" | "grok-build"
+type Tool = "claude-code" | "cursor"
 type HookEvent =
   | { kind: "write"; path: string; before: string | undefined; after: string }
   | { kind: "edit"; path: string; before: string; after: string }

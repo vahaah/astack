@@ -10,9 +10,7 @@ export function encode(
 	switch (tool) {
 		case "claude-code":
 			return encodeClaudeCode(event, verdict);
-		case "codex":
 		case "cursor":
-		case "grok-build":
 			return encodeBase(verdict);
 	}
 }

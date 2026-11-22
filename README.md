@@ -25,7 +25,7 @@ astack is a plugin for AI coding agents. Its skills and rules give the agent one
 | Layer | What runs | Where | What it guarantees |
 |---|---|---|---|
 | Skills and rules | Instructions the agent follows: plan, TDD, deslop, review, hardening | In the agent | Nothing by itself. They guide the agent, and a model can still ignore them |
-| Hooks | `astack hook <client> <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
+| Hooks | `astack hook claude-code <event>` for Claude Code, Codex and Grok Build. Cursor uses `astack hook cursor <event>` | In the client, on each event | Claude Code, Codex and Grok Build deny with exit 2. Cursor always exits 0 and writes JSON. A pre-tool Write, shell or MCP deny can block. A type, comment or STE finding after an edit or a reply is saved and returned as a follow-up at stop. Fails open on a thrown handler. Grok Bot has no hooks |
 | CLI checks | `astack check …` (see [The CLI](#the-cli)) | Locally and in CI | A pass or a fail for the property that check names. `review-growth` warns and still exits 0. `ci-pins` can exit 3 |
 | CI | This repo's Check workflow runs `bun run check` on push and on pull request. A product repo runs its own workflows. The hardening profile gates mirror those jobs, and the agent runs them, including `change-proof` | On the runner, and in the hardening run | A pull request workflow tests the merge of the head into the base. GitHub reports the check on the head. The proof gate still requires the manifest `base` |
 | You | Grants for merges, accounts, secrets, money and destructive actions, and the choices in each plan round | In the conversation or the profile | Every decision astack does not automate |
@@ -450,7 +450,7 @@ The [migration guide](docs/runbooks/change-proof-migration.md) explains adoption
 
 ## Hooks in detail
 
-Claude Code, Codex and Grok Build call `astack hook <client> <event>`. Their events are session start, prompt submit, tool use and stop. On those clients a deny exits 2 and writes the reason on stderr.
+Claude Code, Codex and Grok Build call `astack hook claude-code <event>`. Their events are session start, prompt submit, tool use and stop. On those clients a deny exits 2 and writes the reason on stderr.
 
 Cursor calls `astack hook cursor <event>`. `encodeCursor` always exits 0 and writes JSON on stdout. A deny before a shell, an MCP call or a tool is `{"permission":"deny"}`. A deny of the prompt is `{"continue":false}`.
 
