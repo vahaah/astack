@@ -174,6 +174,21 @@ describe("deriveLadder", () => {
 			"the changed path src/hook/new.ts is under the fail-closed glob src/hook/** of formal/models.json, but no model glob and no unmodelled entry names it",
 		],
 		[
+			"a fail-closed glob that only the base registry holds still stops a new file",
+			input(["src/hook/new.ts"], {
+				registry: {
+					base: REGISTRY,
+					tree: {
+						...REGISTRY,
+						failClosed: REGISTRY.failClosed.filter(
+							(glob) => glob !== "src/hook/**",
+						),
+					},
+				},
+			}),
+			"the changed path src/hook/new.ts is under the fail-closed glob src/hook/** of formal/models.json, but no model glob and no unmodelled entry names it",
+		],
+		[
 			"a lost tree registry stops",
 			input(["docs/design.md"], {
 				registry: { base: REGISTRY, tree: undefined },

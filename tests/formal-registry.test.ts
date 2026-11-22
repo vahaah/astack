@@ -186,6 +186,23 @@ describe("the model registry of astack", () => {
 		},
 	);
 
+	test("[control:rl-fail-closed-new] a new file under a fail-closed folder of astack stops, also next to the unmodelled encoders", () => {
+		const [manifest] = REGISTRY.models;
+		if (manifest === undefined) throw new Error("the registry has no model");
+		const ladder = deriveLadder({
+			changed: [{ path: "src/astack/hook/encode/codex.ts", present: true }],
+			registry: { base: REGISTRY, tree: REGISTRY },
+			floor: { base: "R0", tree: "R0" },
+			manifest,
+			inTree: (file) => TRACKED_SET.has(file),
+		});
+		expect(ladder).toEqual({
+			ok: false,
+			error:
+				"the changed path src/astack/hook/encode/codex.ts is under the fail-closed glob src/astack/hook/** of formal/models.json, but no model glob and no unmodelled entry names it",
+		});
+	});
+
 	test("[control:rl-fail-closed-tree] each tracked file under a fail-closed glob has a model glob or an unmodelled entry", () => {
 		const [manifest] = REGISTRY.models;
 		if (manifest === undefined) throw new Error("the registry has no model");

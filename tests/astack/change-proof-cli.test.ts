@@ -877,7 +877,6 @@ describe("astack check proof", () => {
 		const lowered = (): string => {
 			const registry = JSON.parse(LADDER_FILES["formal/models.json"] ?? "");
 			for (const entry of registry.models) entry.covers = [];
-			registry.failClosed = [];
 			registry.contractOnly = ["**"];
 			return `${JSON.stringify(registry, null, 2)}\n`;
 		};
@@ -886,7 +885,11 @@ describe("astack check proof", () => {
 		>([
 			[
 				"a skip-worktree edit of the registry",
-				{ change: { "src/lock/lock.ts": "export const lock = 2;\n" } },
+				{
+					change: {
+						"src/gate.ts": `${PROOF_FILES["src/gate.ts"]}export const again = 1;\n`,
+					},
+				},
 				(root) => {
 					git(root, "update-index", "--skip-worktree", "formal/models.json");
 					writeFileSync(join(root, "formal/models.json"), lowered());
@@ -896,7 +899,9 @@ describe("astack check proof", () => {
 				"an ignored registry that only the tree holds",
 				{
 					omit: ["formal/models.json"],
-					change: { "src/lock/lock.ts": "export const lock = 2;\n" },
+					change: {
+						"src/gate.ts": `${PROOF_FILES["src/gate.ts"]}export const again = 1;\n`,
+					},
 				},
 				(root) => {
 					writeFileSync(

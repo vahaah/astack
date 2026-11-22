@@ -549,7 +549,7 @@
 		},
 		{
 			"criterion": "RL-FAIL-CLOSED",
-			"controls": ["rl-fail-closed"]
+			"controls": ["rl-fail-closed", "rl-fail-closed-new"]
 		},
 		{
 			"criterion": "RL-REGISTRY-GONE",

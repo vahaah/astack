@@ -113,6 +113,7 @@ A registry diff runs each model of both sides.
 The gate compares the parsed registries of both sides, so an edit that git does not list is also a registry diff.
 A registry at the diff base with no registry in the tree stops at `rung`.
 A model leaves the registry in two changes, because a base model with no module in the tree stops.
+The fail-closed globs of both sides apply, so a fail-closed glob also leaves the registry in two changes.
 With no registry on either side, only the manifest model runs, and the output has no rung line.
 
 ### D7. A pull request cannot lower its own floor

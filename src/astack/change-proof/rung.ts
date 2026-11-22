@@ -137,8 +137,14 @@ export function deriveLadder(input: LadderInput): Result<Ladder, string> {
 	let rung: Rung = "R0";
 	let cause: RungCause | undefined;
 	const selected = new Set<string>();
+	const failClosed = [
+		...new Set([...(base?.failClosed ?? []), ...tree.failClosed]),
+	];
 	for (const { path, present } of changed) {
-		const found = pathRung(present ? tree : (base ?? tree), path);
+		const found = pathRung(
+			{ ...(present ? tree : (base ?? tree)), failClosed },
+			path,
+		);
 		if (found.kind === "stop")
 			return err(
 				`the changed path ${path} is under the fail-closed glob ${found.glob} of ${REGISTRY_PATH}, but no model glob and no unmodelled entry names it`,

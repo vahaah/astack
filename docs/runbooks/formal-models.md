@@ -38,6 +38,7 @@ A contract-only path gives R0, and each other path gives R1.
 `proof.minRung` in `.astack/profile.json` sets a floor from R0 to R4.
 The higher floor of the diff base and the tree applies, so a change cannot lower its own floor.
 Remove a model in two PRs. The first removes its registry entry, and the second removes its files.
+A fail-closed glob also leaves in two PRs, because the globs of the diff base also apply.
 
 ## Run the gate
 

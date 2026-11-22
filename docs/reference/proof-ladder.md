@@ -10,7 +10,7 @@ The [model](../../formal/ProofLadder.tla) examines two models, seven path kinds,
 - [criterion:RL-FLOOR] A base floor of R4 gives R4 to a docs-only diff, and a lower tree floor cannot lower it. The profile and apply accept `proof.minRung` from R0 to R4 and name each other value.
 - [criterion:RL-SELECT] A covered path runs the manifest model first and then the model of the path, one triple each. A registry diff runs each model of both sides once, also when git does not list the registry.
 - [criterion:RL-COVERS] A diff of `merge-guard.ts` or `paths.ts` with a PlanBoundary manifest runs PlanBoundary and SessionGuards at R4. Each `src/` path of a record, and each file that its Implementation correspondence maps, matches a covers or text glob of its model.
-- [criterion:RL-FAIL-CLOSED] An uncovered file under a fail-closed glob stops at `rung`, names the path and starts no Java process.
+- [criterion:RL-FAIL-CLOSED] An uncovered file under a fail-closed glob stops at `rung`, names the path and starts no Java process. The fail-closed globs of the diff base also apply.
 - [criterion:RL-REGISTRY-GONE] A registry at the diff base with no registry in the tree stops at `rung` and starts no Java process.
 - [criterion:RL-STAGE-ORDER] A domain error stops before a rung stop, and a rung stop comes before the model evidence.
 - [criterion:RL-ONE-RUN] A manifest model that a path also selects runs one triple with the manifest negative.

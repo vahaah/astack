@@ -423,7 +423,22 @@
 			"control": "sg-cursor-attended"
 		},
 		{
-			"path": "src/astack/hook/encode/**",
+			"path": "src/astack/hook/encode/base.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/claude-code.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/cursor.ts",
+			"reason": "The encoders print the combined verdict, and they decide nothing",
+			"control": "sg-guard-error"
+		},
+		{
+			"path": "src/astack/hook/encode/index.ts",
 			"reason": "The encoders print the combined verdict, and they decide nothing",
 			"control": "sg-guard-error"
 		},
