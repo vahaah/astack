@@ -99,17 +99,17 @@ function save(repo: Candidate): void {
 	git(repo.root, "commit", "-q", "-m", "change the candidate");
 }
 
-function run(repo: Candidate) {
+function run(repo: Candidate, base = repo.base) {
 	const result = spawnSync(
 		process.execPath,
-		[CLI, "check", "ci-pins", "--base", repo.base],
+		[CLI, "check", "ci-pins", "--base", base],
 		{ cwd: repo.root, encoding: "utf8" },
 	);
 	return { code: result.status, out: result.stdout, err: result.stderr };
 }
 
-function refuses(repo: Candidate, reason: string): void {
-	const result = run(repo);
+function refuses(repo: Candidate, reason: string, base = repo.base): void {
+	const result = run(repo, base);
 	expect(result.code).toBe(1);
 	expect(result.err).toBe("");
 	expect(result.out).toContain(reason);
@@ -139,26 +139,62 @@ describe("CI changes with required proof records", () => {
 		},
 	);
 
-	test.each(["invalid JSON", "wrong base"])(
+	test.each(["invalid JSON", "a base that is not an ancestor"])(
 		"[control:ci-proof-record-manifest] a committed manifest with %s cannot supply proof records",
 		(defect) => {
 			const repo = candidate();
-			if (defect === "wrong base") {
-				repo.proof.base = "0".repeat(40);
-				save(repo);
-			} else {
+			const own = git(repo.root, "rev-parse", "HEAD");
+			if (defect === "invalid JSON") {
 				writeFileSync(join(repo.root, MANIFEST), "{");
 				git(repo.root, "add", "-A");
 				git(repo.root, "commit", "-q", "-m", "break the manifest");
+			} else {
+				repo.proof.base = own;
+				save(repo);
 			}
 			refuses(
 				repo,
-				defect === "wrong base"
-					? "proof records: the committed proof base does not match the merge base"
-					: "proof records: the proof is not valid JSON",
+				defect === "invalid JSON"
+					? "proof records: the proof is not valid JSON"
+					: `proof records: the manifest base ${own} is not an ancestor of the merge base ${repo.base} of ${repo.base} and HEAD`,
 			);
 		},
 	);
+
+	test("[control:ci-proof-record-ancestor-base] a manifest base older than the merge base still permits CI classification", () => {
+		const repo = candidate();
+		git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
+		writeFiles(repo.root, { "notes/main.md": "Main moved.\n" });
+		git(repo.root, "add", "-A");
+		git(repo.root, "commit", "-q", "-m", "main moves");
+		git(repo.root, "checkout", "-q", "main");
+		git(repo.root, "merge", "-q", "--no-edit", "trunk");
+		const result = run(repo, "trunk");
+		expect(result.err).toBe("");
+		expect(result.out).toEndWith(
+			"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n",
+		);
+		expect(result.code).toBe(3);
+	});
+
+	test("[control:ci-proof-record-replace] a replace object on the merge base cannot hide a changed path from CI classification", () => {
+		const repo = candidate();
+		writeFiles(repo.root, { "src/extra.ts": "export const extra = 1;\n" });
+		save(repo);
+		git(repo.root, "checkout", "-q", "-b", "fake", repo.base);
+		writeFiles(repo.root, { "src/extra.ts": "export const extra = 1;\n" });
+		git(repo.root, "add", "-A");
+		git(repo.root, "commit", "-q", "-m", "fake base");
+		const tree = git(repo.root, "rev-parse", "HEAD^{tree}");
+		git(repo.root, "checkout", "-q", "main");
+		git(
+			repo.root,
+			"replace",
+			repo.base,
+			git(repo.root, "commit-tree", tree, "-m", "fake base"),
+		);
+		refuses(repo, "src/extra.ts: the PR also changes this file");
+	});
 
 	test("[control:ci-proof-record-sections] a declared record needs all four proof sections", () => {
 		const repo = candidate();
@@ -182,7 +218,7 @@ describe("CI changes with required proof records", () => {
 			else {
 				const parsed = parseChangeProof(JSON.stringify(repo.proof));
 				if (!parsed.ok) throw new Error(parsed.error.message);
-				expect(ciProofRecords(parsed.value, repo.base, new Map())).toEqual({
+				expect(ciProofRecords(parsed.value, MANIFEST, new Map())).toEqual({
 					ok: false,
 					error: `${RECORD} also supplies another proof input`,
 				});

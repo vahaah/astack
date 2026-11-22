@@ -576,11 +576,61 @@ describe("astack check proof", () => {
 		expect(run.code).toBe(2);
 	});
 
-	test("a --base ref that is not the manifest base fails", () => {
+	test("[control:proof-base-ancestor] a manifest base older than the merge base admits, prints both bases and keeps the files of main out of scope", () => {
 		const repo = proofRepo(scratch);
-		const run = proof(repo.root, ["--base", "HEAD"]);
+		git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
+		writeFileSync(join(repo.root, "README.md"), "# Gate\n\nMain moved.\n");
+		git(repo.root, "commit", "-q", "-am", "main moves");
+		const moved = git(repo.root, "rev-parse", "HEAD");
+		git(repo.root, "update-ref", "refs/remotes/origin/main", moved);
+		git(repo.root, "checkout", "-q", "main");
+		git(repo.root, "merge", "-q", "--no-edit", "trunk");
+		expect(proof(repo.root).out).toBe(
+			"stop: proof controls: no scope row covers the changed path README.md\n",
+		);
+		const run = proof(repo.root, ["--base", "origin/main"]);
+		expect(run.err).toBe("");
+		expect(run.out).toContain(
+			`\nreceipt: change gate-admission base ${repo.base} diff base ${moved} head ${git(repo.root, "rev-parse", "HEAD")} digest `,
+		);
+		expect(lastLine(run.out)).toStartWith(
+			"ok: proof gate-admission admitted at ",
+		);
+		expect(run.code).toBe(0);
+	});
+
+	test("[control:proof-base-not-ancestor] a manifest base that is not an ancestor of the merge base stops and names both commits", () => {
+		const repo = proofRepo(scratch);
+		const own = git(repo.root, "rev-parse", "HEAD");
+		git(repo.root, "update-ref", "refs/remotes/origin/main", repo.base);
+		const path = join(repo.root, ".astack/proof.json");
+		writeFileSync(
+			path,
+			readFileSync(path, "utf8").replace(`"${repo.base}"`, `"${own}"`),
+		);
+		git(repo.root, "commit", "-q", "-am", "base the proof on its own commit");
+		const run = proof(repo.root, ["--base", "origin/main"]);
 		expect(run.out).toBe(
-			`stop: proof stale: --base HEAD resolves to ${git(repo.root, "rev-parse", "HEAD")}, not the manifest base ${repo.base}\n`,
+			`stop: proof stale: the manifest base ${own} is not an ancestor of the merge base ${repo.base} of origin/main and HEAD\n`,
+		);
+		expect(run.code).toBe(1);
+	});
+
+	test("[control:proof-base-replace] a replace object on the merge base cannot hide a changed path from the scope check", () => {
+		const repo = proofRepo(scratch);
+		writeFileSync(join(repo.root, "README.md"), "# Changed\n");
+		git(repo.root, "commit", "-q", "-am", "change the readme");
+		git(repo.root, "checkout", "-q", "-b", "fake", repo.base);
+		writeFileSync(join(repo.root, "README.md"), "# Changed\n");
+		git(repo.root, "commit", "-q", "-am", "fake base");
+		const tree = git(repo.root, "rev-parse", "HEAD^{tree}");
+		git(repo.root, "checkout", "-q", "main");
+		const fake = git(repo.root, "commit-tree", tree, "-m", "fake base");
+		git(repo.root, "replace", repo.base, fake);
+		git(repo.root, "update-ref", "refs/remotes/origin/main", repo.base);
+		const run = proof(repo.root, ["--base", "origin/main"]);
+		expect(run.out).toBe(
+			"stop: proof controls: no scope row covers the changed path README.md\n",
 		);
 		expect(run.code).toBe(1);
 	});

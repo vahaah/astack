@@ -297,8 +297,8 @@ The trade-off is that astack is opinionated. If its path does not fit, the proje
 
 `astack check proof` reads `.astack/proof.json` and admits the change only when all of these hold:
 
-1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit and an ancestor of `HEAD`. When you pass `--base`, that ref resolves to the same commit.
-2. Its `scope` rows cover every changed, staged, removed and untracked path.
+1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit. Without `--base`, that commit is the diff base and an ancestor of `HEAD`. With `--base <ref>`, the diff base is the merge base of the ref and `HEAD`, and the manifest base must be an ancestor of it. So the proof of a PR stays valid when main moves.
+2. Its `scope` rows cover every changed, staged, removed and untracked path since the diff base.
 3. The domain contract resolves. That is the glossary, the aggregate symbol, the terms and invariants, and each cited ADR decision. A cited ADR must have status Accepted, unless the reference has an `integrated-proposal` ratification. Then the governing ADR stays Proposed and the process ADR stays Accepted. ADR 0007 is superseded by ADR 0008. The code does not limit that route to those two files. `governingMetadata` set to `landed-header-value` is the ADR 0008 option. It allows one `Landed` header value to differ.
 4. The spec-drift matrix passes, and each named criterion has a links row.
 5. TLC (`tla2tools.jar` 1.7.4, SHA-256 pinned) passes the model, then finds the named violation in the declared negative mutation, then passes the restored model. Each run uses a temporary copy. Each run has a deadline of at most 60 seconds. The candidate inputs are hashed before and after the runs. The check does not read a stored receipt.
@@ -307,7 +307,7 @@ Exit 0 means admitted. Exit 1 means missing or invalid evidence, or a tool failu
 
 The manifest fields are `version`, `change`, `base`, `scope`, `domain`, `category`, `abstraction`, `model`, `negative` and `limits`. The [proof contract](marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) defines each field.
 
-In this repository the positive run explores 276 distinct states. The negative mutation violates `LandingAuthoritySafe` with a counterexample of 9 states. The receipt names the head commit and a digest of the candidate inputs. Those inputs are the index, the worktree files and any ratification history.
+In this repository the positive run explores 6,450 distinct states. The negative mutation violates `BaseAncestry` with a counterexample of 10 states. The receipt names the manifest base, the diff base, the head commit and a digest of the candidate inputs. Those inputs are the index, the worktree files and any ratification history.
 
 What it does **not** prove:
 
@@ -320,14 +320,14 @@ What it does **not** prove:
 
 What the code does:
 
-- **One typed composition, checked on a model.** `parseChangeProof` maps text to `Result<ChangeProof, Rejection>`. `admitChangeProof` maps that value to `Result<Admitted, Rejection>`. `astack check proof` parses first. A bad parse stops before the model runs. Admission runs after the three TLC runs. `tests/astack/proof-composition.ts` defines `proofForSnapshot`, which returns the first rejection and does not admit a bad parse. There is no generic `bind` helper. [ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) gives the identity and associativity argument on paper. TLC checks `ResultLeftIdentity`, `ResultRightIdentity` and `ResultAssociativity` on a finite encoding of the Result carrier. That encoding uses two values, two errors and all total functions between them. TLC does not check the TypeScript functions. The manifest field `typedWitness` is a separate file. This repository names `tests/astack/governing-authority.test.ts`. Admission checks that this file names each arrow symbol.
+- **One typed composition, checked on a model.** `parseChangeProof` maps text to `Result<ChangeProof, Rejection>`. `admitChangeProof` maps that value to `Result<Admitted, Rejection>`. `astack check proof` parses first. A bad parse stops before the model runs. Admission runs after the three TLC runs. `tests/astack/proof-composition.ts` defines `proofForSnapshot`, which returns the first rejection and does not admit a bad parse. There is no generic `bind` helper. [ADR 0006](docs/adr/0006-internal-composition-records-follow-domain-effects.md) gives the identity and associativity argument on paper. TLC checks `ResultLeftIdentity`, `ResultRightIdentity` and `ResultAssociativity` on a finite encoding of the Result carrier. That encoding uses two values, two errors and all total functions between them. TLC does not check the TypeScript functions. The manifest field `typedWitness` is a separate file. This repository names `src/astack/cli/commands/check/proof.ts`. Admission checks that this file names each arrow symbol.
 - **Composition records in each manifest.** The `category` section names objects, arrows, effects, equality and, for each law, either a witness or a reason it does not apply. `readLaw` in `src/astack/change-proof/contract.ts` requires a reason when a law is `not_applicable`. A pure carrier cannot witness a monad law. `lawProblem` in that file rejects the claim. ADR 0006 states the same rule. The manifest in this repository marks every law not applicable. It names no witness.
 
 What is only analogy:
 
 - **The workflow.** Plan, build, review and merge are not a category. The skills are not morphisms with checked types. Skills pass work through files and git, not through typed interfaces.
 - **Gates.** A gate is a command in the hardening profile that exits zero or not. It is not a typed arrow.
-- **The hero image.** `f ∘ g` on the return arrow, `⊢` and `∎` are notation for the idea, not claims about the code. The caption is "composition as analogy; only the proof parse→admit composition is checked". The manifest also names `compareLandedAuthority` as a typed arrow. That arrow is a pure comparison, not the checked composition.
+- **The hero image.** `f ∘ g` on the return arrow, `⊢` and `∎` are notation for the idea, not claims about the code. The caption is "composition as analogy; only the proof parse→admit composition is checked". The manifest also names `proofBase` and `readIntegrationHistory` as typed arrows. They read Git, and they are not the checked composition.
 
 ## Install by client
 

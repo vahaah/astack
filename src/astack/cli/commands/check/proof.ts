@@ -8,21 +8,23 @@ import {
 	type IntegrationHistory,
 	matrixSourcePaths,
 	modelPaths,
+	type ProofBase,
 	type RepoView,
 	referencedPaths,
 	type Snapshot,
 } from "../../../change-proof/admission.ts";
 import {
 	changedPaths,
-	historyGit,
-	isAncestor,
+	type DiffTarget,
+	mergeBase,
+	proofBase,
 	readIntegrationHistory,
 	readRepoFile,
-	resolveCommit,
 	snapshot,
 } from "../../../change-proof/candidate.ts";
 import {
 	type ChangeProof,
+	DEFAULT_PROOF_MANIFEST,
 	parseChangeProof,
 	type Rejection,
 	type Stage,
@@ -51,7 +53,6 @@ import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 
 const NAME = "astack check proof";
-const DEFAULT_MANIFEST = ".astack/proof.json";
 
 type ManifestInput = { readonly path: string; readonly text: string };
 
@@ -124,7 +125,7 @@ function readManifest(
 ): Result<ManifestInput, Rejection> {
 	const path = resolve(
 		arg === undefined ? root : io.cwd,
-		arg ?? DEFAULT_MANIFEST,
+		arg ?? DEFAULT_PROOF_MANIFEST,
 	);
 	const shown = relative(root, path) || path;
 	const read = readRepoFile(root, relative(root, path));
@@ -142,6 +143,7 @@ function readManifest(
 function repoView(
 	root: string,
 	proof: ChangeProof,
+	base: ProofBase,
 	changed: RepoView["changed"],
 	ratifications: ReadonlyMap<string, Result<IntegrationHistory, string>>,
 ): RepoView {
@@ -155,12 +157,13 @@ function repoView(
 	const modelFiles = new Map(
 		modelPaths(proof).map((path) => [path, readRepoFile(root, path)]),
 	);
-	return { files, modelFiles, changed, ratifications };
+	return { base, files, modelFiles, changed, ratifications };
 }
 
 function ratificationHistories(
 	root: string,
 	proof: ChangeProof,
+	base: ProofBase,
 ): ReadonlyMap<string, Result<IntegrationHistory, string>> {
 	const histories = new Map<string, Result<IntegrationHistory, string>>();
 	for (const adr of proof.domain.adrs) {
@@ -178,12 +181,7 @@ function ratificationHistories(
 		].sort();
 		histories.set(
 			ratification.integratedAt,
-			readIntegrationHistory(
-				root,
-				proof.base,
-				ratification.integratedAt,
-				paths,
-			),
+			readIntegrationHistory(root, base, ratification.integratedAt, paths),
 		);
 	}
 	return histories;
@@ -199,9 +197,11 @@ function historyState(
 			read.ok
 				? {
 						base: read.value.base,
+						mergeBase: read.value.mergeBase,
 						integratedAt: read.value.integratedAt,
 						files: [...read.value.files],
 						baseFiles: [...read.value.baseFiles],
+						mergeBaseFiles: [...read.value.mergeBaseFiles],
 					}
 				: { error: read.error },
 		]),
@@ -241,34 +241,12 @@ async function prove(
 	io: Io,
 	root: string,
 	proof: ChangeProof,
-	baseRef: string | undefined,
+	target: DiffTarget,
 	manifest: ManifestInput,
 ): Promise<number> {
-	const reader = proof.domain.adrs.some((adr) => adr.ratification !== undefined)
-		? historyGit
-		: undefined;
-	if (resolveCommit(root, proof.base, reader) !== proof.base)
-		return stopAt(
-			io,
-			"stale",
-			`the base ${proof.base} is not a commit in this repository`,
-		);
-	if (baseRef !== undefined) {
-		const resolved = resolveCommit(root, baseRef, reader);
-		if (resolved !== proof.base)
-			return stopAt(
-				io,
-				"stale",
-				`--base ${baseRef} resolves to ${resolved ?? "no commit"}, not the manifest base ${proof.base}`,
-			);
-	}
-	if (!isAncestor(root, proof.base, "HEAD", reader))
-		return stopAt(
-			io,
-			"stale",
-			`the base ${proof.base} is not an ancestor of HEAD`,
-		);
-	const changed = changedPaths(root, proof.base);
+	const base = proofBase(root, proof.base, target);
+	if (!base.ok) return stopAt(io, "stale", base.error);
+	const changed = changedPaths(root, base.value.diff);
 	if (!changed.ok) return stopAt(io, "controls", changed.error);
 	const matrix = readRepoFile(root, proof.domain.controls.matrix);
 	const inputs = [
@@ -277,16 +255,16 @@ async function prove(
 		...modelPaths(proof),
 		...(matrix.kind === "text" ? matrixSourcePaths(matrix.text) : []),
 	];
-	const histories = ratificationHistories(root, proof);
+	const histories = ratificationHistories(root, proof, base.value);
 	const before = snapshot(
 		root,
-		proof.base,
+		base.value.diff,
 		changed.value,
 		inputs,
 		historyState(histories),
 	);
 	if (!before.ok) return stopAt(io, "stale", before.error);
-	const view = repoView(root, proof, changed.value, histories);
+	const view = repoView(root, proof, base.value, changed.value, histories);
 	const plan = checkReferences(proof, view);
 	if (!plan.ok) return stop(io, plan.error);
 	const timeoutMs = deadlineMs(io.env);
@@ -343,14 +321,14 @@ async function prove(
 	if (!restored.ok) return stopAt(io, "model", restored.error);
 	io.out(countsLine("restored", restored.value));
 
-	const changedAfter = changedPaths(root, proof.base);
+	const changedAfter = changedPaths(root, base.value.diff);
 	if (!changedAfter.ok) return stopAt(io, "stale", changedAfter.error);
 	const after: Result<Snapshot, string> = snapshot(
 		root,
-		proof.base,
+		base.value.diff,
 		changedAfter.value,
 		inputs,
-		historyState(ratificationHistories(root, proof)),
+		historyState(ratificationHistories(root, proof, base.value)),
 	);
 	if (!after.ok) return stopAt(io, "stale", after.error);
 	const currentManifest = readRepoFile(root, manifest.path);
@@ -366,7 +344,7 @@ async function prove(
 	if (!admitted.ok) return stop(io, admitted.error);
 	const proved = admitted.value;
 	io.out(
-		`receipt: change ${proved.change} base ${proved.base} head ${proved.head} digest ${proved.digest} over ${proved.files} files, tla2tools ${TLC_PIN.version} sha256:${TLC_PIN.sha256} on Java ${checker.javaVersion}\n`,
+		`receipt: change ${proved.change} base ${proved.base} diff base ${proved.diffBase} head ${proved.head} digest ${proved.digest} over ${proved.files} files, tla2tools ${TLC_PIN.version} sha256:${TLC_PIN.sha256} on Java ${checker.javaVersion}\n`,
 	);
 	io.out(`ok: proof ${proved.change} admitted at ${proved.head}\n`);
 	return 0;
@@ -390,12 +368,16 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 		io.out(`${summaryLines(proof.value).join("\n")}\n`);
 		return 0;
 	}
-	return prove(io, root, proof.value, parsed.value.base, text.value);
+	const ref = parsed.value.base;
+	const target: Result<DiffTarget, string> =
+		ref === undefined ? ok({ kind: "manifest-base" }) : mergeBase(root, ref);
+	if (!target.ok) return stopAt(io, "stale", target.error);
+	return prove(io, root, proof.value, target.value, text.value);
 }
 
 export const command: Command<Promise<number>> = {
 	name: "proof",
-	summary: `Admits one ChangeProof manifest (default ${DEFAULT_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the fixed base. Then it runs the pinned tla2tools.jar ${TLC_PIN.version} three times in owned temporary copies: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It hashes the candidate inputs before and after and never reads a stored receipt. --base must resolve to the manifest base. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
+	summary: `Admits one ChangeProof manifest (default ${DEFAULT_PROOF_MANIFEST}). It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. Then it runs the pinned tla2tools.jar ${TLC_PIN.version} three times in owned temporary copies: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
 	usage: "check proof [manifest.json] [--base <ref>] [--summary]",
 	run,
 };
