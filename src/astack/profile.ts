@@ -4,6 +4,7 @@ import { RUNGS, type Rung } from "./change-proof/rung.ts";
 import type { CommentPolicy } from "./comments/classify.ts";
 import { limitsFor } from "./comments/limits.ts";
 import { parseHookConfig } from "./hook-profile.ts";
+import { err, ok, type Result } from "./result.ts";
 
 export type PlanProfile = {
 	readonly dir: string;
@@ -266,6 +267,16 @@ export function proofProblems(value: unknown): string[] {
 			`one of ${RUNGS.join(", ")}`,
 		),
 	];
+}
+
+export function proofFloor(profile: unknown): Result<Rung, string> {
+	if (!isRecord(profile)) return err("the profile must be a JSON object");
+	const proof = profile.proof;
+	if (proof === undefined) return ok("R0");
+	const [problem] = proofProblems(proof);
+	if (problem !== undefined) return err(problem);
+	const floor = field(proof, "minRung");
+	return ok(isRung(floor) ? floor : "R0");
 }
 
 function patternProblems(value: unknown): string[] {

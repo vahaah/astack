@@ -19,6 +19,7 @@ import { heavyTestTimeout } from "../heavy-test.ts";
 import {
 	GATE_RUNS,
 	git,
+	ladderRepo,
 	PROOF_FILES,
 	type Proof,
 	proofRepo,
@@ -76,7 +77,13 @@ const rule = (section: string): string =>
 const TLC_RECORD = (code: number): string =>
 	`echo '@!@!@STARTMSG ${code}:1 @!@!@'; echo 'fake'; echo '@!@!@ENDMSG ${code} @!@!@'`;
 
-function fakeJava(dir: string, positive: string, negative: string): string {
+const REAL_JAVA = process.env.JAVA_HOME
+	? join(process.env.JAVA_HOME, "bin", "java")
+	: spawnSync("sh", ["-c", "command -v java"], {
+			encoding: "utf8",
+		}).stdout.trim();
+
+function javaShim(dir: string, body: readonly string[]): string {
 	const home = join(scratch, dir);
 	mkdirSync(join(home, "bin"), { recursive: true });
 	const java = join(home, "bin", "java");
@@ -84,9 +91,8 @@ function fakeJava(dir: string, positive: string, negative: string): string {
 		java,
 		[
 			"#!/bin/sh",
-			`if [ "$1" = -version ]; then echo 'openjdk version "21.0.2"' >&2; exit 0; fi`,
-			`if grep -qF '/\\ fresh /\\ status' Gate.tla; then ${positive}; fi`,
-			negative,
+			`for last; do :; done; echo "$last" >> '${join(home, "starts.log")}'`,
+			...body,
 			"",
 		].join("\n"),
 	);
@@ -94,9 +100,41 @@ function fakeJava(dir: string, positive: string, negative: string): string {
 	return home;
 }
 
+function fakeJava(dir: string, positive: string, negative: string): string {
+	return javaShim(dir, [
+		`if [ "$1" = -version ]; then echo 'openjdk version "21.0.2"' >&2; exit 0; fi`,
+		`if grep -qF '/\\ fresh /\\ status' Gate.tla; then ${positive}; fi`,
+		negative,
+	]);
+}
+
+function loggingJava(dir: string, gatePositive = ""): string {
+	return javaShim(dir, [
+		...(gatePositive === ""
+			? []
+			: [
+					`if [ "$last" = Gate.tla ] && grep -qF '/\\ fresh /\\ status' Gate.tla; then ${gatePositive}; fi`,
+				]),
+		`exec '${REAL_JAVA}' "$@"`,
+	]);
+}
+
+function starts(home: string): Readonly<Record<string, number>> {
+	let log = "";
+	try {
+		log = readFileSync(join(home, "starts.log"), "utf8");
+	} catch {
+		return {};
+	}
+	const counts: Record<string, number> = {};
+	for (const name of log.split("\n").filter(Boolean))
+		counts[name] = (counts[name] ?? 0) + 1;
+	return counts;
+}
+
 describe("astack check proof", () => {
 	test.each(["check proof", "check-proof"])(
-		"[control:proof-valid-triple] %s admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run",
+		"[control:proof-valid-triple] [control:rl-legacy] %s admits a valid proof after a fresh positive, the named negative and an unchanged positive TLC run, with the output of a repo with no registry",
 		(name) => {
 			const repo = proofRepo(scratch);
 			const args = name === "check proof" ? ["--base", repo.base] : [];
@@ -732,5 +770,208 @@ describe("astack check proof", () => {
 			"stop: proof controls: no scope row covers the changed path README.md\n",
 		);
 		expect(run.code).toBe(1);
+	});
+
+	describe("the proof rung", () => {
+		const head = (root: string): string => git(root, "rev-parse", "HEAD");
+		test("[control:rl-r0] a docs-only diff prints rung R0, admits with a receipt that names no jar and starts no Java process, also with no Java on PATH", () => {
+			const repo = ladderRepo(scratch, {
+				change: { "docs/notes.md": "# Notes\n" },
+			});
+			const java = loggingJava("java-r0");
+			const run = proof(repo.root, [], { JAVA_HOME: java });
+			const bin = join(scratch, "git-only");
+			mkdirSync(bin, { recursive: true });
+			const gitPath = spawnSync("sh", ["-c", "command -v git"], {
+				encoding: "utf8",
+			}).stdout.trim();
+			symlinkSync(gitPath, join(bin, "git"));
+			const bare = proof(repo.root, [], { PATH: bin });
+			expect({
+				lines: run.out.split("\n"),
+				err: run.err,
+				code: run.code,
+			}).toEqual({
+				lines: [
+					"rung: R0 by the changed path .astack/proof.json",
+					expect.stringMatching(
+						new RegExp(
+							`^receipt: change gate-admission base ${repo.base} diff base ${repo.base} head ${head(repo.root)} digest sha256:[0-9a-f]{64} over \\d+ files$`,
+						),
+					),
+					`ok: proof gate-admission admitted at ${head(repo.root)}`,
+					"",
+				],
+				err: "",
+				code: 0,
+			});
+			expect(bare).toEqual(run);
+			expect(starts(java)).toEqual({});
+		});
+
+		test(
+			"[control:rl-floor] a base floor of R4 raises a docs-only diff to R4 and runs the manifest model, and a lower tree floor cannot lower it",
+			() => {
+				const repo = ladderRepo(scratch, {
+					base: { ".astack/profile.json": '{"proof":{"minRung":"R4"}}\n' },
+					change: {
+						"docs/notes.md": "# Notes\n",
+						".astack/profile.json": '{"proof":{"minRung":"R0"}}\n',
+					},
+				});
+				const java = loggingJava("java-floor");
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run.out).toStartWith(
+					`rung: R4 by proof.minRung R4 of .astack/profile.json at the diff base\nmodel: Gate formal/Gate.tla\n${GATE_RUNS}receipt: change gate-admission base `,
+				);
+				expect(run.out).toContain(" files, tla2tools 1.7.4 sha256:");
+				expect(run.code).toBe(0);
+				expect(starts(java)).toEqual({ "-version": 1, "Gate.tla": 3 });
+			},
+			heavyTestTimeout,
+		);
+
+		test(
+			"[control:rl-select] a covered path runs the manifest model first and then the model of the path, one triple each",
+			() => {
+				const repo = ladderRepo(scratch, {
+					change: { "src/lock/lock.ts": "export const lock = 2;\n" },
+				});
+				const java = loggingJava("java-select");
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run.out).toStartWith(
+					`rung: R4 by the changed path src/lock/lock.ts\nmodel: Gate formal/Gate.tla\n${GATE_RUNS}model: Lock formal/Lock.tla\npositive: 2 distinct states, 3 generated, 0 left on queue\nnegative: Close violates TypeOK with a counterexample of 2 states: `,
+				);
+				expect(lastLine(run.out)).toBe(
+					`ok: proof gate-admission admitted at ${head(repo.root)}`,
+				);
+				expect(starts(java)).toEqual({
+					"-version": 1,
+					"Gate.tla": 3,
+					"Lock.tla": 3,
+				});
+			},
+			heavyTestTimeout,
+		);
+
+		test(
+			"[control:rl-one-run] a manifest model that a path also selects runs one triple with the manifest negative",
+			() => {
+				const repo = ladderRepo(scratch, {
+					change: {
+						"src/gate.ts": `${PROOF_FILES["src/gate.ts"]}export const again = 1;\n`,
+					},
+				});
+				const java = loggingJava("java-one");
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run.out).toStartWith(
+					`rung: R4 by the changed path src/gate.ts\nmodel: Gate formal/Gate.tla\n${GATE_RUNS}receipt: `,
+				);
+				expect(run.code).toBe(0);
+				expect(starts(java)).toEqual({ "-version": 1, "Gate.tla": 3 });
+			},
+			heavyTestTimeout,
+		);
+
+		test.each<[string, Parameters<typeof ladderRepo>[1], string, string]>([
+			[
+				"an uncovered file under a fail-closed glob",
+				{ change: { "src/guard/new.ts": "export const guard = 1;\n" } },
+				"rung",
+				"the changed path src/guard/new.ts is under the fail-closed glob src/guard/** of formal/models.json, but no model glob and no unmodelled entry names it",
+			],
+			[
+				"a deleted registry",
+				{ remove: ["formal/models.json"] },
+				"rung",
+				"the diff base holds formal/models.json, but the tree does not. A model leaves the registry only through an edit of formal/models.json",
+			],
+			[
+				"a domain error with an uncovered fail-closed file",
+				{
+					change: { "src/guard/new.ts": "export const guard = 1;\n" },
+					edit: (p) => {
+						p.domain.terms = ["Gate", "Stale receipt"];
+					},
+				},
+				"domain",
+				'CONTEXT.md defines no term "Stale receipt"',
+			],
+		])(
+			"[control:rl-fail-closed] [control:rl-stage-order] %s stops before any Java process",
+			(_name, plan, stage, message) => {
+				const repo = ladderRepo(scratch, plan);
+				const java = loggingJava(`java-stop-${stage}-${message.length}`);
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run).toEqual({
+					code: 1,
+					out: `stop: proof ${stage}: ${message}\n`,
+					err: rule(
+						stage === "rung" ? "Rungs and models" : "Domain and decisions",
+					),
+				});
+				expect(starts(java)).toEqual({});
+			},
+		);
+
+		test(
+			"[control:rl-stop-order] a failed positive run of the first model stops at model and starts no triple of the second model",
+			() => {
+				const repo = ladderRepo(scratch, {
+					change: { "src/lock/lock.ts": "export const lock = 2;\n" },
+				});
+				const java = loggingJava(
+					"java-stop-order",
+					`${TLC_RECORD(1000)}; exit 150`,
+				);
+				const run = proof(repo.root, [], { JAVA_HOME: java });
+				expect(run.out).toBe(
+					"rung: R4 by the changed path src/lock/lock.ts\nmodel: Gate formal/Gate.tla\nstop: proof model: the positive run exited 150 with error 1000\n",
+				);
+				expect(run.code).toBe(1);
+				expect(starts(java)).toEqual({ "-version": 1, "Gate.tla": 3 });
+			},
+			heavyTestTimeout,
+		);
+
+		test(
+			"[control:rl-stale] an edit of formal/models.json during the runs makes the proof stale and names the file",
+			async () => {
+				const repo = ladderRepo(scratch, {
+					change: {
+						"src/gate.ts": `${PROOF_FILES["src/gate.ts"]}export const again = 1;\n`,
+					},
+				});
+				const path = join(repo.root, "formal/models.json");
+				const original = readFileSync(path, "utf8");
+				let changed = false;
+				const run = await new Promise<Run>((done) => {
+					const child = spawn(process.execPath, [CLI, "check", "proof"], {
+						cwd: repo.root,
+						env: proofEnv({}),
+					});
+					let out = "";
+					let err = "";
+					child.stdout.on("data", (chunk: Buffer) => {
+						out += chunk.toString();
+						if (!changed && out.includes("positive:")) {
+							changed = true;
+							writeFileSync(path, `${original}\n`);
+						}
+					});
+					child.stderr.on("data", (chunk: Buffer) => {
+						err += chunk.toString();
+					});
+					child.on("close", (code) => done({ code, out, err }));
+				});
+				expect(changed).toBe(true);
+				expect(lastLine(run.out)).toBe(
+					"stop: proof stale: the candidate inputs changed during the proof: formal/models.json",
+				);
+				expect(run.err).toBe(rule("Base"));
+				expect(run.code).toBe(1);
+			},
+			heavyTestTimeout,
+		);
 	});
 });

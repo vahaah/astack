@@ -6,11 +6,20 @@ import {
 	type AdrReference,
 	type ChangeProof,
 	type FileLink,
+	type ModelContract,
+	type NegativeControl,
 	type Rejection,
 	rejection,
 	type Stage,
 } from "./contract.ts";
 import { compareLandedAuthority } from "./governing-authority.ts";
+import {
+	type Ladder,
+	type LadderRun,
+	modelFiles,
+	moduleName,
+	type Rung,
+} from "./rung.ts";
 import { type ModelPlan, planModel } from "./tla.ts";
 import type { Counts, Violation } from "./tlc.ts";
 
@@ -69,9 +78,18 @@ export type ModelEvidence = {
 
 export type AdmissionFacts = {
 	readonly view: RepoView;
+	readonly ladder: Result<Ladder, string>;
 	readonly before: Snapshot;
 	readonly after: Snapshot;
-	readonly evidence: ModelEvidence;
+	readonly evidence: readonly ModelEvidence[];
+};
+
+export type ModelAdmission = {
+	readonly name: string;
+	readonly positive: Counts;
+	readonly negative: Violation;
+	readonly action: string;
+	readonly restored: Counts;
 };
 
 export type Admitted = {
@@ -81,10 +99,8 @@ export type Admitted = {
 	readonly head: string;
 	readonly digest: string;
 	readonly files: number;
-	readonly positive: Counts;
-	readonly negative: Violation;
-	readonly action: string;
-	readonly restored: Counts;
+	readonly rung: Rung | undefined;
+	readonly models: readonly ModelAdmission[];
 };
 
 const PROBLEM_TEXT: Readonly<Record<FileProblem, string>> = {
@@ -120,7 +136,21 @@ export function referencedPaths(proof: ChangeProof): readonly string[] {
 }
 
 export function modelPaths(proof: ChangeProof): readonly string[] {
-	return [proof.model.module, proof.model.config, ...proof.model.dependencies];
+	return modelFiles(proof.model);
+}
+
+export function modelRuns(
+	proof: ChangeProof,
+	ladder: Ladder,
+): readonly LadderRun[] {
+	if (ladder.kind === "ladder") return ladder.runs;
+	return [
+		{
+			name: moduleName(proof.model.module),
+			model: proof.model,
+			negative: proof.negative,
+		},
+	];
 }
 
 export function matrixSourcePaths(matrixText: string): readonly string[] {
@@ -510,11 +540,11 @@ function scopeCheck(proof: ChangeProof, view: RepoView): Check {
 	return problems.length === 0 ? PASS : fail(problems.join("; "));
 }
 
-function modelCheck(
-	proof: ChangeProof,
+export function planModelFiles(
+	model: ModelContract,
+	negative: NegativeControl,
 	files: ReadonlyMap<string, FileRead>,
 ): Result<ModelPlan, string> {
-	const { model } = proof;
 	const module = textOf(files, model.module);
 	if (!module.ok) return module;
 	const config = textOf(files, model.config);
@@ -525,11 +555,18 @@ function modelCheck(
 		if (!text.ok) return text;
 		dependencies.set(path, text.value);
 	}
-	const plan = planModel(model, proof.negative, {
+	return planModel(model, negative, {
 		module: module.value,
 		config: config.value,
 		dependencies,
 	});
+}
+
+function modelCheck(
+	proof: ChangeProof,
+	files: ReadonlyMap<string, FileRead>,
+): Result<ModelPlan, string> {
+	const plan = planModelFiles(proof.model, proof.negative, files);
 	if (!plan.ok) return plan;
 	const action = proof.abstraction.relation.find(
 		(row) => !plan.value.actions.has(row.modelAction),
@@ -585,13 +622,13 @@ export function staleInputs(
 	];
 }
 
-export function admitChangeProof(
-	proof: ChangeProof,
-	facts: AdmissionFacts,
-): Result<Admitted, Rejection> {
-	const references = checkReferences(proof, facts.view);
-	if (!references.ok) return references;
-	const { positive, negative, restored } = facts.evidence;
+function evidenceCheck(
+	run: LadderRun,
+	evidence: ModelEvidence | undefined,
+): Result<ModelAdmission, Rejection> {
+	if (evidence === undefined)
+		return rejection("model", `model ${run.name} has no triple`);
+	const { positive, negative, restored } = evidence;
 	if (!positive.ok) return rejection("model", positive.error);
 	if (!negative.ok) return rejection("countermodel", negative.error);
 	if (!restored.ok) return rejection("model", restored.error);
@@ -603,6 +640,35 @@ export function admitChangeProof(
 			"model",
 			"the restored run found other state counts than the positive run",
 		);
+	return ok({
+		name: run.name,
+		positive: positive.value,
+		negative: negative.value,
+		action: run.negative.action,
+		restored: restored.value,
+	});
+}
+
+export function admitChangeProof(
+	proof: ChangeProof,
+	facts: AdmissionFacts,
+): Result<Admitted, Rejection> {
+	const references = checkReferences(proof, facts.view);
+	if (!references.ok) return references;
+	if (!facts.ladder.ok) return rejection("rung", facts.ladder.error);
+	const ladder = facts.ladder.value;
+	const runs = modelRuns(proof, ladder);
+	if (facts.evidence.length > runs.length)
+		return rejection(
+			"model",
+			`the proof holds ${facts.evidence.length} triples for ${runs.length} selected models`,
+		);
+	const models: ModelAdmission[] = [];
+	for (const [index, run] of runs.entries()) {
+		const checked = evidenceCheck(run, facts.evidence[index]);
+		if (!checked.ok) return checked;
+		models.push(checked.value);
+	}
 	const { before, after } = facts;
 	if (before.head !== after.head)
 		return rejection(
@@ -624,9 +690,7 @@ export function admitChangeProof(
 		head: after.head,
 		digest: after.digest,
 		files: after.files,
-		positive: positive.value,
-		negative: negative.value,
-		action: proof.negative.action,
-		restored: restored.value,
+		rung: ladder.kind === "ladder" ? ladder.rung : undefined,
+		models,
 	});
 }

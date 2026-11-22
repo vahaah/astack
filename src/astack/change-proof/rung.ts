@@ -79,6 +79,10 @@ export function modelFiles(model: ModelContract): readonly string[] {
 	return [model.module, model.config, ...model.dependencies];
 }
 
+export function moduleName(module: string): string {
+	return module.slice(module.lastIndexOf("/") + 1, -".tla".length);
+}
+
 function pathRung(registry: ModelRegistry, path: string): PathRung {
 	if (path === REGISTRY_PATH)
 		return {

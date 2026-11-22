@@ -13,6 +13,7 @@ import {
 } from "./contract.ts";
 import {
 	type ModelRegistry,
+	moduleName,
 	REGISTRY_PATH,
 	type RegistryModel,
 	type Unmodelled,
@@ -54,8 +55,8 @@ function entryProblem(models: readonly RegistryModel[]): string | undefined {
 		const where = `models[${index}]`;
 		if (models.findIndex((other) => other.name === entry.name) < index)
 			return `${where}.name repeats the name ${entry.name}`;
-		const module = entry.model.module;
-		const own = module.slice(module.lastIndexOf("/") + 1, -".tla".length);
+		const { module } = entry.model;
+		const own = moduleName(module);
 		if (entry.name !== own)
 			return `${where}.name must be ${own}, the module name of ${module}`;
 		const problem = modelProblem(entry.model, entry.negative);
