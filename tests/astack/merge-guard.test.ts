@@ -588,6 +588,9 @@ describe("the merge guard", () => {
 		"echo pr merge 12 --admin | xargs gh",
 		"S='pr merge'; gh $S 12 --admin",
 		'"$GH" api -X PUT repos/o/r/pulls/12/merge',
+		"Y=merge; gh pr $Y 12",
+		'X=pr; Y=MERGE; "$GH" $X ${Y,,} 12',
+		'bash -c "gh pr view $N --json mergeable"',
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
 		const run = bash(
@@ -625,7 +628,7 @@ describe("the merge guard", () => {
 
 	test.each([
 		"env -C ../other gh pr view 12",
-		'bash -c "gh pr view $N --json mergeable"',
+		'bash -c "gh pr view $N --json state"',
 	])("%p cannot be read but names no merge, so it passes", (command) => {
 		expect(bash(guard(GREEN), command).exit).toBe(0);
 	});

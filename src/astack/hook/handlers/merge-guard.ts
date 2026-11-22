@@ -48,7 +48,7 @@ const WRITE_METHOD_VALUE =
 	/^(?:-X|--method=|HTTP_)?(?:PUT|POST|PATCH|DELETE)$/i;
 const JSON_ESCAPE = /\\(?:u[0-9a-fA-F]{4}|["\\/bfnrt])/g;
 const GH = /(?:^|\/)gh$/;
-const NAMES_PR_MERGE = /\bpr\s+merge\b/;
+const MERGE_TEXT = /merg/i;
 const MAY_MERGE = /\bgh\b|\bpr\s+merge\b/i;
 const REPO_FLAG = /^(?:-R|--repo)$/;
 const MAY_TAKE_NEXT_WORD = /^(?:--[^=]*|-[^-=])$/;
@@ -244,11 +244,8 @@ function mergeVerdict(
 }
 
 function mayMerge(step: ShellStep, source: string): boolean {
-	return (
-		NAMES_PR_MERGE.test(source) ||
-		[...step.values, ...(step.simple.substitutions ?? [])].some((value) =>
-			hasMergeWord(nameTokens(value)),
-		)
+	return [source, ...step.values, ...(step.simple.substitutions ?? [])].some(
+		(value) => MERGE_TEXT.test(value),
 	);
 }
 
