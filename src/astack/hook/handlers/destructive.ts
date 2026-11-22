@@ -6,6 +6,7 @@ import {
 	type GitInvocation,
 	type GitRead,
 	HOOKS_PATH_KEY,
+	isLongForm,
 	readGit,
 } from "../../git-command.ts";
 import {
@@ -164,13 +165,6 @@ function operands(
 		}
 	}
 	return { flags, plain, dashed: undefined };
-}
-
-function isLongForm(flag: string, long: string): boolean {
-	return (
-		flag === long ||
-		(long.startsWith("--") && flag.length >= 4 && long.startsWith(flag))
-	);
 }
 
 function hasFlag(
