@@ -25,7 +25,7 @@ export interface SimpleCommand {
 	background?: boolean;
 }
 
-const MANY_WORDS = /^(?:[@*]|\{[@*!]|\{[^}]*\[[@*]\])/;
+const ONE_WORD = /^(?:[A-Za-z_]\w*|\{[A-Za-z_]\w*(?:\[[^\]@*]*\])?\})/;
 
 const EXPANDS_IN_HEREDOC = /[$`\\]/;
 const DEFINES_COMMAND =
@@ -193,7 +193,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					substitution();
 				} else if (d === "$" && /[\w{@*#?$!-]/.test(src[i + 1] ?? "")) {
 					append("", true);
-					if (MANY_WORDS.test(src.slice(i + 1))) splits();
+					if (!ONE_WORD.test(src.slice(i + 1))) splits();
 					i++;
 				} else if (d === "`") {
 					backtickBody();

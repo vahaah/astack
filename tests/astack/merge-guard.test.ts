@@ -883,6 +883,9 @@ describe("the merge guard", () => {
 		`gh api "\${a[@]}"`,
 		`gh api "\${@:2}"`,
 		`gh api "\${!name@}"`,
+		`gh api "\${(f)x}"`,
+		`gh api "\${=x}"`,
+		`gh api "repos/o/r/\${x:-pulls}"`,
 		"echo x | xargs gh api",
 		"xargs -I{} gh api {}",
 	])(
@@ -940,6 +943,7 @@ describe("the merge guard", () => {
 		'gh api "repos/$R/pulls/$N"',
 		'gh api -X GET "repos/$R/pulls/$N/merge"',
 		'gh api -H "$H" "repos/o/r/$TAIL" --method GET',
+		`gh api "repos/\${R}/pulls/\${n[0]}"`,
 	])("a GET with static words or quoted variables passes: %s", (command) => {
 		expect(bash(guard(GREEN), command).exit).toBe(0);
 	});
