@@ -9,6 +9,7 @@ import {
 	gateForbiddenCommands,
 	parseProfile,
 	profileGates,
+	reviewProfileProblems,
 	validateProfile,
 } from "../src/astack/pr-review-profile.ts";
 import { exampleProfilePaths, profilePaths } from "./profile-paths.ts";
@@ -73,6 +74,26 @@ describe("project profiles", () => {
 
 	test("the shared stub names no old install", () => {
 		expect(readFileSync(reviewStubSource, "utf8")).not.toMatch(/agent-stack/i);
+	});
+});
+
+describe("reviewProfileProblems", () => {
+	test("[control:rs-rules] a profile with only its required keys and the change-proof gate gets no problem", () => {
+		const minimal = [
+			"# Profile",
+			"",
+			"```yaml",
+			"version: 1",
+			"gates:",
+			"  - name: change-proof",
+			"    command: astack check proof --base origin/main",
+			"test:",
+			"  name: test",
+			"  command: bun test",
+			"```",
+			"",
+		].join("\n");
+		expect(reviewProfileProblems(minimal)).toEqual([]);
 	});
 });
 
