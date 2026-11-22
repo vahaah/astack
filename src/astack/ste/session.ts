@@ -4,7 +4,9 @@ type Env = Readonly<Record<string, string | undefined>>;
 
 const TEST_INTERACTIVE = "ASTACK_STE_TEST_INTERACTIVE";
 
-const HARNESS_WRAPPER = /^\s*<[a-z][\w-]*(?:\s[^>]*)?>/;
+const TAG_FRAME = /^<[a-z][\w-]*(?:\s[^>]*)?>/;
+
+const LABEL_FRAME = /^\[[A-Za-z][^\]\n]*\](?!\()/;
 
 const CLIP_MARKER = /… \[\+\d+ chars\]$/;
 
@@ -22,13 +24,18 @@ export function cronPromptMatches(text: string, cron: string): boolean {
 		: prompt.startsWith(stored.slice(0, clipped.index));
 }
 
+function opensWithHarnessFrame(text: string): boolean {
+	const opening = text.trimStart();
+	return TAG_FRAME.test(opening) || LABEL_FRAME.test(opening);
+}
+
 export function humanPrompt(
 	source: string | undefined,
 	text: string,
-	env: Env,
+	attended: boolean,
 	crons: readonly string[] = [],
 ): boolean {
 	if (source !== undefined) return source === "user";
-	if (!replyInteractive(env) || HARNESS_WRAPPER.test(text)) return false;
+	if (!attended || opensWithHarnessFrame(text)) return false;
 	return !crons.some((cron) => cronPromptMatches(text, cron));
 }

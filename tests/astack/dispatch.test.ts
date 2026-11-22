@@ -384,6 +384,23 @@ describe("the Claude Code decoder", () => {
 });
 
 describe("the captured prompt channels", () => {
+	function captured(channel: string): unknown {
+		return JSON.parse(
+			readFileSync(
+				join(FIXTURES, `hook-input-UserPromptSubmit-${channel}.json`),
+				"utf8",
+			),
+		);
+	}
+
+	function decodedPrompt(raw: unknown): HookEvent | undefined {
+		return decode("claude-code", "UserPromptSubmit", raw, {
+			env: { CLAUDE_CODE_ENTRYPOINT: "cli" },
+			cwd: project,
+			readText: () => undefined,
+		})?.events[0];
+	}
+
 	test.each([
 		["workflow-brief", "[Workflow harness — computed task] "],
 		["cocode-relay", '[CoCode: the agent in CoCode thread "'],
@@ -392,22 +409,27 @@ describe("the captured prompt channels", () => {
 	])(
 		"[premise] the %s channel sends no source field, so only its opening text marks it",
 		(channel, opening) => {
-			const raw: unknown = JSON.parse(
-				readFileSync(
-					join(FIXTURES, `hook-input-UserPromptSubmit-${channel}.json`),
-					"utf8",
-				),
-			);
-			const [event] =
-				decode("claude-code", "UserPromptSubmit", raw, {
-					env: {},
-					cwd: project,
-					readText: () => undefined,
-				})?.events ?? [];
+			const raw = captured(channel);
+			const event = decodedPrompt(raw);
 			expect({
 				source: typeof raw === "object" && raw !== null && "source" in raw,
 				opening: event?.kind === "prompt" && event.text.startsWith(opening),
 			}).toEqual({ source: false, opening: true });
+		},
+	);
+
+	test.each([
+		["workflow-brief", false],
+		["cocode-relay", false],
+		["agent-message", false],
+		["print", true],
+	])(
+		"[control:sg-framed-prompt] in an attended session the %s prompt is a person's prompt: %p",
+		(channel, human) => {
+			expect(decodedPrompt(captured(channel))).toMatchObject({
+				kind: "prompt",
+				human,
+			});
 		},
 	);
 });

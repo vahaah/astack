@@ -171,7 +171,7 @@ function eventsFor(
 					human: humanPrompt(
 						text(payload.source),
 						prompt,
-						deps.env,
+						replyInteractive(deps.env),
 						savedCrons(session, deps),
 					),
 					session,

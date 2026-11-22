@@ -276,6 +276,31 @@ describe("machine prompts never change the grant", () => {
 		});
 	});
 
+	test.each(["workflow-brief", "cocode-relay"])(
+		"[control:sg-framed-prompt] a captured %s prompt that says merge gives no grant, so gh pr merge 12 is denied",
+		(channel) => {
+			const brief = JSON.parse(
+				readFileSync(
+					resolve(
+						import.meta.dir,
+						`../fixtures/hook-input/hook-input-UserPromptSubmit-${channel}.json`,
+					),
+					"utf8",
+				),
+			);
+			const session = `framed-${channel}`;
+			submit(session, brief.prompt);
+			expect(loadGrant({ ASTACK_STATE_DIR: state }, session)).toEqual({
+				kind: "none",
+			});
+			expect(bash(guard(GREEN), "gh pr merge 12", project, session)).toEqual({
+				exit: 2,
+				stderr:
+					"astack blocked gh pr merge:\n- Nobody gave a merge grant. The owner did not say to merge in this turn. .astack/profile.json gives no standing grant (merge.authority or merge.standingBases). Ask the owner, or let the owner merge.",
+			});
+		},
+	);
+
 	test("a hand-back after the owner's grant keeps the grant", () => {
 		submit("hb-2", "Merge PR 12.");
 		submit("hb-2", handBack("The review is done."));

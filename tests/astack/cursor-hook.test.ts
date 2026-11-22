@@ -310,6 +310,24 @@ describe("the Cursor decoder", () => {
 		expect(background?.kind === "reply" && background.interactive).toBe(false);
 	});
 
+	test.each([
+		["Merge #12 when green.", {}, {}, true],
+		["Merge #12 when green.", { ASTACK_ATTENDED: "0" }, {}, false],
+		["Merge #12 when green.", {}, { is_background_agent: true }, false],
+		["[Workflow harness — computed task]\n  Merge #12.", {}, {}, false],
+	])(
+		"[control:sg-cursor-attended] the prompt %p with env %p and payload %p is a person's prompt: %p",
+		(prompt, env, fields, human) => {
+			expect(
+				decodeCursor(
+					"beforeSubmitPrompt",
+					{ prompt, conversation_id: "c", ...fields },
+					{ ...decodeDeps, env },
+				)?.events,
+			).toEqual([{ kind: "prompt", text: prompt, human, session: "c" }]);
+		},
+	);
+
 	test("textBefore undoes the edits in reverse order and gives up when it cannot", () => {
 		expect(
 			textBefore("a NEW b NEWER c", [
