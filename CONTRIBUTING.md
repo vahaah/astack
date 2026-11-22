@@ -19,7 +19,8 @@ bun run check
 ```
 
 - `bun run check:drift` compiles the CLI in memory and compares every generated file with the committed one. It changes nothing on disk.
-- `bun run check` rebuilds every target. It runs validation, scans, STE checks, the skill word budget, tests, formatting, lint, type checks and the change proof.
+- `bun run check` runs formatting, lint and type checks first. Then it rebuilds every target and runs validation, scans, STE checks, the skill word budget and the change proof. It runs the tests last.
+- `bun run check:fast` gives a short answer while you work, with a fixed cap of 20 s. It runs the checks of the changed code and the launcher tests. It does not replace `bun run check`.
 
 Run `bun run check` before each commit. Do not weaken a check to make a change pass.
 
