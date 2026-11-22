@@ -7,6 +7,11 @@ export type TlcRecord = {
 	readonly body: string;
 };
 
+export type TlcOutput = {
+	readonly records: readonly TlcRecord[];
+	readonly loose: readonly string[];
+};
+
 export type RunEnd =
 	| {
 			readonly kind: "exited";
@@ -41,14 +46,14 @@ const CODE = {
 	finished: 2186,
 	temporalStart: 2192,
 	temporalDone: 2267,
+	sanyFailed: 3002,
 } as const;
 
 const SEVERITY = { error: 1, bug: 2, warning: 3, state: 4 } as const;
 
-export function parseTlcRecords(
-	output: string,
-): Result<readonly TlcRecord[], string> {
+export function parseTlcRecords(output: string): Result<TlcOutput, string> {
 	const records: TlcRecord[] = [];
+	const loose: string[] = [];
 	let open: { code: number; severity: number; lines: string[] } | undefined;
 	for (const line of output.split(/\r?\n/)) {
 		const start = /^@!@!@STARTMSG (\d+):(\d+) @!@!@$/.exec(line);
@@ -67,9 +72,49 @@ export function parseTlcRecords(
 			});
 			open = undefined;
 		} else if (open !== undefined) open.lines.push(line);
+		else loose.push(line);
 	}
 	if (open !== undefined) return err(`record ${open.code} has no end`);
-	return ok(records);
+	return ok({ records, loose });
+}
+
+function sanyLocation(loose: readonly string[]): string | undefined {
+	const located = (
+		module: string | undefined,
+		line: string | undefined,
+		column: string | undefined,
+		message: string | undefined,
+	): string =>
+		`SANY reports ${module === undefined ? "" : `module ${module}, `}line ${line}, column ${column}: ${(message ?? "").trim()}`;
+	for (const [at, text] of loose.entries()) {
+		const rest = loose.slice(at + 1);
+		const parse = /\bat line (\d+), column (\d+)\b/.exec(text);
+		if (parse !== null) {
+			const module = rest
+				.map((next) => /^In module (\S+)$/.exec(next.trim())?.[1])
+				.find((name) => name !== undefined);
+			return located(module, parse[1], parse[2], text);
+		}
+		const semantic =
+			/^line (\d+), col (\d+) to line \d+, col \d+ of module (\S+)$/.exec(
+				text.trim(),
+			);
+		if (semantic !== null)
+			return located(
+				semantic[3],
+				semantic[1],
+				semantic[2],
+				rest.find((next) => next.trim() !== ""),
+			);
+	}
+	return undefined;
+}
+
+function sanyNote(output: TlcOutput): string {
+	if (!output.records.some((record) => record.code === CODE.sanyFailed))
+		return "";
+	const location = sanyLocation(output.loose);
+	return location === undefined ? "" : `. ${location}`;
 }
 
 function interrupted(label: RunLabel, end: RunEnd): string | undefined {
@@ -134,14 +179,14 @@ type Exited = Extract<RunEnd, { kind: "exited" }>;
 function exitedRecords(
 	label: RunLabel,
 	end: RunEnd,
-): Result<{ run: Exited; records: readonly TlcRecord[] }, string> {
+): Result<{ run: Exited; output: TlcOutput }, string> {
 	const stopped = interrupted(label, end);
 	if (stopped !== undefined || end.kind !== "exited")
 		return err(stopped ?? `the ${label} run did not exit`);
-	const records = parseTlcRecords(end.stdout);
-	if (!records.ok)
-		return err(`the ${label} run printed malformed output: ${records.error}`);
-	return ok({ run: end, records: records.value });
+	const output = parseTlcRecords(end.stdout);
+	if (!output.ok)
+		return err(`the ${label} run printed malformed output: ${output.error}`);
+	return ok({ run: end, output: output.value });
 }
 
 function noiseProblem(
@@ -169,15 +214,18 @@ export function judgePositive(
 ): Result<Counts, string> {
 	const exited = exitedRecords(label, end);
 	if (!exited.ok) return exited;
-	const { run, records } = exited.value;
+	const { run, output } = exited.value;
+	const { records } = output;
 	if (run.code !== 0)
 		return err(
-			`the ${label} run exited ${run.code} with ${errorCodes(records)}`,
+			`the ${label} run exited ${run.code} with ${errorCodes(records)}${sanyNote(output)}`,
 		);
 	const noise = noiseProblem(label, run, records);
 	if (noise !== undefined) return err(noise);
 	if (records.some((record) => record.severity === SEVERITY.error))
-		return err(`the ${label} run reported ${errorCodes(records)}`);
+		return err(
+			`the ${label} run reported ${errorCodes(records)}${sanyNote(output)}`,
+		);
 	const temporalRecords: readonly (readonly [number, string])[] = [
 		[CODE.temporalStart, "temporal check"],
 		[CODE.temporalDone, "temporal check completion"],
@@ -216,14 +264,15 @@ export function judgeNegative(
 ): Result<Violation, string> {
 	const exited = exitedRecords("negative", end);
 	if (!exited.ok) return exited;
-	const { run, records } = exited.value;
+	const { run, output } = exited.value;
+	const { records } = output;
 	const temporal = expect.kind === "temporal";
 	const wanted = temporal
 		? "temporal property violation"
 		: "invariant violation";
 	if (run.code !== (temporal ? 13 : 12))
 		return err(
-			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}`,
+			`the negative run exited ${run.code} with ${errorCodes(records)}, not the expected ${wanted}${sanyNote(output)}`,
 		);
 	const noise = noiseProblem("negative", run, records);
 	if (noise !== undefined) return err(noise);

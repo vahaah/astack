@@ -468,7 +468,7 @@ describe("astack check proof", () => {
 			(p) => {
 				p.negative.replacement = '/\\ status\' == "admitted"';
 			},
-			"stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation\n",
+			'stop: proof countermodel: the negative run exited 150 with error 3002, not the expected invariant violation. SANY reports module Gate, line 7, column 29: Encountered "Beginning of definition" at line 7, column 29 and token "/\\\\"\n',
 		],
 	])(
 		"[control:proof-wrong-countermodel] %s is not an accepted countermodel",
