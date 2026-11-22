@@ -129,6 +129,59 @@ describe("CI changes with required proof records", () => {
 		expect(result.out).not.toContain("admitted");
 	});
 
+	function perChange(own: string, second: boolean) {
+		const repo = candidate();
+		const older = '{"version":1,"change":"an-older-change"}\n';
+		git(repo.root, "checkout", "-q", "-b", "trunk", repo.base);
+		writeFiles(repo.root, {
+			[MANIFEST]: older,
+			".astack/proof/m0.json": older,
+			".astack/proof/two.json": older,
+		});
+		git(repo.root, "add", "-A");
+		git(repo.root, "commit", "-q", "-m", "main holds older manifests");
+		git(repo.root, "checkout", "-q", "-b", "per-change");
+		git(repo.root, "rm", "-q", MANIFEST, ".astack/proof/m0.json");
+		writeFiles(repo.root, {
+			[RECORD]: record,
+			[WORKFLOW]: workflow("bun run check --strict"),
+			[own]: JSON.stringify(repo.proof),
+			...(second ? { ".astack/proof/two.json": "{}\n" } : {}),
+		});
+		git(repo.root, "add", "-A");
+		git(repo.root, "commit", "-q", "-m", "move to a manifest of the change");
+		return { repo, result: run(repo, "trunk") };
+	}
+
+	test("[control:ci-proof-per-change] a manifest of the change under .astack/proof/ and each deleted manifest permit CI classification", () => {
+		const { result } = perChange(".astack/proof/own.json", false);
+		expect(result.out).toEndWith(
+			"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n",
+		);
+		expect(result.err).toBe("");
+		expect(result.code).toBe(3);
+	});
+
+	test("[control:ci-proof-two-manifests] a second changed manifest under .astack/proof/ stops CI classification", () => {
+		const { repo } = perChange(".astack/proof/own.json", true);
+		const trunk = git(repo.root, "rev-parse", "trunk");
+		refuses(
+			repo,
+			`proof records: the diff from the merge base ${trunk} of trunk and HEAD changes more than one manifest under .astack/proof/: .astack/proof/own.json, .astack/proof/two.json. Pass a manifest path`,
+			"trunk",
+		);
+	});
+
+	test("[control:ci-proof-merged-manifest] a manifest of the merge base that the change edits stops CI classification", () => {
+		const { repo } = perChange(".astack/proof/two.json", false);
+		const trunk = git(repo.root, "rev-parse", "trunk");
+		refuses(
+			repo,
+			`proof records: the merge base ${trunk} of trunk holds .astack/proof/two.json. Add a new manifest under .astack/proof/`,
+			"trunk",
+		);
+	});
+
 	test.each(["src/extra.ts", "formal/Gate.tla", "formal/extra.md"])(
 		"[control:ci-proof-record-scope] a change to %s stays outside CI classification",
 		(path) => {

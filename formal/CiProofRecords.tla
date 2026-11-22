@@ -1,7 +1,7 @@
 ------------------------ MODULE CiProofRecords ------------------------
 EXTENDS Naturals, FiniteSets
 
-Checks == {"schema", "base", "regular", "utf8", "sections", "roles", "path"}
+Checks == {"schema", "base", "regular", "utf8", "sections", "roles", "path", "manifest"}
 RecordOK == [check \in Checks |-> TRUE]
 RecordCases == {RecordOK} \cup {[RecordOK EXCEPT ![check] = FALSE] : check \in Checks}
 Kinds == {"ci", "ci-records", "ci-source", "ci-model"}

@@ -36,3 +36,22 @@ The project configs can name private repositories and paths.
 Public fixtures must use synthetic values with the same structure.
 An apply write refuses the example companion.
 Commit companion changes before an apply that records its provenance.
+
+## Project configs
+
+Apply reads each project config with these rules.
+
+`projects/<name>.json` in the companion holds the apply config for one project.
+Its `tracker`, `merge`, `ste`, `domain` and `keepPatterns` fields become the repo's `.astack/profile.json`.
+Its `commentConflicts` list the open comment-rule conflicts, and its `commentDecisions` record the owner's decisions.
+`projects/<name>/pr-review-hardening.profile.md` is the hardening profile of that repo.
+
+The `branches` object of `projects/<name>.json` holds an overlay for each base branch with its own CI, such as `v2`.
+An overlay sets only `gates`, `ciOnlyGates` and `ciParity`, and each other key comes from the top of the config.
+`projects/<name>/branches/<branch>/pr-review-hardening.profile.md` is the hardening profile of the overlay.
+`scripts/lib/projects.ts` fails a config when that file is missing.
+
+An apply whose `--base` names that branch uses the overlay for the CI parity check and writes the profile of the overlay.
+An update takes the overlay from `--overlay <branch>`, and the README gives the rule that refuses an update without it.
+A decision citation is a comment that cites an ADR, such as `ADR-0006`, or a comment line that starts with `Source:`.
+Apply sends each citation of the repo through the comment hook with `keepPatterns`, and fails on a citation that the hook does not keep.

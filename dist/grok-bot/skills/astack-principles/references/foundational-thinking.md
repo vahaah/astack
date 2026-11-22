@@ -1,37 +1,20 @@
 # Foundational Thinking
 
-Structural decisions preserve future options.
-Decisions within the code preserve simplicity.
+Structural decisions keep future options open.
+Decisions inside the code keep it simple.
 
 ## Data structures first
 
-Choose the data shape before writing logic.
-Define core types early.
-Trace every access pattern.
-Choose structures that match the dominant paths.
-
-At code level, remove repeated structure instead of abstracting every repeated line.
-Types and data models should converge.
-Three similar statements still beat a premature abstraction.
-Prefer explicit code to clever code.
-Test behavior and edge cases, not line counts.
+Choose the data shape before you write logic.
+Define the core types early, and trace each access pattern.
+Remove repeated structure, but do not make an abstraction for each repeated line.
 
 ## Concurrency
 
-Before sharing state, ask "what happens if another actor modifies this concurrently?"
+Before you share state, ask what happens when a different actor changes it at the same time.
 If the answer is not "nothing", isolate the state.
 
 ## Scaffold first
 
-Do work first when it helps every later phase.
-Ask "does every subsequent phase benefit from this existing?"
-CI, linting, test infrastructure, and shared types are scaffold.
-Put setup before features and tests before fixes.
-Keep commits small and focused on one purpose.
-
-Each increment should deliver a coherent abstraction or deepen an existing one.
-Do not scatter a new capability across callers as special-case coordination.
-
-Subtract before building the scaffold.
-Remove dead code first.
-Then lay the foundations.
+Do first the work that helps each later phase, such as CI, lint, test tools and shared types.
+Ask whether each later phase gets a benefit from it.

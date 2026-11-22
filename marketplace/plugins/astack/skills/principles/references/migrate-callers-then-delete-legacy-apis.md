@@ -1,22 +1,11 @@
 # Migrate Callers Then Delete Legacy APIs
 
-After you choose a new API as the right design, migrate its callers in one refactor wave.
-Remove the old API in that same wave instead of keeping a compatibility layer.
+When you choose a new internal API, move each caller in one refactor wave.
+Remove the old API in that wave. Do not keep a compatibility layer.
 
-## Rules
+`astack:coding-rules` gives the rule in its section "Keep the change small and fenced".
 
-- Do not keep legacy API paths only because internal callers still exist.
-- Inventory the callers. Migrate them. Delete the old API immediately.
-- Treat temporary adapters as exceptions. Set a time limit for them. Do not make them the default architecture.
-- Update tests to assert the new contract. Delete tests that only protect implementation details from before the refactor.
+Apply it when no external user needs backward compatibility and the project can take a coordinated break.
+Two APIs give two paths for the same work.
 
-## Conditions
-
-Apply this principle when all of these conditions hold:
-
-- No external users depend on backward compatibility.
-- The project can absorb coordinated breaking changes.
-- The new API is part of a simplification or refactor initiative.
-
-Keeping both APIs creates two paths for the same work.
-It slows cleanup and makes the codebase grow without removing old paths.
+You skipped this principle when both APIs still do the same work after the change.

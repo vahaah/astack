@@ -1,60 +1,47 @@
 ---
 name: "astack-how"
-description: "Explain code behavior, architecture, ownership, or placement. Use for walkthroughs and teaching requests. Use why for design reasons."
+description: "Explain how code works, its architecture, its owners, or where a change belongs. Use for walkthroughs and teaching requests. Use why for design reasons."
 disable-model-invocation: true
 ---
 
 # How
 
-Explain how code works and where its responsibilities belong.
-Give a senior engineer enough context to work in the subsystem without narrating every source line.
-For a teaching request, read `references/teach.md` and combine the `how` and `why` results.
-
-Use read-only Agent subagents with `subagent_type: general-purpose`.
-Tell each one to read code and run read-only commands without edits.
-Use the `how explorer` role from `astack-models.md`, with `haiku` as its default.
-Use the `how explainer` role for each explainer, with `opus` as its default.
-
-Set `model` to the configured role value.
-Use the default when the rule or role line is missing.
-For `auto` or `inherit-parent`, omit `model`.
-If the Agent tool rejects a value, use the default and report the fallback.
-Follow the effort rules in `../astack-mode/SKILL.md`.
-
-A nested run adds another subagent level.
-Claude Code permits three levels and gives no Agent tool to the third level.
-Without that tool, do the explorer and explainer work yourself, in order.
-Report that fallback.
-
-## 1. Choose the scope
-
-For an ambiguous question, state your interpretation and start exploration.
+Explore the codebase to answer a "how does X work?" question.
+For an ambiguous scope, state your interpretation and start.
 The user can redirect it.
 
-For one module, one small helper, or one narrow question, use one explainer.
-Build its prompt from `references/explainer-prompt.md` without the explorer-findings section.
+## 1. Explain
+
+Start one read-only Agent subagent with `subagent_type: general-purpose`.
 It explores and explains in one pass.
-Then go to step 4.
+Set `model` from the `judgment and prose` role line of `astack-models.md`, or to `opus` with no line.
+For `auto` or `inherit-parent`, omit `model`.
+If the Agent tool refuses the value, use `opus`.
+Report that fallback.
 
-For several files, services, or a full architecture question, continue with step 2.
-When uncertain, use the simple path.
+Give the subagent the user's question and this brief:
 
-## 2. Explore a complex scope
+> Write an architectural explanation for a senior engineer who is new to this area.
+> Explore the codebase, and do not edit a file.
+> After one read, the engineer must have a mental model that lets them work in this area with confidence.
+> Use the headings `Overview`, `Key Concepts`, `How It Works`, `Where Things Live`, and `Gotchas`.
+> Omit a heading that does not apply.
+> In `How It Works`, follow the trigger, the data flow, and the decision points in prose.
+> Name the files and functions so the reader can find them.
+> Add a diagram only when it shows a relationship faster than prose.
 
-Split the question into 2 to 4 distinct angles.
-Spawn all explorers in one message.
-Fill `references/explorer-prompt.md` with the question and assigned angle for each one.
+With no Agent tool, do the exploration and the explanation yourself.
 
-## 3. Combine the findings
+## 2. Teach
 
-Wait for every explorer's result.
-Spawn one explainer with `references/explainer-prompt.md` and all explorer findings.
+A request to teach also asks why the code has its shape.
+Then also follow `why` on the same target.
+Read the file that `astack skill-path astack:why` prints.
+Weave its reasons into each heading.
+Keep its confidence words, because its uncertainty is part of the evidence.
 
-## 4. Present the explanation
+## 3. Present
 
-Present the explainer's output.
-Make light edits for clarity or conversation context.
+Present the output of the subagent.
+Make light edits for clarity or for the context of the conversation.
 Do not rewrite it substantially.
-
-Use the template's applicable sections: `Overview`, `Key Concepts`, `How It Works`, `Where Things Live`, and `Gotchas`.
-Omit a section when it does not apply.

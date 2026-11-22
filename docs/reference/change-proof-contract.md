@@ -5,6 +5,7 @@
 [ADR 0008](../adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md) governs the explicit history-bound proposal route and its selected landing-value option.
 [ADR 0014](../adr/0014-each-proof-stop-names-its-cause.md) governs what each stop names.
 [ADR 0015](../adr/0015-change-proof-follows-risk.md) governs the proof rung, and [the ladder requirements](proof-ladder.md) give its criteria.
+[ADR 0016](../adr/0016-each-change-carries-its-own-proof-manifest.md) governs the manifest of each change and the ordinary ADR rule.
 The [installed contract](../../marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) gives the format and runner limits.
 
 ## Acceptance criteria
@@ -30,6 +31,12 @@ The [installed contract](../../marketplace/plugins/astack/skills/pr-review-harde
 - [criterion:CP-19] A failed run names its invariant or property. It prints at most 20 numbered steps of 200 characters, then a count of the rest.
 - [criterion:CP-20] A stale stop names each changed path, the index or the ratification history. A run past the deadline names its last progress record.
 - [criterion:CP-21] Each stop writes one stderr line with the proof contract section of its stage. The example manifest of the proof contract parses, and the schema accepts each carrier form of the proof contract.
+- [criterion:CP-manifest-merge] Two branches that each replace the base manifest with their own merge with 0 conflicts after one of them merges. `check proof --base main` admits the second, whose scope lists the deleted manifest exactly.
+- [criterion:CP-manifest-search] With no `--base`, the one present manifest under `.astack/proof/` admits, and the first line names it. Two manifests stop with both names. A tree with no manifest there reads `.astack/proof.json`.
+- [criterion:CP-manifest-base] With `--base`, two manifests that the diff from the merge base changes stop with both names. A diff that changes none stops and names the merge base. A manifest that the merge base holds stops with its path, also in `check ci-pins`.
+- [criterion:CP-manifest-held] A tree that keeps a manifest of its manifest base stops with that path, also when the change rewrites it as its own. `.astack/proof.json` beside a folder manifest stops too. An unstaged delete of the base manifest admits.
+- [criterion:CP-adr-decision] An Accepted ordinary ADR that explains the arrows only under the cited decision passes the domain stage. A decision with only subsections passes, and an empty decision stops.
+- [criterion:CP-record-decision] A proof record whose D1 and D2 each hold a Category composition admits a manifest that cites D2. A D2 section with no arrow stops, also when D1 holds the arrows. A title that the D2 span lacks comes from the whole record. A record with a missing section still stops.
 
 ## Claim boundary
 

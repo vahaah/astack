@@ -25,7 +25,7 @@ Follow [Prove It Works](../../astack-principles/references/prove-it-works.md).
    Each iteration ends in a check before the next begins, under [Sequence Work into Verifiable Units](../../astack-principles/references/sequence-verifiable-units.md). For an unattended run, borrow only the wake mechanism from Autonomous run (`playbooks/autonomous-run.md`). Do not borrow its stop rule.
 6. Continue beyond the first plateau. On a stall or several rejections, try another strategy before declaring the work complete. Options include changing category, combining near-misses, rereading source, or trying a more radical approach. Correctness and simplicity take priority over the number. Revert a win that breaks behavior. Keep a simplification that holds the number, under [Laziness Protocol](../../astack-principles/references/laziness-protocol.md).
 7. Stop when the predicate is met or remaining ideas offer marginal value that does not justify their cost. Do not relax the predicate to meet it. Do not quit while cheap untried hypotheses remain. If stuck, surface that fact instead of repeating attempts without progress.
-8. Run Opening a PR with accepted commits stacked in the order they landed.
+8. Run Create PR steps 1 to 8 (`references/create-pr.md`) with accepted commits stacked in the order they landed.
 
 ## Reply
 

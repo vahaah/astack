@@ -13,11 +13,11 @@
 
 astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you at each decision that is yours, such as a plan choice or a merge. To start, follow the [Quickstart](#quickstart).
 
-- 44 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
+- 43 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
-- The `astack` CLI for plan sessions and 13 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
+- The `astack` CLI for plan sessions and 14 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
 
 ## Contents
 
@@ -90,7 +90,7 @@ Install the signed release `v0.3.0`. Use that tag only after it is on [the relea
 
 The CLI runs on Node 22 or later, or on Bun. `bun run check` and `bun run apply` need Bun. `astack check proof` and the `change-proof` gate also need Java 17 or later. The checker fetches the pinned TLA+ `tla2tools.jar` v1.7.4 and verifies its SHA-256 on every use. See the [formal-model runbook](docs/runbooks/formal-models.md).
 
-> **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `bun run apply`. A repo without `.astack/proof.json`, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
+> **Upgrading a repo that already uses astack?** Releases with the proof gate make `change-proof` a mandatory gate on `bun run apply`. A repo without a proof manifest, a TLA+ model and a governing ADR fails that gate. Follow the [migration guide](docs/runbooks/change-proof-migration.md) in one adoption PR before you apply the new profile.
 
 ```sh
 ASTACK_TAG=v0.3.0
@@ -173,7 +173,7 @@ You land with a merge grant, then plan the next session.
 8. **Merge** only with a grant in the profile or in that turn.
 9. **Plan the next session.**
 
-The full guide is [docs/workflow.md](docs/workflow.md). The rule card routes each session. This page states the limits of each check. The card is [marketplace/plugins/astack/skills/mode/references/card.md](marketplace/plugins/astack/skills/mode/references/card.md).
+The rule card routes each session, and it wins where this page differs. This page states the limits of each check. The card is [marketplace/plugins/astack/skills/mode/references/card.md](marketplace/plugins/astack/skills/mode/references/card.md).
 
 ### One plan session is one pull request
 
@@ -294,7 +294,7 @@ The trade-off is that astack is opinionated. If its path does not fit, the proje
 
 ### What ChangeProof proves, and what it does not
 
-`astack check proof` reads `.astack/proof.json` and admits the change only when all of these hold:
+`astack check proof` reads the manifest of the change under `.astack/proof/` and admits the change only when all of these hold:
 
 1. The manifest parses as version 1 JSON with only its known keys. Its `base` is a full commit. Without `--base`, that commit is the diff base and an ancestor of `HEAD`. With `--base <ref>`, the diff base is the merge base of the ref and `HEAD`, and the manifest base must be an ancestor of it. So the proof of a PR stays valid when main moves.
 2. Its `scope` rows cover every changed, staged, removed and untracked path since the diff base.
@@ -373,7 +373,7 @@ Use the local-copy procedure in [`dist/cursor/astack/README.md`](dist/cursor/ast
 
 ### Grok Bot
 
-Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 46 skills.
+Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 45 skills.
 
 ### Other Agent Skills clients
 
@@ -441,7 +441,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack board <plan>` | Show what to merge, what is active and what can start. Do not commit the board |
 | `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
 | `astack check pr-head` | Check that HEAD equals or descends from the PR head fetched with `gh` |
-| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus `.astack/proof.json` or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
+| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus the manifest of the change, a deleted manifest or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
 | `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
 | `astack check hardening-profile` | Check `.claude/pr-review-hardening.profile.md` with the rules that apply uses. Each problem prints with its repair and exits 1. A missing profile or fenced block exits 2. `astack doctor` runs the same rules |
@@ -465,7 +465,7 @@ The [review checks runbook](docs/runbooks/review-checks.md) gives the commands f
 
 ### Change proof
 
-`astack check proof` reads `.astack/proof.json` at the repo root. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract. That contract is the glossary, the aggregate, the terms and the invariants. The registry `formal/models.json` and the `proof.minRung` floor set the proof rung, so a docs-only diff starts no Java process. The check fails when any part is missing or stale. With `--base <ref>`, the diff starts at the merge base of the ref and `HEAD`. The manifest `base` can be older than that merge base, so a merge to main keeps the proof of a PR valid. Without `--base`, the diff starts at the manifest `base`, so a merge of main puts the paths of main in scope. So pass `--base origin/<base>` in the proof job of CI and in the `change-proof` gate. Do not move `base` after such a merge. Fetch enough git history in CI for `base` and the merge base to resolve.
+Each change adds its own manifest at `.astack/proof/<change>.json` and deletes each manifest of its base. `astack check proof` reads the one manifest there, and with `--base` the one that the diff adds. A tree with no manifest there reads the legacy `.astack/proof.json`. The manifest names a fixed `base` commit, the `scope` paths and their obligations. It also names the TLA+ model references and the domain contract. That contract is the glossary, the aggregate, the terms and the invariants. The registry `formal/models.json` and the `proof.minRung` floor set the proof rung, so a docs-only diff starts no Java process. The check fails when any part is missing or stale. With `--base <ref>`, the diff starts at the merge base of the ref and `HEAD`. The manifest `base` can be older than that merge base, so a merge to main keeps the proof of a PR valid. Without `--base`, the diff starts at the manifest `base`, so a merge of main puts the paths of main in scope. So pass `--base origin/<base>` in the proof job of CI and in the `change-proof` gate. Do not move `base` after such a merge. Fetch enough git history in CI for `base` and the merge base to resolve.
 
 `bun run apply` requires one gate named `change-proof`. That gate cannot be optional or limited to some paths. Its command runs `astack check proof`, such as `astack check proof --base origin/main`. `review-growth` warns and still exits 0. `spec-drift` exits 1 when a link is missing. Neither replaces the proof gate. Add `interrogate` only when you want that review.
 The [formal-model runbook](docs/runbooks/formal-models.md) gives the required workflow and the retry tutorial.
@@ -496,7 +496,7 @@ In Cursor, deny means a follow-up prompt, unless the change goes through `preToo
 
 ## Applying astack to a repo
 
-`bun run apply` is a script in this checkout, not an `astack` command. It reads `projects/<name>.json` from the [private companion](#private-companion). It writes the managed files, `.astack/profile.json` and the hardening profile. The gates live in the hardening profile. Apply does not write `.astack/proof.json`. Run a dry run first. See [the repository install guide](docs/install-repo.md). `astack init` writes only a starter `.astack/profile.json` and never makes a commit.
+`bun run apply` is a script in this checkout, not an `astack` command. It reads `projects/<name>.json` from the [private companion](#private-companion). It writes the managed files, `.astack/profile.json` and the hardening profile. The gates live in the hardening profile. Apply does not write a proof manifest. Run a dry run first. See [the repository install guide](docs/install-repo.md). `astack init` writes only a starter `.astack/profile.json` and never makes a commit.
 
 ## Runtimes, files and environment
 
@@ -510,7 +510,7 @@ In Cursor, deny means a follow-up prompt, unless the change goes through `preToo
 | File or variable | Meaning |
 |---|---|
 | `.astack/profile.json` | Tracker, merge grant, hook profile, STE mode, plan folders, `commentKeep`, `managed`, `neutral`, `types` and `maxCommentLines`. Gates are not in this file |
-| `.astack/proof.json` | The ChangeProof manifest. Prepare it in the repo. Apply does not write it |
+| `.astack/proof/<change>.json` | The ChangeProof manifest of one change. Prepare it in the repo. Apply does not write it. With none there, the check reads the legacy `.astack/proof.json` |
 | `.claude/pr-review-hardening.profile.md` | The hardening profile. Its gates mirror CI, including the mandatory `change-proof` gate |
 | `ASTACK_TLC_JAR` | Absolute path of a pinned `tla2tools.jar` outside the repo |
 | `ASTACK_PROOF_TIMEOUT_MS` | Whole number from 1 to 60000. It can only lower the 60 second deadline of each TLC run |
@@ -550,11 +550,13 @@ bun run check:fast
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so a merge of main shows its paths as a scope gap.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so the proof stops on each path that a merge of main brings in.
+
+Each README chart is a `mermaid` block, and `docs/charts/<name>.mmd` keeps its source. When you change a chart, change the `.mmd` file and the README block together. `bun run charts` fails when they differ.
 
 `check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget and the change proof. It runs the tests last, in parallel.
 
-The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
+The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. `lines` of `scripts/lib/budget.json` caps the longest line of `AGENTS.md`, and the gate also fails over that cap. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
 
 `check:fast` gives a short answer while you work. It runs the type check, lint, build, bundle, the dist build without the external checks, STE precision gate and word budget. Then it runs the tests that `bun test --changed` selects from the merge base with `origin/HEAD`. It also runs each test file that starts the launcher or the bundle. Its fixed cap is 20 s. It does not fail on time, and it does not replace `check`.
 
@@ -569,7 +571,7 @@ The word budget of `check`, `bun run budget`, counts the words of the Markdown f
 | `dist/` | Generated builds, one folder per client |
 | `tests/` | Tests and synthetic fixtures |
 | `upstream/` | Frozen snapshots for licence evidence and tests |
-| `docs/` | Design, decisions, workflow and runbooks |
+| `docs/` | Design, decisions and runbooks |
 
 Change generated files at their source. `AGENTS.md` names each generated path and its build command. Private config stays in the [private companion](#private-companion).
 

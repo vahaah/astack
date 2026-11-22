@@ -29,6 +29,13 @@ Ratification history stays bound to it. It must be an ancestor of the diff base.
 _Avoid_: Current main tip
 _Code_: `ProofBase.manifest`
 
+### Change manifest
+
+The ChangeProof of one change at `.astack/proof/<change>.json`, which the change adds as a new file.
+The change deletes each manifest of its manifest base. A tree with no change manifest uses `.astack/proof.json`.
+_Avoid_: Shared proof file, default proof manifest
+_Code_: `chooseManifest`
+
 ### Diff base
 
 The commit that the scope check and the input snapshots read from.
@@ -194,6 +201,20 @@ The cap on the `*.md` words of each skill tree and on their total, in `scripts/l
 `bun run budget` fails when a skill or the total passes its cap.
 _Avoid_: Size limit, token budget
 _Code_: `budgetReport`
+
+### Installed copy
+
+A skill folder that an install or a build wrote, such as a plugin cache or `dist/`.
+An agent reads it, but never edits it, because the next install or build replaces it.
+_Avoid_: Plugin copy, local skill
+_Code_: `marketplace/plugins/astack/skills/reflect/SKILL.md`
+
+### Source checkout
+
+A git work tree that tracks a skill, outside an installed copy and the apply `managed` list.
+An accepted skill edit goes there. With no source checkout, the edit goes to Backlog.
+_Avoid_: Source copy, repo copy
+_Code_: `marketplace/plugins/astack/skills/reflect/SKILL.md`
 
 ### Finding event
 

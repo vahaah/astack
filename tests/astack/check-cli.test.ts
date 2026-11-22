@@ -155,17 +155,16 @@ describe("astack check-pr", () => {
 		expect(run.out).toBe(out);
 	});
 
-	test.each([
-		"write-docs/SKILL.md",
-		"write-docs/references/pr-and-commits.md",
-		"mode/playbooks/opening-a-pr.md",
-	])("the PR body line limit of %s is the limit of check-pr", (file) => {
-		const text = readFileSync(join(SKILLS, file), "utf8");
-		const limits = [
-			...text.matchAll(/Keep (?:the|that) body under about (\d+) lines/g),
-		].map((match) => Number(match[1]));
-		expect(limits).toEqual([PR_BODY_MAX_LINES]);
-	});
+	test.each(["write-docs/SKILL.md", "write-docs/references/pr-and-commits.md"])(
+		"the PR body line limit of %s is the limit of check-pr",
+		(file) => {
+			const text = readFileSync(join(SKILLS, file), "utf8");
+			const limits = [
+				...text.matchAll(/Keep (?:the|that) body under about (\d+) lines/g),
+			].map((match) => Number(match[1]));
+			expect(limits).toEqual([PR_BODY_MAX_LINES]);
+		},
+	);
 
 	test("--template checks every heading of the named template", () => {
 		const run = astack(["check-pr", "-", "--template", "release"], PR_BODY);
