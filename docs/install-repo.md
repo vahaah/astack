@@ -87,13 +87,14 @@ The command reads the tracker from the branch names and the commit subjects. It 
 | `.astack/profile.json` | The settings that the astack hooks and the CLI read. These are the tracker, the merge grant, STE, the plan folders and the comment keep patterns. The `managed` list names each file that apply writes. |
 | `.astack/proof.json` | The repo-owned domain, composition, model, and control contract. Prepare it in the repo rather than generating unrelated proof through apply. |
 | `.astack/NOTICE` | The MIT notices of pstack and mattpocock/skills. It names each file that holds their text, and each of those files names it. |
-| `.claude/skills/pr-review-hardening/SKILL.md` | A stub that starts `astack:pr-review-hardening` in this repo. `skillMirrors` in the project config writes the same stub into a mirror such as `.agents/skills`. |
-| `.astack/pr-review-hardening/FALLBACK.md` | The fallback loop that each stub reads only when the plugin is absent. Primary and mirrored stubs link to this shared file. |
+| `.claude/skills/pr-review-hardening/SKILL.md` | A stub that starts `astack:pr-review-hardening` in this repo. With no plugin, it runs no step and gives the install line of the plugin. `skillMirrors` in the project config writes the same stub into a mirror such as `.agents/skills`. |
 | `.claude/pr-review-hardening.profile.md` | The gates, the reviewers and the limits of the review loop. |
 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` and `docs/agents/domain.md` | They tell the astack skills where the tickets, the labels and the domain docs are. |
 | `.claude/rules/<dir>/agent-skills.md` | It points agents to the three flow docs. |
 | `.claude/rules/<dir>/coding.md` and `.claude/rules/<dir>/comments.md` | Copies of the coding rule and the comment rule. The write mode adds them only when the project config sets `artifacts.rules: true`. |
 | `.claude/settings.json` | The marketplace and the three plugins, for teammates. The write mode adds them only with `--marketplace-repo`. |
+
+Apply deletes an old `.astack/pr-review-hardening/FALLBACK.md`, because the stub no longer reads it.
 
 `astack init` writes only the first file. To add the review loop, run `/astack:pr-review-hardening` in the repo. To add the flow docs, run `/astack:setup`.
 
