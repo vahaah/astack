@@ -589,7 +589,7 @@ describe("the merge guard", () => {
 		"S='pr merge'; gh $S 12 --admin",
 		'"$GH" api -X PUT repos/o/r/pulls/12/merge',
 		"Y=merge; gh pr $Y 12",
-		'X=pr; Y=MERGE; "$GH" $X ${Y,,} 12',
+		'X=pr; Y=MERGE; "$GH" $X "$(echo $Y | tr A-Z a-z)" 12',
 		'bash -c "gh pr view $N --json mergeable"',
 	])("%p cannot be read, so it is denied before the read", (command) => {
 		const reads: Reads = [];
