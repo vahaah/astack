@@ -31,6 +31,7 @@ import { PROFILE_PATH } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
 import type { Command } from "../command.ts";
+import { NODE_FLOOR } from "../floor.ts";
 import { type Io, usageError } from "../io.ts";
 
 type Json = Readonly<Record<string, unknown>>;
@@ -79,8 +80,6 @@ export function savedRuntimePath(home: string): string {
 	return join(home, ".local", "state", "astack", "runtime");
 }
 
-export const NODE_FLOOR = 22;
-
 function nodeMajor(path: string): number | undefined {
 	if (basename(path).startsWith("bun")) return undefined;
 	const result = spawnSync(path, ["--version"], {
@@ -89,14 +88,6 @@ function nodeMajor(path: string): number | undefined {
 	});
 	const major = /^v?(\d+)\./.exec(result.stdout ?? "")?.[1];
 	return major === undefined ? undefined : Number(major);
-}
-
-function usable(path: string | undefined): path is string {
-	if (!executable(path)) return false;
-	const major = nodeMajor(path);
-	return major === undefined
-		? basename(path).startsWith("bun")
-		: major >= NODE_FLOOR;
 }
 
 function nvmNodes(home: string): string[] {
@@ -112,28 +103,24 @@ function guiRuntime(
 	home: string,
 ): { readonly found: string | undefined; readonly old: string | undefined } {
 	const saved = readText(savedRuntimePath(home))?.split("\n")[0];
-	const candidates = [
+	const pick = [
 		env.ASTACK_RUNTIME,
 		saved,
+		"/usr/bin/bun",
+		"/bin/bun",
 		"/usr/bin/node",
 		"/bin/node",
-		"/opt/homebrew/bin/node",
 		"/opt/homebrew/bin/bun",
-		"/usr/local/bin/node",
+		"/opt/homebrew/bin/node",
 		"/usr/local/bin/bun",
+		"/usr/local/bin/node",
 		join(home, ".bun", "bin", "bun"),
 		join(home, ".volta", "bin", "node"),
 		...nvmNodes(home),
-	];
-	const found = candidates.find(usable);
-	const old =
-		found === undefined
-			? candidates.find(
-					(path): path is string =>
-						executable(path) && (nodeMajor(path) ?? NODE_FLOOR) < NODE_FLOOR,
-				)
-			: undefined;
-	return { found, old };
+	].find(executable);
+	return pick !== undefined && (nodeMajor(pick) ?? NODE_FLOOR) < NODE_FLOOR
+		? { found: undefined, old: pick }
+		: { found: pick, old: undefined };
 }
 
 function currentRuntime(): string {

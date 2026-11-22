@@ -366,6 +366,7 @@ export function snapshot(
 	hash.update("index\0");
 	hash.update(index.stdout);
 	hash.update("\0worktree\0");
+	const entries = new Map<string, string>();
 	const covered: string[] = [];
 	let files = 0;
 	for (const path of paths) {
@@ -381,10 +382,12 @@ export function snapshot(
 			const entry = directoryEntry(root, path, gitlinks.has(path), paths);
 			if (!entry.ok) return entry;
 			hash.update(`${path}\0${entry.value.line}\n`);
+			entries.set(path, entry.value.line);
 			files += entry.value.files;
 			if (entry.value.nested) covered.push(`${path.replace(/\/+$/, "")}/`);
 		} else {
 			hash.update(`${path}\0${line}\n`);
+			entries.set(path, line);
 			files++;
 		}
 	}
@@ -392,5 +395,8 @@ export function snapshot(
 		head,
 		digest: `sha256:${hash.digest("hex")}`,
 		files,
+		index: createHash("sha256").update(index.stdout).digest("hex"),
+		history: createHash("sha256").update(history).digest("hex"),
+		entries,
 	});
 }

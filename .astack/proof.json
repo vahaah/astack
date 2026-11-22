@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "finding-telemetry-and-own-fences",
-	"base": "c7758498463257ca7be4f1b7fa80b327bd94c4c1",
+	"base": "1508fb47273ceb33ef8b57f499fc8ebcff47372e",
 	"scope": [
 		{
 			"path": "src/astack/ste/events.ts",

@@ -1,3 +1,4 @@
+import { NODE_FLOOR } from "./cli/floor.ts";
 import { CODEX_HOOK_EVENTS, CODEX_HOOK_HASHES } from "./codex-trust.ts";
 import { MARKETPLACE_NAME, PLUGIN_IDS } from "./marketplace.ts";
 import { ASTACK_RULES, ruleLinkName } from "./rules.ts";
@@ -148,7 +149,7 @@ function runtimeFindings(snapshot: Snapshot): Finding[] {
 					"fail",
 					snapshot.runtime.old === undefined
 						? "bin/astack finds no node or bun with the PATH of a GUI app. Set ASTACK_RUNTIME, or run astack doctor --save-runtime."
-						: `bin/astack finds only ${snapshot.runtime.old}, which is older than node 22, so the hooks do not run. Install node 22 or later, or bun, and run astack doctor --save-runtime with it.`,
+						: `bin/astack picks ${snapshot.runtime.old} first, which is older than node ${NODE_FLOOR}, so the hooks do not run. Install node ${NODE_FLOOR} or later, or bun, and run astack doctor --save-runtime with it.`,
 				)
 			: finding(
 					"runtime",

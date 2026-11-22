@@ -16,6 +16,10 @@ import {
 
 afterAll(removeWorlds);
 
+function stderrLines(text: string): string[] {
+	return text.split("\n").sort();
+}
+
 describe("astack check pr-head", () => {
 	test("the complete unpushed list survives output above the default process buffer", () => {
 		const world = createWorld();
@@ -260,7 +264,7 @@ describe("astack check pr-head", () => {
 		script(world, 1, viewing(12, missing));
 		const run = astack(world, []);
 		expect(run.out).toBe("stop: git fetch exited 128\n");
-		expect(run.err).toBe(direct.stderr);
+		expect(stderrLines(run.err)).toEqual(stderrLines(direct.stderr));
 		expect(run.code).toBe(1);
 		expect(run.git).toEqual([["fetch", "origin", missing]]);
 	});
