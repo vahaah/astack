@@ -292,8 +292,7 @@
 				"bounds": [
 					"Three input kinds can change during the runs: a file, the index and the ratification history. Each nonempty subset is one case.",
 					"Each failure kind maps to one section of the proof contract.",
-					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results.",
-					"Finite Result laws use two values, two errors and all total functions between them."
+					"The authority and base cases, the validation stages and the bounded positive, negative, restored and freshness results."
 				],
 				"fairness": ["WF_vars(Next)"],
 				"invariants": [
@@ -310,10 +309,7 @@
 					"HistoryAtManifest",
 					"MovedAuthorityStops",
 					"StaleStopNamesPaths",
-					"StopNamesSection",
-					"ResultLeftIdentity",
-					"ResultRightIdentity",
-					"ResultAssociativity"
+					"StopNamesSection"
 				],
 				"properties": ["EventuallyTerminal"]
 			},
@@ -334,13 +330,15 @@
 				"docs/adr/0007-integrated-proposals-require-accepted-ratification.md",
 				"docs/adr/0008-ratified-landing-metadata-requires-an-explicit-opt-in.md",
 				"docs/adr/0012-change-proof-accepts-an-older-base.md",
-				"docs/adr/0014-each-proof-stop-names-its-cause.md"
+				"docs/adr/0014-each-proof-stop-names-its-cause.md",
+				"docs/adr/0017-law-claims-run-on-code.md"
 			],
 			"covers": [
 				"src/astack/change-proof/**",
 				"src/astack/cli/commands/check/proof.ts",
 				"scripts/check-proof.ts",
-				"src/astack/result.ts"
+				"src/astack/result.ts",
+				"src/astack/hook/events.ts"
 			],
 			"text": []
 		},
@@ -531,11 +529,6 @@
 		{
 			"path": "src/astack/hook/encode/index.ts",
 			"reason": "The encoders print the combined verdict, and they decide nothing",
-			"control": "sg-guard-error"
-		},
-		{
-			"path": "src/astack/hook/events.ts",
-			"reason": "It defines the handler and verdict shapes, and it decides nothing",
 			"control": "sg-guard-error"
 		},
 		{

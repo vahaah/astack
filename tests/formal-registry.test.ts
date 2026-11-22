@@ -56,6 +56,8 @@ const NAME_COLLISIONS = new Set([
 	"stop src/astack/cli/bin.ts",
 	"stop src/astack/hook/encode/cursor.ts",
 	"failed src/astack/doctor.ts",
+	"all src/astack/codex-hooks.ts",
+	"combine src/astack/comments/suppressions.ts",
 ]);
 
 function declares(path: string, name: string): boolean {

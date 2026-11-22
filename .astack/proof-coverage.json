@@ -11,7 +11,8 @@
 		"docs/reference/test-fixtures.md",
 		"docs/reference/proof-ladder.md",
 		"docs/reference/programme-supervision.md",
-		"docs/reference/pr-head-check.md"
+		"docs/reference/pr-head-check.md",
+		"docs/reference/law-controls.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -67,7 +68,9 @@
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
 		"tests/old-names.test.ts",
-		"tests/astack/pr-head.test.ts"
+		"tests/astack/pr-head.test.ts",
+		"tests/property/result-laws.test.ts",
+		"tests/property/verdict-monoid.test.ts"
 	],
 	"links": [
 		{
@@ -676,6 +679,34 @@
 		{
 			"criterion": "PH-NOPR",
 			"controls": ["ph-nopr-named", "ph-nopr-error"]
+		},
+		{
+			"criterion": "RL-MONAD",
+			"controls": ["result-monad-laws"]
+		},
+		{
+			"criterion": "RL-FUNCTOR",
+			"controls": ["result-functor-laws"]
+		},
+		{
+			"criterion": "RL-ALL",
+			"controls": ["result-all-order"]
+		},
+		{
+			"criterion": "VM-MONOID",
+			"controls": ["verdict-monoid"]
+		},
+		{
+			"criterion": "LAW-CLAIMED",
+			"controls": ["proof-law-claimed"]
+		},
+		{
+			"criterion": "LAW-MONOID",
+			"controls": ["proof-monoid-pair"]
+		},
+		{
+			"criterion": "ADMIT-ORDER",
+			"controls": ["proof-stage-order"]
 		}
 	]
 }

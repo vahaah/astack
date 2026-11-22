@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "pr-head-check",
-	"base": "9811ba4b29054a782a8ebe0357386d50d4c6bc08",
+	"base": "b9a1546a7be8503c7fe3fd32628a9c9fa88ee454",
 	"scope": [
 		{
 			"path": "marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
