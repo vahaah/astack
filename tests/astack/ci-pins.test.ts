@@ -1,61 +1,41 @@
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import {
-	mkdirSync,
-	mkdtempSync,
-	realpathSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync,
-} from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
+import {
+	buildTemplate,
+	commitTree,
+	copyRepo,
+	type Files,
+	git,
+	type Template,
+} from "../git-template.ts";
 
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
 const scratch = realpathSync(mkdtempSync(join(tmpdir(), "astack-ci-pins-")));
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 let count = 0;
 
-type Files = Readonly<Record<string, string | { readonly link: string }>>;
-
-function git(cwd: string, args: readonly string[]): string {
-	const result = spawnSync("git", args, {
-		cwd,
-		encoding: "utf8",
-		env: {
-			...process.env,
-			GIT_AUTHOR_NAME: "t",
-			GIT_AUTHOR_EMAIL: "t@example.com",
-			GIT_COMMITTER_NAME: "t",
-			GIT_COMMITTER_EMAIL: "t@example.com",
-		},
-	});
-	if (result.status !== 0)
-		throw new Error(`git ${args.join(" ")}: ${result.stderr}`);
-	return result.stdout.trim();
-}
-
-function write(root: string, files: Files): void {
-	for (const [path, text] of Object.entries(files)) {
-		mkdirSync(dirname(join(root, path)), { recursive: true });
-		if (typeof text === "string") writeFileSync(join(root, path), text);
-		else symlinkSync(text.link, join(root, path));
-	}
-}
+let template: Template | undefined;
 
 function pullRequest(base: Files, head: Files): string {
 	count += 1;
-	const root = join(scratch, `repo-${count}`);
-	mkdirSync(root, { recursive: true });
-	git(root, ["init", "-q", "-b", "main"]);
-	write(root, base);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "base"]);
-	git(root, ["checkout", "-q", "-b", "pr"]);
-	write(root, head);
-	git(root, ["add", "-A"]);
-	git(root, ["commit", "-q", "-m", "head"]);
-	return root;
+	template ??= buildTemplate(
+		{
+			name: "ci-pins",
+			repos: ["."],
+			build: (root) => git(root, ["init", "-q", "-b", "main"]),
+		},
+		scratch,
+	);
+	return commitTree(copyRepo(template, join(scratch, `repo-${count}`)), {
+		commits: [
+			{ branch: "main", files: base },
+			{ branch: "pr", from: "main", files: head },
+		],
+		checkout: "pr",
+	}).root;
 }
 
 function ciPins(

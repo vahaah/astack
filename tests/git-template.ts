@@ -46,7 +46,11 @@ export type RepoCopy = {
 
 const PAST_EPOCH_SECONDS = 1_700_000_000;
 
-function git(cwd: string, args: readonly string[], input?: string): void {
+export function git(
+	cwd: string,
+	args: readonly string[],
+	input?: string,
+): void {
 	const result = spawnSync("git", args, {
 		cwd,
 		input,
