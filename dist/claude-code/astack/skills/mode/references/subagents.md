@@ -86,6 +86,8 @@ Agreement is a strong signal.
 
 ## Use fresh subagents
 
+Start each subagent with a clean context, not a fork of this conversation.
+Give it the brief and file pointers.
 Give new work to a fresh subagent with consolidated scope.
 Include the original brief, every later directive, and the prior agent's report and branch.
 This rule covers a fix round, follow-up, retry, and next queue item.
