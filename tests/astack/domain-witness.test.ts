@@ -171,7 +171,9 @@ async function verdict(
 	);
 }
 
-function lines(run: Awaited<ReturnType<typeof verdict>>) {
+function lines(
+	run: Awaited<ReturnType<typeof verdict>>,
+): string | readonly number[] {
 	if (!run.ok) return run.error.message;
 	return run.value.kind === "pass"
 		? "pass"
