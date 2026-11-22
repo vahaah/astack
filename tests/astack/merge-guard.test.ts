@@ -754,6 +754,14 @@ describe("the merge guard", () => {
 			`gh api graphql --input - <<'EOF'\n${JSON.stringify({ query: MUTATION })}\nEOF`,
 			API_DENY,
 		],
+		[
+			`gh api graphql --input - <<EOF\n${JSON.stringify({ query: READ })}\nEOF`,
+			PASSES,
+		],
+		[
+			'gh api graphql --input - <<EOF\n{"query":"$(cat merge.graphql)"}\nEOF',
+			API_DENY,
+		],
 		[`gh api graphql -f query='${READ}' -F owner="$OWNER"`, API_DENY],
 		["cat read.json | gh api graphql --input /dev/stdin", API_DENY],
 		["gh api graphql -F query=@/dev/stdin", API_DENY],

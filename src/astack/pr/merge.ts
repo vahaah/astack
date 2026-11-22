@@ -39,9 +39,8 @@ function fileText(
 	dir: string,
 ): string | undefined {
 	if (word.dynamic) return undefined;
-	return word.value === "-"
-		? command.stdin
-		: readOptional(resolve(dir, word.value));
+	if (word.value !== "-") return readOptional(resolve(dir, word.value));
+	return command.stdinDynamic === true ? undefined : command.stdin;
 }
 
 type FlagWord = { readonly name: string; readonly value: Word | undefined };

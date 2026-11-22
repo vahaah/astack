@@ -15,12 +15,15 @@ export interface Redirect {
 export interface SimpleCommand {
 	words: Word[];
 	stdin: string | undefined;
+	stdinDynamic?: boolean;
 	redirects: Redirect[];
 	substitutions?: string[];
 	piped?: boolean;
 	wholeStage?: boolean;
 	background?: boolean;
 }
+
+const EXPANDS_IN_HEREDOC = /[$`]/;
 
 const UNQUOTED_EXPANSION = /[*?[]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
 
@@ -59,6 +62,7 @@ export function parseShell(src: string): SimpleCommand[] {
 	let pendingHeredocs: {
 		tag: string;
 		strip: boolean;
+		quoted: boolean;
 		command: SimpleCommand;
 	}[] = [];
 	let substitutions: string[] = [];
@@ -84,6 +88,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		unquoted = "";
 		if (hereStringNext) {
 			hereStringNext.stdin = word.value;
+			if (word.dynamic) hereStringNext.stdinDynamic = true;
 			hereStringNext = undefined;
 		} else if (redirectNext) {
 			current.redirects.push({ ...redirectNext, target: word });
@@ -115,7 +120,8 @@ export function parseShell(src: string): SimpleCommand[] {
 	const substitution = (): void => {
 		const heredoc = HEREDOC_SUBSTITUTION.exec(src.slice(i));
 		if (heredoc) {
-			append(stripTabs(heredoc[4] ?? "", heredoc[1] === "-"));
+			const body = stripTabs(heredoc[4] ?? "", heredoc[1] === "-");
+			append(body, heredoc[2] === "" && EXPANDS_IN_HEREDOC.test(body));
 			i += heredoc[0].length;
 			return;
 		}
@@ -137,6 +143,8 @@ export function parseShell(src: string): SimpleCommand[] {
 					lines.push(line);
 				}
 				doc.command.stdin = stripTabs(lines.join("\n"), doc.strip);
+				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(doc.command.stdin))
+					doc.command.stdinDynamic = true;
 			}
 			pendingHeredocs = [];
 			continue;
@@ -255,6 +263,7 @@ export function parseShell(src: string): SimpleCommand[] {
 				pendingHeredocs.push({
 					tag: match[3] ?? "",
 					strip: match[1] === "-",
+					quoted: match[2] !== "",
 					command: current,
 				});
 				i += match[0].length;
@@ -577,7 +586,11 @@ function stdinScript(
 	earlier: readonly ShellStep[],
 ): Body | undefined {
 	if (simple.stdin !== undefined)
-		return { text: simple.stdin, dynamic: false, stdin: true };
+		return {
+			text: simple.stdin,
+			dynamic: simple.stdinDynamic === true,
+			stdin: true,
+		};
 	if (simple.piped !== true) return undefined;
 	const previous = earlier.at(-1);
 	const printed =
@@ -824,7 +837,9 @@ function printedText(step: ShellStep): string | undefined {
 		case "printf":
 			return printfText(args);
 		case "cat":
-			return args.every((arg) => arg.value === "-" || arg.value.startsWith("-"))
+			return args.every(
+				(arg) => arg.value === "-" || arg.value.startsWith("-"),
+			) && step.simple.stdinDynamic !== true
 				? step.simple.stdin
 				: undefined;
 		default:

@@ -167,7 +167,12 @@ function inputText(
 				? value.slice(1)
 				: undefined;
 	if (path === undefined) return word.value;
-	const text = path === "-" ? step.simple.stdin : readFile(path);
+	const text =
+		path !== "-"
+			? readFile(path)
+			: step.simple.stdinDynamic === true
+				? undefined
+				: step.simple.stdin;
 	return kind === "input" && text !== undefined ? decodedEscapes(text) : text;
 }
 

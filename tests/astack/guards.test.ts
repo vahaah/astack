@@ -264,6 +264,28 @@ describe("the plain form of a git step", () => {
 		},
 	);
 
+	test.each([
+		[
+			"M=--hard; bash <<EOF\ngit reset '$M'\nEOF",
+			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+		],
+		[
+			'M=--hard; bash <<< "git reset $M"',
+			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+		],
+		[
+			"M=--hard; bash -c \"$(cat <<EOF\ngit reset '$M'\nEOF\n)\"",
+			"because a variable or a command substitution is in its shell body.",
+		],
+	])(
+		"%s is denied, because an unquoted heredoc or a here-string expands a variable",
+		(command, cause) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(cause);
+			expect(said).toContain("owner gate");
+		},
+	);
+
 	test("curl | bash passes on a dirty tree, because its pipe holds no guarded git verb", () => {
 		expect(
 			destructive.run(
