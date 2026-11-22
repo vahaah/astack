@@ -116,7 +116,7 @@ When you change a chart, change the `.mmd` file and the README block together.
 | Publication | [Publish](runbooks/publish.md) |
 | How our code works | `astack:how` |
 | Why the code has this shape | `astack:why` |
-| A fact outside the repository | `astack:research` |
+| A fact outside the repository | The S1 research brief of `astack:plan` |
 | A ticket or a document outside a plan | `astack:write-ticket` or `astack:write-docs` |
 
 Read a skill before you say what it does.

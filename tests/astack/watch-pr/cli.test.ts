@@ -1,4 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { command as watchPrCommand } from "../../../src/astack/cli/commands/watch-pr.ts";
 import { err, ok } from "../../../src/astack/result.ts";
 import {
 	type CliRuntime,
@@ -15,6 +18,34 @@ import {
 	type WatcherVerdict,
 } from "../../../src/astack/watch-pr/types.ts";
 import { fakeReader, passingCheck } from "./fakes.ts";
+
+const ROOT = join(import.meta.dir, "../../..");
+const SKILLS = "marketplace/plugins/astack/skills";
+
+const argvOf = (args: string): string[] =>
+	args
+		.replace(/[[\]]/g, " ")
+		.replace(/<[^>]+>/g, "12")
+		.split(/\s+/)
+		.filter((arg) => arg !== "");
+
+const INLINE_WATCH = /`(?:astack )?watch-pr(?=[\s`])([^`]*)`/g;
+const FENCED_WATCH = /(?:^|[\s;&|(])(?:astack\s+)?watch-pr(?=\s|$)([^;&|#)]*)/g;
+const FENCE = /^\s*(```|~~~)/;
+
+function watchCommands(
+	text: string,
+): readonly { readonly line: number; readonly argv: string[] }[] {
+	const commands: { readonly line: number; readonly argv: string[] }[] = [];
+	let fenced = false;
+	for (const [at, line] of text.split("\n").entries()) {
+		if (FENCE.test(line)) fenced = !fenced;
+		else
+			for (const match of line.matchAll(fenced ? FENCED_WATCH : INLINE_WATCH))
+				commands.push({ line: at + 1, argv: argvOf(match[1] ?? "") });
+	}
+	return commands;
+}
 
 function testRuntime(reader: GitHubReader): {
 	readonly runtime: CliRuntime;
@@ -51,12 +82,10 @@ describe("parseWatchArgs", () => {
 					repo: null,
 					pr: null,
 					mode: "single",
-					stackPrs: [],
 					statusOnly: false,
 					pretty: false,
 					polling: {
 						interval: 60,
-						sweepInterval: 300,
 						timeout: 0,
 						maxQueryErrors: 5,
 						allowDraft: false,
@@ -66,19 +95,16 @@ describe("parseWatchArgs", () => {
 		);
 	});
 
-	test("parses a frozen queued stack bottom-to-top", () => {
+	test("parses each option, and a PR number with a #", () => {
 		expect(
 			parseWatchArgs([
 				"--owner",
 				"octo",
 				"--repo",
 				"hello",
-				"--queued-stack",
-				"--stack-prs",
-				"#10, 11,#12",
+				"--pr",
+				"#7",
 				"--interval=2.5",
-				"--sweep-interval",
-				"30",
 				"--timeout",
 				"0",
 				"--max-query-errors",
@@ -93,14 +119,12 @@ describe("parseWatchArgs", () => {
 				options: {
 					owner: "octo",
 					repo: "hello",
-					pr: null,
-					mode: "queued-stack",
-					stackPrs: [10, 11, 12].map((number) => parsePrNumber(number)),
+					pr: parsePrNumber(7),
+					mode: "single",
 					statusOnly: true,
 					pretty: true,
 					polling: {
 						interval: 2.5,
-						sweepInterval: 30,
 						timeout: 0,
 						maxQueryErrors: 3,
 						allowDraft: true,
@@ -108,13 +132,6 @@ describe("parseWatchArgs", () => {
 				},
 			}),
 		);
-	});
-
-	test("reads --stack as the stack mode and a PR number with a #", () => {
-		const parsed = parseWatchArgs(["--stack", "--pr", "#7"]);
-		expect(
-			parsed.ok && parsed.value.kind === "watch" ? parsed.value.options : null,
-		).toMatchObject({ mode: "stack", pr: parsePrNumber(7) });
 	});
 
 	test.each([["--help"], ["-h"]])("reads %s as a help request", (flag) => {
@@ -126,11 +143,6 @@ describe("parseWatchArgs", () => {
 			"a zero interval",
 			["--interval", "0"],
 			"error: option '--interval <seconds>' argument '0' is invalid. must be greater than zero",
-		],
-		[
-			"a negative sweep interval",
-			["--sweep-interval=-1"],
-			"error: option '--sweep-interval <seconds>' argument '-1' is invalid. must be greater than zero",
 		],
 		[
 			"a negative timeout",
@@ -147,21 +159,6 @@ describe("parseWatchArgs", () => {
 			["--pr", "#0"],
 			"error: option '--pr <number>' argument '#0' is invalid. must be a positive integer",
 		],
-		[
-			"a duplicate queued PR",
-			["--queued-stack", "--stack-prs", "1,1"],
-			"error: option '--stack-prs <n,...>' argument '1,1' is invalid. contains a duplicate PR",
-		],
-		[
-			"both stack modes",
-			["--stack", "--queued-stack"],
-			"error: option '--stack' cannot be used with option '--queued-stack'",
-		],
-		[
-			"a frozen queue without the queued mode",
-			["--stack-prs", "1,2"],
-			"error: --stack-prs requires --queued-stack",
-		],
 	])("refuses %s", (_, argv, message) => {
 		expect(parseWatchArgs(argv)).toEqual(err(message));
 	});
@@ -176,6 +173,43 @@ describe("parseWatchArgs", () => {
 		expect(parsed.ok).toBe(false);
 		expect(parsed.ok ? "" : parsed.error).toStartWith("error: ");
 		expect(parsed.ok ? "" : parsed.error).toContain(quoted);
+	});
+
+	test("the command scan finds an inline or fenced watch-pr command, with or without the astack prefix", () => {
+		const text = [
+			"Run `astack watch-pr --pr <n>` first.",
+			"Then `watch-pr --stack` once.",
+			"```sh",
+			"astack watch-pr --queued-stack --stack-prs 3,4",
+			"```",
+			"Its tests are in `tests/astack/watch-pr/render.test.ts`, and `watch-pr` calls gh.",
+		].join("\n");
+		expect(watchCommands(text)).toEqual([
+			{ line: 1, argv: ["--pr", "12"] },
+			{ line: 2, argv: ["--stack"] },
+			{ line: 4, argv: ["--queued-stack", "--stack-prs", "3,4"] },
+			{ line: 6, argv: [] },
+		]);
+	});
+
+	test("[control:wp-text-commands] each astack watch-pr command of the skill texts and the README parses, with a number for each placeholder", () => {
+		const commands = [
+			"README.md",
+			...readdirSync(join(ROOT, SKILLS), { recursive: true, encoding: "utf8" })
+				.filter((path) => path.endsWith(".md"))
+				.map((path) => join(SKILLS, path)),
+		].flatMap((file) =>
+			watchCommands(readFileSync(join(ROOT, file), "utf8")).map(
+				({ line, argv }) => ({ where: `${file}:${line}`, argv }),
+			),
+		);
+		expect(commands.some(({ argv }) => argv.includes("--pr"))).toBe(true);
+		expect(
+			commands.flatMap(({ where, argv }) => {
+				const parsed = parseWatchArgs(argv);
+				return parsed.ok ? [] : [`${where}: ${parsed.error}`];
+			}),
+		).toEqual([]);
 	});
 });
 
@@ -244,33 +278,6 @@ describe("main", () => {
 		expect(reader.calls).toEqual([]);
 	});
 
-	test("bypasses the queue machine for queued-stack status-only", async () => {
-		const harness = testRuntime(fakeReader());
-		const code = await main(
-			[
-				"--owner",
-				"owner",
-				"--repo",
-				"repo",
-				"--queued-stack",
-				"--stack-prs",
-				"1",
-				"--status-only",
-			],
-			harness.runtime,
-		);
-		expect(code).toBe(0);
-		expect(harness.stdout).toHaveLength(1);
-		const line = harness.stdout.join("");
-		expect(JSON.parse(line)).toMatchObject({
-			kind: "STATUS",
-			terminal: true,
-			exitCode: 0,
-			mode: "queued-stack",
-		});
-		expect(line).not.toContain('"kind":"QUEUE"');
-	});
-
 	test("returns exit 4 for a hidden GitHub-side CI refusal", async () => {
 		const reader = fakeReader({
 			facts: { mergeStateStatus: "BLOCKED" },
@@ -294,16 +301,58 @@ describe("main", () => {
 		});
 	});
 
+	test.each([
+		[
+			"--pr 12",
+			["--pr", "12"],
+			'{"schemaVersion":1,"sequence":1,"observedAt":"2026-07-26T00:00:00.000Z","mode":"single","kind":"READY","terminal":true,"exitCode":0,"scope":{"kind":"single","pr":{"kind":"ready-pr","context":{"owner":"owner","repo":"repo","number":12},"proof":{"mergeability":"clear","threads":[],"ci":{"source":"gh-pr-checks","all":[{"kind":"passed","name":"ci","reportedState":"SUCCESS","description":"","link":"","workflow":""}],"hadPreviousPassingCi":false,"kind":"ci-clean","failed":[],"pending":[],"github":{"kind":"allowed","basis":"merge-state","mergeStateStatus":"CLEAN","headRollupState":"SUCCESS"}},"gate":{"state":"OPEN","reviewDecision":"APPROVED","draft":"not-draft"}}}}}\n',
+		],
+		[
+			"--pr 12 --status-only",
+			["--pr", "12", "--status-only"],
+			'{"schemaVersion":1,"sequence":1,"observedAt":"2026-07-26T00:00:00.000Z","mode":"single","kind":"STATUS","terminal":true,"exitCode":0,"reason":"status-only","rows":[{"kind":"open","context":{"owner":"owner","repo":"repo","number":12},"facts":{"context":{"owner":"owner","repo":"repo","number":12},"mergeable":"MERGEABLE","mergeStateStatus":"CLEAN","reviewDecision":"APPROVED","headRefOid":"head","headRefName":"feature","baseRefName":"main","state":"OPEN","mergedAt":null,"isDraft":false},"threads":[],"ci":{"source":"gh-pr-checks","all":[{"kind":"passed","name":"ci","reportedState":"SUCCESS","description":"","link":"","workflow":""}],"hadPreviousPassingCi":false,"kind":"ci-clean","failed":[],"pending":[],"github":{"kind":"allowed","basis":"merge-state","mergeStateStatus":"CLEAN","headRollupState":"SUCCESS"}},"reviewAutomationRunning":false}]}\n',
+		],
+	])(
+		"[control:wp-single-json] astack watch-pr %s on one ready PR prints the JSON line of trunk, byte for byte",
+		async (_, argv, line) => {
+			const harness = testRuntime(fakeReader());
+			expect(await main(argv, harness.runtime)).toBe(0);
+			expect(harness.stdout).toEqual([line]);
+			expect(harness.stderr).toEqual([]);
+		},
+	);
+
+	test("[control:wp-one-pr] each removed stack flag exits 64 with an unknown option error and no reader call, and the help, the usage and the summary name no stack mode", async () => {
+		for (const argv of [
+			["--stack"],
+			["--queued-stack"],
+			["--stack-prs", "3,4"],
+			["--sweep-interval", "30"],
+		]) {
+			const reader = fakeReader();
+			const harness = testRuntime(reader);
+			expect(await main(argv, harness.runtime)).toBe(64);
+			expect(harness.stdout).toEqual([]);
+			expect(harness.stderr).toEqual([`error: Unknown option '${argv[0]}'\n`]);
+			expect(reader.calls).toEqual([]);
+		}
+		const help = testRuntime(fakeReader());
+		expect(await main(["--help"], help.runtime)).toBe(0);
+		for (const text of [
+			help.stdout.join(""),
+			watchPrCommand.usage,
+			watchPrCommand.summary,
+		])
+			expect(text).not.toMatch(/\b(?:stack|queue)/i);
+	});
+
 	test("shows help on stdout without touching the reader", async () => {
 		const reader = fakeReader();
 		const harness = testRuntime(reader);
 		expect(await main(["--help"], harness.runtime)).toBe(0);
 		const help = harness.stdout.join("");
 		expect(help).toStartWith(
-			"Usage: astack watch-pr [options]\n\nWatch one pull request, a connected stack, or an immutable queued stack.\nJSON (NDJSON while polling) is the default; --pretty renders human text.\n",
-		);
-		expect(help).toContain(
-			"  --stack-prs <n,...>         frozen bottom-to-top queue (queued mode only)\n",
+			"Usage: astack watch-pr [options]\n\nWatch one pull request.\nJSON (NDJSON while polling) is the default; --pretty renders human text.\n",
 		);
 		expect(help).toContain(
 			"  --interval <seconds>        poll interval (default: 60)\n",

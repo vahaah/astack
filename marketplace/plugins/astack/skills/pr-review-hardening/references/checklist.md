@@ -26,9 +26,9 @@ Guard: "keys the stub fallback reads" in `tests/hardening-consistency.test.ts`, 
 
 ### review-target-identity
 
-Does each step that acts on a PR compare the local head with the head of the PR, and diff against the fetched base? Does it stop on each failure of gh that is not the no-PR answer? Does each push for a PR from a fork go to the head repository, so that the run never pushes a branch to `origin`? Does a fork that does not allow edits from maintainers stop the run with no fix commit? Does each step take the checkout of a PR from a fork by its local branch, never by its head branch name? Does each walk over a stack of PRs leave out each PR from a fork, also a fork with a matching branch name?
+Does each step that acts on a PR compare the local head with the head of the PR, and diff against the fetched base? Does it stop on each failure of gh that is not the no-PR answer? Does each push for a PR from a fork go to the head repository, so that the run never pushes a branch to `origin`? Does a fork that does not allow edits from maintainers stop the run with no fix commit? Does each step take the checkout of a PR from a fork by its local branch, never by its head branch name?
 
-Guard: "a failed gh is never a run with no PR" and "each diff runs against the fetched base" in `tests/hardening-consistency.test.ts`. They scan each astack text and profile. The origin scan of "the branch of the fix commits" in the same file reads each astack text, the stub fallback and each profile. The playbooks of the mode that push a PR are astack texts too. It finds each sentence that names `origin` as the remote of `git push` or as the target of a push or of the fix commits. It exempts the push sentence of a run with no PR or a PR from the same repository. It exempts the negation in the push for a PR from a fork, and nothing else. "a run that names a PR reviews that PR" in the same file finds each sentence that takes a checkout by the name of the head branch. The fork test in `tests/astack/watch-pr/github.test.ts` gives the stack walk a PR from a fork with a matching head branch.
+Guard: "a failed gh is never a run with no PR" and "each diff runs against the fetched base" in `tests/hardening-consistency.test.ts`. They scan each astack text and profile. The origin scan of "the branch of the fix commits" in the same file reads each astack text, the stub fallback and each profile. The playbooks of the mode that push a PR are astack texts too. It finds each sentence that names `origin` as the remote of `git push` or as the target of a push or of the fix commits. It exempts the push sentence of a run with no PR or a PR from the same repository. It exempts the negation in the push for a PR from a fork, and nothing else. "a run that names a PR reviews that PR" in the same file finds each sentence that takes a checkout by the name of the head branch.
 
 ### clean-stop-criteria
 
@@ -177,12 +177,6 @@ Does a step of apply copy a worktree that git records inside the product repo, s
 Guard: "apply --dry-run copies the repo for its checks" in `tests/apply/ci-parity-apply.test.ts`. The dry run reads the nested worktrees with `nestedWorktrees` in `scripts/lib/project-apply.ts`, and copies each other entry of the repo.
 
 ## Commands that read GitHub
-
-### pr-graph-walk
-
-Does each walk over the base chain of PRs keep a set of the PRs that it visited? Does it stop when a PR repeats, so that a cycle of open PRs cannot make it loop forever?
-
-Guard: "ends the walk down the stack when the bases of open PRs form a cycle" in `tests/astack/watch-pr/github.test.ts`. It gives `orderStack` two open PRs, and each PR has the head branch of the other PR as its base.
 
 ### terminal-control-text
 

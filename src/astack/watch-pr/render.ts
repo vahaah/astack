@@ -118,10 +118,10 @@ function renderBlocker(blocker: T.MergeBlocker | StatusQueryBlocker): string {
 		case "merge-gate": {
 			const action =
 				blocker.reason === "closed-without-merge"
-					? "restore or remove the closed PR from the queued stack"
+					? "reopen the closed PR or watch another PR"
 					: blocker.reason === "draft-pr"
-						? "mark the PR ready for review before waiting for the merge queue"
-						: "resolve the changes-requested review before waiting for the merge queue";
+						? "mark the PR ready for review"
+						: "resolve the changes-requested review";
 			return [
 				`BLOCKER: ${blocker.reason}`,
 				`pr=${blocker.pr.number}`,
@@ -143,16 +143,10 @@ function renderBlocker(blocker: T.MergeBlocker | StatusQueryBlocker): string {
 }
 export function renderPretty(verdict: T.WatcherVerdict): string {
 	switch (verdict.kind) {
-		case "QUEUE":
-			return `QUEUE: captured ${verdict.queue.length} PR${verdict.queue.length === 1 ? "" : "s"} bottom-to-top: ${verdict.queue.map((pr) => `#${pr.number}`).join(",")}\n`;
 		case "STATUS":
 			return renderStatusTable(verdict.rows);
 		case "WAITING":
-			return verdict.reason.kind === "pending-checks"
-				? `WAITING: frontier=#${verdict.frontier.number}; ${verdict.reason.pending.length} check${verdict.reason.pending.length === 1 ? "" : "s"} pending\n`
-				: `WAITING: frontier=#${verdict.frontier.number} is blocker-free; waiting for merge queue (${verdict.reason.unmergedCount} PR${verdict.reason.unmergedCount === 1 ? "" : "s"} unmerged)\n`;
-		case "ADVANCE":
-			return `ADVANCE: merged #${verdict.merged.number}; next=#${verdict.frontier.number}; remaining=${verdict.remaining}\n`;
+			return `WAITING: frontier=#${verdict.frontier.number}; ${verdict.reason.pending.length} check${verdict.reason.pending.length === 1 ? "" : "s"} pending\n`;
 		case "RETRY":
 			return `RETRY: GitHub status query failed; retrying in ${verdict.retryInSeconds}s\ndetail=${escapeControls(verdict.failure.detail)}\n`;
 		case "BLOCKER":
@@ -164,14 +158,10 @@ export function renderPretty(verdict: T.WatcherVerdict): string {
 					: "";
 			return `READY: no merge conflicts, no unresolved review threads, no failing or pending checks${detail}\n`;
 		}
-		case "COMPLETE":
-			return `COMPLETE: queued stack merged (${verdict.queue.length} PR${verdict.queue.length === 1 ? "" : "s"})\n`;
 		case "TIMEOUT":
-			if (verdict.reason.kind === "pending-checks")
-				return "TIMEOUT: checks still pending\n";
-			if (verdict.reason.kind === "status-unavailable")
-				return "TIMEOUT: GitHub status remained unavailable\n";
-			return `TIMEOUT: queued stack still has ${verdict.reason.unmergedCount} PR${verdict.reason.unmergedCount === 1 ? "" : "s"} unmerged; frontier=#${verdict.reason.frontier.number}\n`;
+			return verdict.reason.kind === "pending-checks"
+				? "TIMEOUT: checks still pending\n"
+				: "TIMEOUT: GitHub status remained unavailable\n";
 		default: {
 			const exhaustive: never = verdict;
 			return exhaustive;

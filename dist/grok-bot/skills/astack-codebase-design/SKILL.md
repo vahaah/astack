@@ -132,6 +132,22 @@ Choose interfaces that support direct tests:
 - The TypeScript `interface` keyword or a class's public methods do not define the full Interface. Include every fact that callers need.
 - "Boundary" can also mean a DDD bounded context. Use "seam" or "interface" when that is the intended meaning.
 
+## Survey
+
+Run a survey only when the owner asks for codebase upkeep.
+
+1. Pick the scope. Use the area that the owner names. Otherwise read a long stretch of `git log --oneline`, and start with the files that change most.
+2. Read `CONTEXT.md` and the ADRs of the scope. Propose no change that an ADR forbids, unless real friction gives a reason to reopen it.
+3. Start one `astack-explorer` subagent on the scope. Tell it to report friction:
+   - One concept that needs many small modules to trace.
+   - An interface that is almost as complex as its implementation.
+   - Pure functions that tests call, while the bugs are in their callers.
+   - Modules that show their details across a seam.
+   - Code that you cannot test through its interface.
+4. Apply the deletion test to each shallow module. A deletion that concentrates complexity marks a candidate.
+5. Rank the candidates in the reply. Give the files, the problem, the change, the gain in locality, leverage and tests, and `Strong`, `Worth exploring` or `Speculative`. Propose no interface yet.
+6. Ask the owner which candidate to explore. Grill it with `astack-grilling` and `astack-domain-modeling`. For alternative interfaces, use [DESIGN-IT-TWICE.md](DESIGN-IT-TWICE.md). Send a candidate that is worth building to `/astack-plan`.
+
 ## Going deeper
 
 - [DEEPENING.md](DEEPENING.md) covers dependency categories, seam discipline and replacement of old tests for a chosen cluster.

@@ -3,7 +3,6 @@ import type {
 	ChecksFastPath,
 	CommitRollup,
 	GitHubReader,
-	OpenPullRequest,
 	PrContext,
 	PullRequestFacts,
 	RawReviewThread,
@@ -21,7 +20,6 @@ export interface FakeReaderOptions {
 	readonly threads?: readonly ReviewThread[];
 	readonly threadPages?: readonly ReviewThreadPage[];
 	readonly commitRollups?: readonly CommitRollup[];
-	readonly openPullRequests?: readonly OpenPullRequest[];
 	readonly origin?: Repository | null;
 	readonly current?: PrContext;
 }
@@ -101,10 +99,6 @@ export function fakeReader(
 		async pullRequest(requested) {
 			calls.push("pullRequest");
 			return { ...defaults, ...options.facts, context: requested };
-		},
-		async openPullRequests() {
-			calls.push("openPullRequests");
-			return options.openPullRequests ?? [];
 		},
 		async checksFastPath() {
 			calls.push("checksFastPath");

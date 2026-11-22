@@ -13,7 +13,7 @@
 
 astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and Cursor. It plans the work with you, builds it test-first, runs a formal model check of the change and reviews it. It asks you at each decision that is yours, such as a plan choice or a merge. To start, follow the [Quickstart](#quickstart).
 
-- 50 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
+- 46 skills: instructions for plans, builds, reviews, pull requests, tickets, documents and the control of terminal, web and mobile apps.
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
@@ -372,7 +372,7 @@ Use the local-copy procedure in [`dist/cursor/astack/README.md`](dist/cursor/ast
 
 ### Grok Bot
 
-Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 52 skills.
+Follow [the Grok Bot guide](docs/runbooks/install-grok-bot.md). This target ships no astack hooks. It adds the `astack-rules` and `astack-sync` skills, so it holds 48 skills.
 
 ### Other Agent Skills clients
 
@@ -450,7 +450,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check stack-config` | Compare watched files with the record from `astack stack start`. It prints a restart command and never runs it |
 | `astack stack start` | Start a long-lived local Supabase stack and record the watched files of this checkout |
 | `astack plan …`, `astack plan-ticket` | Plan trail, drafts, the delegation grant, tracker export and drift. These print write plans and never call a tracker |
-| `astack watch-pr [--pr <n>] [--stack]` | Watch a pull request, its open stack or a queued stack through `gh`, and print each verdict |
+| `astack watch-pr [--pr <n>]` | Watch one pull request through `gh`, and print each verdict |
 | `astack managed <path>` | Print whether apply writes the path or the repo owns it. Exit 0 when the owner is known, and 2 when the profile cannot tell |
 | `astack print codex-agents\|cursor-install` | Print install text from the repository build |
 | `astack init` | Write `.astack/profile.json` for a repo. It never makes a commit |

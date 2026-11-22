@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { validate } from "../scripts/validate.ts";
@@ -72,6 +78,20 @@ test.each([
 		]);
 	},
 );
+
+test("[control:an-models-header] the header of the rule file that setup-models writes names astack and no pstack", () => {
+	const skill = readFileSync(
+		join(
+			import.meta.dir,
+			"../marketplace/plugins/astack/skills/setup-models/SKILL.md",
+		),
+		"utf8",
+	);
+	const rule = skill.slice(skill.indexOf("\n## 5. Write the rule\n"));
+	const header = /```conf\n(#.*)\n/.exec(rule)?.[1] ?? "";
+	expect(header).toMatch(/\bastack\b/);
+	expect(header).not.toMatch(/pstack/i);
+});
 
 test("validate keeps upstream credits, ordinary flow prose, and current skill calls", () => {
 	const result = report(

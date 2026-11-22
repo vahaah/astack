@@ -3,7 +3,7 @@ name: "astack-rules"
 description: "Use at the start of every task. The astack standing rules for plans, code, comments, tickets, PRs and replies."
 metadata:
   astack-version: "0.3.0"
-  astack-skills: "astack-architect,astack-arena,astack-babysit-pr,astack-benchmark-checklist,astack-code-review,astack-codebase-design,astack-coding-guide,astack-coding-rules,astack-control-cli,astack-control-ui,astack-council,astack-deslop,astack-diagnosing-bugs,astack-domain-modeling,astack-figure-it-out,astack-file-pr,astack-full-send,astack-full-stop,astack-grilling,astack-how,astack-improve-codebase-architecture,astack-in-your-own-words,astack-interrogate,astack-leaving-pr-comments,astack-mode,astack-modernize,astack-no-comments,astack-plan,astack-pr-review-hardening,astack-principles,astack-prototype,astack-recall,astack-reflect,astack-research,astack-retro,astack-rules,astack-setup,astack-setup-models,astack-sharpen,astack-show-me-your-work,astack-sol-loop,astack-swarm,astack-sync,astack-takeover,astack-tdd,astack-to-tickets,astack-types,astack-wayfinder,astack-why,astack-write-docs,astack-write-ticket,astack-writing-for-agents"
+  astack-skills: "astack-architect,astack-arena,astack-babysit-pr,astack-benchmark-checklist,astack-code-review,astack-codebase-design,astack-coding-guide,astack-coding-rules,astack-control-cli,astack-control-ui,astack-council,astack-deslop,astack-diagnosing-bugs,astack-domain-modeling,astack-figure-it-out,astack-file-pr,astack-full-send,astack-full-stop,astack-grilling,astack-how,astack-in-your-own-words,astack-interrogate,astack-leaving-pr-comments,astack-mode,astack-modernize,astack-no-comments,astack-plan,astack-pr-review-hardening,astack-principles,astack-recall,astack-reflect,astack-retro,astack-rules,astack-setup,astack-setup-models,astack-sharpen,astack-show-me-your-work,astack-sol-loop,astack-swarm,astack-sync,astack-takeover,astack-tdd,astack-to-tickets,astack-types,astack-wayfinder,astack-why,astack-write-docs,astack-write-ticket"
 ---
 
 # astack rules
@@ -20,7 +20,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/plan` | Plan mode, concise, unresolved questions last. With "I am building", run `astack-plan` in plan mode. After approval, first write `docs/plans/<slug>.md` |
 | `/grilling` | `astack-grilling` on the frontier. One recommendation and lettered options for each question |
 | "go", "do your recommendation", "use best practices and our previous decisions" | A delegation grant. Write `delegate: on` in the plan. "agree", "next" and "approve" continue |
-| "resume" | Mode playbook `resume.md`. Read the plan, the tracker and git, then continue from the next step |
+| "resume", "status", "what waits on me" | `resume.md`. A status ask gets Catch up, which only reads and starts no work |
 | `/goal`, "continue the board" | Programme tier and the `astack-mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
 | a hotfix, "I need it fast" | Quick tier. One grill round at most |
 | a bug, an error report, a tester report | The `astack-mode` Bug fix playbook and `astack-diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
@@ -33,7 +33,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | UI polish, mobile | `astack-control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack-mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack-mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When a named astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When a named skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
 
 ### Standing rules
 

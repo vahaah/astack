@@ -8,7 +8,7 @@
 **/skills/astack-plan/SKILL.md:\bBash\(astack:\*\):names the permission rule that covers the astack calls in Claude Code
 **/skills/astack-plan/references/stages.md:subagent_type|model "(?:opus|sonnet|haiku)":the stage templates give the subagent type and model as intent, and a tool without them uses its own
 **/skills/astack-pr-review-hardening/references/*.md:subagent_type|Agent tool|`Agent`:the profile names subagent types as intent, and a tool without them runs the reviewer itself
-**/skills/astack-{code-review,grilling,improve-codebase-architecture,research,wayfinder,codebase-design}/**:subagent_type|`Agent`|Agent tool:flow names subagent types as intent, and a tool without them runs the brief itself
+**/skills/astack-{code-review,grilling,wayfinder,codebase-design}/**:subagent_type|`Agent`|Agent tool:flow names subagent types as intent, and a tool without them runs the brief itself
 **/skills/astack-retro/SKILL.md:\bClaude\b|~/\.claude\b:retro reads the session logs of the tool that ran the session
 **/skills/astack-plan/**:~/\.claude/plans:the rule warns that a plan in the Claude Code plan folder is lost to other tools
 **/skills/astack-{arena,how,interrogate,mode,no-comments,reflect,setup-models,swarm,why}/**:subagent_type|`Agent`|Agent tool|Agent subagent:pstack names subagent types and the Agent tool as intent, and a tool without them runs the brief itself
@@ -19,7 +19,6 @@
 **/skills/astack-no-comments/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool for the approval question, and other tools ask in plain text
 **/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
 **/skills/astack-plan/references/phase-boundaries.md:\bClaude\b:names Claude as one end of a harness hand-off example
-**/skills/astack-writing-for-agents/SKILL-MECHANICS.md:\bClaude Code\b:the invocation rules state what Claude Code does with a user-only skill, and name Codex for contrast
 **/skills/astack-arena/references/external-seats.md:\bclaude -p\b:the sol-loop reviewer seat runs the claude CLI through the shell, also in a Codex session
 **/skills/astack-setup-models/SKILL.md:\bclaude -p\b:setup-models checks the claude CLI before it writes a claude seat for the sol-loop reviewer
 **/skills/astack-sol-loop/SKILL.md:CLAUDE_CONFIG_DIR|~/\.claude\b:sol-loop reads the model rule at the path that setup-models writes, because Codex does not load that folder
