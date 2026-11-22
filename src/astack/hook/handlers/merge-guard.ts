@@ -27,7 +27,7 @@ import {
 	type Verdict,
 } from "../events.ts";
 
-const PR_MERGE_MUTATION = /\bmergePullRequest\b/;
+const UNREAD_QUERY = /(?:^|=)@|^--input(?:=|$)/;
 const MERGE_MUTATION_IN_INPUT =
 	/\b(?:mergePullRequest|enablePullRequestAutoMerge|enqueuePullRequest|mergeBranch)\b/;
 const MERGE_PATH =
@@ -58,7 +58,12 @@ const UNREADABLE: MergeCommand = { kind: "unreadable" };
 
 function isApiMerge(args: readonly string[]): boolean {
 	if (args[0] !== "api") return false;
-	if (args.some((value) => PR_MERGE_MUTATION.test(value))) return true;
+	if (args.some((value) => MERGE_MUTATION_IN_INPUT.test(value))) return true;
+	if (
+		args.includes("graphql") &&
+		args.some((value) => UNREAD_QUERY.test(value))
+	)
+		return true;
 	return (
 		args.some((value) => MERGE_PATH.test(value)) &&
 		args.some((value) => METHOD_CHANGING_FLAG.test(value))

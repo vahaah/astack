@@ -629,6 +629,22 @@ describe("the merge guard", () => {
 			"gh api graphql -f query='mutation { mergePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
 			API_DENY,
 		],
+		[
+			"gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
+			API_DENY,
+		],
+		[
+			"gh api graphql -f query='mutation { enqueuePullRequest(input: {pullRequestId: \"x\"}) { clientMutationId } }'",
+			API_DENY,
+		],
+		["gh api graphql -F query=@merge.graphql", API_DENY],
+		["gh api graphql -Fquery=@-", API_DENY],
+		["gh api graphql --field query=@merge.graphql", API_DENY],
+		["gh api graphql --input query.json", API_DENY],
+		[
+			'gh api graphql -f query=\'query { repository(owner: "o", name: "r") { pullRequest(number: 12) { mergeable } } }\'',
+			PASSES,
+		],
 		["gh api repos/o/r/pulls/12/merge", PASSES],
 		["gh api -i repos/o/r/pulls/12/merge", PASSES],
 		[
