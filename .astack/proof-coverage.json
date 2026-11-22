@@ -9,7 +9,8 @@
 		"docs/reference/doctor.md",
 		"docs/reference/finding-telemetry.md",
 		"docs/reference/test-fixtures.md",
-		"docs/reference/programme-supervision.md"
+		"docs/reference/programme-supervision.md",
+		"docs/reference/pr-head-check.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -57,7 +58,8 @@
 		"tests/check-companion.test.ts",
 		"tests/astack/watch-pr/cli.test.ts",
 		"tests/supervision-text.test.ts",
-		"tests/old-names.test.ts"
+		"tests/old-names.test.ts",
+		"tests/astack/pr-head.test.ts"
 	],
 	"links": [
 		{
@@ -541,6 +543,26 @@
 		{
 			"criterion": "AN-NAMES",
 			"controls": ["an-names", "an-models-header"]
+		},
+		{
+			"criterion": "PH-LINE",
+			"controls": ["ph-line"]
+		},
+		{
+			"criterion": "PH-LATER",
+			"controls": ["ph-later"]
+		},
+		{
+			"criterion": "PH-PAIR",
+			"controls": ["ph-pair"]
+		},
+		{
+			"criterion": "PH-LIST",
+			"controls": ["ph-list"]
+		},
+		{
+			"criterion": "PH-NOPR",
+			"controls": ["ph-nopr-named", "ph-nopr-error"]
 		}
 	]
 }

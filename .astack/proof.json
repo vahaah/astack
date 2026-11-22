@@ -1,200 +1,207 @@
 {
 	"version": 1,
-	"change": "owner-catch-up",
-	"base": "a4a8bec3d5775a6f36e1e3afd5ad9cf198cf260d",
+	"change": "pr-head-check",
+	"base": "ef9a3f625423e0f683c0ff26dc74db1a26a3a63f",
 	"scope": [
 		{
-			"path": "src/astack/watch-pr/cli.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/babysit-pr/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/watch-pr/github.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/file-pr/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/watch-pr/policy.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/full-send/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/watch-pr/render.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/full-stop/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/watch-pr/types.ts",
-			"obligation": "WP-SINGLE-JSON",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/modernize/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "src/astack/cli/commands/watch-pr.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/why/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "tests/astack/watch-pr/cli.test.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "tests/astack/watch-pr/fakes.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/watch-pr/github.test.ts",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/watch-pr/policy.test.ts",
-			"obligation": "WP-DEADLINE",
-			"modelRefs": ["TypeOK"]
+			"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/playbooks/opening-a-pr.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/mode/playbooks/shipping.md",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
-			"path": "README.md",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "docs/review-lessons.md",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md",
-			"obligation": "WP-ONE-PR",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "src/astack/plan/check.ts",
-			"obligation": "AN-NAMES",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/astack/plan-check.test.ts",
-			"obligation": "AN-NAMES",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "tests/old-names.test.ts",
-			"obligation": "AN-NAMES",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
-			"obligation": "AN-NAMES",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
-			"obligation": "OR-NO-STORE",
-			"modelRefs": [
-				"CatchUp",
-				"Checkpoint",
-				"CatchUpListsEach",
-				"CheckpointHidesNothing"
-			]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/paths-and-wakeups.md",
-			"obligation": "OR-NO-STORE",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/playbooks.md",
-			"obligation": "OR-NO-STORE",
-			"modelRefs": ["TypeOK"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["CatchUp", "CatchUpListsEach"]
-		},
-		{
-			"path": "rules/astack.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["CatchUp", "CatchUpListsEach"]
-		},
-		{
-			"path": "marketplace/plugins/astack/skills/mode/references/routes.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+			"path": "marketplace/plugins/astack/skills/mode/references/create-pr.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["Raise", "CatchUp", "CatchUpListsEach"]
+			"obligation": "PH-LATER",
+			"modelRefs": ["Decide", "ActOnlyOnHeldHead"]
 		},
 		{
 			"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
-			"obligation": "CU-CHECKPOINT",
-			"modelRefs": ["Checkpoint", "CheckpointHidesNothing"]
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
 		},
 		{
-			"path": "docs/design.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["CatchUp", "CatchUpListsEach"]
+			"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
 		},
 		{
-			"path": "tests/supervision-text.test.ts",
-			"obligation": "CU-LIST",
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "PH-LINE",
 			"modelRefs": [
-				"CatchUp",
-				"Checkpoint",
-				"CatchUpListsEach",
-				"CheckpointHidesNothing"
+				"Check",
+				"Decide",
+				"Pull",
+				"ActOnlyOnHeldHead",
+				"OtherResultStops"
 			]
 		},
 		{
-			"path": "formal/OwnerCatchUp.*",
-			"obligation": "CU-LIST",
+			"path": "tests/astack/pr-head.test.ts",
+			"obligation": "PH-NOPR",
+			"modelRefs": ["Check", "NoPrOnlyOnMessage"]
+		},
+		{
+			"path": "docs/review-lessons.md",
+			"obligation": "PH-LINE",
+			"modelRefs": ["ActOnlyOnHeldHead"]
+		},
+		{
+			"path": "formal/PrHeadCheck.*",
+			"obligation": "PH-LINE",
 			"modelRefs": [
-				"Raise",
-				"Settle",
-				"CatchUp",
-				"Checkpoint",
+				"Check",
+				"Decide",
+				"Pull",
 				"TypeOK",
-				"CatchUpListsEach",
-				"CheckpointHidesNothing"
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
 			]
 		},
 		{
-			"path": "docs/adr/0024-*.md",
-			"obligation": "CU-LIST",
+			"path": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+			"obligation": "PH-LINE",
 			"modelRefs": [
-				"CatchUp",
-				"Checkpoint",
-				"CatchUpListsEach",
-				"CheckpointHidesNothing"
+				"Check",
+				"Decide",
+				"Pull",
+				"TypeOK",
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
 			]
 		},
 		{
-			"path": "docs/reference/programme-supervision.md",
-			"obligation": "CU-LIST",
+			"path": "docs/reference/pr-head-check.md",
+			"obligation": "PH-LINE",
 			"modelRefs": [
-				"CatchUp",
-				"Checkpoint",
-				"CatchUpListsEach",
-				"CheckpointHidesNothing"
+				"Check",
+				"Decide",
+				"Pull",
+				"TypeOK",
+				"ActOnlyOnHeldHead",
+				"NoPrOnlyOnMessage",
+				"OtherResultStops"
 			]
 		},
 		{
 			"path": "CONTEXT.md",
-			"obligation": "CU-LIST",
-			"modelRefs": ["Raise", "Settle", "CatchUpListsEach"]
+			"obligation": "PH-PAIR",
+			"modelRefs": ["Decide", "Pull", "ActOnlyOnHeldHead", "OtherResultStops"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/arena/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/arena/references/external-seats.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/setup-models/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/subagents.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/coding-rules/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "rules/coding.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/types/SKILL.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/types/references/hook.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "tests/external-seats.test.ts",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "docs/adr/README.md",
@@ -207,17 +214,17 @@
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "scripts/lib/budget.json",
-			"obligation": "WB-ratchet",
-			"modelRefs": ["TypeOK"]
-		},
-		{
 			"path": "docs/plans/review-roadmap/**",
 			"obligation": "SG-preserve",
 			"modelRefs": ["TypeOK"]
 		},
 		{
-			"path": "marketplace/plugins/astack/bin/astack.js",
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "rules/astack.md",
 			"obligation": "SG-generated",
 			"modelRefs": ["TypeOK"]
 		},
@@ -231,48 +238,48 @@
 		"context": "Astack delivery assurance",
 		"glossary": "CONTEXT.md",
 		"aggregate": {
-			"path": "src/astack/plan/board.ts",
-			"symbol": "Board"
+			"path": "src/astack/cli/commands/check/pr-head.ts",
+			"symbol": "PullRequest"
 		},
-		"terms": ["Waiting item", "ChangeProof", "Model control", "Session guard"],
+		"terms": [
+			"Head check",
+			"ChangeProof",
+			"Model control",
+			"Session guard",
+			"Skill word budget"
+		],
 		"invariants": [
 			{
-				"name": "A catch-up lists each item that waited at that reply",
-				"modelRef": "CatchUpListsEach"
+				"name": "A text acts on a PR only when gh read that PR and HEAD holds its head",
+				"modelRef": "ActOnlyOnHeldHead"
 			},
 			{
-				"name": "A checkpoint lists up to 3 waiting items, and past 3 gives their count and the status pointer",
-				"modelRef": "CheckpointHidesNothing"
+				"name": "A text takes no PR only after the no-PR message of gh with no --pr",
+				"modelRef": "NoPrOnlyOnMessage"
+			},
+			{
+				"name": "Each other result stops the text, except one pull after a head stop",
+				"modelRef": "OtherResultStops"
 			}
 		],
 		"adrs": [
 			{
-				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
+				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
 				"decision": "D1"
 			},
 			{
-				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
+				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
 				"decision": "D2"
-			},
-			{
-				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
-				"decision": "D3"
-			},
-			{
-				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
-				"decision": "D4"
 			}
 		],
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"WP-ONE-PR",
-				"WP-SINGLE-JSON",
-				"OR-NO-STORE",
-				"CU-LIST",
-				"CU-CHECKPOINT",
-				"AN-NAMES",
-				"WP-DEADLINE",
+				"PH-LINE",
+				"PH-LATER",
+				"PH-PAIR",
+				"PH-LIST",
+				"PH-NOPR",
 				"WB-ratchet",
 				"SG-preserve",
 				"SG-generated"
@@ -282,221 +289,221 @@
 	"category": {
 		"carrier": {
 			"kind": "artifact",
-			"contract": "Each arrow maps the argv of one watch to one terminal verdict of one PR, and the JSON line of that verdict keeps schemaVersion 1, mode single and the single READY scope. A status ask maps the plan, the board and the gh reads to one reply that lists each waiting item and changes nothing."
+			"contract": "Each arrow maps the arguments of one head check to one exit code and one last line. A text goes on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line."
 		},
 		"objects": [
 			{
-				"name": "Argv",
+				"name": "Args",
 				"link": {
-					"path": "src/astack/watch-pr/cli.ts",
-					"symbol": "argv"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "args"
 				}
 			},
 			{
-				"name": "WatchArgs",
+				"name": "Selector",
 				"link": {
-					"path": "src/astack/watch-pr/cli.ts",
-					"symbol": "WatchArgs"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "explicit"
 				}
 			},
 			{
-				"name": "PrContext",
+				"name": "ViewText",
 				"link": {
-					"path": "src/astack/watch-pr/types.ts",
-					"symbol": "PrContext"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "view"
 				}
 			},
 			{
-				"name": "TerminalVerdict",
+				"name": "PullRequest",
 				"link": {
-					"path": "src/astack/watch-pr/types.ts",
-					"symbol": "TerminalVerdict"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "PullRequest"
+				}
+			},
+			{
+				"name": "ExitCode",
+				"link": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "stopped"
 				}
 			}
 		],
 		"arrows": [
 			{
-				"name": "parseWatchArgs",
-				"from": "Argv",
-				"to": "WatchArgs",
+				"name": "selectorOf",
+				"from": "Args",
+				"to": "Selector",
 				"link": {
-					"path": "src/astack/watch-pr/cli.ts",
-					"symbol": "parseWatchArgs"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "selectorOf"
 				},
 				"effects": []
 			},
 			{
-				"name": "resolveContext",
-				"from": "WatchArgs",
-				"to": "PrContext",
+				"name": "parsePullRequest",
+				"from": "ViewText",
+				"to": "PullRequest",
 				"link": {
-					"path": "src/astack/watch-pr/github.ts",
-					"symbol": "resolveContext"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "parsePullRequest"
 				},
-				"effects": ["spawn"]
+				"effects": []
 			},
 			{
-				"name": "runSimple",
-				"from": "PrContext",
-				"to": "TerminalVerdict",
+				"name": "run",
+				"from": "Args",
+				"to": "ExitCode",
 				"link": {
-					"path": "src/astack/watch-pr/policy.ts",
-					"symbol": "runSimple"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "run"
 				},
-				"effects": ["spawn", "clock"]
+				"effects": ["spawn", "fs-write"]
 			}
 		],
 		"composites": [],
-		"equality": "Two verdicts are equal when their JSON lines are equal byte for byte. Two catch-up replies are equal when they list the same waiting items and the same failed reads.",
+		"equality": "Two head checks are equal when their exit codes and their standard output are equal byte for byte.",
 		"laws": [
 			{
 				"law": "id-left",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "id-right",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "assoc",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-id",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "functor-comp",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-left",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-right",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			},
 			{
 				"law": "monad-assoc",
 				"status": "not_applicable",
-				"reason": "main calls parseWatchArgs, resolveContext and runSimple in order with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
+				"reason": "run calls selectorOf and parsePullRequest with plain calls, and the record declares no composite arrow. This change adds no composition operator, map, functor or monad."
 			}
 		],
-		"typedWitness": "src/astack/watch-pr/cli.ts"
+		"typedWitness": "src/astack/cli/commands/check/pr-head.ts"
 	},
 	"abstraction": {
-		"hides": "The board query, the plan reads and the gh reads of a status ask, and the gh reads and the poll loop of one watch.",
+		"hides": "The no-PR message of gh, the fetch of the PR head, the ancestry check and the unpushed list.",
 		"callersKnow": [
-			"Each waiting item gets one line in a catch-up, and a failed read gets its own line.",
-			"A status ask only reads and starts no work.",
-			"A checkpoint names up to 3 waiting items, and past 3 gives their count and says that status lists them.",
-			"astack watch-pr watches one PR, and a removed stack flag exits 64 with no reader call.",
-			"The JSON lines of a watch keep schemaVersion 1, mode single and the single READY scope."
+			"Run astack check pr-head before you act on a PR, with --pr <n> for a named PR.",
+			"Go on only after exit 0 with an ok: last line or exit 3 with a no_pr: last line.",
+			"After stop: HEAD does not hold PR_HEAD, pull the PR branch and run the command again.",
+			"A later failure of gh pr view is an error, not a missing PR."
 		],
-		"deletionTest": "Without the Catch up part, each status ask builds the waiting list from the plan, the board and gh in its own words, and the card resume row starts work.",
+		"deletionTest": "Without the command, 15 texts hold the manual head check and the no-PR rule again.",
 		"alternatives": [
 			{
-				"name": "A new card row for the status words",
-				"rejectedBecause": "The card holds 40 of 40 lines."
+				"name": "A link to the engine section",
+				"rejectedBecause": "The agent then reads another file for each PR text."
 			},
 			{
-				"name": "A new catch-up skill",
-				"rejectedBecause": "The resume reads already give each fact."
+				"name": "A line that reads only the exit code",
+				"rejectedBecause": "It drops the last line, which the caller contract of the command needs."
 			},
 			{
-				"name": "A link to a PR comment in place of the list",
-				"rejectedBecause": "The owner then opens another page for each call."
-			},
-			{
-				"name": "Keep the watch-pr stack runners",
-				"rejectedBecause": "They have 0 runs in all history."
+				"name": "Give the setup seed the head line",
+				"rejectedBecause": "A product repo can run the seed with no astack."
 			}
 		],
 		"relation": [
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
-					"symbol": "Catch"
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "run"
 				},
-				"modelAction": "CatchUp"
-			},
-			{
-				"concrete": {
-					"path": "src/astack/plan/board.ts",
-					"symbol": "boardText"
-				},
-				"modelAction": "CatchUp"
-			},
-			{
-				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
-					"symbol": "Catch"
-				},
-				"modelAction": "CatchUp"
+				"modelAction": "Check"
 			},
 			{
 				"concrete": {
 					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
-					"symbol": "waiting"
+					"symbol": "no_pr"
 				},
-				"modelAction": "Checkpoint"
+				"modelAction": "Decide"
 			},
 			{
 				"concrete": {
-					"path": "marketplace/plugins/astack/skills/mode/playbooks/orchestrate.md",
-					"symbol": "checkpoint"
+					"path": "marketplace/plugins/astack/skills/mode/references/resume.md",
+					"symbol": "no_pr"
 				},
-				"modelAction": "Checkpoint"
+				"modelAction": "Decide"
 			},
 			{
 				"concrete": {
-					"path": "src/astack/cli/commands/plan.ts",
-					"symbol": "appendDraft"
+					"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+					"symbol": "PR_HEAD"
 				},
-				"modelAction": "Raise"
+				"modelAction": "Pull"
+			},
+			{
+				"concrete": {
+					"path": "marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+					"symbol": "PR_HEAD"
+				},
+				"modelAction": "Pull"
 			}
 		],
 		"omitted": [
-			"Settle stands for an owner answer, a merge or a closed draft, which happen outside astack code.",
-			"The watch-pr cut, the names and the caps change no reply rule, so they have no model state. The wp-one-pr, wp-single-json, wp-text-commands, an-names and an-models-header controls and the budget gate examine them.",
-			"The model takes the reads of the plan, the board and gh as true observations."
+			"Done stands for the end of a text run after its decision.",
+			"The six rule fixes of review D7, D8, H8, H5, C4 and J6 change no head check, so they have no model state. Their tests, rg checks and the budget gate examine them.",
+			"The model takes the result of the command as a true observation of gh and git."
 		]
 	},
 	"model": {
-		"module": "formal/OwnerCatchUp.tla",
-		"config": "formal/OwnerCatchUp.cfg",
+		"module": "formal/PrHeadCheck.tla",
+		"config": "formal/PrHeadCheck.cfg",
 		"dependencies": [],
 		"bounds": [
-			"4 waiting items, so a reply over 3 items and a reply over 4 items are both reachable.",
-			"One reply at a time, after each raise or settle of an item."
+			"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+			"One check, one decision and at most one pull after a head stop."
 		],
 		"fairness": [],
-		"invariants": ["TypeOK", "CatchUpListsEach", "CheckpointHidesNothing"],
+		"invariants": [
+			"TypeOK",
+			"ActOnlyOnHeldHead",
+			"NoPrOnlyOnMessage",
+			"OtherResultStops"
+		],
 		"properties": []
 	},
 	"negative": {
-		"file": "formal/OwnerCatchUp.tla",
-		"action": "CatchUp",
-		"original": "listed |-> waiting,",
-		"replacement": "listed |-> IF Cardinality(waiting) > FoldAt THEN {} ELSE waiting,",
-		"defect": "A catch-up that folds 4 waiting items into a count, as the old checkpoint did with the open questions, hides each item from the owner.",
+		"file": "formal/PrHeadCheck.tla",
+		"action": "Decide",
+		"original": "acted' = (result = \"ok\")",
+		"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+		"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
 		"expect": {
 			"kind": "invariant",
-			"name": "CatchUpListsEach"
+			"name": "ActOnlyOnHeldHead"
 		}
 	},
 	"limits": [
-		"The finite model takes the reads of the plan, the board and gh as true observations. The cu-list and cu-checkpoint controls examine the texts.",
-		"The model does not check the watch-pr cut, the names or the caps. Their controls and the budget gate examine them.",
-		"The model does not check the words of the docs, the ADR and the plan. Review and the STE gates examine them.",
+		"The finite model takes the result of the command as a true observation of gh and git. The pr-head tests examine the command with a fake gh and a real git repository.",
+		"The model does not read the words of the texts. The ph-line, ph-later, ph-pair and ph-list controls examine them.",
+		"The model does not check the six rule fixes, the docs, the ADR and the plan. Their tests, review and the STE gates examine them.",
 		"Exact-head CI, review and every ordinary gate stay required."
 	]
 }
