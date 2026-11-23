@@ -14,6 +14,7 @@ import {
 } from "../../git-command.ts";
 import {
 	canonical,
+	canonicalFile,
 	canonicalRelative,
 	readOptional,
 	toPosix,
@@ -25,6 +26,7 @@ import {
 	settledRepos,
 } from "../../session-repos.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
+import { stateDir } from "../../state.ts";
 import {
 	ALLOW,
 	combineAll,
@@ -1094,18 +1096,90 @@ function sessionRepoTest(
 	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root);
 }
 
+const GATE_READERS = new Set([
+	"cat",
+	"grep",
+	"head",
+	"jq",
+	"less",
+	"ls",
+	"stat",
+	"tail",
+	"wc",
+]);
+
+function gateFolder(env: Env): string | undefined {
+	const state = stateDir(env);
+	return state === undefined ? undefined : canonicalFile(join(state, "gates"));
+}
+
+function inFolder(folder: string, path: string): boolean {
+	const inside = relative(folder, canonicalFile(path));
+	return inside === "" || (!inside.startsWith("..") && !isAbsolute(inside));
+}
+
+function gateFolderReason(what: string, folder: string): string {
+	return `${what} writes into the gate record folder ${folder}, and only astack gates run writes a gate record. ${OWNER_GATE}`;
+}
+
+function gateFolderReasons(
+	steps: readonly ShellStep[],
+	folder: string,
+	env: Env,
+): readonly string[] {
+	return steps.flatMap((step) => {
+		const there = (word: Word) =>
+			!word.dynamic &&
+			[word.value, word.value.slice(word.value.indexOf("=") + 1)].some(
+				(text) =>
+					text !== "" &&
+					inFolder(
+						folder,
+						resolve(
+							step.dir,
+							text.startsWith("~/") && env.HOME
+								? join(env.HOME, text.slice(2))
+								: text,
+						),
+					),
+			);
+		const program = step.words[0];
+		const reads =
+			program !== undefined &&
+			!program.dynamic &&
+			GATE_READERS.has(basename(program.value));
+		return step.simple.redirects.some(
+			(redirect) => redirect.op.includes(">") && there(redirect.target),
+		) ||
+			(!reads && step.words.some(there))
+			? [gateFolderReason(shown(step.words), folder)]
+			: [];
+	});
+}
+
 export const handler = defineHandler({
 	id: "destructive",
-	on: ["shell"],
+	on: ["shell", "write", "edit"],
 	run: (event, context) => {
+		const folder = gateFolder(context.env);
+		if (event.kind !== "shell")
+			return folder !== undefined &&
+				inFolder(folder, resolve(context.cwd, event.path))
+				? denial([
+						gateFolderReason(
+							`A ${event.kind === "write" ? "Write" : "Edit"} call to ${event.path}`,
+							folder,
+						),
+					])
+				: ALLOW;
 		const repos = settledRepos(context.env, context.session);
-		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
+		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates)\b/i.test(event.command))
 			return ALLOW;
 		const steps = shellSteps(event.command, event.cwd);
 		const placed = placedLine(steps, context.env);
 		const sessionRepo = sessionRepoTest(repos, placed);
-		const verdict = combineAll(
-			steps.map((step, index) =>
+		const verdict = combineAll([
+			...steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
 						exported: exportedWords(steps, index),
@@ -1114,7 +1188,12 @@ export const handler = defineHandler({
 					}),
 				),
 			),
-		);
+			denial(
+				folder === undefined
+					? []
+					: gateFolderReasons(steps, folder, context.env),
+			),
+		]);
 		if (verdict.kind !== "deny" && !placed)
 			rememberRepos(
 				context.env,

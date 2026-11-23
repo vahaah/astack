@@ -25,7 +25,7 @@
 		},
 		{
 			"path": "src/astack/hook/handlers/destructive.ts",
-			"obligation": "SG-hook-skip",
+			"obligation": "SG-gate-folder",
 			"modelRefs": ["Push", "HookSkipNeedsGates"]
 		},
 		{
@@ -205,6 +205,7 @@
 				"SG-hook-skip",
 				"SG-hooks-path",
 				"SG-gates-run",
+				"SG-gate-folder",
 				"SG-conformance",
 				"SG-generated",
 				"SG-preserve"

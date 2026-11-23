@@ -422,6 +422,10 @@
 			"controls": ["sg-gates-run"]
 		},
 		{
+			"criterion": "SG-gate-folder",
+			"controls": ["sg-gate-folder"]
+		},
+		{
 			"criterion": "SG-generated",
 			"controls": ["sg-stale-cli"]
 		},

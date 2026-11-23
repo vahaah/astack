@@ -832,6 +832,79 @@ describe("a hook skip", () => {
 	});
 });
 
+describe("the gate record folder", () => {
+	let state = "";
+	let gates = "";
+	let records = "";
+
+	beforeAll(() => {
+		state = join(root, "gate-folder-state");
+		gates = join(state, "gates");
+		records = join(root, "records");
+		mkdirSync(gates, { recursive: true });
+		mkdirSync(records, { recursive: true });
+		writeFileSync(join(gates, "a.json"), "{}\n");
+		writeFileSync(join(records, "a.json"), "{}\n");
+	});
+
+	function run(event: HookEvent): Verdict {
+		return destructive.run(event, {
+			...context(records),
+			env: { ASTACK_STATE_DIR: state },
+		});
+	}
+
+	test.each([
+		[
+			"a Write call",
+			() =>
+				({
+					kind: "write",
+					path: join(gates, "x.json"),
+					before: undefined,
+					after: "{}",
+				}) as const,
+		],
+		[
+			"an Edit call",
+			() =>
+				({
+					kind: "edit",
+					path: join(gates, "a.json"),
+					before: "{}\n",
+					after: "{ }\n",
+					regions: [],
+					oldText: "{}",
+					newText: "{ }",
+				}) as const,
+		],
+		["an echo redirect", () => shell(`echo '{}' > ${gates}/x.json`, records)],
+		["a cp with no git word", () => shell(`cp a.json ${gates}/`, records)],
+		[
+			"a cp through a relative path",
+			() => shell("cp a.json ../gate-folder-state/gates/b.json", records),
+		],
+	])(
+		"[control:sg-gate-folder] %s into the gate record folder is denied",
+		(_, event) => {
+			const said = reason(run(event()));
+			expect(said).toContain("gate record folder");
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		shell(`cat ${gates}/a.json`, records),
+		shell("astack gates run --base main", records),
+		shell(`echo '{}' > ${records}/b.json`, records),
+	])(
+		"%p passes, because it only reads the gate record folder or does not name it",
+		(event) => {
+			expect(run(event).kind).toBe("allow");
+		},
+	);
+});
+
 describe("a core.hooksPath that names a folder", () => {
 	let active = "";
 
