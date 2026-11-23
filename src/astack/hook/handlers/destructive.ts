@@ -611,7 +611,10 @@ function lossReasons(
 	];
 }
 
+const SKIP_NAME = /^(?:HUSKY|LEFTHOOK)(?:=|$)/i;
 const SKIP_VARIABLE = /^(?:HUSKY|LEFTHOOK)=(?:0|false)$/i;
+const CONFIG_NAME = /^GIT_CONFIG(?:_\w+)?(?==|$)/;
+const INCLUDE_KEY = /^include(?:if\..*)?\.path$/i;
 const PUSHES_UNRECORDED = ["--all", "--branches", "--mirror", "--tags"];
 const PUSH_VALUE_FLAGS = [
 	"-o",
@@ -628,7 +631,50 @@ type ShellState = {
 };
 
 function isSkipVariable(word: Word): boolean {
-	return !word.dynamic && SKIP_VARIABLE.test(word.value);
+	return (
+		SKIP_NAME.test(word.value) &&
+		(word.dynamic ||
+			!word.value.includes("=") ||
+			SKIP_VARIABLE.test(word.value))
+	);
+}
+
+type EnvConfig = {
+	readonly words: readonly Word[];
+	readonly settings: readonly string[];
+	readonly unread: boolean;
+};
+
+function envConfig(env: readonly Word[]): EnvConfig {
+	const words = env.filter((word) => CONFIG_NAME.test(word.value));
+	const latest = new Map<string, Word>();
+	for (const word of words)
+		latest.set(CONFIG_NAME.exec(word.value)?.[0] ?? "", word);
+	const value = (name: string): string | undefined => {
+		const word = latest.get(name);
+		return word === undefined || word.dynamic || !word.value.includes("=")
+			? undefined
+			: word.value.slice(name.length + 1);
+	};
+	const count = value("GIT_CONFIG_COUNT");
+	const pairs = count !== undefined && /^\d+$/.test(count) ? Number(count) : -1;
+	const read = new Set(["GIT_CONFIG_COUNT"]);
+	const settings: string[] = [];
+	for (let at = 0; at < pairs && at * 2 < latest.size; at++) {
+		const key = value(`GIT_CONFIG_KEY_${at}`);
+		const setting = value(`GIT_CONFIG_VALUE_${at}`);
+		if (key === undefined || setting === undefined) break;
+		settings.push(`${key}=${setting}`);
+		read.add(`GIT_CONFIG_KEY_${at}`).add(`GIT_CONFIG_VALUE_${at}`);
+	}
+	return {
+		words,
+		settings,
+		unread:
+			words.length > 0 &&
+			(settings.length !== pairs ||
+				[...latest.keys()].some((name) => !read.has(name))),
+	};
 }
 
 function gitText(dir: string, args: string[]): string | undefined {
@@ -745,8 +791,9 @@ function turnsHooksOff(setting: string, dir: string): boolean {
 	const at = setting.indexOf("=");
 	const key = at < 0 ? setting : setting.slice(0, at);
 	return (
-		HOOKS_PATH_KEY.test(key) &&
-		!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1))
+		INCLUDE_KEY.test(key) ||
+		(HOOKS_PATH_KEY.test(key) &&
+			!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1)))
 	);
 }
 
@@ -765,12 +812,16 @@ function skipForm(
 	shell: ShellState,
 ): string | undefined {
 	if (noVerify(git, flags)) return `git ${git.sub} --no-verify`;
-	const variables = [...shell.exported, ...step.env]
-		.filter(isSkipVariable)
-		.map((word) => word.value);
-	return variables.length > 0 ||
-		git.config.some((setting) => turnsHooksOff(setting, git.dir))
-		? [...variables, ...step.values].join(" ")
+	const env = [...shell.exported, ...step.env];
+	const config = envConfig(env);
+	const turnsOff = (setting: string) => turnsHooksOff(setting, git.dir);
+	const fromEnv = config.unread || config.settings.some(turnsOff);
+	const shown = [
+		...env.filter(isSkipVariable),
+		...(fromEnv ? config.words : []),
+	].map((word) => word.value);
+	return shown.length > 0 || git.config.some(turnsOff)
+		? [...shown, ...step.values].join(" ")
 		: undefined;
 }
 
@@ -822,7 +873,8 @@ function hooksPathReasons(
 	const verbs = ["get", "list", "set", "unset"];
 	const action = verbs.includes(plain[0] ?? "") ? plain[0] : undefined;
 	const [key, value] = action === undefined ? plain : plain.slice(1);
-	if (key === undefined || !HOOKS_PATH_KEY.test(key)) return [];
+	if (key === undefined || !(HOOKS_PATH_KEY.test(key) || INCLUDE_KEY.test(key)))
+		return [];
 	const unsets =
 		action === "unset" || flags.some((flag) => /^--unset(?:-all)?$/.test(flag));
 	const reads =
@@ -830,7 +882,13 @@ function hooksPathReasons(
 		action === "list" ||
 		flags.some((flag) => /^(?:--get|--list|-l)/.test(flag)) ||
 		(!unsets && value === undefined);
-	if (reads || (!unsets && value !== undefined && tracksHooks(git.dir, value)))
+	if (
+		reads ||
+		(!unsets &&
+			value !== undefined &&
+			HOOKS_PATH_KEY.test(key) &&
+			tracksHooks(git.dir, value))
+	)
 		return [];
 	return [
 		`${step.values.join(" ")} skips the git hooks of the repo. ${OWNER_GATE}`,
@@ -937,11 +995,37 @@ function stepReasons(
 	}
 }
 
-function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
-	return steps
-		.slice(0, index)
-		.filter((step) => step.values[0] === "export")
-		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
+function exportsVariables(step: ShellStep): boolean {
+	const [name, ...args] = step.values;
+	switch (name) {
+		case "export":
+			return true;
+		case "declare":
+		case "typeset":
+			return args.some((arg) => /^-[A-Za-z]*x/.test(arg));
+		case "set":
+			return args.some(
+				(arg, at) =>
+					/^-[A-Za-z]*a/.test(arg) ||
+					(arg === "-o" && args[at + 1] === "allexport"),
+			);
+		default:
+			return false;
+	}
+}
+
+function exportedWords(steps: readonly ShellStep[], index: number): Word[] {
+	const earlier = steps.slice(0, index);
+	const forms = earlier.filter(exportsVariables);
+	if (forms.length === 0) return [];
+	const hookWord = (word: Word) =>
+		SKIP_NAME.test(word.value) || CONFIG_NAME.test(word.value);
+	return [
+		...forms.flatMap((step) => step.words.slice(1).filter(hookWord)),
+		...earlier
+			.filter((step) => step.words.length === 0)
+			.flatMap((step) => step.env.filter(hookWord)),
+	];
 }
 
 function placedLine(steps: readonly ShellStep[], env: Env): boolean {
@@ -974,7 +1058,7 @@ export const handler = defineHandler({
 			steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
-						exported: exportedSkips(steps, index),
+						exported: exportedWords(steps, index),
 						env: context.env,
 						sessionRepo,
 					}),

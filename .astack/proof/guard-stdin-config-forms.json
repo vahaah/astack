@@ -24,6 +24,11 @@
 			"modelRefs": ["Push"]
 		},
 		{
+			"path": "src/astack/hook/handlers/destructive.ts",
+			"obligation": "SG-hook-skip",
+			"modelRefs": ["Push", "HookSkipNeedsGates"]
+		},
+		{
 			"path": "src/astack/shell.ts",
 			"obligation": "SG-stdin-source",
 			"modelRefs": ["RunGit", "DenialNeedsLoss"]
@@ -40,8 +45,8 @@
 		},
 		{
 			"path": "tests/astack/guards.test.ts",
-			"obligation": "SG-stdin-source",
-			"modelRefs": ["RunGit"]
+			"obligation": "SG-hook-skip",
+			"modelRefs": ["RunGit", "Push"]
 		},
 		{
 			"path": "tests/astack/merge-guard.test.ts",
@@ -56,7 +61,7 @@
 		{
 			"path": "docs/reference/session-guards.md",
 			"obligation": "SG-stdin-source",
-			"modelRefs": ["RunGit"]
+			"modelRefs": ["RunGit", "Push"]
 		},
 		{
 			"path": "marketplace/plugins/astack/bin/astack.js",

@@ -407,7 +407,7 @@
 		},
 		{
 			"criterion": "SG-hook-skip",
-			"controls": ["sg-hook-skip"]
+			"controls": ["sg-hook-skip", "sg-hook-skip-env"]
 		},
 		{
 			"criterion": "SG-gates-run",

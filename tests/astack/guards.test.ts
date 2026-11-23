@@ -678,6 +678,38 @@ describe("a hook skip", () => {
 		expect(said).toContain("owner gate");
 	});
 
+	test.each([
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git push",
+		"export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null; git push",
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=include.path GIT_CONFIG_VALUE_0=/tmp/h git push",
+		`GIT_CONFIG_PARAMETERS="'core.hookspath'='/dev/null'" git push`,
+		"GIT_CONFIG_GLOBAL=/tmp/x git push",
+		"GIT_CONFIG_SYSTEM=/tmp/x git push",
+		"HUSKY=0; export HUSKY; git push",
+		"export HUSKY; git push",
+		"declare -x HUSKY=0; git push",
+		"typeset -x LEFTHOOK=0; git push",
+		"set -a; HUSKY=0; git push",
+		"HUSKY=$X git push",
+		"git -c include.path=/tmp/h push",
+		"git -c includeIf.onbranch:main.path=/tmp/h commit -m x",
+	])(
+		"[control:sg-hook-skip-env] %s gets the hook-skip reason, because git or the hook manager reads that setting from the environment or an included file",
+		(command) => {
+			const said = reason(run(command, false));
+			expect(said).toContain("skips the git hooks of the repo.");
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0=T git push",
+		"HUSKY=0; git push",
+		"git config --get include.path",
+	])("%s passes, because it turns no hook off", (command) => {
+		expect(run(command, false).kind).toBe("allow");
+	});
+
 	test("an exported skip variable reaches the push after it", () => {
 		expect(reason(run("export HUSKY=0 && git push", false))).toContain(
 			"HUSKY=0 git push skips the git hooks of the repo.",
