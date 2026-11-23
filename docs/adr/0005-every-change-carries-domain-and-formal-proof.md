@@ -68,6 +68,8 @@ Remote required-check settings remain an owner action.
 
 > Amended 2026-11-22: D4 said "The CI classifier can admit the committed default proof manifest and declared separate proof records beside CI changes." [ADR 0016](0016-each-change-carries-its-own-proof-manifest.md) D7 lets it admit the manifest that `check proof --base` chooses at HEAD, its proof records and each deleted manifest.
 
+> Note 2026-11-23: D2 and D4 each gained three lines after acceptance, with no dated block. PR #14 added the lines of D2 on the ADR reader. PR #17 added the lines of D4 on the CI classifier. Both decisions stay in force with those lines.
+
 ### D5. ADR history stays explicit
 
 Every ChangeProof cites current accepted decisions.

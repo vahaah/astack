@@ -12,6 +12,8 @@ The catalog rewrite removed every moved-prose STE exemption.
 Each retained skill needs its full body, references, invocation contract, and upstream credits.
 The ECC additions must use the same source across those builds.
 
+> Note 2026-11-23: No ECC item ships, and `upstream/lock.json` pins no ECC snapshot. This ADR holds five subjects. A later decision on one of them gets its own ADR.
+
 ## Decisions
 
 ### D1. Keep one catalog and its complete behavior

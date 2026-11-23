@@ -4,7 +4,7 @@ Status. Design v4, 2026-10-27.
 This is the binding design for the source and its install builds.
 ADR 0001 replaces the former port model with one astack plugin.
 ADR 0002 requires a new first commit for the public source repository.
-The accepted programme decision D3 publishes the source with its generated builds.
+ADR 0002 D1 publishes the source with its generated builds.
 
 ## 1. Identity
 

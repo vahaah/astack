@@ -19,6 +19,8 @@ The public tree includes the source and its generated install builds under progr
 It includes only synthetic project and machine fixtures.
 Root marketplace manifests point to the generated builds in `dist/`.
 
+> Note 2026-11-23: "Programme decision D3" was a row of a plan that the repo deleted. D1 now holds its rule: the public tree holds the source and its generated install builds.
+
 ### D2. The owner creates the public repo and pushes its first commit
 
 An agent prepares the scanned tree. The creation of a public repo is an account step, so it waits for the owner.
