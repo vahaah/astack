@@ -1,5 +1,14 @@
-import { afterAll, describe, expect, test } from "bun:test";
-import { mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { afterAll, describe, expect, spyOn, test } from "bun:test";
+import { spawnSync } from "node:child_process";
+import * as fs from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	realpathSync,
+	rmSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -79,6 +88,77 @@ describe("[control:ports-profile-once] one Ports value", () => {
 		portsFrom(raw).profile.readProfile("/private/var/r");
 		expect(reads).toEqual(["/private/var/r", "/private/var/r"]);
 	});
+});
+
+describe("[control:ports-profile-once] one hook call", () => {
+	const real = join(scratch, "repo");
+	const linked = join(scratch, "linked");
+	const git = (...args: string[]) => spawnSync("git", args, { cwd: real });
+	mkdirSync(join(real, ".astack"), { recursive: true });
+	symlinkSync(real, linked);
+	git("init", "-q", "-b", "main");
+	git("config", "user.email", "t@example.com");
+	git("config", "user.name", "T");
+	writeFileSync(
+		join(real, ".astack/profile.json"),
+		JSON.stringify({ ste: { mode: "deny" } }),
+	);
+	writeFileSync(join(real, "a.ts"), "export const a = 1;\n");
+	writeFileSync(
+		join(real, "notes.md"),
+		"# Notes\n\nThe tool reads the file.\n",
+	);
+	git("add", ".");
+	git("commit", "-q", "-m", "first");
+	writeFileSync(join(real, "a.ts"), "export const a = 2;\n");
+	git("add", "a.ts");
+
+	function reads(dir: string, fields: Readonly<Record<string, unknown>>) {
+		const spy = spyOn(fs, "readFileSync");
+		try {
+			runHook(
+				"claude-code",
+				"PreToolUse",
+				JSON.stringify({ cwd: dir, session_id: "ports", ...fields }),
+				{ ASTACK_STATE_DIR: join(scratch, "state") },
+			);
+			return spy.mock.calls.filter(([path]) =>
+				String(path).endsWith(".astack/profile.json"),
+			).length;
+		} finally {
+			spy.mockRestore();
+		}
+	}
+
+	test.each([
+		["the repo folder", real],
+		["a link to the repo folder", linked],
+	])(
+		"a Write, an Edit and a git commit in %s each read the profile once",
+		(_name, dir) => {
+			expect([
+				reads(dir, {
+					tool_name: "Write",
+					tool_input: {
+						file_path: join(dir, "b.ts"),
+						content: "export const b = 1;\n",
+					},
+				}),
+				reads(dir, {
+					tool_name: "Edit",
+					tool_input: {
+						file_path: join(dir, "notes.md"),
+						old_string: "reads",
+						new_string: "opens",
+					},
+				}),
+				reads(dir, {
+					tool_name: "Bash",
+					tool_input: { command: 'git commit -m "feat: change a"' },
+				}),
+			]).toEqual([1, 1, 1]);
+		},
+	);
 });
 
 describe("[control:ports-one-edge] each hook call", () => {

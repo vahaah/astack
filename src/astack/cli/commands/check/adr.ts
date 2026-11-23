@@ -14,6 +14,7 @@ import {
 	loadGlossary,
 	planProfileFor,
 } from "../../../plan/files.ts";
+import { processPorts } from "../../../ports.ts";
 import { andThen, err, ok, type Result } from "../../../result.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
@@ -52,13 +53,14 @@ function testControls(root: string): ReadonlySet<string> {
 }
 
 function templateFacts(root: string): TemplateFacts {
-	const configured = planProfileFor(root).glossary;
-	const domain = loadDomainEnv(root, configured);
+	const ports = processPorts();
+	const configured = planProfileFor(ports, root).glossary;
+	const domain = loadDomainEnv(ports, root, configured);
 	const card =
 		domain.card.ok && domain.card.value.kind === "card"
 			? domain.card.value
 			: undefined;
-	const glossary = loadGlossary(root, configured);
+	const glossary = loadGlossary(ports.files, root, configured);
 	return {
 		card,
 		registry: domain.registry.ok ? domain.registry.value : undefined,
@@ -88,7 +90,7 @@ function run(args: readonly string[], io: Io): number {
 	if (top === undefined)
 		return usageError(io, `${NAME}: not inside a git repository`);
 	const root = canonical(top);
-	const dir = planProfileFor(root).adr;
+	const dir = planProfileFor(processPorts(), root).adr;
 	const head = readTreeFolder(root, dir);
 	const { base } = parsed.value;
 	const lines = (problems: readonly AdrProblem[]) =>

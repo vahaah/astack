@@ -7,6 +7,7 @@ export const handler = defineHandler({
 	on: ["session-start"],
 	run: (event, context) => {
 		const text = sessionStartContext(
+			context.ports,
 			event.cwd,
 			context.projectDir,
 			context.today,

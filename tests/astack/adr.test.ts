@@ -11,6 +11,7 @@ import {
 import { checkPlan } from "../../src/astack/plan/check.ts";
 import { checkEnv } from "../../src/astack/plan/files.ts";
 import { parsePlan } from "../../src/astack/plan/parse.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { DEFAULT_PLAN_PROFILE } from "../../src/astack/profile.ts";
 import { fixture, REPO } from "./plan-helpers.ts";
 
@@ -47,7 +48,7 @@ test("[control:adr-heading] check-plan reads ADR decision headings as change pro
 		"## Scope",
 		"Cites ADR 0021 D1, ADR 0021 D2, ADR 0021 D3 and ADR 0021 D9.\n\n## Scope",
 	);
-	const env = checkEnv({
+	const env = checkEnv(processPorts(), {
 		root,
 		config: DEFAULT_PLAN_PROFILE,
 		slug: "member-export",

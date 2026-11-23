@@ -19,6 +19,7 @@ import {
 import type { Snapshot, TrackerObject } from "../../src/astack/plan/tracker.ts";
 import type { CheckEnv } from "../../src/astack/plan/types.ts";
 import { parseBacklink } from "../../src/astack/plan/units.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { DEFAULT_PLAN_PROFILE } from "../../src/astack/profile.ts";
 
 export const FIXTURES = resolve(import.meta.dir, "../fixtures/plans");
@@ -41,7 +42,7 @@ export function fixture(path: string): string {
 }
 
 export function fixtureEnv(root: string = REPO): CheckEnv {
-	return checkEnv({
+	return checkEnv(processPorts(), {
 		root,
 		config: DEFAULT_PLAN_PROFILE,
 		slug: "fixture",

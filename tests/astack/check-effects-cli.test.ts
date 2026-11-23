@@ -6,6 +6,7 @@ import type { Io } from "../../src/astack/cli/io.ts";
 import { DEFAULT_CODE_ROOTS } from "../../src/astack/domain/profile.ts";
 import { effectReport, findingLine } from "../../src/astack/domain/report.ts";
 import { loadDomainEnv, planProfileFor } from "../../src/astack/plan/files.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { git, scratchDir, writeFiles } from "./change-proof-fixture.ts";
 
 const parent = scratchDir("astack-check-effects-");
@@ -123,7 +124,12 @@ describe("astack check effects", () => {
 			"CONTEXT.md": CARD,
 			"src/c.ts": 'import { a } from "@/lib/a";\nexport const c = a;\n',
 		});
-		const read = loadDomainEnv(aliased, planProfileFor(aliased).glossary).card;
+		const ports = processPorts();
+		const read = loadDomainEnv(
+			ports,
+			aliased,
+			planProfileFor(ports, aliased).glossary,
+		).card;
 		const card = read.ok && read.value.kind === "card" ? read.value : undefined;
 		if (card === undefined) throw new Error("no card");
 		const lines = (totality: boolean) => {

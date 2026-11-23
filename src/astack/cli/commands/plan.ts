@@ -38,6 +38,7 @@ import {
 } from "../../plan/trail.ts";
 import type { TrailRow } from "../../plan/types.ts";
 import { extractCopy } from "../../plan/units.ts";
+import { processPorts } from "../../ports.ts";
 import { err, ok, type Result } from "../../result.ts";
 import { checkText, denied } from "../../ste/check.ts";
 import { denyMessage } from "../../ste/format.ts";
@@ -327,7 +328,7 @@ function setFromSnapshot(
 
 function slugFile(root: string, slug: string): string | undefined {
 	if (!SLUG.test(slug)) return undefined;
-	const dir = join(root, planProfileFor(root).dir);
+	const dir = join(root, planProfileFor(processPorts(), root).dir);
 	return [join(dir, `${slug}.md`), join(dir, slug, "index.md")].find(
 		(candidate) => readText(candidate) !== undefined,
 	);
