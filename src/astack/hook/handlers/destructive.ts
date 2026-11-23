@@ -718,7 +718,9 @@ function isExecutable(path: string): boolean {
 	return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
 }
 
-function activeHooks(root: string): readonly string[] | undefined {
+type ActiveHooks = { readonly dir: string; readonly names: readonly string[] };
+
+function activeHooks(root: string): ActiveHooks | undefined {
 	const folder = gitText(root, [
 		...READ_ONLY_GIT,
 		"rev-parse",
@@ -727,12 +729,15 @@ function activeHooks(root: string): readonly string[] | undefined {
 	]);
 	if (folder === undefined) return undefined;
 	const dir = resolve(root, folder);
-	return HOOK_NAMES.filter((name) => isExecutable(join(dir, name)));
+	return {
+		dir,
+		names: HOOK_NAMES.filter((name) => isExecutable(join(dir, name))),
+	};
 }
 
-const EXECUTABLE_BLOB = /^100755 blob [0-9a-f]+\t([\s\S]*)$/;
+const EXECUTABLE_BLOB = /^100755 blob ([0-9a-f]+)\t([\s\S]*)$/;
 
-function headHooks(root: string, path: string): ReadonlySet<string> {
+function headHooks(root: string, path: string): ReadonlyMap<string, string> {
 	const prefix = path === "" ? "" : `${path}/`;
 	const listed = runGit(root, [
 		...READ_ONLY_GIT,
@@ -743,21 +748,48 @@ function headHooks(root: string, path: string): ReadonlySet<string> {
 		"--",
 		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
 	]);
-	if (!listed.ok) return new Set();
-	return new Set(
+	if (!listed.ok) return new Map();
+	return new Map(
 		listed.stdout
 			.toString("utf8")
 			.split("\0")
-			.flatMap((entry) => {
-				const tracked = EXECUTABLE_BLOB.exec(entry)?.[1];
+			.flatMap((entry): [string, string][] => {
+				const [, blob, tracked] = EXECUTABLE_BLOB.exec(entry) ?? [];
 				const name = tracked?.slice(prefix.length);
-				return tracked === `${prefix}${name}` &&
+				return blob !== undefined &&
+					tracked === `${prefix}${name}` &&
 					name !== undefined &&
 					HOOK_NAMES.includes(name)
-					? [name]
+					? [[name, blob]]
 					: [];
 			}),
 	);
+}
+
+function blobIds(root: string, files: readonly string[]): readonly string[] {
+	if (files.length === 0) return [];
+	const hashed = gitText(root, [
+		...READ_ONLY_GIT,
+		"hash-object",
+		"--no-filters",
+		"--",
+		...files,
+	]);
+	return hashed === undefined ? [] : hashed.split("\n");
+}
+
+function changedUnder(root: string, path: string): boolean {
+	const status = runGit(root, [
+		...READ_ONLY_GIT,
+		"status",
+		"--porcelain=v1",
+		"-z",
+		"--untracked-files=all",
+		"--ignored",
+		"--",
+		`:(literal)${path === "" ? "." : path}`,
+	]);
+	return !status.ok || status.stdout.length > 0;
 }
 
 function realFolder(path: string): string | undefined {
@@ -783,8 +815,17 @@ function tracksHooks(dir: string, folder: string): boolean {
 	const active = root === undefined ? undefined : activeHooks(root);
 	if (root === undefined || path === undefined || active === undefined)
 		return false;
+	if (realFolder(active.dir) === realFolder(join(root, path))) return true;
 	const tracked = headHooks(root, path);
-	return tracked.size > 0 && active.every((name) => tracked.has(name));
+	if (tracked.size === 0 || changedUnder(root, path)) return false;
+	const ids = blobIds(
+		root,
+		active.names.map((name) => join(active.dir, name)),
+	);
+	return (
+		ids.length === active.names.length &&
+		active.names.every((name, at) => tracked.get(name) === ids[at])
+	);
 }
 
 function turnsHooksOff(setting: string, dir: string): boolean {

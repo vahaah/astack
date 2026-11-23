@@ -414,6 +414,10 @@
 			"controls": ["sg-hook-skip", "sg-hook-skip-env"]
 		},
 		{
+			"criterion": "SG-hooks-path",
+			"controls": ["sg-hooks-path"]
+		},
+		{
 			"criterion": "SG-gates-run",
 			"controls": ["sg-gates-run"]
 		},

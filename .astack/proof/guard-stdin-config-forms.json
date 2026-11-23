@@ -183,6 +183,7 @@
 				"SG-stdin-source",
 				"SG-unknown-dollar",
 				"SG-hook-skip",
+				"SG-hooks-path",
 				"SG-gates-run",
 				"SG-conformance",
 				"SG-generated",

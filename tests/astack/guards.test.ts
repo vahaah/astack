@@ -819,11 +819,18 @@ describe("a core.hooksPath that names a folder", () => {
 			"partial",
 			"staged",
 			"swapped",
+			"same",
+			"changed",
 		])
 			mkdirSync(join(active, folder), { recursive: true });
 		initRepo(active);
 		const hook = "#!/bin/sh\nexit 0\n";
+		const red = "#!/bin/sh\nexit 1\n";
 		write(active, {
+			"same/pre-push": red,
+			"same/pre-commit": red,
+			"changed/pre-push": red,
+			"changed/pre-commit": red,
 			".githooks/pre-push": hook,
 			".githooks/pre-commit": hook,
 			"docs/update": "How to update\n",
@@ -836,6 +843,10 @@ describe("a core.hooksPath that names a folder", () => {
 		for (const path of [
 			".githooks/pre-push",
 			".githooks/pre-commit",
+			"same/pre-push",
+			"same/pre-commit",
+			"changed/pre-push",
+			"changed/pre-commit",
 			"partial/pre-push",
 			"swapped/pre-push",
 			"swapped/pre-commit",
@@ -850,9 +861,10 @@ describe("a core.hooksPath that names a folder", () => {
 		chmodSync(join(active, "staged/pre-commit"), 0o755);
 		git(active, "add", "staged");
 		for (const name of ["pre-push", "pre-commit"]) {
-			write(active, { [`.git/hooks/${name}`]: "#!/bin/sh\nexit 1\n" });
+			write(active, { [`.git/hooks/${name}`]: red });
 			chmodSync(join(active, ".git/hooks", name), 0o755);
 		}
+		write(active, { "changed/pre-push": hook });
 	});
 
 	function run(command: string): Verdict {
@@ -893,14 +905,45 @@ describe("a core.hooksPath that names a folder", () => {
 	});
 
 	test.each([
-		"git -c core.hooksPath=.githooks push",
-		"git config core.hooksPath .githooks",
+		["git -c core.hooksPath=.githooks push", "hooks with other bytes"],
+		["git config core.hooksPath plain", "a hook with mode 100644"],
+		["git config core.hooksPath changed", "a working-tree change"],
 	])(
-		"%s passes, because HEAD holds each active hook in the folder as an executable file",
+		"[control:sg-hooks-path] %s skips the hooks that are active now, because its folder holds %s",
+		(command) => {
+			const said = reason(run(command));
+			expect(said).toContain(`${command} skips the git hooks of the repo.`);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"git -c core.hooksPath=same push",
+		"git config core.hooksPath same",
+	])(
+		"%s passes, because HEAD holds each active hook in the folder as an executable file with the same bytes",
 		(command) => {
 			expect(run(command).kind).toBe("allow");
 		},
 	);
+
+	test("a core.hooksPath that git uses now passes, also with a working-tree change in it", () => {
+		const inUse = join(root, "hooks-in-use");
+		mkdirSync(join(inUse, ".githooks"), { recursive: true });
+		initRepo(inUse);
+		write(inUse, { ".githooks/pre-push": "#!/bin/sh\nexit 0\n" });
+		chmodSync(join(inUse, ".githooks/pre-push"), 0o755);
+		git(inUse, "add", ".");
+		git(inUse, "commit", "-q", "-m", "base");
+		git(inUse, "config", "core.hooksPath", ".githooks");
+		write(inUse, { ".githooks/pre-push": "#!/bin/sh\nexit 1\n" });
+		expect(
+			destructive.run(
+				shell("git -c core.hooksPath=./.githooks push", inUse),
+				context(inUse),
+			).kind,
+		).toBe("allow");
+	});
 });
 
 describe("the clean selection of the work-loss guard", () => {
