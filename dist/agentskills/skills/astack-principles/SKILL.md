@@ -3,7 +3,7 @@ name: "astack-principles"
 description: "Use when you need an engineering principle for core design, architecture, verification, delegation or meta structure. Read the reference file of each principle that applies."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

@@ -3,7 +3,7 @@ name: "astack-council"
 description: "Use for /astack-council or \"council\". One reviewer from each entry of the council members role reviews the work. The agent acts on the findings and loops until each reviewer agrees or the round cap ends."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

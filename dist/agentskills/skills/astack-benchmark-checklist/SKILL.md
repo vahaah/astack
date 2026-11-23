@@ -3,7 +3,7 @@ name: "astack-benchmark-checklist"
 description: "Check performance measurements before you report or use them. Use for benchmarks, measured speedups, regressions, or performance-based choices."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

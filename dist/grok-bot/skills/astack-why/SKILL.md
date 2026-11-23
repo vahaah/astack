@@ -3,7 +3,7 @@ name: "astack-why"
 description: "Find the reasons behind code in its written record. Use for why questions, design reasons, regressions, postmortems, tradeoffs, or data-backed thresholds. Use how for runtime behavior."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Why

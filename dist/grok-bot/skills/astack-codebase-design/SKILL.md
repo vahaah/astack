@@ -2,7 +2,7 @@
 name: "astack-codebase-design"
 description: "Use when you design a module interface, place a seam, or deepen a module for testability. It gives a shared vocabulary for deep modules, deepening candidates and code that agents must navigate. Other skills use it as a design reference."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Codebase Design

@@ -2,7 +2,7 @@
 name: "astack-babysit-pr"
 description: "Watch one PR through CI and review bots, fix the real findings and stop at merge-ready. Use when the owner asks to babysit, watch or monitor a PR."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Babysit PR

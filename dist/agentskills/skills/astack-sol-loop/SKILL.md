@@ -3,7 +3,7 @@ name: "astack-sol-loop"
 description: "Use for /astack-sol-loop or \"sol loop\". One reviewer from another model family reviews the change in rounds. The agent makes the smallest changes that satisfy the reviewer and pushes back on scope growth."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

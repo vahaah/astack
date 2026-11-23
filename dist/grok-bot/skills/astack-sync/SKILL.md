@@ -2,7 +2,7 @@
 name: "astack-sync"
 description: "Use to install or refresh the astack skills. Saves each skill of the public astack release as a private skill with its version stamp."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # astack sync

@@ -3,7 +3,7 @@ name: "astack-leaving-pr-comments"
 description: "Format each GitHub comment that an agent posts for the owner. Use before you post a PR comment, an inline review comment, a reply to a reviewer or a bot, or a dismissal reason."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 
