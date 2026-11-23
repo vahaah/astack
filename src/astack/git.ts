@@ -16,14 +16,34 @@ export interface GitResult {
 	stdout: Buffer;
 }
 
-export function runGit(cwd: string, args: string[], input?: string): GitResult {
+export function runGit(
+	cwd: string,
+	args: readonly string[],
+	input?: string,
+): GitResult {
 	const result = spawnSync("git", args, { cwd, input, maxBuffer: MAX_BUFFER });
 	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
 }
 
-function gitText(cwd: string, args: string[]): string | undefined {
+export function gitText(
+	cwd: string,
+	args: readonly string[],
+): string | undefined {
 	const result = runGit(cwd, args);
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
+}
+
+export function gitValue(
+	cwd: string,
+	args: readonly string[],
+): string | undefined {
+	const text = gitText(cwd, args);
+	return text === "" ? undefined : text;
+}
+
+export function currentBranch(cwd: string): string | undefined {
+	const branch = gitValue(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	return branch === "HEAD" ? undefined : branch;
 }
 
 export function repoRoot(cwd: string): string | undefined {

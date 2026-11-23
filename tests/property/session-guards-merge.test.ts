@@ -6,6 +6,7 @@ import fc from "fast-check";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
 import type { Env, Handler } from "../../src/astack/hook/events.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import {
 	AUTHORITY,
 	loadSessionGuards,
@@ -52,7 +53,7 @@ function hook(
 	return runHook("claude-code", event, payload, real.env, {
 		cwd: real.project,
 		today: "2026-11-22",
-		readText: () => undefined,
+		ports: processPorts,
 		handlers: [real.guard],
 	});
 }

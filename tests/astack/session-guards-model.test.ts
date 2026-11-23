@@ -15,6 +15,7 @@ import {
 } from "../../src/astack/hook/handlers/destructive.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { isScratchPath } from "../../src/astack/paths.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import type { ReadPullRequest } from "../../src/astack/pr/github.ts";
 import {
 	AUTHORITY,
@@ -55,6 +56,7 @@ function context(cwd: string, env: Context["env"]): Context {
 		projectDir: cwd,
 		env,
 		today: "2026-11-22",
+		ports: processPorts(),
 		session: "conformance",
 	};
 }
@@ -296,7 +298,7 @@ describe("[control:sg-conformance-merge] the merge guard answers each merge of t
 							const deps = (handler: Handler) => ({
 								cwd: project,
 								today: "2026-11-22",
-								readText: () => undefined,
+								ports: processPorts,
 								handlers: [handler],
 							});
 							const guard = mergeGuard(read);

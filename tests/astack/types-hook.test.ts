@@ -12,6 +12,7 @@ import { join, resolve } from "node:path";
 import { type HookDeps, runHook } from "../../src/astack/hook/dispatch.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
 import { handler as types } from "../../src/astack/hook/handlers/types.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures/types");
 const CLI = resolve(import.meta.dir, "../../src/astack/cli/bin.ts");
@@ -27,13 +28,7 @@ function deps(handlers = [types]): HookDeps {
 	return {
 		cwd: project,
 		today: "2026-10-16",
-		readText: (path) => {
-			try {
-				return readFileSync(path, "utf8");
-			} catch {
-				return undefined;
-			}
-		},
+		ports: processPorts,
 		handlers,
 	};
 }

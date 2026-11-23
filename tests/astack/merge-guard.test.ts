@@ -19,6 +19,7 @@ import {
 	type Verdict,
 } from "../../src/astack/hook/events.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import {
 	type BaseAuthority,
 	type PrTarget,
@@ -123,6 +124,7 @@ function context(
 		projectDir: undefined,
 		env: { ASTACK_STATE_DIR: state },
 		today: "2026-10-16",
+		ports: processPorts(),
 		session,
 	};
 }
@@ -274,7 +276,7 @@ describe("machine prompts never change the grant", () => {
 			{
 				cwd: project,
 				today: "2026-10-16",
-				readText: () => undefined,
+				ports: processPorts,
 				handlers: [guard(GREEN)],
 			},
 		);

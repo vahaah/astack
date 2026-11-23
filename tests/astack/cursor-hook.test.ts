@@ -40,6 +40,7 @@ import {
 	note,
 } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 
 const ROOT = resolve(import.meta.dir, "../..");
 const dirs: string[] = [];
@@ -62,13 +63,7 @@ function deps(
 	return {
 		cwd,
 		today: "2026-10-16",
-		readText: (path) => {
-			try {
-				return readFileSync(path, "utf8");
-			} catch {
-				return undefined;
-			}
-		},
+		ports: processPorts,
 		handlers,
 		store,
 	};

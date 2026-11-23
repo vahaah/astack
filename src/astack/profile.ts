@@ -56,8 +56,12 @@ export function readProfileJson(projectDir: string): unknown {
 	}
 }
 
+export function sectionOf(profile: unknown, key: string): unknown {
+	return field(profile, key);
+}
+
 export function profileSection(projectDir: string, key: string): unknown {
-	return field(readProfileJson(projectDir), key);
+	return sectionOf(readProfileJson(projectDir), key);
 }
 
 function repoRelative(value: unknown): string | undefined {

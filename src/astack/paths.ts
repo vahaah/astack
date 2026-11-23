@@ -1,9 +1,11 @@
 import {
 	existsSync,
 	lstatSync,
+	readdirSync,
 	readFileSync,
 	readlinkSync,
 	realpathSync,
+	statSync,
 } from "node:fs";
 import {
 	basename,
@@ -28,11 +30,57 @@ export function toPosix(path: string): string {
 	return sep === "/" ? path : path.split(sep).join("/");
 }
 
-export function canonical(dir: string): string {
+export function realPath(path: string): string | undefined {
 	try {
-		return realpathSync(dir);
+		return realpathSync(path);
 	} catch {
-		return dir;
+		return undefined;
+	}
+}
+
+export function canonical(dir: string): string {
+	return realPath(dir) ?? dir;
+}
+
+export function listDir(path: string): readonly string[] | undefined {
+	try {
+		return readdirSync(path);
+	} catch {
+		return undefined;
+	}
+}
+
+export function isExecutable(path: string): boolean {
+	try {
+		const stat = statSync(path, { throwIfNoEntry: false });
+		return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
+	} catch {
+		return false;
+	}
+}
+
+export type FolderId = {
+	readonly device: string;
+	readonly inode: string;
+	readonly birth: string;
+	readonly ctime: string;
+	readonly mtime: string;
+};
+
+export function folderId(path: string): FolderId | undefined {
+	try {
+		const stat = lstatSync(path, { bigint: true, throwIfNoEntry: false });
+		return stat === undefined
+			? undefined
+			: {
+					device: String(stat.dev),
+					inode: String(stat.ino),
+					birth: String(stat.birthtimeNs),
+					ctime: String(stat.ctimeNs),
+					mtime: String(stat.mtimeNs),
+				};
+	} catch {
+		return undefined;
 	}
 }
 

@@ -1,5 +1,6 @@
 import type { Region } from "../comments/added.ts";
 import type { HookGroup, HookPolicy } from "../hook-profile.ts";
+import type { Ports } from "../ports.ts";
 
 export const TOOLS = ["claude-code", "cursor"] as const;
 export type Tool = (typeof TOOLS)[number];
@@ -78,6 +79,7 @@ export type Context = {
 	readonly projectDir: string | undefined;
 	readonly env: Env;
 	readonly today: string;
+	readonly ports: Ports;
 	readonly session?: string;
 	readonly refresh?: boolean;
 	readonly hooks?: HookPolicy;
