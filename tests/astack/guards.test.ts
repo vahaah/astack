@@ -661,33 +661,56 @@ describe("a hook skip", () => {
 		hooked = join(root, "hooked");
 		state = join(root, "hooked-state");
 		mkdirSync(join(hooked, ".githooks"), { recursive: true });
+		mkdirSync(join(hooked, ".claude"));
 		mkdirSync(join(hooked, "src"));
 		initRepo(hooked);
 		write(hooked, {
 			".githooks/pre-push": "#!/bin/sh\nexit 0\n",
+			".claude/pr-review-hardening.profile.md": "# Profile\n",
 			"src/app.ts": "a\n",
 		});
 		chmodSync(join(hooked, ".githooks/pre-push"), 0o755);
 		git(hooked, "add", ".");
 		git(hooked, "commit", "-q", "-m", "base");
+		git(hooked, "checkout", "-q", "-b", "edited");
+		write(hooked, { ".claude/pr-review-hardening.profile.md": "# Edited\n" });
+		git(hooked, "commit", "-q", "-am", "drop a gate");
+		git(hooked, "checkout", "-q", "main");
 		git(hooked, "checkout", "-q", "-b", "feature");
 	});
 
-	function run(command: string, recorded: boolean): Verdict {
-		const head = spawnSync("git", ["rev-parse", "HEAD"], {
+	type Recorded = "none" | "bound" | "old" | "edited";
+
+	function gitOut(...args: string[]): string {
+		return spawnSync("git", args, {
 			cwd: hooked,
 			encoding: "utf8",
 		}).stdout.trim();
+	}
+
+	function run(command: string, recorded: Recorded): Verdict {
 		const env = { ASTACK_STATE_DIR: state };
 		rmSync(state, { recursive: true, force: true });
-		if (recorded)
-			saveGateRecord(env, {
-				head,
-				base: "main",
-				baseSha: head,
-				ran: ["lint"],
-				skipped: [],
-			});
+		const source = recorded === "edited" ? "edited" : "HEAD";
+		const head = gitOut("rev-parse", source);
+		const record = {
+			head,
+			base: "main",
+			baseSha: gitOut("rev-parse", "main"),
+			profile: gitOut(
+				"rev-parse",
+				`${source}:.claude/pr-review-hardening.profile.md`,
+			),
+			ran: ["lint"],
+			skipped: [],
+		};
+		if (recorded === "bound" || recorded === "edited")
+			saveGateRecord(env, record);
+		if (recorded === "old") {
+			mkdirSync(join(state, "gates"), { recursive: true });
+			const { profile: _, ...old } = record;
+			writeFileSync(join(state, "gates", `${head}.json`), JSON.stringify(old));
+		}
 		return destructive.run(shell(command, hooked), {
 			...context(hooked),
 			env,
@@ -699,7 +722,7 @@ describe("a hook skip", () => {
 			.filter((form) => form.group === "hook-skip")
 			.map((form) => form.command),
 	)("[control:sg-hook-skip] %s gets the --no-verify reason", (command) => {
-		const said = reason(run(command, false));
+		const said = reason(run(command, "none"));
 		expect(said).toContain(`${command} skips the git hooks of the repo.`);
 		expect(said).toContain("owner gate");
 	});
@@ -722,7 +745,7 @@ describe("a hook skip", () => {
 	])(
 		"[control:sg-hook-skip-env] %s gets the hook-skip reason, because git or the hook manager reads that setting from the environment or an included file",
 		(command) => {
-			const said = reason(run(command, false));
+			const said = reason(run(command, "none"));
 			expect(said).toContain("skips the git hooks of the repo.");
 			expect(said).toContain("owner gate");
 		},
@@ -733,11 +756,11 @@ describe("a hook skip", () => {
 		"HUSKY=0; git push",
 		"git config --get include.path",
 	])("%s passes, because it turns no hook off", (command) => {
-		expect(run(command, false).kind).toBe("allow");
+		expect(run(command, "none").kind).toBe("allow");
 	});
 
 	test("an exported skip variable reaches the push after it", () => {
-		expect(reason(run("export HUSKY=0 && git push", false))).toContain(
+		expect(reason(run("export HUSKY=0 && git push", "none"))).toContain(
 			"HUSKY=0 git push skips the git hooks of the repo.",
 		);
 	});
@@ -763,7 +786,7 @@ describe("a hook skip", () => {
 	])(
 		"%s skips the hooks, because its folder holds no tracked hook",
 		(command, form) => {
-			const said = reason(run(command, false));
+			const said = reason(run(command, "none"));
 			expect(said).toContain(`${form} skips the git hooks of the repo.`);
 			expect(said).toContain("owner gate");
 		},
@@ -775,18 +798,20 @@ describe("a hook skip", () => {
 		"git config core.hooksPath ./.githooks/",
 		"git -c core.hooksPath=.githooks push origin feature",
 	])("%s passes, because it reads the hooks or turns them on", (command) => {
-		expect(run(command, false).kind).toBe("allow");
+		expect(run(command, "none").kind).toBe("allow");
 	});
 
 	test.each([
-		"git push --no-verify",
-		"LEFTHOOK=0 git push origin feature",
-		"HUSKY=0 git push origin HEAD:feature",
-		"export HUSKY=0 && git push",
-	])(
-		"[control:sg-gates-run] %s passes when astack gates run recorded HEAD",
-		(command) => {
-			expect(run(command, true).kind).toBe("allow");
+		["git push --no-verify", "bound", "allow"],
+		["LEFTHOOK=0 git push origin feature", "bound", "allow"],
+		["HUSKY=0 git push origin HEAD:feature", "bound", "allow"],
+		["export HUSKY=0 && git push", "bound", "allow"],
+		["git push --no-verify", "old", "deny"],
+		["HUSKY=0 git push origin edited", "edited", "deny"],
+	] as const)(
+		"[control:sg-gates-run] %s with a %s gate record gets %s, because the record must hold the profile blob of the source and of its merge base",
+		(command, recorded, kind) => {
+			expect(run(command, recorded).kind).toBe(kind);
 		},
 	);
 
@@ -801,7 +826,7 @@ describe("a hook skip", () => {
 			"LEFTHOOK=0 git commit -m x skips the git hooks",
 		],
 	])("%s stays an owner gate with a record of HEAD", (command, text) => {
-		const said = reason(run(command, true));
+		const said = reason(run(command, "bound"));
 		expect(said).toContain(text);
 		expect(said).toContain("owner gate");
 	});

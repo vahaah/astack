@@ -1,6 +1,6 @@
 import { realpathSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
-import { loadGateRecord } from "../../gates.ts";
+import { loadGateRecord, profileBlobs, sameProfile } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
 import {
 	type GitInvocation,
@@ -875,7 +875,16 @@ function recorded(spec: string, dir: string, env: Env): boolean {
 		"--quiet",
 		`${source}^{commit}`,
 	]);
-	return sha !== undefined && loadGateRecord(env, sha) !== undefined;
+	const record = sha === undefined ? undefined : loadGateRecord(env, sha);
+	const blobs =
+		sha === undefined || record === undefined
+			? undefined
+			: profileBlobs(dir, sha, record.baseSha);
+	return (
+		record !== undefined &&
+		blobs !== undefined &&
+		sameProfile(record, blobs.source, blobs.base)
+	);
 }
 
 function skipPushReasons(

@@ -29,6 +29,26 @@
 			"modelRefs": ["Push", "HookSkipNeedsGates"]
 		},
 		{
+			"path": "src/astack/gates.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun", "Push", "HookSkipNeedsGates"]
+		},
+		{
+			"path": "src/astack/cli/commands/gates.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/astack/gates.test.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
+			"path": "tests/astack/guard-composition.ts",
+			"obligation": "SG-gates-run",
+			"modelRefs": ["GatesRun"]
+		},
+		{
 			"path": "src/astack/shell.ts",
 			"obligation": "SG-stdin-source",
 			"modelRefs": ["RunGit", "DenialNeedsLoss"]
@@ -228,6 +248,13 @@
 					"symbol": "recordOf"
 				},
 				"modelAction": "GatesRun"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/gates.ts",
+					"symbol": "sameProfile"
+				},
+				"modelAction": "Push"
 			}
 		],
 		"omitted": [

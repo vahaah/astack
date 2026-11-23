@@ -85,6 +85,7 @@ export const gateRecordArrow: (
 	head: string,
 	base: string,
 	baseSha: string,
+	profile: string,
 ) => GateRecord | undefined = recordOf;
 
 export function guardArrows(read: ReadPullRequest) {
