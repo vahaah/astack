@@ -52,7 +52,7 @@ If the correct fix needs a file outside the fence, do not work around the fence.
 
 The run then ends in principled incompletion.
 
-In mode `ci_proof`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in that mode, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`. A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action. The run prints the CI change that it proposes, as above, and ends in principled incompletion. The author makes the CI change, and the next run reviews it.
+In mode `ci_proof` or `ci_mixed`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in those modes, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`. A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action. The run prints the CI change that it proposes, as above, and ends in principled incompletion. The author makes the CI change, and the next run reviews it.
 
 ## Files that astack writes
 

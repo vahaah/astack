@@ -283,7 +283,7 @@ Each entry is `{name, when, sources}`. `name` is `contract-coverage` or `claims-
 | `fallback` | string | none | The merge command to use while `command`'s script does not exist yet. |
 | `conditions` | list of strings | `[]` | Conditions the run checks and prints evidence for before it merges. |
 
-In mode `ci_proof`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge, whatever `after_clean_stop` and `conditions` say.
+In mode `ci_proof` or `ci_mixed`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge. This holds whatever `after_clean_stop` and `conditions` say.
 
 ## Draft a profile
 

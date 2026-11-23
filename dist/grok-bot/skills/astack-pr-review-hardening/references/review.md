@@ -39,7 +39,7 @@ Every reviewer prompt carries:
 - the absolute path of the review checklist `references/checklist.md`, with the rule that a question applies only when the diff changes its area;
 - the blocking rules below;
 - the ledger's `fixed` and `advisory` entries, so they are not raised again unless the code they name changed;
-- in mode `ci_proof`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs. `astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;
+- in mode `ci_proof` or `ci_mixed`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs. `astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;
 - every line of `reviewers.notes`.
 
 Sort the outputs into blocking candidates and suggestions by the labels in "Which findings block". Keep each reviewer's text unmodified under its name.
@@ -91,7 +91,7 @@ For each candidate, write down the reproduction. It is a command, a test, an inp
 
 ## The ledger
 
-Keep one ledger per branch at `$(git rev-parse --git-common-dir)/pr-review-hardening/<branch>.json`, with each `/` in the branch name replaced by `-`. It sits inside git's own directory, so it is never committed, every worktree of the clone shares it, and it survives the session. Write an entry the moment you create or change it, so a run that is cut off can resume. The ledger also holds `stopped`, the decision of the last run on the branch. It is `null` until that run stops. A ledger with no `stopped` key comes from a run that stopped. The ledger also holds `mode`, the mode of the last CI check of the run, `standard` or `ci_proof`.
+Keep one ledger per branch at `$(git rev-parse --git-common-dir)/pr-review-hardening/<branch>.json`, with each `/` in the branch name replaced by `-`. It sits inside git's own directory, so it is never committed, every worktree of the clone shares it, and it survives the session. Write an entry the moment you create or change it, so a run that is cut off can resume. The ledger also holds `stopped`, the decision of the last run on the branch. It is `null` until that run stops. A ledger with no `stopped` key comes from a run that stopped. The ledger also holds `mode`, the mode of the last CI check of the run, `standard`, `ci_proof` or `ci_mixed`.
 
 Each entry holds:
 

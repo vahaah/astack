@@ -70,7 +70,7 @@ Guard: "gate entries that fix the tree" in `tests/pr-review-profile.test.ts`, th
 
 ### ci-job-coverage
 
-Does each blocking CI job and step have a gate that runs its commands, on all of its paths, in its order? Does the run stop on a PR that changes a tool version that CI sets up or reads from a version file? Does a PR that changes only CI run in mode `ci_proof`, with a red gate advisory only on its proof? Does its merge need green required checks of its head? Does another change to a version file get the gates of the run?
+Does each blocking CI job and step have a gate that runs its commands, on all of its paths, in its order? Does the run stop on a PR that changes a tool version that CI sets up or reads from a version file? Does a PR that changes only CI run in mode `ci_proof`, with a red gate advisory only on its proof? Does a PR that changes CI and another file run in mode `ci_mixed`, with each gate blocking? Does its merge need green required checks of its head? Does another change to a version file get the gates of the run?
 
 Guard: the parity check of apply, `checkCiParity` in `scripts/lib/ci-parity.ts`, with `stepVerdicts` and `orderVerdicts`. `astack check ci-pins`, `checkCiPins` in `src/astack/ci-pins.ts`, guards the stop of preflight step 8, and `compareSetups` guards its exit 3.
 

@@ -1607,11 +1607,11 @@ describe("a PR that changes CI", () => {
 			sectionLines(ciPins, "What each exit code means").join(" "),
 		);
 	const ciCheck = [
-		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest. The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base. Each record must be non-executable UTF-8 Markdown with all required sections and references. Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs. Changed models, controls, authority, and all other non-CI files still stop the run. These records grant no proof result. The current proof gate stays blocking in every mode. A file outside CI and this checked proof metadata stops the run, because a red gate can come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
-		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest. The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base. Each record must be non-executable UTF-8 Markdown with all required sections and references. Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs. These records grant no proof result. The current proof gate stays blocking in every mode. For exit 3 with another changed file or a failed proof record, the last line starts with `ci_mixed:`. A red gate can then come from that file, so each gate blocks. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. When it exits 3 and its last line starts with `ci_mixed:`, the run goes on in mode `ci_mixed`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
 		"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
 		"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
-		"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
+		"In mode `ci_proof` or `ci_mixed`, the run reviews, fixes and gates the PR as usual.",
 	];
 	const recorded =
 		"It records the mode in the ledger, in each `GATE_SUMMARY` and in each PR comment.";
@@ -1661,7 +1661,7 @@ describe("a PR that changes CI", () => {
 			"## The ledger",
 		);
 		for (const sentence of [
-			"in mode `ci_proof`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs.",
+			"in mode `ci_proof` or `ci_mixed`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs.",
 			"`astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;",
 		])
 			expect(review).toContain(sentence);
@@ -1675,7 +1675,7 @@ describe("a PR that changes CI", () => {
 				"## Review-bot threads",
 			),
 		).toContain(
-			"The ledger also holds `mode`, the mode of the last CI check of the run, `standard` or `ci_proof`.",
+			"The ledger also holds `mode`, the mode of the last CI check of the run, `standard`, `ci_proof` or `ci_mixed`.",
 		);
 		expect(gate).toContain(
 			"- the mode, and each advisory gate of mode `ci_proof` with its proof;",
@@ -1741,7 +1741,7 @@ describe("a PR that changes CI", () => {
 
 	test("a clean stop of mode ci_proof needs a CI read-back that passes, whatever merge.after_clean_stop says, and the /goal ties ADVISORY_CI_PROOF to that mode", () => {
 		expect(sentencesFrom(gate, "## CI read-back", "## Unclean stop")).toContain(
-			"In that mode, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass.",
+			"In both modes, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass.",
 		);
 		expect(sentencesFrom(gate, "## CI read-back", "## Unclean stop")).toContain(
 			"A run without a PR has no CI run to read, so its `ciReadBack` is `not_run`, and it stops with principled incompletion.",
@@ -1753,7 +1753,7 @@ describe("a PR that changes CI", () => {
 				"## Draft a profile",
 			),
 		).toContain(
-			"In mode `ci_proof`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge, whatever `after_clean_stop` and `conditions` say.",
+			"In mode `ci_proof` or `ci_mixed`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge. This holds whatever `after_clean_stop` and `conditions` say.",
 		);
 		expect(paragraphStarting(gate, "/goal Run")).toContain(
 			"It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof.",
@@ -1768,7 +1768,7 @@ describe("a PR that changes CI", () => {
 			"When a condition fails, the read-back fails. Then never merge, and stop with principled incompletion.",
 		);
 		expect(paragraphStarting(gate, "1. How the run stopped:")).toContain(
-			"Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof, and the result of the CI read-back.",
+			"Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof. In mode `ci_proof` or `ci_mixed`, also the result of the CI read-back.",
 		);
 	});
 
@@ -1776,7 +1776,7 @@ describe("a PR that changes CI", () => {
 		expect(
 			sentencesFrom(engineSkill, "## After the stop", "## References"),
 		).toContain(
-			"In mode `ci_proof`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
+			"In mode `ci_proof` or `ci_mixed`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
 		);
 	});
 
@@ -1787,10 +1787,36 @@ describe("a PR that changes CI", () => {
 			"## Files that astack writes",
 		);
 		expect(fence).toContain(
-			"In mode `ci_proof`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in that mode, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`.",
+			"In mode `ci_proof` or `ci_mixed`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in those modes, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`.",
 		);
 		expect(fence).toContain(
 			"A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action.",
+		);
+	});
+
+	test("[control:ci-mixed-gates] the preflight takes exit 3 with a ci_mixed: last line, a clean stop of that mode needs ciReadBack: pass, and no gate of the mode is advisory", () => {
+		expect(sentencesFrom(engineSkill, "## Preflight", "## Baseline")).toContain(
+			"When it exits 3 and its last line starts with `ci_mixed:`, the run goes on in mode `ci_mixed`.",
+		);
+		expect(
+			paragraphStarting(
+				sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+				"The iteration is clean when",
+			),
+		).toContain(
+			"In mode `ci_proof` or `ci_mixed`, a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`, whatever `merge.after_clean_stop` says.",
+		);
+		const green = sentencesFrom(gate, "## Green", "## Iteration output");
+		expect(green).toContain(
+			"In mode `ci_mixed`, the PR also changes a file outside CI, so a red gate can come from that file. No gate of that mode is advisory, and each red gate blocks.",
+		);
+		expect(green).toContain(
+			"every gate that ran exited 0, or is an advisory gate of mode `ci_proof`.",
+		);
+		expect(
+			sentencesFrom(engineSkill, "## After the stop", "## References"),
+		).toContain(
+			"In mode `ci_proof` or `ci_mixed`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
 		);
 	});
 
@@ -1926,22 +1952,22 @@ describe("the proof of a clean stop", () => {
 		},
 		{
 			condition:
-				"In mode `ci_proof`, a clean stop also needs `mode: ci_proof` in the `GATE_SUMMARY`",
+				"a clean stop also needs that mode in the `mode` of the `GATE_SUMMARY`",
 			fields: ["mode"],
 			goal: [
-				"If the CI check gave mode ci_proof, that GATE_SUMMARY also shows mode ci_proof and ciReadBack pass.",
+				"If the CI check gave mode ci_proof or ci_mixed, that GATE_SUMMARY also shows that mode and ciReadBack pass.",
 			],
 		},
 		{
 			condition:
-				"In mode `ci_proof`, a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`",
+				"a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`",
 			fields: ["ciReadBack"],
-			goal: ["that GATE_SUMMARY also shows mode ci_proof and ciReadBack pass"],
+			goal: ["that GATE_SUMMARY also shows that mode and ciReadBack pass"],
 		},
 		{
-			condition: "so a run of mode `ci_proof` without a PR cannot stop clean",
+			condition: "so a run of either mode without a PR cannot stop clean",
 			fields: ["ciReadBack", "prHead"],
-			goal: ["mode ci_proof and ciReadBack pass", "prHead equal to headSha"],
+			goal: ["that mode and ciReadBack pass", "prHead equal to headSha"],
 		},
 		{
 			condition: "- `stop_clean`: the iteration is clean and",
