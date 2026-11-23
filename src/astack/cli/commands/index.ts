@@ -10,6 +10,7 @@ import { command as managed } from "./managed.ts";
 import { command as plan } from "./plan.ts";
 import { command as planTicket } from "./plan-ticket.ts";
 import { command as print } from "./print.ts";
+import { command as review } from "./review.ts";
 import { command as session } from "./session.ts";
 import { command as skillPath } from "./skill-path.ts";
 import { command as stack } from "./stack.ts";
@@ -30,6 +31,7 @@ export const COMMANDS: readonly Command<number | Promise<number>>[] = [
 	print,
 	init,
 	watchPr,
+	review,
 ];
 
 export const ALIASES: readonly Command<number | Promise<number>>[] =

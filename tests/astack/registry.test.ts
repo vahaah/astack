@@ -52,6 +52,7 @@ describe("the command registry", () => {
 			"print",
 			"init",
 			"watch-pr",
+			"review",
 			"check-comments",
 			"check-types",
 			"check-ticket",
