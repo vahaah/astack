@@ -64,6 +64,10 @@
 			"obligation": "PLAN-CUT"
 		},
 		{
+			"path": "tests/mode-router.test.ts",
+			"obligation": "PLAN-RECORD"
+		},
+		{
 			"path": "tests/plan-skill-text.test.ts",
 			"obligation": "PLAN-RECORD"
 		},
