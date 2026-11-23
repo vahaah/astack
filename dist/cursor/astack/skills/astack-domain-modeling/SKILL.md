@@ -6,8 +6,8 @@ description: "Build a project domain model. Use when you discuss terminology, ch
 # Domain modeling
 
 Build the domain model during design work.
-Every change records its affected context, aggregate ownership, invariants, and governing decisions in its ChangeProof.
-The governing ADR connects function contracts to formal claims, category composition, correspondence, and executable controls.
+A code plan names its context, caps, steps and laws in one `domain` block, which a ChangeProof cites with `domain.plan`.
+The contexts card maps each context to its code globs.
 Challenge unclear terms.
 Test relationships with concrete edge cases.
 Record each resolved term and qualifying decision when the discussion settles it.
@@ -44,7 +44,6 @@ The map links each context to its files:
 │       └── docs/adr/
 ```
 
-Create a missing glossary when you resolve the first term.
 Create `docs/adr/` when the first decision needs an ADR.
 Do not create empty files in advance.
 
@@ -82,10 +81,8 @@ Update `CONTEXT.md` as soon as a term is resolved.
 Use [GLOSSARY-FORMAT.md](./GLOSSARY-FORMAT.md).
 Do not collect resolved terms for a later batch.
 
-Keep `CONTEXT.md` as a glossary.
+Keep `CONTEXT.md` as a glossary with its contexts card.
 Exclude specifications, scratch notes and implementation decisions.
-A term can end with `_Code_: <symbol>` to identify its code symbol.
-That optional line is the only content beyond the term's definition and vocabulary guidance.
 
 ### Offer ADRs only when needed
 

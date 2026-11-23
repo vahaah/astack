@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "session-guards-conformance",
-	"base": "0da3a395ff1371fab74ecdbc6a9d3caead1ff4fb",
+	"base": "54c05ae4300e43ea0c8029ad5e7fbce3f0c314ed",
 	"scope": [
 		{
 			"path": "src/astack/pr/grant.ts",

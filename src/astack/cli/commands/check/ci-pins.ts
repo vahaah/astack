@@ -5,6 +5,7 @@ import {
 	type MergeBase,
 	mergeBase,
 	proofBase,
+	readCommittedFile,
 	resolveCommit,
 } from "../../../change-proof/candidate.ts";
 import { ciProofRecords } from "../../../change-proof/ci-records.ts";
@@ -132,6 +133,22 @@ function proofRecordsAt(
 	const matrix = proofFileAt(root, matrixPath);
 	if (!matrix.ok) return matrix;
 	files.set(matrixPath, { kind: "text", text: matrix.value });
+	const { composition } = parsed.value;
+	const cites = parsed.value.domain.adrs.some(
+		(adr) => adr.ratification !== undefined,
+	);
+	if (composition.kind === "plan" && cites) {
+		const atHead = readCommittedFile(root, "HEAD", composition.plan);
+		const plan =
+			atHead.kind === "text"
+				? atHead
+				: readCommittedFile(root, parsed.value.base, composition.plan);
+		if (plan.kind !== "text")
+			return err(
+				`the plan record ${composition.plan} is missing at HEAD and at the manifest base ${parsed.value.base}`,
+			);
+		files.set(composition.plan, plan);
+	}
 	const records = ciProofRecords(parsed.value, choice.value.path, files);
 	return records.ok ? ok([...records.value, ...deleted]) : records;
 }

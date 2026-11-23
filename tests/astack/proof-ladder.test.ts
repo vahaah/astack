@@ -7,11 +7,17 @@ import type {
 import {
 	deriveLadder,
 	type LadderInput,
+	lawRung,
 	type ModelRegistry,
 	REGISTRY_PATH,
 	type RegistryModel,
 	type Rung,
 } from "../../src/astack/change-proof/rung.ts";
+import {
+	parseCard,
+	parseDomainBlock,
+} from "../../src/astack/domain/notation.ts";
+import { lawClaims } from "../../src/astack/domain/rules.ts";
 
 function contract(name: string): ModelContract {
 	return {
@@ -82,6 +88,7 @@ function input(
 		registry: { base: REGISTRY, tree: REGISTRY },
 		floor: { base: "R0", tree: "R0" },
 		manifest: MANIFEST,
+		laws: [],
 		inTree: (path) => TREE.has(path),
 		...edit,
 	};
@@ -99,7 +106,12 @@ function summary(ladder: ReturnType<typeof deriveLadder>): Row | string {
 	const { rung, cause, runs } = ladder.value;
 	return {
 		rung,
-		by: cause.kind === "path" ? cause.path : `floor ${cause.side}`,
+		by:
+			cause.kind === "path"
+				? cause.path
+				: cause.kind === "law"
+					? `law ${cause.id}`
+					: `floor ${cause.side}`,
 		runs: runs.map((run) => `${run.name} ${run.negative.action}`),
 	};
 }
@@ -213,6 +225,50 @@ describe("deriveLadder", () => {
 		expect(summary(deriveLadder(given))).toEqual(expected);
 	});
 
+	test.each<[string, LadderInput, Row | string]>([
+		[
+			"a prop law on a read-only cap gives R2",
+			input(["docs/design.md"], {
+				laws: [{ id: "L1", check: "prop", readOnly: true }],
+			}),
+			{ rung: "R2", by: "law L1", runs: [] },
+		],
+		[
+			"a prop law on an invariant gives R3 over a path at R1",
+			input(["scripts/build.ts"], {
+				laws: [
+					{ id: "L1", check: "tsc" },
+					{ id: "L2", check: "prop", readOnly: false },
+				],
+			}),
+			{ rung: "R3", by: "law L2", runs: [] },
+		],
+		[
+			"a tla law gives R4 and selects its model after the manifest model",
+			input(["docs/design.md"], {
+				laws: [{ id: "L3", check: "tla", model: "Guards" }],
+			}),
+			{ rung: "R4", by: "law L3", runs: ["Admission Admit", "Guards Step"] },
+		],
+		[
+			"a tla law whose model the registry does not hold stops",
+			input(["docs/design.md"], {
+				laws: [{ id: "L3", check: "tla", model: "Lost" }],
+			}),
+			"the tla law L3 names the model Lost, which formal/models.json does not hold",
+		],
+		[
+			"a floor above the law rung still raises it",
+			input(["docs/design.md"], {
+				laws: [{ id: "L1", check: "prop", readOnly: true }],
+				floor: { base: "R0", tree: "R3" },
+			}),
+			{ rung: "R3", by: "floor tree", runs: [] },
+		],
+	])("[control:rung-law] %s", (_name, given, expected) => {
+		expect(summary(deriveLadder(given))).toEqual(expected);
+	});
+
 	test("[control:rl-registry-diff] a registry diff runs each model of both sides once, the manifest model first", () => {
 		const gone = entry("Gone", ["src/gone.ts"]);
 		const added = entry("Added", ["src/added.ts"]);
@@ -268,5 +324,36 @@ describe("deriveLadder", () => {
 			by: REGISTRY_PATH,
 			runs: ["Admission Admit", "Guards Step"],
 		});
+	});
+});
+
+describe("the law rung of a block", () => {
+	test("[control:rung-law-derived] a prop law on a read-only card cap gives R2, and a prop law on a block cap with a write op or on an invariant gives R3", () => {
+		const card = parseCard([
+			{
+				path: "CONTEXT.md",
+				text: "## Contexts\n\n```domain\ncontext Gate : src/**\ncap  Log [fs-read] @ src/log.ts: read(read)\n```\n",
+			},
+		]);
+		const block = parseDomainBlock(
+			[
+				"context Gate",
+				"agg  Gate @ src/gate.ts: Gate",
+				"inv  G1 Gate: only fresh input is admitted",
+				"cap  Store [fs-read, fs-write] @ src/store.ts: load(read), save(write)",
+				"law  L1 Log a read of the log gives the same rows   check: prop C1",
+				"law  L2 Store a save keeps each gate   check: prop C2",
+				"law  L3 G1 a stale gate is never admitted   check: prop C3",
+			].map((text, index) => ({ n: index + 1, text })),
+		);
+		if (!card.ok || card.value.kind !== "card" || !block.ok)
+			throw new Error(JSON.stringify({ card, block }));
+		expect(
+			lawClaims(block.value, card.value).map((law) => [law.id, lawRung(law)]),
+		).toEqual([
+			["L1", "R2"],
+			["L2", "R3"],
+			["L3", "R3"],
+		]);
 	});
 });

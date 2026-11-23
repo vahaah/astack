@@ -36,8 +36,8 @@ With none there, it reads `.astack/proof.json`.
 |---|---|
 | `version`, `change`, `base` | `1`, a name and a full base SHA. [Base](#base) |
 | `scope` | `[{path, obligation}]`. Rows cover each tracked, staged, deleted and nonignored untracked change, and no row is idle except a manifest path |
-| `domain` | `context`, `glossary`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
-| `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. [Category and abstraction](#category-and-abstraction) |
+| `domain` | `context`, `glossary`, `plan`, `aggregate {path, symbol}`, `terms`, `invariants [{name, modelRef}]`, `adrs [{file, decision}]` and `controls {matrix, criteria}`. [Domain and decisions](#domain-and-decisions) |
+| `category` | `carrier`, `objects [{name, link {path, symbol}}]`, `arrows [{name, from, to, link, effects}]`, `composites [{arrows, op}]`, `equality`, `laws [{law, status, witness, reason}]` and `typedWitness`. `domain.plan` replaces it. [Category and abstraction](#category-and-abstraction) |
 | `abstraction` | `hides`, `callersKnow`, `deletionTest`, `alternatives [{name, rejectedBecause}]`, `relation [{concrete {path, symbol}, modelAction}]` and `omitted`. [Category and abstraction](#category-and-abstraction) |
 | `model` | `module`, `config`, `dependencies`, `bounds`, `fairness`, `invariants` and `properties`. [TLC execution](#tlc-execution) |
 | `negative` | `file`, `action`, `original`, `replacement`, `defect` and `expect {kind, name}`. [TLC execution](#tlc-execution) |
@@ -50,13 +50,11 @@ The manifest never stores its own digest or commit hash.
 
 The matrix uses [spec-links.md](spec-links.md).
 Criterion and control markers come from their source files independently of the links.
-Implementation gates run those controls separately.
 Link validation is not semantic coverage.
 
 ## Domain and decisions
 
-Use the affected context's glossary and aggregate symbol.
-`domain.context` must be the exact text of a glossary heading.
+`domain.context` must be the exact text of a glossary heading. With `domain.plan`, it must name a context of the contexts card.
 Each term must be the exact text of a heading or of a bold span, such as `**Order**:`.
 Plain text in a table cell does not define a term.
 [GLOSSARY-FORMAT.md](../../domain-modeling/GLOSSARY-FORMAT.md) gives the glossary format.
@@ -71,8 +69,7 @@ Fenced examples and duplicate Status fields cannot provide governing metadata.
 An explicit integrated-proposal reference can use a previously ratified Proposed record under an unchanged Accepted process.
 It must declare `ratification` with `kind: integrated-proposal`, a `process` file and decision, `integratedAt`, and `proofRecord`.
 `integratedAt` must be a full commit identity ancestral to the fixed base.
-Historical reads ignore replacement refs and graft ancestry. Missing objects fail without a lazy fetch.
-The route requires Git's `--no-lazy-fetch` option and rejects unsupported Git commands.
+History reads follow the [Base](#base) rules, and a missing object fails.
 Both records must be regular UTF-8 files in that commit, the base, and the candidate.
 By default, their complete bytes must match across those views.
 Both cited decisions must exist outside fences and have text.
@@ -90,20 +87,18 @@ The process must already be Accepted in all three views. Its authority cannot co
 The separate `proofRecord` supplies the four proof sections and their required links and arrow explanations.
 A section under the cited decision wins, else each section of the title counts.
 The checker binds those records and actual history facts before and after model execution.
-Semantic review must make sure the Accepted process ratifies the selected proposal.
-Ancestry establishes integration, not human approval or process meaning.
-Without this explicit record, the Accepted-only rule remains unchanged.
-New or amended proposals need a separate authorised integration before this route can use them.
+Review makes sure that the Accepted process ratifies the proposal, because ancestry proves only integration.
+This route never takes a new or amended proposal.
 
 The optional `governingMetadata: "landed-header-value"` selects one narrow lifecycle exception for the governing record.
 Each view must contain one unambiguous existing top-level Landed header.
 Only its nonblank single-line value can differ. Every byte outside that value remains protected.
-The Accepted process remains completely byte-identical and must authorize that lifecycle duty.
+The Accepted process stays byte-identical and must authorize that duty.
 Semantic review must check the landing statement's truth. This option never changes status or decision authority.
 The supported flat preamble accepts plain `Landed: value` and zero-indent `- **Landed:** value` forms.
 Fenced, nested, repeated, missing, multiline, or ambiguous headers fail even when unchanged.
 The selected value cannot introduce HTML, fences, control characters, line separators, or a Markdown continuation.
-Raw input freshness remains mandatory. A value change during model execution is still stale.
+A value change during the model runs is still stale.
 
 ## Category and abstraction
 
@@ -127,19 +122,22 @@ A functor or monoid claim needs both of its witnesses.
 Pure and artifact records cannot claim monad laws.
 An inapplicable law cannot replace an applicable witness.
 Witnesses name linked implementation controls. A `model:` witness is deprecated.
-The typed witness mentions the real arrow symbols and belongs in the repo's normal compiler or document checks.
+A legacy `typedWitness` file mentions each arrow symbol.
+
+With `domain.plan`, the tsc witness compares each linked step of the plan block with its line.
+Each prop law needs a links row for its control, and each tla law its model and invariant in the registry.
 
 Each abstraction explains what callers must know and what the module hides.
 Its relation maps concrete functions or contracts to model actions.
 Its deletion test rejects a layer that adds no useful domain rule.
-These declarations require semantic review.
-The checker cannot infer their truth from names alone.
+Review examines these declarations, because names cannot prove them.
 
 ## Rungs and models
 
 Covered paths, model files and `formal/models.json` give R4. With no registry, each path gives R4. An uncovered fail-closed path or a deleted registry stops.
 
-Contract-only paths give R0, and other paths give R1. `proof.minRung` only raises the rung. Only R4 runs TLC, one triple for each selected model.
+Contract-only paths give R0, and other paths give R1. A law gives R0 for tsc, R2 for a prop law on a read-only cap, R3 for another prop law and R4 for tla. A tla law selects its model.
+`proof.minRung` only raises the rung. Only R4 runs TLC, one triple for each selected model.
 
 ## TLC execution
 
@@ -175,6 +173,4 @@ Invalid arguments or schema use exit 2.
 Read the reported rejection stage before choosing the next action.
 An old CLI without this command cannot satisfy the gate.
 
-Model checking establishes the selected finite model claims under their assumptions.
-Existing gates and semantic review establish separate implementation evidence.
-Repository records cannot guarantee a model's private reasoning.
+Model checking proves only the finite model claims. Gates and review give the implementation evidence.

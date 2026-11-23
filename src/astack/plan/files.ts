@@ -6,6 +6,9 @@ import {
 	statSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { parseRegistry } from "../change-proof/registry.ts";
+import { REGISTRY_PATH } from "../change-proof/rung.ts";
+import { type CardFile, parseCard } from "../domain/notation.ts";
 import { repoRoot } from "../git.ts";
 import { loadProfile, type PlanProfile } from "../profile.ts";
 import { err, ok, type Result } from "../result.ts";
@@ -13,7 +16,7 @@ import { defaultSkillPathEnv, principleSkills } from "../skill-path.ts";
 import { parseGlossary, planSlug } from "./check.ts";
 import { hasPlanFrontmatter } from "./parse.ts";
 import { draftsPath, readTrail, SLUG, trailPath } from "./trail.ts";
-import type { CheckEnv, Glossary } from "./types.ts";
+import type { CheckEnv, DomainEnv, Glossary } from "./types.ts";
 
 export function todayIso(at = new Date()): string {
 	return at.toISOString().slice(0, 10);
@@ -53,7 +56,7 @@ export function planProfileFor(root: string): PlanProfile {
 }
 
 const GLOSSARY_FILES = ["CONTEXT.md", "GLOSSARY.md"];
-const GLOSSARY_MAPS = ["CONTEXT-MAP.md", "GLOSSARY-MAP.md"];
+export const GLOSSARY_MAPS = ["CONTEXT-MAP.md", "GLOSSARY-MAP.md"];
 
 export function loadGlossary(
 	root: string,
@@ -90,6 +93,28 @@ export function loadGlossary(
 	};
 }
 
+export function loadDomainEnv(
+	root: string,
+	configured: string | undefined,
+): DomainEnv {
+	const glossary = (configured ? [configured] : GLOSSARY_FILES).find((name) =>
+		existsSync(join(root, name)),
+	);
+	const files: CardFile[] = [
+		...GLOSSARY_MAPS,
+		...(glossary === undefined ? [] : [glossary]),
+	].flatMap((path) => {
+		const text = readText(join(root, path));
+		return text === undefined ? [] : [{ path, text }];
+	});
+	const registry = readText(join(root, REGISTRY_PATH));
+	return {
+		card: parseCard(files),
+		registry: registry === undefined ? ok(undefined) : parseRegistry(registry),
+		codeRoots: loadProfile(root).domain.codeRoots,
+	};
+}
+
 export interface EnvOptions {
 	root: string;
 	config: PlanProfile;
@@ -105,6 +130,7 @@ export function checkEnv(options: EnvOptions): CheckEnv {
 		today: options.today,
 		adrDir: options.config.adr,
 		glossary: loadGlossary(options.root, options.config.glossary),
+		domain: loadDomainEnv(options.root, options.config.glossary),
 		trail: options.trail
 			? readTrail(trailPath(options.root, options.slug))
 			: undefined,

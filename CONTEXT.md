@@ -3,6 +3,25 @@
 This context governs evidence and admission for engineering changes.
 Product contexts keep their own terms, code, and decisions.
 
+## Contexts
+
+Each card context groups the code owners of one area under this glossary.
+
+```domain
+context Kernel shared : src/astack/result.ts, src/astack/glob.ts, src/astack/git.ts, src/astack/json-format.ts, src/astack/headings.ts, src/astack/print.ts
+context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr.ts, src/astack/spec-drift.ts, src/astack/cli/commands/check/proof.ts, src/astack/cli/commands/check/spec-drift.ts
+context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
+context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
+context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
+context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
+context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/cli/commands/check/index.ts, src/astack/codex-hooks.ts, src/astack/codex-trust.ts, src/astack/commit-style.ts, src/astack/doctor.ts, src/astack/hook-profile.ts, src/astack/init.ts, src/astack/managed.ts, src/astack/marketplace.ts, src/astack/profile.ts, src/astack/public-repo.ts, src/astack/repo-facts.ts, src/astack/rules.ts, src/astack/skill-path.ts
+cap  TypeCheck [fs-read, fs-write, spawn] @ src/astack/domain/witness-run.ts: typeCheck(write)
+pure src/astack/domain/notation.ts
+pure src/astack/domain/profile.ts
+pure src/astack/domain/rules.ts
+pure src/astack/domain/witness.ts
+```
+
 ## Language
 
 ### ChangeProof
@@ -60,6 +79,20 @@ _Code_: `deriveLadder`
 The file `formal/models.json`, which maps each path to its models, a fail-closed stop, an unmodelled control or a contract-only rung.
 _Avoid_: Model list in the profile, verdict cache
 _Code_: `ModelRegistry`
+
+### Domain block
+
+The one `domain` fence under `## Domain and effects` of a code plan.
+It names the context, caps, steps, flows and laws of the change, and check-plan, the tsc witness and the rung read it.
+_Avoid_: Prose effect list, category section
+_Code_: `DomainBlock`
+
+### Contexts card
+
+The one `domain` fence under `## Contexts` of the context map, else of the glossary file.
+Each card context groups code owners under one glossary.
+_Avoid_: Card path key, a glossary for each code owner
+_Code_: `parseCard`
 
 ### Composition record
 

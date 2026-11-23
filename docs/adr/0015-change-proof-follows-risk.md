@@ -45,6 +45,8 @@ The model has 2 models, 7 path kinds, a base registry that can be absent and the
 A diff holds one or two path kinds, and the model takes each order of the derive, start, judge and admit steps.
 The model takes the glob match, the registry parse and the TLC verdict as true observations.
 
+> Amended 2026-11-22: The model also takes a fixed law kind with the law rung 0, 2, 3 or 4. `Rung` takes the highest of the path rung, the law rung and both floors, and `FloorOnlyRaises` holds the law rung too. `TlaLawSelects` holds that a tla law selects the second model. [ADR 0018](0018-one-domain-and-effects-record-is-checked-against-code.md) D5 holds the law rung.
+
 #### Category composition
 
 The record uses the `pure` carrier, because each arrow returns a value and does no I/O.
@@ -105,6 +107,8 @@ A model glob, a model file or the registry gives R4.
 A path under a fail-closed glob with no model glob stops, unless an `unmodelled` entry gives it R1.
 A path under a `contractOnly` glob gives R0, and each other path gives R1.
 R2 and R3 wait for the plan laws of a later block.
+
+> Amended 2026-11-22: A law of a plan block now gives R2 and R3. A prop law on a read-only cap gives R2, and each other prop law gives R3. [ADR 0018](0018-one-domain-and-effects-record-is-checked-against-code.md) D5 holds this rule.
 
 ### D5. At R4 the manifest model runs with each selected model
 
