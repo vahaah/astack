@@ -881,6 +881,8 @@ describe("the gate record folder", () => {
 				}) as const,
 		],
 		["an echo redirect", () => shell(`echo '{}' > ${gates}/x.json`, records)],
+		["an &> redirect", () => shell(`echo '{}' &> ${gates}/x.json`, records)],
+		["an &>> redirect", () => shell(`echo '{}' &>> ${gates}/x.json`, records)],
 		["a cp with no git word", () => shell(`cp a.json ${gates}/`, records)],
 		[
 			"a cp through a relative path",
@@ -1404,6 +1406,11 @@ describe("a repo that this session made", () => {
 			"an echo redirect",
 			(state: string, cwd: string) =>
 				shell(`echo '[]' > ${state}/session-repos/s.json`, cwd),
+		],
+		[
+			"an &> redirect",
+			(state: string, cwd: string) =>
+				shell(`echo '[]' &> ${state}/session-repos/s.json`, cwd),
 		],
 	])(
 		"[control:sg-session-repo-record] %s into the session repo record folder is denied",

@@ -289,6 +289,13 @@ export function parseShell(src: string): SimpleCommand[] {
 			i++;
 			continue;
 		}
+		if (c === "&" && src[i + 1] === ">") {
+			endWord();
+			const op = src[i + 2] === ">" ? "&>>" : "&>";
+			redirectNext = { op, fd: STDOUT_FD };
+			i += op.length;
+			continue;
+		}
 		if (c === "&") {
 			const paired = src[i + 1] === "&";
 			if (!paired) current.background = true;
@@ -856,11 +863,11 @@ function stdoutWrites(simple: SimpleCommand): ShellWrite[] {
 	return simple.redirects
 		.filter(
 			(redirect) =>
-				redirect.fd === STDOUT_FD && /^(?:>|>>|>\|)$/.test(redirect.op),
+				redirect.fd === STDOUT_FD && /^(?:&?>>?|>\|)$/.test(redirect.op),
 		)
 		.map((redirect) => ({
 			target: redirect.target,
-			append: redirect.op === ">>",
+			append: redirect.op.endsWith(">>"),
 		}));
 }
 
