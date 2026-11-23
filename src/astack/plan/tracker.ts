@@ -1,10 +1,10 @@
 import { err, ok, type Result } from "../result.ts";
 import { parseBacklink } from "./units.ts";
 
-export const TARGETS = ["linear", "github"] as const;
+const TARGETS = ["linear", "github"] as const;
 export type Target = (typeof TARGETS)[number];
 
-export const OBJECT_TYPES = [
+const OBJECT_TYPES = [
 	"project",
 	"document",
 	"milestone",
@@ -13,7 +13,7 @@ export const OBJECT_TYPES = [
 ] as const;
 export type ObjectType = (typeof OBJECT_TYPES)[number];
 
-export const TRACKER_STATES = [
+const TRACKER_STATES = [
 	"todo",
 	"in-progress",
 	"in-review",
@@ -113,7 +113,7 @@ const STATE_WORDS: ReadonlyMap<string, TrackerState> = new Map([
 	["not_planned", "canceled"],
 ]);
 
-export function trackerState(value: unknown): TrackerState | undefined {
+function trackerState(value: unknown): TrackerState | undefined {
 	const word = text(value)?.toLowerCase().replace(/_/g, " ");
 	return word
 		? (STATE_WORDS.get(word) ?? STATE_WORDS.get(word.replace(/ /g, "_")))
