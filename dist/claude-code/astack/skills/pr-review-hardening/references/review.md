@@ -13,6 +13,8 @@ Never launch `pr-review-toolkit:code-simplifier`. It edits code, and the fix fen
 - `applicable`: `code-reviewer` always. `pr-test-analyzer` when the diff changes tests. `silent-failure-hunter` when it changes error handling. `type-design-analyzer` when it adds or changes types. `comment-analyzer` when it adds or changes comments or docs. Only agents listed in `reviewers.agents` are candidates.
 - `all`: every agent in `reviewers.agents`, every iteration.
 
+With `applicable`, the rung sizes the set. Read the `rung: R<n>` line of the last change-proof gate output. With no such line, a diff of Markdown files only is R0, and each other diff is R1. At R0, launch one agent: `comment-analyzer` when `reviewers.agents` lists it, else the first agent that it lists. From R1, launch the `applicable` set. An entry of `reviewers.extra` with `when: rung R<n>` applies from that rung up.
+
 Then run each entry of `reviewers.extra` whose `when` applies, as its `invoke` says.
 
 If a configured reviewer cannot be launched, stop with principled incompletion and name it. Never substitute another reviewer without the user's approval.
@@ -48,7 +50,7 @@ Sort the outputs into blocking candidates and suggestions by the labels in "Whic
 
 After the reviewers return, read each file in `reviewers.checklists` and check the diff against the part its `use` names. A concrete violation the reviewers missed is a candidate with source `checklist`.
 
-Then go through the review checklist, `references/checklist.md`. Ask the question of each item whose area the diff changes. A concrete failure that the reviewers missed is a candidate with source `checklist` too. Record the class of each candidate in its ledger entry.
+When the diff changes the profile, a file under `.github/`, a `package.json` or a script that a gate runs, go through the review checklist, `references/checklist.md`. Ask the question of each item whose area the diff changes. A concrete failure that the reviewers missed is a candidate with source `checklist` too. Record the class of each candidate in its ledger entry.
 
 A checklist item, or a reviewer request, that demands a comment the keep list does not cover is not a finding. The comment gate decides comments. Record each such item under comment-rule conflicts in the final report.
 
@@ -108,13 +110,13 @@ Print the entries this iteration touched as `FINDING_LEDGER`.
 
 ## Review growth
 
-Keep a fixed first-review record beside the ledger at `<branch>.review.json`.
-It holds `baseSha` and `firstReviewedHead` as full commit SHAs.
-Create it immediately before the first reviewer launch, after the prepasses.
-Use the merge base of `BASE_SHA` and `REVIEWED_HEAD` as `baseSha`.
-Never replace this record during a resume or a new run, including runs that archive earlier findings.
-If a record exists but cannot be read, report an unavailable growth check.
-Do not create a new baseline to hide that failure.
+The review record sits beside the ledger at `<branch>.review.json`. Only `astack review` writes it.
+Immediately before the first reviewer launch, after the prepasses, run `astack review record --base <BASE_SHA> --head <REVIEWED_HEAD>`.
+It creates an absent record with `baseSha` and `firstReviewedHead`, and it never replaces them.
+After the stop of a run that reached the review step, run it again with `--decision <decision> --launches <n>`.
+`<n>` is the sum of `reviewerLaunches` over the iterations of the run.
+When it exits 1, the record cannot be read. Report an unavailable growth check with the error, and never create a new record.
+`astack review base` prints `baseSha` and `firstReviewedHead`.
 
 Run this command before each reviewer launch and after the final gate:
 
@@ -136,6 +138,15 @@ The existing iteration cap remains binding.
 The preflight loads the ledger once per run, before the prepasses. A ledger whose `stopped` is `null` comes from a run that was cut off, so this run resumes it, whatever `ledger.carry_over` says. A resumed run keeps each entry, and its first iteration is the one after the highest `iteration` of the entries. So each id stays unique, and `iterations.max` bounds both runs. Otherwise, with `ledger.carry_over: true`, a new run starts from the existing ledger. An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since. With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty. Each run sets `stopped` to `null` at this load, and to its decision when it stops.
 
 A finding recurs when, after one fix attempt, a new candidate matches a `fixed` entry's `claim_hash`. It also recurs when the candidate names the same file with a materially similar claim. Mark it `recurring` and stop the run.
+
+## Delta run
+
+Preflight step 12 runs `astack review base --head HEAD`.
+Exit 0 with a `delta: <sha>` last line makes a delta run, and `DELTA_SHA` is that sha.
+Exit 3 with a `full:` last line, or exit 1, makes a full run. The final report names the reason or the error.
+Exit 2 stops with principled incompletion.
+In a delta run, the reviewers get `git -C <WORKTREE> diff <DELTA_SHA> <HEAD>`, and an empty delta launches no reviewer.
+The run keeps the ledger, the comment gate and each gate.
 
 ## Review-bot threads
 

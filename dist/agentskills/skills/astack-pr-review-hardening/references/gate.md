@@ -152,6 +152,8 @@ commentGateFindings:
 gateFindings:
 gitStatusChangedByGate:
 diffFiles:
+reviewRange:
+reviewerLaunches:
 reviewedHead:
 headSha:
 prHead:
@@ -160,7 +162,7 @@ ciReadBack: pass | fail | not_run
 decision: continue | stop_clean | stop_recurring | stop_principled_incompletion
 ```
 
-`blockingReviewerFindings` is the number of blocking reviewer and checklist findings of the iteration. `commentGateFindings` is the number of its findings `C<n>.<k>`, and `gateFindings` is the number of its findings `G<n>.<k>`. `gitStatusChangedByGate` is true when `GIT_STATUS_AFTER_GATE` shows a tracked file that the restore did not restore. `diffFiles` is the number of paths that `git diff --name-only --no-renames <BASE_SHA>...HEAD` prints after the last gate run. A clean stop needs a value above 0. `reviewedHead` is the `REVIEWED_HEAD` of the review step. `headSha` is the output of `git rev-parse HEAD` after the last gate run. A clean stop needs the two values to be equal. `prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`. `mode` is the mode of the last CI check of the run. It is `ci_proof` or `ci_mixed` when that check exits 3 with a last line that starts with that mode and a colon, and `standard` otherwise. A clean stop in mode `ci_proof` or `ci_mixed` needs it to show that mode, so the final report names the mode. `ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back. A clean stop in mode `ci_proof` or `ci_mixed` needs `pass`.
+`blockingReviewerFindings` is the number of blocking reviewer and checklist findings of the iteration. `commentGateFindings` is the number of its findings `C<n>.<k>`, and `gateFindings` is the number of its findings `G<n>.<k>`. `gitStatusChangedByGate` is true when `GIT_STATUS_AFTER_GATE` shows a tracked file that the restore did not restore. `diffFiles` is the number of paths that `git diff --name-only --no-renames <BASE_SHA>...HEAD` prints after the last gate run. A clean stop needs a value above 0. `reviewRange` is the range that the reviewers got, `<BASE_SHA>...<HEAD>` in a full run or `<DELTA_SHA>..<HEAD>` in a delta run. `reviewerLaunches` is the number of reviewers that the iteration launched, the extra reviewers included. `reviewedHead` is the `REVIEWED_HEAD` of the review step. `headSha` is the output of `git rev-parse HEAD` after the last gate run. A clean stop needs the two values to be equal. `prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`. `mode` is the mode of the last CI check of the run. It is `ci_proof` or `ci_mixed` when that check exits 3 with a last line that starts with that mode and a colon, and `standard` otherwise. A clean stop in mode `ci_proof` or `ci_mixed` needs it to show that mode, so the final report names the mode. `ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back. A clean stop in mode `ci_proof` or `ci_mixed` needs `pass`.
 
 ## PR comment
 
@@ -219,5 +221,5 @@ When the run ends in `stop_recurring` or `stop_principled_incompletion` and `pro
 A `/goal` condition is judged from the transcript. Build it from the profile:
 
 ```text
-/goal Run /astack-pr-review-hardening <base> until a transcript-visible GATE_SUMMARY shows decision stop_clean after at least <iterations.min> iterations. It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof. It shows zero blocking reviewer, comment-gate and gate findings, gitStatusChangedByGate false, diffFiles above 0, reviewedHead equal to headSha, and prHead equal to headSha or none. If metrics ran, that GATE_SUMMARY also shows METRICS_EXIT 0 and every never_increase key no higher than the previous iteration. If the CI check gave mode ci_proof or ci_mixed, that GATE_SUMMARY also shows that mode and ciReadBack pass. Also stop on stop_recurring or stop_principled_incompletion, with the reason printed.
+/goal Run /astack-pr-review-hardening <base> until a transcript-visible GATE_SUMMARY shows decision stop_clean after at least <iterations.min> iterations. It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof. It shows zero blocking reviewer, comment-gate and gate findings, gitStatusChangedByGate false, diffFiles above 0, reviewedHead equal to headSha, and prHead equal to headSha or none. It shows reviewerLaunches above 0 in a full run. If metrics ran, that GATE_SUMMARY also shows METRICS_EXIT 0 and every never_increase key no higher than the previous iteration. If the CI check gave mode ci_proof or ci_mixed, that GATE_SUMMARY also shows that mode and ciReadBack pass. Also stop on stop_recurring or stop_principled_incompletion, with the reason printed.
 ```

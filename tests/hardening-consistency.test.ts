@@ -1827,6 +1827,87 @@ describe("a PR that changes CI", () => {
 	});
 });
 
+describe("the review range and the reviewer set", () => {
+	const engineSkill = read(`${engine}/SKILL.md`);
+	const review = read(`${engine}/references/review.md`);
+	const preflight = sentencesFrom(engineSkill, "## Preflight", "## Baseline");
+
+	test("the preflight runs astack review base before it loads the ledger, and a delta run reviews only the delta", () => {
+		const base = preflight.indexOf("Run `astack review base --head HEAD`");
+		expect(base).toBeGreaterThan(-1);
+		expect(base).toBeLessThan(
+			preflight.indexOf("Load the ledger once per run"),
+		);
+		const delta = sentencesFrom(
+			review,
+			"## Delta run",
+			"## Review-bot threads",
+		);
+		for (const sentence of [
+			"Exit 0 with a `delta: <sha>` last line makes a delta run, and `DELTA_SHA` is that sha.",
+			"Exit 3 with a `full:` last line, or exit 1, makes a full run.",
+			"Exit 2 stops with principled incompletion.",
+			"In a delta run, the reviewers get `git -C <WORKTREE> diff <DELTA_SHA> <HEAD>`, and an empty delta launches no reviewer.",
+			"The run keeps the ledger, the comment gate and each gate.",
+		])
+			expect(delta).toContain(sentence);
+	});
+
+	test("[control:review-rung] the rung of the last change-proof gate sizes the applicable set, and R0 launches one agent", () => {
+		const launch = sentencesFrom(
+			review,
+			"## Launch the reviewers",
+			"## Additional astack reviewers",
+		);
+		for (const sentence of [
+			"With `applicable`, the rung sizes the set. Read the `rung: R<n>` line of the last change-proof gate output. With no such line, a diff of Markdown files only is R0, and each other diff is R1.",
+			"At R0, launch one agent: `comment-analyzer` when `reviewers.agents` lists it, else the first agent that it lists.",
+			"From R1, launch the `applicable` set.",
+			"An entry of `reviewers.extra` with `when: rung R<n>` applies from that rung up.",
+		])
+			expect(launch).toContain(sentence);
+	});
+
+	test("[control:rung-floor] a full run with 0 reviewer launches never stops clean", () => {
+		expect(
+			paragraphStarting(
+				sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+				"The iteration is clean when",
+			),
+		).toContain(
+			"A clean stop of a full run also needs `reviewerLaunches` above 0.",
+		);
+		expect(
+			paragraphStarting(read(`${engine}/references/gate.md`), "/goal Run"),
+		).toContain("reviewerLaunches above 0 in a full run");
+	});
+
+	test("the run reads the review checklist only for a diff of the profile, of CI, of a package.json or of a gate script", () => {
+		const area =
+			"the profile, a file under `.github/`, a `package.json` or a script that a gate runs";
+		expect(stepWith(engineSkill, "Launch the reviewers")).toContain(
+			`\`references/review.md\` says how, and when the review checklist \`\${CLAUDE_SKILL_DIR}/references/checklist.md\` applies.`,
+		);
+		expect(
+			sentencesFrom(review, "## Checklist pass", "## comment-analyzer"),
+		).toContain(
+			`When the diff changes ${area}, go through the review checklist, \`references/checklist.md\`.`,
+		);
+	});
+
+	test("the review record of the PR is written only by astack review, and the stop adds its decision and launches", () => {
+		const growth = sentencesFrom(review, "## Review growth", "## Delta run");
+		for (const sentence of [
+			"Only `astack review` writes it.",
+			"run `astack review record --base <BASE_SHA> --head <REVIEWED_HEAD>`.",
+			"run it again with `--decision <decision> --launches <n>`.",
+			"When it exits 1, the record cannot be read. Report an unavailable growth check with the error, and never create a new record.",
+		])
+			expect(growth).toContain(sentence);
+		expect(growth).not.toContain("Use the merge base of `BASE_SHA`");
+	});
+});
+
 describe("a clean iteration commits no fix", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const unseen =
@@ -1970,6 +2051,12 @@ describe("the proof of a clean stop", () => {
 			goal: ["that mode and ciReadBack pass", "prHead equal to headSha"],
 		},
 		{
+			condition:
+				"A clean stop of a full run also needs `reviewerLaunches` above 0",
+			fields: ["reviewerLaunches", "reviewRange"],
+			goal: ["reviewerLaunches above 0 in a full run"],
+		},
+		{
 			condition: "- `stop_clean`: the iteration is clean and",
 			fields: ["decision"],
 			goal: [
@@ -1998,6 +2085,10 @@ describe("the proof of a clean stop", () => {
 		decision:
 			"decision: continue | stop_clean | stop_recurring | stop_principled_incompletion",
 		mode: "`mode` is the mode of the last CI check of the run.",
+		reviewRange:
+			"`reviewRange` is the range that the reviewers got, `<BASE_SHA>...<HEAD>` in a full run or `<DELTA_SHA>..<HEAD>` in a delta run.",
+		reviewerLaunches:
+			"`reviewerLaunches` is the number of reviewers that the iteration launched, the extra reviewers included.",
 		ciReadBack:
 			"`ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back.",
 	};
