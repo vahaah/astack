@@ -30,8 +30,12 @@ const MODULE = /\.tsx?$/;
 const SYMLINK = "120000";
 const REGULAR = new Set(["100644", "100755"]);
 
+function rootAnchored(codeRoots: readonly string[]): readonly string[] {
+	return codeRoots.map((glob) => (glob.includes("/") ? glob : `./${glob}`));
+}
+
 function isModule(codeRoots: readonly string[], path: string): boolean {
-	return MODULE.test(path) && anyGlob(codeRoots, path);
+	return MODULE.test(path) && anyGlob(rootAnchored(codeRoots), path);
 }
 
 function entries(output: string, pattern: RegExp): Entry[] {

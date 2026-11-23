@@ -62,6 +62,17 @@ describe("moduleSources", () => {
 		});
 	});
 
+	test("a code root with no slash names only a file at the repo root", () => {
+		const found = moduleSources({
+			root,
+			codeRoots: ["*.tsx", "*.ts"],
+			at: { kind: "tree" },
+		});
+		expect(found.ok ? found.value.map((one) => one.path) : found).toEqual([
+			"tools.ts",
+		]);
+	});
+
 	test("a ref that is no commit gives a source stop", () => {
 		expect([
 			read({ kind: "commit", commit: "no-such-ref" }),
