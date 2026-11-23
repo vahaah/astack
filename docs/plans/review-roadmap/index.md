@@ -139,7 +139,7 @@ Blocks.
 - B08 Hooks read the body that the same command writes (review `B3`, `B2`, `K8`, `K6`, `K3`, `K2`, `K7`). Lane. c. Brief. stub.
 - B10 Public issue and PR text passes a hashed deny list (review `K5`, `K4`). Lane. a. Brief. stub.
 - B11 The STE hooks and the comment advice soften where telemetry shows false denies (review `B5`, `B6`, `B4`, `K1`). Lane. c. Brief. stub.
-- B12 One review record and a delta review (review `D3`, `D1`, `D2`, `D6`, `D4`). Lane. e. Depends on. B07, B24. Brief. stub.
+- B12 One review record and a delta review (review `D3`, `D1`, `D2`, `D6`, `D4`). Lane. e. Depends on. B07, B24. Brief. B12.md.
 - B37 The shell reader and the destructive guard close the stdin, fd and environment config forms. Lane. a. Brief. B37.md.
 
 ### M7 A pstack-shaped router and short hot-path text
