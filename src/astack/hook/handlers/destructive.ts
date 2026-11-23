@@ -1126,6 +1126,10 @@ function stepReasons(
 	}
 }
 
+function isAllExport(option: string): boolean {
+	return option.replaceAll("_", "").toLowerCase() === "allexport";
+}
+
 function exportsVariables(step: ShellStep): boolean {
 	const [name, ...args] = step.values;
 	switch (name) {
@@ -1138,8 +1142,10 @@ function exportsVariables(step: ShellStep): boolean {
 			return args.some(
 				(arg, at) =>
 					/^-[A-Za-z]*a/.test(arg) ||
-					(arg === "-o" && args[at + 1] === "allexport"),
+					(arg === "-o" && isAllExport(args[at + 1] ?? "")),
 			);
+		case "setopt":
+			return args.some(isAllExport);
 		default:
 			return false;
 	}

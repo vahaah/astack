@@ -51,7 +51,8 @@ An `include.path` or `includeIf.<cond>.path` key from each source is a hook skip
 
 ### D4. Each export form exports the earlier skip assignments
 
-An earlier `export`, `declare -x`, `typeset -x`, `set -a` or `set -o allexport` step exports each earlier assignment of the line.
+An earlier `export`, `declare -x`, `typeset -x`, `set -a`, `set -o allexport` or zsh `setopt allexport` step exports each earlier assignment of the line.
+The option name of `set -o` and `setopt` matches in any case and with or without `_`, as zsh reads it.
 So an earlier `HUSKY` or `LEFTHOOK` assignment with such a step is a hook skip, in either order.
 A bare `export HUSKY` and a skip value that a variable gives are hook skips too.
 
