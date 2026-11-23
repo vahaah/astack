@@ -1413,7 +1413,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("[control:sg-session-repo-copied] after git init NEW && cd NEW && cp a.txt b.txt a reset in the new repo passes, because the copy brings no work from outside", () => {
+	test("after git init NEW && cd NEW && cp a.txt b.txt a reset in the new repo passes, because the copy brings no work from outside", () => {
 		const { dir, state } = fresh("new");
 		const parent = join(dir, "..");
 		const made = `git init -q ${dir} && cd ${dir} && echo a > a.txt && cp a.txt b.txt`;
