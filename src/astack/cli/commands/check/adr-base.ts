@@ -1,5 +1,8 @@
+import { existsSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { type AdrFolder, adrFolder } from "../../../adr.ts";
 import { readBlobs, runGit } from "../../../git.ts";
+import { readOptional } from "../../../paths.ts";
 import { err, ok, type Result } from "../../../result.ts";
 
 export type BaseProblem = { readonly ref: string; readonly message: string };
@@ -48,5 +51,16 @@ export function readBaseFolder(
 				return text === undefined ? [] : [{ path, text }];
 			}),
 		),
+	);
+}
+
+export function readTreeFolder(root: string, dir: string): AdrFolder {
+	const names = existsSync(join(root, dir)) ? readdirSync(join(root, dir)) : [];
+	return adrFolder(
+		dir,
+		names.sort().flatMap((name) => {
+			const text = readOptional(join(root, dir, name));
+			return text === undefined ? [] : [{ path: `${dir}/${name}`, text }];
+		}),
 	);
 }

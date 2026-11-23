@@ -1,9 +1,6 @@
-import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-	type AdrFolder,
 	type AdrProblem,
-	adrFolder,
 	amendProblems,
 	type TemplateFacts,
 	templateProblems,
@@ -20,7 +17,7 @@ import {
 import { andThen, err, ok, type Result } from "../../../result.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
-import { mergeBase, readBaseFolder } from "./adr-base.ts";
+import { mergeBase, readBaseFolder, readTreeFolder } from "./adr-base.ts";
 
 const NAME = "astack check adr";
 const CONTROL = /\[control:([A-Za-z][A-Za-z0-9._-]*)\]/g;
@@ -40,17 +37,6 @@ function options(
 		at++;
 	}
 	return ok({ base });
-}
-
-function treeFolder(root: string, dir: string): AdrFolder {
-	const names = existsSync(join(root, dir)) ? readdirSync(join(root, dir)) : [];
-	return adrFolder(
-		dir,
-		names.sort().flatMap((name) => {
-			const text = readOptional(join(root, dir, name));
-			return text === undefined ? [] : [{ path: `${dir}/${name}`, text }];
-		}),
-	);
 }
 
 function testControls(root: string): ReadonlySet<string> {
@@ -103,7 +89,7 @@ function run(args: readonly string[], io: Io): number {
 		return usageError(io, `${NAME}: not inside a git repository`);
 	const root = canonical(top);
 	const dir = planProfileFor(root).adr;
-	const head = treeFolder(root, dir);
+	const head = readTreeFolder(root, dir);
 	const { base } = parsed.value;
 	const lines = (problems: readonly AdrProblem[]) =>
 		problems.map((one) => `${one.file}:${one.line}: ${one.message}\n`).join("");
