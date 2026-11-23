@@ -236,8 +236,8 @@ _Code_: `src/astack/deny-store.ts`
 
 ### Split instruction
 
-A clause in the last person's prompt of a session that asks for a second or separate PR.
-It lets that session open a second PR from one worktree to one base. A negation or a question gives none.
+A clause in the last person's prompt of a session that asks to open a second or separate PR.
+It lets that session open a second PR from one worktree to one base. A negation, a question or a clause that joins PRs gives none.
 _Avoid_: Split grant, split permission
 _Code_: `splitInstructionIn`
 

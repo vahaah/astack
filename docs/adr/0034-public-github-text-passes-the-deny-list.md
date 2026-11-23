@@ -61,8 +61,9 @@ A stacked base is the head of an open PR. The split instruction counts only in t
 
 ### D9. splitInstructionIn reads the clauses of the merge grant reader
 
-A clause with PR or pull request gives the instruction when split comes before the PR word. Second, separate, another or two just before it count too.
-A negation or a question gives none.
+A clause with PR or pull request gives the instruction only when a verb that opens a PR comes before the PR word. These verbs are open, create, make, ship, put, file, raise and split.
+Then split before the PR word, or second, separate, another or two just before it, gives the instruction.
+A negation, a question, "one PR" and "into one" or "into the first" give none. So a clause that closes, merges, folds or reviews a PR gives none.
 
 ### D10. The outbound handler has no model
 

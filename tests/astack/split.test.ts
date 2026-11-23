@@ -17,6 +17,11 @@ describe("the split instruction of a person's prompt", () => {
 		["Should the docs go in a separate PR?", false],
 		["Split the parser into two files.", false],
 		["Fix the second commit of this PR.", false],
+		["Close the second PR.", false],
+		["These two PRs should be one PR.", false],
+		["Fold the second PR into the first.", false],
+		["Put the second PR into the first one.", false],
+		["Make these two PRs one PR.", false],
 	])("[control:split-instruction] %p gives %p", (prompt, split) => {
 		expect(splitInstructionIn(prompt)).toBe(split);
 	});

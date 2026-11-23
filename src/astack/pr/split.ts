@@ -20,6 +20,17 @@ export const NO_SESSION_PRS: SessionPrs = { split: false, opens: [] };
 
 const SPLITS = "split";
 const NEW_PR = new Set(["second", "separate", "another", "two"]);
+const OPENS_PR = new Set([
+	"create",
+	"file",
+	"make",
+	"open",
+	"put",
+	"raise",
+	"ship",
+	SPLITS,
+]);
+const JOINED = new Set(["one", "first"]);
 
 function prWordAt(tokens: readonly string[], index: number): boolean {
 	const token = tokens[index];
@@ -27,14 +38,26 @@ function prWordAt(tokens: readonly string[], index: number): boolean {
 	return token === "pull" && /^requests?$/.test(tokens[index + 1] ?? "");
 }
 
+function joinsPrs(tokens: readonly string[]): boolean {
+	return tokens.some((token, index) => {
+		if (token === "one") return prWordAt(tokens, index + 1);
+		if (token !== "into") return false;
+		const next = tokens[index + 1] === "the" ? index + 2 : index + 1;
+		return JOINED.has(tokens[next] ?? "");
+	});
+}
+
 function clauseSplits({ tokens, question }: Clause): boolean {
 	if (question || tokens.some((token) => NEGATIONS.has(token))) return false;
-	return tokens.some(
-		(_, index) =>
-			prWordAt(tokens, index) &&
-			(NEW_PR.has(tokens[index - 1] ?? "") ||
-				tokens.slice(0, index).includes(SPLITS)),
-	);
+	if (joinsPrs(tokens)) return false;
+	return tokens.some((_, index) => {
+		if (!prWordAt(tokens, index)) return false;
+		const before = tokens.slice(0, index);
+		return (
+			before.some((token) => OPENS_PR.has(token)) &&
+			(NEW_PR.has(tokens[index - 1] ?? "") || before.includes(SPLITS))
+		);
+	});
 }
 
 export function splitInstructionIn(prompt: string): boolean {
