@@ -1,11 +1,17 @@
 import { ghBody, ghFlags, isGh } from "../../gh.ts";
-import { runGit } from "../../git.ts";
+import { originSlug, repoRoot, runGit } from "../../git.ts";
 import {
 	duplicateReasons,
 	type ListOpenPrs,
 	listOpenPrsWithGh,
 	type NewPr,
 } from "../../pr/open.ts";
+import {
+	loadSessionPrs,
+	saveSessionPrs,
+	sessionStore,
+} from "../../pr/session-prs.ts";
+import { sessionReasons, splitInstructionIn } from "../../pr/split.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import {
 	ALLOW,
@@ -19,34 +25,89 @@ import {
 	type Verdict,
 } from "../events.ts";
 
-function headFlag(step: ShellStep): string | undefined {
+type Draft = {
+	readonly head: string | undefined;
+	readonly body: string | undefined;
+	readonly base: string | undefined;
+	readonly repo: string | undefined;
+};
+
+function flagValue(
+	step: ShellStep,
+	names: readonly string[],
+): string | undefined {
 	const words = step.words.slice(3);
 	for (let index = 0; index < words.length; index++) {
 		const value = words[index]?.value ?? "";
-		if (value === "-H" || value === "--head") return words[index + 1]?.value;
-		if (value.startsWith("--head=")) return value.slice("--head=".length);
+		if (names.includes(value)) return words[index + 1]?.value;
+		const long = names.find((name) => value.startsWith(`${name}=`));
+		if (long !== undefined) return value.slice(long.length + 1);
 	}
 	return undefined;
 }
 
+function gitLine(dir: string, args: string[]): string | undefined {
+	const result = runGit(dir, args);
+	const line = result.ok ? result.stdout.toString("utf8").trim() : "";
+	return line === "" ? undefined : line;
+}
+
 function currentBranch(dir: string): string | undefined {
-	const result = runGit(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
-	const branch = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return branch === "" || branch === "HEAD" ? undefined : branch;
+	const branch = gitLine(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	return branch === "HEAD" ? undefined : branch;
+}
+
+function defaultBase(dir: string): string {
+	const remote = gitLine(dir, [
+		"symbolic-ref",
+		"--short",
+		"refs/remotes/origin/HEAD",
+	]);
+	return remote?.replace(/^origin\//, "") ?? "";
+}
+
+function newPr(draft: Draft, dir: string): NewPr {
+	const root = repoRoot(dir) ?? dir;
+	return {
+		head: draft.head,
+		body: draft.body,
+		base: draft.base ?? defaultBase(dir),
+		repo: (draft.repo ?? originSlug(root) ?? "").toLowerCase(),
+		root,
+	};
 }
 
 function verdictOf(
 	subject: string,
-	pr: Pick<NewPr, "head" | "body">,
+	draft: Draft,
 	dir: string,
-	repo: string | undefined,
 	list: ListOpenPrs,
+	context: Context,
 ): Verdict {
-	if (pr.head === undefined && pr.body === undefined) return ALLOW;
-	const open = list(dir, repo);
+	if (draft.head === undefined && draft.body === undefined) return ALLOW;
+	const open = list(dir, draft.repo);
 	if (!open) return ALLOW;
-	const reasons = duplicateReasons(pr, open);
-	if (reasons.length === 0) return ALLOW;
+	const pr = newPr(draft, dir);
+	const store = sessionStore(context.env, context.session);
+	const record = loadSessionPrs(store);
+	const reasons = [
+		...duplicateReasons(pr, open),
+		...sessionReasons(pr, record, open),
+	];
+	if (reasons.length === 0) {
+		if (pr.head !== undefined)
+			saveSessionPrs(
+				{
+					split: record.split,
+					opens: [
+						...record.opens,
+						{ root: pr.root, repo: pr.repo, base: pr.base, head: pr.head },
+					],
+				},
+				store,
+			);
+		return ALLOW;
+	}
 	return deny(
 		[
 			`astack blocked ${subject}, because one plan is one PR:`,
@@ -56,20 +117,32 @@ function verdictOf(
 	);
 }
 
-function shellVerdict(event: EventOf<"shell">, list: ListOpenPrs): Verdict {
+function shellVerdict(
+	event: EventOf<"shell">,
+	context: Context,
+	list: ListOpenPrs,
+): Verdict {
 	if (!/\bgh\b/.test(event.command)) return ALLOW;
 	return combineAll(
 		shellSteps(event.command, event.cwd)
 			.filter((step) => isGh(step.values, "pr", "create"))
 			.map((step) => {
 				const flags = ghFlags(step.words.slice(3));
-				const head = headFlag(step) ?? currentBranch(step.dir);
+				const envRepo = step.env
+					.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
+					.filter((value) => value !== undefined)
+					.at(-1);
 				return verdictOf(
 					"gh pr create",
-					{ head, body: ghBody(flags, step.simple, step.dir) },
+					{
+						head: flagValue(step, ["-H", "--head"]) ?? currentBranch(step.dir),
+						body: ghBody(flags, step.simple, step.dir),
+						base: flagValue(step, ["-B", "--base"]),
+						repo: flags.repo ?? envRepo ?? context.env.GH_REPO,
+					},
 					step.dir,
-					flags.repo,
 					list,
+					context,
 				);
 			}),
 	);
@@ -81,32 +154,56 @@ function field(input: unknown, key: string): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
+function isMcpCreate(event: EventOf<"mcp">): boolean {
+	if (/github/i.test(event.server) && event.tool === "create_pull_request")
+		return true;
+	return /create/i.test(event.tool) && /pull_?request/i.test(event.tool);
+}
+
 function mcpVerdict(
 	event: EventOf<"mcp">,
 	context: Context,
 	list: ListOpenPrs,
 ): Verdict {
-	if (!/github/i.test(event.server) || event.tool !== "create_pull_request")
-		return ALLOW;
+	if (!isMcpCreate(event)) return ALLOW;
+	const dir = projectDirOf(context);
 	const owner = field(event.input, "owner");
 	const repo = field(event.input, "repo");
 	return verdictOf(
-		"create_pull_request",
-		{ head: field(event.input, "head"), body: field(event.input, "body") },
-		projectDirOf(context),
-		owner && repo ? `${owner}/${repo}` : undefined,
+		event.tool,
+		{
+			head: field(event.input, "head") ?? currentBranch(dir),
+			body: field(event.input, "body"),
+			base: field(event.input, "base"),
+			repo: owner && repo ? `${owner}/${repo}` : undefined,
+		},
+		dir,
 		list,
+		context,
 	);
+}
+
+function promptVerdict(event: EventOf<"prompt">, context: Context): Verdict {
+	if (!event.human) return ALLOW;
+	const store = sessionStore(context.env, event.session);
+	const record = loadSessionPrs(store);
+	saveSessionPrs(
+		{ split: splitInstructionIn(event.text), opens: record.opens },
+		store,
+	);
+	return ALLOW;
 }
 
 export function duplicatePr(list: ListOpenPrs): Handler {
 	return defineHandler({
 		id: "duplicate-pr",
-		on: ["shell", "mcp"],
+		on: ["prompt", "shell", "mcp"],
 		run: (event, context) => {
 			switch (event.kind) {
+				case "prompt":
+					return promptVerdict(event, context);
 				case "shell":
-					return shellVerdict(event, list);
+					return shellVerdict(event, context, list);
 				case "mcp":
 					return mcpVerdict(event, context, list);
 			}
