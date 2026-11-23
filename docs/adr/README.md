@@ -30,3 +30,4 @@
 | [0027](0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md) | The review stub needs the plugin, and commentKeep is the one keep list | Accepted |
 | [0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) | A broad discard passes in a repo that this session made | Accepted |
 | [0030](0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md) | astack check effects compares the effect classes of the code with the domain record | Accepted |
+| [0031](0031-each-new-adr-follows-one-template-and-accepted-adr-text-changes-only-by-a-dated-block.md) | Each new ADR follows one template, and accepted ADR text changes only by a dated block | Accepted |

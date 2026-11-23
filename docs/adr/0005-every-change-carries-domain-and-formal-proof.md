@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-03
 Ticket: none
 Supersedes: none
-Amended by: 0008 D3 for proposals, 0012 for the base, 0015 for rungs and 0016 for manifests
+Amended by: 0008 D3 for proposals, 0012 for bases, 0015 for rungs, 0016 for manifests and 0031 D2
 
 ## Context
 

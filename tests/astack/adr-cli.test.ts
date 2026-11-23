@@ -178,8 +178,7 @@ describe("astack check adr", () => {
 				"A file of rows.",
 				"",
 			].join("\n"),
-			"tests/export.test.ts":
-				'test("[control:export-rows-once] rows", () => {});\n',
+			"tests/export.test.ts": `test("${["[control", "export-rows-once]"].join(":")} rows", () => {});\n`,
 			"docs/adr/README.md": `${INDEX}| [0002](0002-exports-stream-rows.md) | Exports stream rows | Accepted |\n`,
 			"docs/adr/0002-exports-stream-rows.md": NEW_ADR,
 		});

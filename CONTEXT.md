@@ -156,6 +156,20 @@ A current accepted ADR decision or a ratified proposal with checked authority an
 Its history remains available after a later ADR replaces it.
 _Avoid_: Deleted decision
 
+### ADR template
+
+The one form of a new ADR: the header lines, then Context, Decisions, Domain and effects, Consequences and Alternatives considered.
+Its Domain and effects part names glossary terms on a `Terms.` line and holds one `domain` fence.
+_Avoid_: ADR format, record skeleton
+_Code_: `templateProblems` in `src/astack/adr.ts`
+
+### Dated block
+
+A blockquote that starts with `> Note YYYY-MM-DD:` or `> Amended YYYY-MM-DD:` and changes the words of an ADR past Proposed.
+It is the only way that the prose of an accepted decision changes.
+_Avoid_: Inline edit, errata
+_Code_: `amendProblems` in `src/astack/adr.ts`
+
 ### Ratified proposal
 
 A Proposed ADR integrated under a ratification process before the fixed implementation base.
