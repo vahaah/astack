@@ -1,5 +1,19 @@
 import { type Clause, clausesOf, NEGATIONS } from "./grant.ts";
 
+export type SessionOpen = {
+	readonly root: string;
+	readonly repo: string;
+	readonly base: string;
+	readonly head: string;
+};
+
+export type SessionPrs = {
+	readonly split: boolean;
+	readonly opens: readonly SessionOpen[];
+};
+
+export const NO_SESSION_PRS: SessionPrs = { split: false, opens: [] };
+
 const SPLITS = "split";
 const NEW_PR = new Set(["second", "separate", "another", "two"]);
 
