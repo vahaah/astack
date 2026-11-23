@@ -291,6 +291,14 @@ export function parseShell(src: string): SimpleCommand[] {
 			i++;
 			continue;
 		}
+		if (c === "&" && src[i + 1] === ">") {
+			endWord();
+			const opStart = i;
+			i++;
+			while (src[i] === ">") i++;
+			redirectNext = { op: src.slice(opStart, i), fd: undefined };
+			continue;
+		}
 		if (c === "&") {
 			const paired = src[i + 1] === "&";
 			if (!paired) current.background = true;

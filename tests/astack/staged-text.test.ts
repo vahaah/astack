@@ -104,6 +104,8 @@ const UNREAD = [
 	(join: string) => `bash -c "$SCRIPT"${join}`,
 	(join: string) => `tee body.md > /dev/null <<EOF${join}\n$(cat draft.md)\nEOF`,
 	(join: string) => `tee body.md > /dev/null <<< "$DRAFT"${join}`,
+	(join: string) => `echo x &> body.md${join}`,
+	(join: string) => `printf '%s' x &>> body.md${join}`,
 ];
 
 const CONDITIONAL = [
@@ -172,7 +174,7 @@ describe("stagedText reads a body file as the earlier steps of its command leave
 		);
 	});
 
-	test("[control:body-file-unread] a dynamic target or script, sed, diff, cp, a python heredoc and a tee of dynamic stdin give unread with the disk text, and cat or astack give none", () => {
+	test("[control:body-file-unread] a dynamic target or script, sed, diff, cp, a python heredoc, a tee of dynamic stdin and an &> write give unread with the disk text, and cat or astack give none", () => {
 		const items = fc.array(fc.oneof(write, reader, unreadItem(UNREAD)), {
 			maxLength: 5,
 		});

@@ -40,7 +40,7 @@ A write inside `if`, `case`, a loop, a group, a subshell, a function, a substitu
 
 A step gives an unread body when its folder or a write target is dynamic.
 A step that names the base name of the body file in a form that `fileWrites` does not parse also gives one.
-So `sed -i`, `diff`, `cp` and a python heredoc that writes `body.md` give an unread `./body.md`.
+So `sed -i`, `diff`, `cp`, an `&>` write and a python heredoc that writes `body.md` give an unread `./body.md`.
 A heredoc counts only in a step that `fileWrites` does not parse.
 A reader step never gives one. The reader steps are `cat` with no redirect, `head`, `tail`, `grep`, `wc`, `ls`, `test`, `[` and `astack`.
 
