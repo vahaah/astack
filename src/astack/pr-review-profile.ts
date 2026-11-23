@@ -290,6 +290,7 @@ const profileShape = object(
 			notes: list(text),
 		}),
 		test_adequacy: oneOf("changed-behaviour", "control-per-clause"),
+		converge: flag,
 		ledger: object({ carry_over: flag }),
 		prepasses: list(
 			object(

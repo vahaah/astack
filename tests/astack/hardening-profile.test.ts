@@ -176,3 +176,23 @@ test("[control:rs-window-command] a profile that still sets comments.keep_patter
 	]);
 	expect((await check(repo)).code).toBe(0);
 });
+
+test.each([
+	["true", 0, "ok"],
+	["false", 0, "ok"],
+	["1", 1, "converge: must be true or false"],
+] as const)(
+	"[control:profile-converge] the opt-in converge key with the value %s exits %d",
+	async (value, code, result) => {
+		const repo = repoWith(markerProfile(`converge: ${value}`), [castKeep]);
+		const path = join(repo, MANAGED_PATHS.reviewProfile);
+		expect(await check(repo)).toEqual({
+			code,
+			out:
+				result === "ok"
+					? `ok: ${path} passes the hardening profile rules\n`
+					: `${path}: ${result}. Change it as references/profile.md of the pr-review-hardening skill says\n`,
+			err: "",
+		});
+	},
+);
