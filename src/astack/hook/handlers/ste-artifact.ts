@@ -142,7 +142,7 @@ function stepTargets(
 ): ShellTargets {
 	const step = steps[at];
 	if (step === undefined) return NO_SHELL_TARGETS;
-	const read = stagedReader(steps, at);
+	const read = stagedReader(steps, at, context.ports.files);
 	switch (step.values[0]) {
 		case "gh": {
 			const found = ghTargets(step, read);

@@ -1,11 +1,11 @@
 import { bodyText, foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
-import { originSlug, repoRoot } from "../../git.ts";
 import {
 	headingAdvice,
 	headingDeny,
 	missingHeadings,
 	prHeadings,
 } from "../../headings.ts";
+import type { Ports } from "../../ports.ts";
 import { linkFindings } from "../../pr/links.ts";
 import { partOfRequired } from "../../pr/profile.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
@@ -32,8 +32,8 @@ type PrText = {
 	readonly root: string | undefined;
 };
 
-function headingVerdict(pr: PrText, body: string): Verdict {
-	const source = prHeadings(pr.root);
+function headingVerdict(pr: PrText, body: string, ports: Ports): Verdict {
+	const source = prHeadings(ports.files, pr.root);
 	const missing = missingHeadings(body, source.headings);
 	if (missing.length === 0) return ALLOW;
 	const gap = {
@@ -47,9 +47,11 @@ function headingVerdict(pr: PrText, body: string): Verdict {
 		: deny(headingDeny(pr.subject, gap));
 }
 
-function linkVerdict(pr: PrText): Verdict {
+function linkVerdict(pr: PrText, ports: Ports): Verdict {
 	const requirePartOf =
-		!pr.foreign && pr.root !== undefined && partOfRequired(pr.root);
+		!pr.foreign &&
+		pr.root !== undefined &&
+		partOfRequired(ports.profile.readProfile(pr.root));
 	const findings = linkFindings(
 		{ title: pr.title, body: pr.body },
 		{ requirePartOf },
@@ -64,31 +66,40 @@ function linkVerdict(pr: PrText): Verdict {
 	);
 }
 
-function textVerdict(pr: PrText): Verdict {
-	const links = linkVerdict(pr);
+function textVerdict(pr: PrText, ports: Ports): Verdict {
+	const links = linkVerdict(pr, ports);
 	if (!pr.create || pr.body === undefined) return links;
-	return combine(headingVerdict(pr, pr.body), links);
+	return combine(headingVerdict(pr, pr.body, ports), links);
 }
 
-function originOf(root: string | undefined): string | undefined {
-	return root === undefined ? undefined : originSlug(root);
+function originOf(ports: Ports, root: string | undefined): string | undefined {
+	return root === undefined ? undefined : ports.git.gitOrigin(root);
 }
 
-function shellPr(steps: readonly ShellStep[], at: number): PrText | undefined {
+function shellPr(
+	steps: readonly ShellStep[],
+	at: number,
+	ports: Ports,
+): PrText | undefined {
 	const step = steps[at];
 	if (step === undefined) return undefined;
 	const action = step.values[2] ?? "";
 	const flags = ghFlags(step.words.slice(3));
 	if (flags.skip) return undefined;
-	const root = repoRoot(step.dir);
+	const root = ports.git.gitRoot(step.dir);
 	return {
 		subject: `gh pr ${action}`,
 		create: action === "create",
 		title: flags.title,
 		body: bodyText(
-			ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+			ghBody(
+				flags,
+				step.simple,
+				step.dir,
+				stagedReader(steps, at, ports.files),
+			),
 		),
-		foreign: foreignRepo(flags.repo, originOf(root)),
+		foreign: foreignRepo(flags.repo, originOf(ports, root)),
 		root,
 	};
 }
@@ -110,7 +121,7 @@ function mcpPr(event: EventOf<"mcp">, context: Context): PrText | undefined {
 	if (!/github/i.test(event.server) || !MCP_PR_TOOLS.has(event.tool))
 		return undefined;
 	const input = isFields(event.input) ? event.input : {};
-	const root = repoRoot(projectDirOf(context));
+	const root = context.ports.git.gitRoot(projectDirOf(context));
 	const owner = field(input, "owner");
 	const repo = field(input, "repo");
 	return {
@@ -122,7 +133,7 @@ function mcpPr(event: EventOf<"mcp">, context: Context): PrText | undefined {
 			owner !== undefined && repo !== undefined
 				? `${owner}/${repo}`.toLowerCase()
 				: undefined,
-			originOf(root),
+			originOf(context.ports, root),
 		),
 		root,
 	};
@@ -135,7 +146,7 @@ export const handler = defineHandler({
 		switch (event.kind) {
 			case "mcp": {
 				const pr = mcpPr(event, context);
-				return pr ? textVerdict(pr) : ALLOW;
+				return pr ? textVerdict(pr, context.ports) : ALLOW;
 			}
 			case "shell": {
 				if (!/\bgh\b/.test(event.command)) return ALLOW;
@@ -147,8 +158,8 @@ export const handler = defineHandler({
 							!isGh(step.values, "pr", "edit")
 						)
 							return [];
-						const pr = shellPr(steps, at);
-						return pr ? [textVerdict(pr)] : [];
+						const pr = shellPr(steps, at, context.ports);
+						return pr ? [textVerdict(pr, context.ports)] : [];
 					}),
 				);
 			}

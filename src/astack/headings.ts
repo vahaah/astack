@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
+import type { FilePorts } from "./ports.ts";
 
 export type TicketKind = "bug" | "feature";
 
@@ -106,32 +106,16 @@ export interface Template {
 	headings: string[];
 }
 
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
+function inode(files: FilePorts, path: string): string | undefined {
+	const id = files.folderId(files.realPath(path) ?? path);
+	return id === undefined ? undefined : `${id.device}:${id.inode}`;
 }
 
-function inode(path: string): string | undefined {
-	try {
-		const stats = statSync(path);
-		return `${stats.dev}:${stats.ino}`;
-	} catch {
-		return undefined;
-	}
-}
-
-function listMarkdown(dir: string): string[] {
-	try {
-		return readdirSync(dir)
-			.filter((file) => /\.md$/i.test(file))
-			.sort()
-			.map((file) => join(dir, file));
-	} catch {
-		return [];
-	}
+function listMarkdown(files: FilePorts, dir: string): string[] {
+	return (files.listDir(dir) ?? [])
+		.filter((file) => /\.md$/i.test(file))
+		.sort()
+		.map((file) => join(dir, file));
 }
 
 function frontMatterField(markdown: string, field: string): string[] {
@@ -159,8 +143,12 @@ function frontMatterField(markdown: string, field: string): string[] {
 		.filter(Boolean);
 }
 
-function loadTemplate(root: string, path: string): Template | undefined {
-	const text = readText(path);
+function loadTemplate(
+	files: FilePorts,
+	root: string,
+	path: string,
+): Template | undefined {
+	const text = files.readText(path);
 	if (text === undefined) return undefined;
 	return {
 		path: path.slice(root.length + 1),
@@ -172,25 +160,26 @@ function loadTemplate(root: string, path: string): Template | undefined {
 }
 
 function templatesAt(
+	files: FilePorts,
 	root: string,
-	files: string[],
+	paths: string[],
 	dirs: string[],
 ): Template[] {
-	const single = files
-		.map((file) => loadTemplate(root, join(root, file)))
+	const single = paths
+		.map((file) => loadTemplate(files, root, join(root, file)))
 		.find(Boolean);
 	if (single) return [single];
 	const seen = new Set<string>();
 	return dirs
 		.filter((dir) => {
-			const id = inode(join(root, dir));
+			const id = inode(files, join(root, dir));
 			if (id === undefined || seen.has(id)) return false;
 			seen.add(id);
 			return true;
 		})
-		.flatMap((dir) => listMarkdown(join(root, dir)))
+		.flatMap((dir) => listMarkdown(files, join(root, dir)))
 		.flatMap((path) => {
-			const template = loadTemplate(root, path);
+			const template = loadTemplate(files, root, path);
 			return template ? [template] : [];
 		});
 }
@@ -216,8 +205,9 @@ export function templateSource(template: Template): HeadingSource {
 	return { source: template.path, headings: template.headings };
 }
 
-export function prTemplates(root: string): Template[] {
+export function prTemplates(files: FilePorts, root: string): Template[] {
 	return templatesAt(
+		files,
 		root,
 		[
 			".github/PULL_REQUEST_TEMPLATE.md",
@@ -231,8 +221,11 @@ export function prTemplates(root: string): Template[] {
 	);
 }
 
-export function prHeadings(root: string | undefined): HeadingSource {
-	const templates = root ? prTemplates(root) : [];
+export function prHeadings(
+	files: FilePorts,
+	root: string | undefined,
+): HeadingSource {
+	const templates = root ? prTemplates(files, root) : [];
 	const [first, ...rest] = templates;
 	if (!first)
 		return { source: "the default PR body standard", headings: PR_HEADINGS };
@@ -247,8 +240,9 @@ export function prHeadings(root: string | undefined): HeadingSource {
 	return { source: "the repo's PR templates", headings: shared };
 }
 
-export function issueTemplates(root: string): Template[] {
+export function issueTemplates(files: FilePorts, root: string): Template[] {
 	return templatesAt(
+		files,
 		root,
 		[
 			".github/ISSUE_TEMPLATE.md",
@@ -275,10 +269,11 @@ function namesKind(template: Template, kind: TicketKind): boolean {
 }
 
 export function issueTemplateFor(
+	files: FilePorts,
 	root: string | undefined,
 	kind: TicketKind,
 ): Template | undefined {
-	const templates = root ? issueTemplates(root) : [];
+	const templates = root ? issueTemplates(files, root) : [];
 	const match = templates.find((template) => namesKind(template, kind));
 	if (match) return match;
 	const [only, ...rest] = templates;
@@ -296,10 +291,11 @@ export function ticketStandard(kind: TicketKind): HeadingSource {
 }
 
 export function issueHeadings(
+	files: FilePorts,
 	root: string | undefined,
 	kind: TicketKind,
 ): HeadingSource {
-	const template = issueTemplateFor(root, kind);
+	const template = issueTemplateFor(files, root, kind);
 	return template ? templateSource(template) : ticketStandard(kind);
 }
 

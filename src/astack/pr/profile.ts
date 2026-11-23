@@ -1,5 +1,3 @@
-import { readProfileJson } from "../profile.ts";
-
 export type MergeAuthority = "standing" | "turn";
 
 export type MergeProfile = {
@@ -42,8 +40,6 @@ export function parseMergeProfile(parsed: unknown): MergeProfile {
 	};
 }
 
-export function partOfRequired(projectDir: string): boolean {
-	return (
-		record(record(readProfileJson(projectDir)).tracker).requirePartOf === true
-	);
+export function partOfRequired(profile: unknown): boolean {
+	return record(record(profile).tracker).requirePartOf === true;
 }

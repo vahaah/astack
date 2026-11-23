@@ -1,5 +1,4 @@
 import { bodyText, foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
-import { originSlug, repoRoot } from "../../git.ts";
 import {
 	detectTicketKind,
 	emailAddresses,
@@ -12,6 +11,7 @@ import {
 	TICKET_HEADINGS,
 	ticketFooter,
 } from "../../headings.ts";
+import type { Ports } from "../../ports.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
 import { stagedReader } from "../body-reader.ts";
 import {
@@ -30,13 +30,17 @@ function notesVerdict(notes: readonly string[]): Verdict {
 	return notes.length > 0 ? note(notes.join("\n\n")) : ALLOW;
 }
 
-function issueCreateVerdict(steps: readonly ShellStep[], at: number): Verdict {
+function issueCreateVerdict(
+	steps: readonly ShellStep[],
+	at: number,
+	ports: Ports,
+): Verdict {
 	const step = steps[at];
 	if (step === undefined) return ALLOW;
 	const flags = ghFlags(step.words.slice(3));
 	if (flags.skip) return ALLOW;
 	const body = bodyText(
-		ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+		ghBody(flags, step.simple, step.dir, stagedReader(steps, at, ports.files)),
 	);
 	if (body === undefined) return ALLOW;
 	const kind = detectTicketKind({
@@ -44,8 +48,8 @@ function issueCreateVerdict(steps: readonly ShellStep[], at: number): Verdict {
 		labels: flags.labels,
 		body,
 	});
-	const root = repoRoot(step.dir);
-	const source = issueHeadings(root, kind);
+	const root = ports.git.gitRoot(step.dir);
+	const source = issueHeadings(ports.files, root, kind);
 	const missing = missingHeadings(body, source.headings);
 	const gap: HeadingGap | undefined =
 		missing.length > 0
@@ -60,7 +64,7 @@ function issueCreateVerdict(steps: readonly ShellStep[], at: number): Verdict {
 	const notes = emails.length > 0 ? [personalDataNote(emails)] : [];
 	const foreign = foreignRepo(
 		flags.repo,
-		root === undefined ? undefined : originSlug(root),
+		root === undefined ? undefined : ports.git.gitOrigin(root),
 	);
 	if (gap && foreign)
 		return notesVerdict([headingAdvice(SUBJECT, gap, foreign), ...notes]);
@@ -140,7 +144,7 @@ function linearVerdict(event: EventOf<"mcp">): Verdict {
 export const handler = defineHandler({
 	id: "ticket",
 	on: ["shell", "mcp"],
-	run: (event) => {
+	run: (event, context) => {
 		switch (event.kind) {
 			case "shell": {
 				if (!/\bgh\b/.test(event.command)) return ALLOW;
@@ -148,7 +152,7 @@ export const handler = defineHandler({
 				return combineAll(
 					steps.flatMap((step, at) =>
 						isGh(step.values, "issue", "create")
-							? [issueCreateVerdict(steps, at)]
+							? [issueCreateVerdict(steps, at, context.ports)]
 							: [],
 					),
 				);

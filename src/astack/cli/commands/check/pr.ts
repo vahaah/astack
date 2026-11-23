@@ -5,8 +5,10 @@ import {
 	prTemplates,
 	templateSource,
 } from "../../../headings.ts";
+import { processPorts } from "../../../ports.ts";
 import { linkFindings } from "../../../pr/links.ts";
 import { partOfRequired } from "../../../pr/profile.ts";
+import { readProfileJson } from "../../../profile.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
@@ -14,7 +16,8 @@ import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
 export const PR_BODY_MAX_LINES = 40;
 
 function reportLinks(io: Io, body: string, root: string | undefined): number {
-	const requirePartOf = root !== undefined && partOfRequired(root);
+	const requirePartOf =
+		root !== undefined && partOfRequired(readProfileJson(root));
 	const findings = linkFindings({ title: undefined, body }, { requirePartOf });
 	for (const finding of findings) io.out(`PR body: ${finding}\n`);
 	return findings.length > 0 ? 1 : 0;
@@ -52,11 +55,12 @@ function headingSource(
 	root: string | undefined,
 	template: string | undefined,
 ): HeadingSource | number {
-	if (!template) return prHeadings(root);
+	const { files } = processPorts();
+	if (!template) return prHeadings(files, root);
 	const picked = pickTemplate(
 		io,
 		"astack check-pr",
-		root ? prTemplates(root) : [],
+		root ? prTemplates(files, root) : [],
 		template,
 	);
 	return typeof picked === "number" ? picked : templateSource(picked);
