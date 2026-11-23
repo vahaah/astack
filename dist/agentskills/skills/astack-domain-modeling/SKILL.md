@@ -3,7 +3,7 @@ name: "astack-domain-modeling"
 description: "Build a project domain model. Use when you discuss terminology, change CONTEXT.md, or record or edit an ADR."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

@@ -3,7 +3,7 @@ name: "astack-setup-models"
 description: "Configure astack models and reasoning budgets by role. Use for /astack-setup-models, model selection, or budget changes."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

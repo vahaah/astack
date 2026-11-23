@@ -3,7 +3,7 @@ name: "astack-setup"
 description: "Configure the issue tracker, triage labels and domain documents for astack engineering skills. Run before their first use in a repo."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Set up astack

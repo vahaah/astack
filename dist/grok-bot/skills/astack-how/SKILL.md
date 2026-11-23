@@ -3,7 +3,7 @@ name: "astack-how"
 description: "Explain how code works, its architecture, its owners, or where a change belongs. Use for walkthroughs and teaching requests. Use why for design reasons."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # How

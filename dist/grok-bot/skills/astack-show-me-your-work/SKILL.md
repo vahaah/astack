@@ -3,7 +3,7 @@ name: "astack-show-me-your-work"
 description: "Keep a TSV decision trail for long or unattended work. Store it locally unless a reviewer needs a committed trail."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Show me your work
