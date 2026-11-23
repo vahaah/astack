@@ -62,6 +62,10 @@ A `git archive` pipe keeps the exemption only when its `tar` step stays in the f
 Each word of that step must be an extract, verbose, keep, mode or stdin file flag, and the step must have no env.
 So `-C`, `--directory`, `-P` and each other `tar` flag give the verdict of ADR 0010 D3.
 
+Amended 2026-11-23. The `git archive` step must stay in the tree of the repo too.
+`--prefix`, `--remote`, `--add-file`, `--add-virtual-file` and a tree-ish with a path, such as `HEAD:sub`, give the verdict of ADR 0010 D3.
+With the exemption, the extraction keeps each dirty nested repo and submodule that has no bound record.
+
 ### D4. A record starts pending, and the next shell call settles it
 
 A new record is pending, because the hook cannot see whether the command ran.

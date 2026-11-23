@@ -89,6 +89,11 @@
 			"modelRefs": ["Push", "GatesRun", "HookSkipNeedsGates"]
 		},
 		{
+			"path": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["RunGit", "Exempt", "SessionRepoPasses"]
+		},
+		{
 			"path": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
 			"obligation": "SG-hook-skip",
 			"modelRefs": ["Push"]
@@ -195,6 +200,10 @@
 			{
 				"file": "docs/adr/0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md",
 				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D3"
 			}
 		],
 		"controls": {
@@ -207,6 +216,7 @@
 				"SG-gates-run",
 				"SG-gate-folder",
 				"SG-conformance",
+				"SG-session-repo-identity",
 				"SG-generated",
 				"SG-preserve"
 			]

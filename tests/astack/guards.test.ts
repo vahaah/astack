@@ -1262,6 +1262,49 @@ describe("a repo that this session made", () => {
 		expect(said).toContain("deletes the untracked files vendor/lib/.");
 	});
 
+	test.each([
+		"git archive --prefix=../victim/ HEAD | tar -xf -",
+		"git archive --pref=sub/ HEAD | tar -xf -",
+		"git archive --remote=../other HEAD | tar -xf -",
+		"git archive --add-file=extra.txt HEAD | tar -xf -",
+		"git archive --add-virtual-file=a.txt:x HEAD | tar -xf -",
+		"git archive HEAD:docs | tar -xf -",
+	])(
+		"[control:sg-session-repo-archive] %s gets no session exemption, because the archive step can write outside the tree of the repo",
+		(command) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(reason(sessionRun(command, dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test("git archive HEAD | tar -xf - is denied in a session repo for a dirty nested repo and a dirty submodule", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const nested = join(dir, "vendor/lib");
+		dirtyRepoAt(nested);
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		write(dir, { "sub/a.txt": "c\n" });
+		const said = reason(sessionRun("git archive HEAD | tar -xf -", dir, state));
+		expect(said).toContain("vendor/lib/");
+		expect(said).toContain("sub");
+	});
+
 	test("[control:sg-session-repo-identity] a reset is denied in a dirty repo that another process made at a dropped pending path", () => {
 		const { dir, state } = fresh("made");
 		const parent = join(dir, "..");

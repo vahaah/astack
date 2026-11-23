@@ -1,4 +1,4 @@
-import { realpathSync, statSync } from "node:fs";
+import { lstatSync, realpathSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { loadGateRecord, profileBlobs, sameProfile } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
@@ -149,6 +149,7 @@ export interface WorkLoss {
 	readonly excludes?: readonly string[];
 	readonly keepsUntrackedFolders?: boolean;
 	readonly removesNestedRepos?: boolean;
+	readonly reachesNestedRepos?: boolean;
 	readonly target?: string;
 }
 
@@ -511,15 +512,38 @@ function lostPaths(
 	const excluded = excludedPaths(dir, loss);
 	const overwritten =
 		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
-	const lost = [...changedPaths(dir, loss), ...overwritten].filter(
+	const changed = [...changedPaths(dir, loss), ...overwritten];
+	const session =
+		(changed.length > 0 || loss.reachesNestedRepos === true) &&
+		sessionRepo(root);
+	const nested =
+		session && loss.reachesNestedRepos === true
+			? changedPaths(dir, {
+					lost: "untracked",
+					pathspecs: loss.pathspecs,
+					removesNestedRepos: true,
+				}).filter((path) => path.endsWith("/"))
+			: [];
+	const lost = [...changed, ...nested].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
-	return lost.length > 0 && sessionRepo(root)
-		? lost.filter(
-				(path) =>
-					path.endsWith("/") && !sessionRepo(join(root, path.slice(0, -1))),
-			)
+	return session
+		? lost.filter((path) => {
+				const at = join(root, path.replace(/\/$/, ""));
+				return isRepoRoot(at) && !sessionRepo(at);
+			})
 		: lost;
+}
+
+function isRepoRoot(path: string): boolean {
+	try {
+		return (
+			lstatSync(path, { throwIfNoEntry: false })?.isDirectory() === true &&
+			lstatSync(join(path, ".git"), { throwIfNoEntry: false }) !== undefined
+		);
+	} catch {
+		return true;
+	}
 }
 
 function workLossReasons(
@@ -555,6 +579,26 @@ function tarExtracts(step: ShellStep): boolean {
 const TAR_HERE =
 	/^(?:-|-?[fkmopvx]+|--(?:extract|get|verbose|keep-old-files|file(?:=-)?))$/;
 
+const ARCHIVES_ELSEWHERE = [
+	"--prefix",
+	"--remote",
+	"--add-file",
+	"--add-virtual-file",
+];
+
+function archivesHere(step: ShellStep, git: GitInvocation): boolean {
+	return (
+		!step.words.some((word) => word.dynamic) &&
+		git.args.every((arg) =>
+			arg.startsWith("-")
+				? !ARCHIVES_ELSEWHERE.some((flag) =>
+						isLongForm(arg.split("=")[0] ?? "", flag),
+					)
+				: !arg.includes(":"),
+		)
+	);
+}
+
 function extractsHere(step: ShellStep): boolean {
 	return (
 		step.env.length === 0 &&
@@ -587,11 +631,12 @@ function extractReasons(
 		return [
 			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
 		];
+	const exempt = extractsHere(step) && archivesHere(previous, source.git);
 	return lossReasons(
 		command,
-		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		{ lost: "tracked", pathspecs: WHOLE_TREE, reachesNestedRepos: exempt },
 		step.dir,
-		extractsHere(step) ? sessionRepo : NO_SESSION_REPO,
+		exempt ? sessionRepo : NO_SESSION_REPO,
 	);
 }
 
