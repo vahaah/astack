@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-11-22
 Ticket: none
 Supersedes: none
+Amended by: 0037
 
 ## Context
 
@@ -122,6 +123,8 @@ The cut skills held 9,287 words.
 After the cut and the repointed routes, the budget holds 50 skills and 140,953 words, under the plan target of 141,500.
 
 > Amended 2026-11-22: A second set folds four wrapper skills under the fold rule of D1. research becomes the research brief of plan stage S1. improve-codebase-architecture becomes the Survey section of codebase-design. prototype becomes the "Person-judged prototype" section of the mode Prototype playbook. writing-for-agents moves into the mode authoring playbook. Under D2, the cap of plan rises from 14,280 to 14,299, the cap of codebase-design from 1,532 to 1,739 and the cap of mode from 29,155 to 30,081. The rises add 1,152 words, and the total cap falls by 4,288 words. The budget then holds 46 skills and 136,513 words.
+
+> Amended 2026-11-23: ADR 0037 D3 cuts `astack plan export`, `astack plan drift` and `kind:programme`. `astack plan keys` stays, and programmes file issues through `astack:write-ticket`.
 
 ### D4. Cursor no longer delivers old string-only records
 

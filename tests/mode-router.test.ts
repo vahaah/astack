@@ -70,11 +70,11 @@ const RULE_HOMES: readonly RuleHome[] = [
 	},
 	{
 		phrase: "S0 to S3, S5 and S6",
-		home: "marketplace/plugins/astack/skills/plan/references/tiers.md",
+		home: "marketplace/plugins/astack/skills/plan/SKILL.md",
 	},
 	{
-		phrase: "first write `docs/plans/<slug>.md`",
-		home: "marketplace/plugins/astack/skills/plan/references/tiers.md",
+		phrase: "first write and commit `docs/plans/<slug>.md`",
+		home: "marketplace/plugins/astack/skills/plan/SKILL.md",
 	},
 	{
 		phrase: "Record the grant",
@@ -156,7 +156,7 @@ const RULE_HOMES: readonly RuleHome[] = [
 	},
 	{
 		phrase: "Keep the steps together in one run",
-		cut: "tiers.md gives the quick tier one session",
+		cut: "plan SKILL.md gives the quick tier one session",
 	},
 	{
 		phrase: "Write `Root cause: X because Y` before the fix",

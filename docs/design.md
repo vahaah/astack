@@ -254,13 +254,13 @@ The main shape is one big-bang PR per session. Parallel step workers build it in
 
 The caps fit the owner's real plans. Fixtures with the size and shape of three real plans of 10.8 KB, 19.7 KB and 27 KB must pass with no deny. They are in `tests/fixtures/plans/shapes/`.
 
-`astack check-plan` examines the frontmatter, the section order, the decision rows, the sessions, the steps and the hot-file rule. It also examines the milestones and blocks, the questions, the gates, the caps, the ledger rules, the links and the prose. The prose rules give the ASD-STE100 findings as warnings. In a repo with a contexts card, it also examines the `## Domain and effects` block of each code plan, as [ADR 0018](adr/0018-one-domain-and-effects-record-is-checked-against-code.md) says.
+`astack check-plan` examines the frontmatter, the section order, the decision rows, the sessions, the steps and the hot-file rule. It also examines the milestones and blocks, the questions, the gates, the caps, the ledger rules, the links and the prose. The prose rules give the ASD-STE100 findings as warnings. In a repo with a contexts card, it also examines the `## Domain and effects` block of each code plan, as [ADR 0018](adr/0018-one-domain-and-effects-record-is-checked-against-code.md) says. Stages S3 to S6 own that record ([ADR 0037](adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md)). S3 names the card context, and S4 drafts the `domain` block. S5 links each step to a `Files` cell, and S6 adds code-checked laws for each invariant and write capability.
 
 | Artifact | Warn | Deny |
 |---|---|---|
 | standard plan, block brief | over 24 KB or 400 lines | over 32 KB |
 | programme index | over 250 lines or 15 live D rows | over 16 KB |
-| hand-off comment | over 5 lines | none |
+| hand-off comment | over 4 lines | none |
 
 - The standard tier has no row cap. The byte cap controls bloat.
 - In a file with `plan:` frontmatter, the hook denies only four edits. These are a result over the deny cap, an added checkbox line, an added `Status:` line and a register table. Each other finding that the edit adds is a note.
@@ -276,27 +276,12 @@ The plan and session contracts are these.
 1. Handles `M<n>`, `B<nn>`, `B<nn>/S<n>` and `D<n>` are legal in plans, trackers, PR titles and commit subjects. The comment hook still denies them in code.
 2. Sessions with parallel steps in waves replace phases. One `now` session per lane is legal.
 3. The checkpoint package, `checkpoints:`, `delegate:` and `owner-gates:` are first-class fields. The standard tier files no tickets.
-4. New commands are `astack plan export`, `drift` and `keys`, plus STE in `check plan`, `check ticket` and the hand-off render.
 
-## 6. Tracker export on request
+## 6. Tracker keys and PR rules
 
-`home: repo` is the default. The owner asks, and then `astack plan export <slug> --to linear|github` prints a typed write plan. The skill runs each write through the Linear MCP or `gh`. `astack plan keys <slug>` reads the new keys on stdin and writes the `Ticket.` lines in one commit. The long-running structure stays the same in every home.
+`home: repo` is the default. The plan holds structure, Exit, Proof, edges and settled decisions, while the tracker holds status, claims, comments, hand-offs and open decision threads. When `home` is `linear` or `github`, the tracker copy is the plan, and no command reads that copy.
 
-| astack | Linear | GitHub |
-|---|---|---|
-| Programme | a delivery project linked to the team roadmap initiative (Q3) | a map issue, type Feature, label `kind:programme` |
-| Index text | a project Document, "generated from <path>@<sha>" | the map issue body |
-| Milestone | a project milestone `M2 <demo title>` | a repository milestone |
-| Block | an issue `B07 <outcome>`, parent the main spec ticket, label `Lane/<x>` | an issue, type Feature, sub-issue of the map |
-| Session | a sub-issue `B07/S2 <what becomes true>`, blockedBy from Depends on | an issue, type Task, sub-issue of the block, native blocked-by |
-| Open decision | an issue `Kind/decision` that blocks the sessions it binds | an issue, label `kind:decision` |
-
-Round-trip rules.
-1. One home at a time. `home: repo` is the default, and the tracker holds a mirror. No command moves a plan between homes. Drift still reads a plan whose home is `linear` or `github` from its tracker copy.
-2. The plan holds structure, Exit, Proof, edges and settled decisions. The tracker holds status, claims, comments, hand-offs, defects and open decision threads.
-3. Export is idempotent. It shows a dry run first, files blockers first, writes only the fields astack owns and never deletes. Each object ends with the back-link `astack: <slug>/<unit> @ <commit>`, which drift uses to tell a stale export from an edit in the tracker.
-4. `astack plan drift <slug>` reads tracker JSON on stdin. It reports a stale export, owned fields edited in the tracker, orphans, unmapped children and status contradictions. It never resolves human text on its own.
-5. Titles use no long dash. The handle and a space carry the split. GitHub allows 100 sub-issues per parent, so blocks are the parents of sessions.
+Programmes file their map issue and `Binds.` decision issues through `astack:write-ticket`. `astack plan keys <plan>` reads the unit-to-key JSON map on stdin and writes the `Ticket.` lines in one commit. The CLI never calls a tracker.
 
 PR and ticket rules come from the repo profile.
 - `tracker.requirePartOf: true` makes line 1 of a PR body `Part of <key>`. Three of the four client configs set it. One line can name more tickets, as in `Part of ABC-327, ABC-331`.
@@ -518,7 +503,7 @@ The tests compare generated bytes, modes, and mtimes before and after the read-o
 - Plan fixtures. Synthetic plans sized like three real plans of 10.8 KB, 19.7 KB and 27 KB pass. Two steps of one wave on one hot-file region fail. A register table fails. A handle in a code comment fails.
 - STE fixtures. The 3-old-sentence Edit passes. A JSON reply, a one-block reply and a `-p` session get no rewrite. The Stop of the rewrite allows. A second reply in one turn gets its own rewrite. Two parallel claims give one block.
 - Type fixtures. A Biome reflow of an old cast line passes. A new cast in a file with old casts fails.
-- Laws with fast-check. Decode then encode is the identity on each captured fixture. `combine` obeys the monoid laws. Two builds give the same bytes. A new keep pattern never turns an allow into a deny. A second export plans no tracker write.
+- Laws with fast-check. Decode then encode is the identity on each captured fixture. `combine` obeys the monoid laws. Two builds give the same bytes. A new keep pattern never turns an allow into a deny.
 - Per target. Claude Code gets `claude plugin validate --strict` and the load gate in a temp `CLAUDE_CONFIG_DIR`. Codex gets a temp `CODEX_HOME` and `HOME`, `codex debug prompt-input` and `codex exec --json --dangerously-bypass-hook-trust`. Then one smoke run in Codex Desktop follows. Cursor gets ajv on the manifests and `cursor-agent -p --plugin-dir` after an update. agentskills gets `skills-ref validate`.
 
 ### 12.1 Signed public releases

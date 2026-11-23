@@ -1,41 +1,15 @@
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { gitValue } from "../git.ts";
 import { readOptional } from "../paths.ts";
 import { profileSection } from "../profile.ts";
 import { err, ok, type Result } from "../result.ts";
-import { type PlanSet, planSetFromText } from "./planset.ts";
 import type { SessionRecord } from "./session.ts";
 import { parseSnapshot, type Snapshot } from "./tracker.ts";
 import { planStateDir } from "./trail.ts";
 
-export function planCommit(root: string, paths: readonly string[]): string {
-	return (
-		gitValue(root, ["log", "-1", "--format=%h", "--", ...paths]) ??
-		"uncommitted"
-	);
-}
-
-export function renderAt(
-	root: string,
-	set: PlanSet,
-): (sha: string) => PlanSet | undefined {
-	return (sha) => {
-		if (!/^[0-9a-f]{4,40}$/.test(sha)) return undefined;
-		const text = gitValue(root, ["show", `${sha}:${set.path}`]);
-		return text === undefined
-			? undefined
-			: planSetFromText(set.path, `${text}\n`, (path) => {
-					const brief = gitValue(root, ["show", `${sha}:${path}`]);
-					return brief === undefined ? undefined : `${brief}\n`;
-				});
-	};
-}
-
 export type PlanSettings = {
 	readonly branchPrefix: string | undefined;
 	readonly wip: number | undefined;
-	readonly team: string | undefined;
 };
 
 export function planSettings(root: string): PlanSettings {
@@ -55,7 +29,6 @@ export function planSettings(root: string): PlanSettings {
 			typeof wip === "number" && Number.isInteger(wip) && wip > 0
 				? wip
 				: undefined,
-		team: text("team"),
 	};
 }
 

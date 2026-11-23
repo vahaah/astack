@@ -1,6 +1,7 @@
 # Plan boundary and plan tool requirements
 
 [ADR 0020](../adr/0020-plan-tools-share-one-adr-reader.md) governs the ADR heading reader, the session boundary and the graduated row.
+[ADR 0037](../adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md) governs the domain record stages of `astack:plan`, the cut of the export and drift subcommands, and the 4-line hand-off comment.
 The [model](../../formal/PlanBoundary.tla) examines the boundary and the graduated row over three sessions and two rows.
 
 ## Acceptance criteria
@@ -11,6 +12,9 @@ The [model](../../formal/PlanBoundary.tla) examines the boundary and the graduat
 - [criterion:GRAD-ONCE] An owner row in the form `Graduated to ADR NNNN Dm` passes `check-plan --base` only when that heading resolves. A graduated row that is live again fails.
 - [criterion:BOUNDARY-ONCE] A resume that finds the next session branch continues it and runs no second boundary. No plan text opens a PR that holds only plan edits.
 - [criterion:SPAN-RUN] A code span starts only at a full backtick run and ends at a run of the same length. A double-backtick span hides its words from check-plan, the PR link reader and the comment classifier. A longer run with no match masks nothing.
+- [criterion:PLAN-RECORD] Each stage from S3 to S6 of `astack:plan` owns its part of the domain record. S3 names the context, S4 drafts the block, S5 links steps, and S6 adds laws.
+- [criterion:PLAN-CUT] The removed export and drift subcommands exit 2, and their modules are gone. No tracked Markdown outside `docs/plans`, `docs/adr`, `CHANGELOG.md`, `upstream` and `dist` names them or the programme label.
+- [criterion:HANDOFF-COUNT] For 0 to 9 unresolved questions and any done-step count, `astack session handoff` prints 4 lines and no question count.
 
 ## Claim boundary
 

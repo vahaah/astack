@@ -37,7 +37,6 @@ import {
 	type Step,
 	TIERS,
 	type Tier,
-	type TrailRow,
 	type Unit,
 } from "./types.ts";
 
@@ -1769,24 +1768,6 @@ export function checkAgainstBase(
 				`${handle} reuses a number at or below D${maxBase}; number new rows from D${maxBase + 1}`,
 			);
 	return findings.sort((a, b) => a.line - b.line);
-}
-
-export function parseTrail(text: string): TrailRow[] {
-	return text
-		.split(/\r?\n/)
-		.slice(1)
-		.filter((line) => line.trim() !== "")
-		.map((line) => {
-			const [
-				ts = "",
-				phase = "",
-				decision = "",
-				why = "",
-				evidence = "",
-				result = "",
-			] = line.split("\t");
-			return { ts, phase, decision, why, evidence, result };
-		});
 }
 
 export function parseGlossary(text: string): {

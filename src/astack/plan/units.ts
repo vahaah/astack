@@ -44,14 +44,10 @@ export type ExportUnit = {
 	readonly state: string | undefined;
 };
 
-export const CHECKERS =
+const CHECKERS =
 	"The implementer runs it on the PR head and puts the result in the PR. The reviewer checks that result against the criteria.";
 
 const BACKLINK = /^astack: (\S+) @ (\S+)\s*$/;
-
-export function backlink(id: string, sha: string): string {
-	return `astack: ${id} @ ${sha}`;
-}
 
 export function parseBacklink(
 	body: string | undefined,
@@ -62,14 +58,6 @@ export function parseBacklink(
 		if (match) return { id: match[1] ?? "", sha: match[2] ?? "" };
 	}
 	return undefined;
-}
-
-export function withoutBacklink(body: string | undefined): string {
-	return (body ?? "")
-		.split(/\r?\n/)
-		.filter((line) => !BACKLINK.test(line.trim()))
-		.join("\n")
-		.trim();
 }
 
 function checkboxes(items: readonly string[]): string {
@@ -284,49 +272,6 @@ function decisionBody(question: Question, path: string): string {
 	].join("\n");
 }
 
-function fence(text: string): string {
-	const longest = Math.max(
-		2,
-		...[...text.matchAll(/`+/g)].map((match) => match[0].length),
-	);
-	return "`".repeat(longest + 1);
-}
-
-export function planCopy(
-	text: string,
-	path: string,
-	home: string,
-	target: "linear" | "github",
-): string {
-	const note =
-		home === "repo"
-			? `The plan file \`${path}\`. Home is repo, so edit the repo file. This copy is a mirror.`
-			: `The plan file \`${path}\`. Home is ${home}, so this copy is the plan. Edit it here.`;
-	if (target === "linear") return `${note}\n\n${text.trim()}`;
-	const marks = fence(text);
-	return `${note}\n\n${marks}markdown astack-plan ${path}\n${text.trim()}\n${marks}`;
-}
-
-export function extractCopy(
-	body: string | undefined,
-): { readonly path: string; readonly text: string } | undefined {
-	const clean = withoutBacklink(body);
-	const fenced = /^(`{3,})markdown astack-plan (\S+)\n([\s\S]*?)\n\1\s*$/m.exec(
-		clean,
-	);
-	if (fenced) return { path: fenced[2] ?? "", text: `${fenced[3] ?? ""}\n` };
-	const header = /^The plan file `([^`]+)`[^\n]*\n\n([\s\S]*)$/.exec(clean);
-	return header
-		? { path: header[1] ?? "", text: `${(header[2] ?? "").trim()}\n` }
-		: undefined;
-}
-
-export function setHome(text: string, home: string): string {
-	return /^home:.*$/m.test(text)
-		? text.replace(/^home:.*$/m, `home: ${home}`)
-		: text.replace(/^(tier:.*)$/m, `$1\nhome: ${home}`);
-}
-
 function addendumBody(plan: Plan, path: string): string {
 	const rows = plan.decisions.rows
 		.filter((row) => !row.retired && row.handle.startsWith("D"))
@@ -395,13 +340,6 @@ function base(
 
 function milestoneName(milestone: Milestone): string {
 	return `${milestone.handle ?? ""} ${stripPeriod(milestone.title)}`.trim();
-}
-
-export function trackerUnits(set: PlanSet): ExportUnit[] {
-	const units = collectUnits(set);
-	return tierOf(set.root) === "programme"
-		? units
-		: units.filter((unit) => unit.kind !== "session");
 }
 
 export function collectUnits(set: PlanSet): ExportUnit[] {

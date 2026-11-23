@@ -9,11 +9,13 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import fc from "fast-check";
 import { command as board } from "../../src/astack/cli/commands/board.ts";
 import { command as session } from "../../src/astack/cli/commands/session.ts";
 import { buildBoard } from "../../src/astack/plan/board.ts";
 import { parsePlan } from "../../src/astack/plan/parse.ts";
 import {
+	handoff,
 	nextScope,
 	type SessionRecord,
 } from "../../src/astack/plan/session.ts";
@@ -232,13 +234,15 @@ describe("astack session", () => {
 		).toEqual([["1"], ["2"], ["3"], ["4"]]);
 	});
 
-	test("handoff fits in 5 lines, comments on the ticket and the PR, and prints the resume prompt", () => {
+	test("handoff fits in 4 lines, comments on the ticket and the PR, and prints the resume prompt", () => {
 		const out = json(["handoff", EXPORT]);
 		const [comment = "", prompt = ""] = out.text.split(
 			"\n--- resume prompt ---\n",
 		);
-		expect(comment.trim().split("\n")).toHaveLength(5);
+		expect(comment.trim().split("\n")).toHaveLength(4);
 		expect(comment).toContain("Done. Steps 1, 2, 3, 4");
+		expect(comment).not.toContain("Open.");
+		expect(comment).not.toMatch(/unresolved question/i);
 		expect(
 			out.writes.map((write: { summary: string }) => write.summary),
 		).toEqual(["post the hand-off on ABC-120", "post the hand-off on PR #41"]);
@@ -246,6 +250,62 @@ describe("astack session", () => {
 			"Resume. astack session resume docs/plans/member-export.md. Use ultracode.",
 		);
 		expect(prompt).toEndWith(" Use ultracode.\n");
+	});
+
+	test("[control:handoff-names-no-count] for 0 to 9 unresolved questions and any done-step count, handoff has 4 lines and no question count", () => {
+		const base = parsePlan(EXPORT, fixture(`repo/${EXPORT}`));
+		const s1 = base.sessions[0];
+		if (!s1) throw new Error("no session");
+		fc.assert(
+			fc.property(
+				fc.integer({ min: 0, max: 9 }),
+				fc.integer({ min: 0, max: s1.steps.length }),
+				(openCount, doneCount) => {
+					const questions = Array.from({ length: openCount }, (_, i) => ({
+						line: 100 + i,
+						number: i + 1,
+						text: `Question ${i + 1}`,
+						settles: [],
+						blocks: [],
+						binds: [],
+						decideBy: undefined,
+						ticket: undefined,
+					}));
+					const plan = { ...base, questions };
+					const doneIds = s1.steps.slice(0, doneCount).map((step) => step.id);
+					const record: SessionRecord = {
+						plan: EXPORT,
+						session: "S1",
+						branch: "sam/abc-120/member-export",
+						base: "main",
+						started: "2026-10-16T10:00:00Z",
+						ultracode: false,
+						pr: 41,
+						checkpoints:
+							doneIds.length > 0
+								? [
+										{
+											at: "2026-10-16T11:00:00Z",
+											steps: doneIds,
+											wave: "W1",
+											head: "abc1234",
+										},
+									]
+								: [],
+					};
+					const out = handoff(plan, s1, record, "Resume.");
+					const [comment = ""] = out.text.split("\n--- resume prompt ---\n");
+					const lines = comment.trim().split("\n");
+					expect(lines).toHaveLength(4);
+					expect(lines[0]).toStartWith("Hand-off for ");
+					expect(lines[1]).toStartWith("Done. ");
+					expect(lines[2]).toStartWith("Next. ");
+					expect(lines[3]).toStartWith("Resume. ");
+					expect(comment).not.toContain("Open.");
+					expect(comment).not.toMatch(/unresolved question/i);
+				},
+			),
+		);
 	});
 
 	test("resume prints the prompt with the branch, the PR, the grant and ultracode", () => {

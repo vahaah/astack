@@ -111,14 +111,6 @@ describe("save_issue fields that some Linear servers lack", () => {
 			),
 		).toEqual(["Call save_issue with addLabels."]);
 	});
-
-	test("the export runbook sends the full labels list when the server has no addLabels", () => {
-		expect(
-			read("marketplace/plugins/astack/skills/plan/references/tracker.md"),
-		).toContain(
-			"An update can carry `addLabels`. When the `save_issue` schema of your Linear server has no `addLabels`, send `labels` in its place. Give the object's labels from the tracker JSON plus the new ones.",
-		);
-	});
 });
 
 describe("plan recovery uses the recorded workflow state", () => {

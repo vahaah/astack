@@ -200,7 +200,7 @@ astack refuses a click tool whose input names a merge button too. It refuses eac
 
 `/astack:plan` keeps one plan file per effort under `docs/plans/`. A programme keeps an index and one brief for each block under `docs/plans/<slug>/`. `astack check-plan` proves the structure. It examines the frontmatter, the section order, the decision rows, and the sessions with their steps tables. It holds the rule of one editor for each hot-file region in a wave. It also examines the milestones, the gates, the caps and the ledger rules. The hook checks only files whose frontmatter has `plan:`, so older plans and ledgers in a repo stay editable.
 
-`astack session` starts, checkpoints, hands off and resumes one session. `astack board` prints the startable frontier of a plan. `astack plan export`, `drift` and `keys` print typed write plans for Linear or GitHub, and the skill runs them. The CLI never calls a tracker.
+`astack session` starts, checkpoints, hands off and resumes one session. `astack board` prints the startable frontier of a plan. `astack plan keys` writes tracker keys back into plan files in one commit. The CLI never calls a tracker.
 
 Set the plan directory, the glossary file and the ADR directory in `.astack/profile.json` when a repo keeps them elsewhere:
 
@@ -321,7 +321,7 @@ astack plan-ticket docs/plans/x.md S1                  # the tracker body of a u
 astack plan trail x start "<decision>" "<why>" "<evidence>" "<result>"
 astack plan draft x "<title>" "<why>" # an out-of-scope finding for the owner to file
 astack plan delegate docs/plans/x.md on                # the delegation grant: delegate on, checkpoints report
-astack plan export docs/plans/x.md --to linear --team Core --tracker -   # a write plan; also drift, keys
+astack plan keys docs/plans/x.md < keys.json          # write filed tracker keys back into the plan
 astack plan attended                  # attended, or unattended in a headless or SDK session
 astack session start docs/plans/x.md  # then checkpoint, handoff, resume
 astack board docs/plans/x/index.md    # drain first, the startable frontier, the WIP cap

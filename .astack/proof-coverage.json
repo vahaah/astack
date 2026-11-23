@@ -129,7 +129,9 @@
 		"tests/astack/process.test.ts",
 		"tests/astack/hook-port-replay.test.ts",
 		"tests/mode-router.test.ts",
-		"tests/skill-load-report.test.ts"
+		"tests/skill-load-report.test.ts",
+		"tests/astack/plan-tracker.test.ts",
+		"tests/plan-skill-text.test.ts"
 	],
 	"links": [
 		{
@@ -1240,6 +1242,18 @@
 		{
 			"criterion": "MR-brief-set",
 			"controls": ["mr-brief-set"]
+		},
+		{
+			"criterion": "PLAN-RECORD",
+			"controls": ["plan-record-stages"]
+		},
+		{
+			"criterion": "PLAN-CUT",
+			"controls": ["plan-cut-commands", "plan-cut-text"]
+		},
+		{
+			"criterion": "HANDOFF-COUNT",
+			"controls": ["handoff-names-no-count"]
 		}
 	]
 }

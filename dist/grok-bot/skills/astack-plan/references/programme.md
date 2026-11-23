@@ -1,129 +1,71 @@
 # Programme tier
 
-A programme is a destination that needs more than one milestone.
-It has an index and one brief for each block.
-Write a brief at most two sessions before its first session starts.
-Keep the decisions in the index, not in a map issue.
+A programme spans multiple milestones with an index and one brief per block.
+Write each brief at most two sessions ahead, and keep decisions in the index.
 
-## The index
+## Index and briefs
 
-`<plan dir>/<slug>/index.md` comes from `astack check-plan --template=programme`. Its sections are Context, Goal, Scope, Lanes, Decisions, Milestones, Not yet specified, Premises, Risks, Gates and Unresolved questions. Only Goal, Scope, Decisions, Milestones, Not yet specified and Unresolved questions are required.
+Start `<plan dir>/<slug>/index.md` from `astack check-plan --template=programme`.
+Required sections are Goal, Scope, Decisions, Milestones, Not yet specified and Unresolved questions.
 
 ```markdown
-## Lanes
-
-- a. Ingest. Files. services/ingest/.
-- b. Warehouse. Files. warehouse/.
-
 ## Milestones
 
 ### M1 Events land in staging within 10 minutes
 
 State. now
-Demo. An analyst sees a test event in the staging table 10 minutes after a click.
+Demo. An analyst sees a test event in staging 10 minutes after a click.
 Proof. `bun scripts/event-lag.ts --table staging`
 Depends on. None.
 Target. 2026-11-20
 Blocks.
-- B01 Stream events into the staging table. Lane. a. Brief. B01.md.
+- B01 Stream events into staging. Lane. a. Brief. B01.md.
 - B02 Model the staging table. Lane. b. Depends on. B01. Brief. stub.
 ```
 
-- A milestone is a state that a person can watch. `Demo.` is one sentence, and `Proof.` is one command.
-- `State.` is `now`, `next`, `later` or `exited`. One milestone is `now`. A wave is the milestone in progress, so a programme needs no wave unit.
-- A `now` milestone needs Demo, Proof and Blocks. A `later` milestone needs Demo and can carry Fog.
-- Each block bullet reads `B<nn> <outcome>. Lane. <x>. Depends on. <B handles>. Brief. <file|stub|done>.`. A lane must be under `## Lanes` when that section exists.
-- The index holds no status of blocks or sessions. The tracker holds it, and `astack board` shows it.
-- Over a `template.md` cap, move detail into the briefs.
-
-## Briefs
-
-A brief is a standard plan with `tier: brief`, `programme: <slug>` and `block: B<nn>`.
-Its sessions use the handles `B<nn>/S<n>`.
-A session can depend on a session of another block, such as `B03/S1`.
-The brief keeps no session log.
-Post the hand-off on the PR and the issue.
-
-The last session of a block moves its durable facts to ADRs or tests. Its PR deletes the brief and sets the block line to `Brief. done`.
+- One milestone is `now` (`State.` is `now`, `next`, `later` or `exited`).
+- Each block bullet reads `B<nn> <outcome>. Lane. <x>. Depends on. <B handles>. Brief. <file|stub|done>.`.
+- The index holds no live status. `astack board` derives it from the plan, tracker JSON and git.
+- A brief sets `tier: brief`, `programme: <slug>` and `block: B<nn>` with session handles `B<nn>/S<n>`.
+- The last session PR of a block moves durable facts to ADRs or tests, deletes the brief and sets `Brief. done`.
 
 ## Chart a programme
 
-1. Run S0 and S1 as for a standard plan.
-2. Name the destination in a first round. It fixes the scope.
-3. Grill breadth-first across the whole space. List the open decisions and the first sessions that can start now.
-4. When this finds no fog, drop to the standard tier. Log a `tier` trail row.
-5. Write the index. Put the fog under `## Not yet specified`.
-6. Write each open decision as an unresolved question with an interim default, in this form:
-
-```text
-3. <Question>? Recommended. <Interim default>, because <evidence>. Rejected. <Other answer and its cost>. Binds. B07/S2, B09. Decide by. M2.
-```
-
-Sessions build the interim default.
-Only a change to that default needs an answer.
-On export, each question with `Binds.` becomes a decision issue.
-It blocks the units that the question binds.
-
-7. Write the brief of each block that can start in the next two sessions.
-8. Start one background subagent with the S1 research brief of `stages.md` for each research question. Each one pushes a `research/<slug>-<topic>` branch and opens no PR.
-9. Stop. Charting settles no decision by hand.
+1. Run S0 and S1, name the destination in round 1, and grill breadth-first across the space.
+2. Drop to `standard` (log `tier` trail row) if no fog remains.
+3. Write the index, put fog under `## Not yet specified`, and write open decisions with `Recommended.`, `Rejected.`, `Binds.` and `Decide by.`.
+4. Sessions build the interim default until an answer changes it.
+5. When asked, file the map and each `Binds.` question through `astack-write-ticket` (Map template). Write keys back with `astack plan keys`.
+6. Write briefs for blocks starting in the next two sessions, run S1 research briefs for research questions, and stop.
 
 ## The map
 
-A map is one tracker issue with the label `wayfinder:map`.
-Its body uses the Map template of `astack-write-ticket`, and its children are decision issues.
-The tracker doc of the repo gives each command.
+A map is a `wayfinder:map` tracker issue using the Map template of `astack-write-ticket`, with decision issues as children.
 
 | Label | Who answers | Work |
 |---|---|---|
-| `wayfinder:grilling` | A person. This is the default | `astack-grilling` and `astack-domain-modeling` |
-| `wayfinder:prototype` | A person | The prototype playbook of `astack-mode` |
-| `wayfinder:research` | An agent alone | The S1 research brief of `stages.md` |
-| `wayfinder:task` | An agent alone, or a person with a checklist | The manual work that a decision needs first, such as an account |
+| `wayfinder:grilling` | Person (default) | `astack-grilling` and `astack-domain-modeling` |
+| `wayfinder:prototype` | Person | `astack-mode playbooks/prototype.md` |
+| `wayfinder:research` | Agent alone | S1 research brief (`stages.md`) |
+| `wayfinder:task` | Agent or person checklist | Prerequisite manual work |
 
-Never answer for a person.
-
-- Name each map and issue by its title as a link, also under Decisions so far.
-- Add the dependencies after the real issue numbers exist. Never write a placeholder such as `#<n>`, because it can link another issue.
-- A claim is an assignee. Assign the issue before any work, so that a parallel session skips it.
-- The frontier holds each open child with no assignee and no open blocker.
-- Do not cut fog into guessed issues. When an answer makes it precise, file its issue.
-- Write work past the destination under Scope with its reason. It never becomes an issue of this map.
-- Close an issue that is out of scope, with no line under Decisions so far.
+Never answer for a person. Assign an issue before work, add dependencies only after real issue numbers exist, and never cut fog into guessed issues.
 
 ## Work through a map
 
-Use this loop for a `wayfinder:map` issue that no plan holds.
-When its Notes name a plan, run `/astack-plan <slug>` instead.
+For a `wayfinder:map` issue with no plan (otherwise run `/astack-plan <slug>`):
 
-1. Read the map body, but not each child.
-2. Take the issue that the owner names, or the first issue of the frontier. Claim it.
-3. Do the work that its label names.
-4. Post the answer as a comment. Close the issue. Add one line to Decisions so far.
-5. File each issue that the answer makes precise. Remove its fog line.
+1. Read the map body and claim the named issue or first unblocked frontier issue.
+2. Do the work its label names, post the answer, close the issue, and add one line under Decisions so far.
+3. File newly concrete issues and clear their fog lines. Take one non-research issue per session.
 
-Take one decision issue in each session. Research issues are the exception.
-
-## Run the board
+## Board, milestone exit and close
 
 ```sh
 astack board <index> [--tracker <file|->] [--wip <n>]
 ```
 
-The board is a view that astack derives from the plan, the tracker JSON and git.
-Never commit it.
-
-- Drain first. When a PR of a session is open, merge or close it before a new launch.
-- The startable frontier holds each session with steps whose dependencies are done and that no question blocks.
-- The frontier comes longest tail first, so the session that unlocks the longest chain starts first.
-- The WIP cap is 5 sessions, or `plan.wip` in the profile. The board prints a start command for each free slot.
-- The board names each block whose brief to write next.
-- Merges stay behind the owner gates and the merge grant of the profile.
-
-## Milestone exit
-
-After all sessions of the `now` milestone merge, run the milestone exit of `upkeep.md`.
-
-## Close
-
-A programme closes when its last milestone exits. The last session PR deletes `<plan dir>/<slug>/`. Keep the ADRs and the glossary. Mark the tracker container complete.
+- Never commit the board output. Drain open session PRs before launching new sessions.
+- Launch startable sessions longest tail first up to WIP (5, or `plan.wip`), and write named briefs next.
+- Run `upkeep.md` Milestone exit when every session of `now` merges.
+- When the last milestone exits, the last session PR deletes `<plan dir>/<slug>/` and keeps ADRs and the glossary.
