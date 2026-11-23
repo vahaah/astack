@@ -960,7 +960,7 @@ describe("gh pr create and gh issue create", () => {
 		expect(context(run)).not.toContain("astack blocked");
 	});
 
-	test("[control:repo-origin] gh issue create with a --repo that names origin denies a heading gap, and another repo gets advice", () => {
+	test("[control:repo-origin-issue] gh issue create with a --repo that names origin denies a heading gap, and another repo gets advice", () => {
 		const repo = mkdtempSync(join(tmpdir(), "astack-hook-origin-"));
 		try {
 			git(repo, "init", "-q");

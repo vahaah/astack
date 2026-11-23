@@ -364,7 +364,7 @@ describe("the Cursor hook runner", () => {
 		).toEqual({ permission: "allow" });
 	});
 
-	test("[control:chain-deny-line] a denied chain names each step that did not run, as on Claude Code", () => {
+	test("[control:chain-deny-line-cursor] a denied chain names each step that did not run, as on Claude Code", () => {
 		const line = "Nothing in this command ran. It had 2 steps. git, echo.";
 		expect(
 			run(

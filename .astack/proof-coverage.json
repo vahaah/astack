@@ -16,7 +16,8 @@
 		"docs/reference/source-scan.md",
 		"docs/reference/pr-recipes.md",
 		"docs/reference/domain-record.md",
-		"docs/reference/review-stub.md"
+		"docs/reference/review-stub.md",
+		"docs/reference/hook-retries.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -99,7 +100,12 @@
 		"tests/astack/domain-effect-change.test.ts",
 		"tests/astack/check-effects-cli.test.ts",
 		"tests/property/grant-store.test.ts",
-		"tests/property/grant-monoid.test.ts"
+		"tests/property/grant-monoid.test.ts",
+		"tests/astack/staged-text.test.ts",
+		"tests/astack/pr-body.test.ts",
+		"tests/astack/skill-path.test.ts",
+		"tests/astack/headings.test.ts",
+		"tests/astack/check-cli.test.ts"
 	],
 	"links": [
 		{
@@ -976,6 +982,38 @@
 				"grant-save-fail",
 				"sg-grant-save-allows"
 			]
+		},
+		{
+			"criterion": "HR-staged",
+			"controls": ["body-file-staged", "hook-staged-body"]
+		},
+		{
+			"criterion": "HR-unread",
+			"controls": ["body-file-unread", "hook-unread-body"]
+		},
+		{
+			"criterion": "HR-conditional",
+			"controls": ["body-file-conditional", "hook-unread-body"]
+		},
+		{
+			"criterion": "HR-chain",
+			"controls": ["chain-deny-line", "chain-deny-line-cursor"]
+		},
+		{
+			"criterion": "HR-origin",
+			"controls": ["repo-origin", "repo-origin-issue"]
+		},
+		{
+			"criterion": "HR-skill-path",
+			"controls": ["skill-path-base-name", "card-route-paths"]
+		},
+		{
+			"criterion": "HR-ticket-text",
+			"controls": ["email-version-forms", "template-bug-headings"]
+		},
+		{
+			"criterion": "HR-pr-length",
+			"controls": ["pr-length-tables"]
 		}
 	]
 }
