@@ -23,7 +23,7 @@ Changed tool versions and a base move that changes CI remain blocked.
 `CiRecordsSafe` states that every `ci_proof` result has eligible inputs.
 `CurrentProofRequired` states that delivery still requires independent current proof.
 `MixedKeepsGates` states that a `ci_mixed` delivery has no red gate and a passing CI read-back.
-`delivery` means only that these two prerequisites hold. Other review and merge checks remain outside the model.
+`delivery` means only that these prerequisites hold. Other review and merge checks remain outside the model.
 The finite cases include four diff classes and eight record checks, with one invalid record check at a time.
 Tool equality, base movement, proof success, a red gate, and the read-back each have two values.
 The safety model claims no fairness, progress, eventual CI success, or full implementation refinement.

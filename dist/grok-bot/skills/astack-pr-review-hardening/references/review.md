@@ -154,7 +154,7 @@ With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_
 A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.
 A gate or comment finding has no severity, so it never becomes `deferred`.
 A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. Each iteration reproduces it again. It becomes `fixed` when the failure does not occur at `REVIEWED_HEAD`.
-When a plan covers the branch, send each `deferred` finding to `astack plan draft <slug>`. Otherwise, the final report and the PR comment name it.
+When a plan covers the branch, send each `deferred` finding to `astack plan draft <slug> <title> <why>`. Otherwise, the final report and the PR comment name it.
 
 ## Review-bot threads
 

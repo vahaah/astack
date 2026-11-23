@@ -204,7 +204,7 @@ With no `metrics`, the run reports `METRICS=UNAVAILABLE` and has no budget check
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `select` | `applicable` or `all` | `applicable` | `applicable` picks agents by what the diff changes. `all` runs every agent in `agents`. |
+| `select` | `applicable` or `all` | `applicable` | `applicable` picks agents by the diff and its rung. `all` runs every agent in `agents`. |
 | `agents` | list of strings | the five below | `pr-review-toolkit` agent names. |
 | `extra` | list of `{name, invoke, when}` | `[]` | More reviewers. `invoke` says how to run one, such as a Skill name or an Agent `subagent_type`. `when` says when it applies. |
 | `checklists` | list of `{path, use}` | `[]` | Repo files the reviewers and the checklist pass apply. `use` says which part applies. |
