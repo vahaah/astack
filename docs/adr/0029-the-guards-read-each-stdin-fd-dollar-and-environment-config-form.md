@@ -43,6 +43,7 @@ So such a shell after such a step is unreadable, also in a nested body.
 A digit word that a quote or an escape touches is no fd, as bash reads it.
 A step with a stdin redirect and a static `exec` or `eval` word makes the stdin of each step dynamic. A loop can run that step first.
 A bare shell in a text with `()` before `{` or `(` is unreadable, because a function of any name can feed it.
+A pipe stays open across a newline only when the stage after it holds no word, redirect, here-string or heredoc.
 
 ### D2. Each unknown `$` form is dynamic
 

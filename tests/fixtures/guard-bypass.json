@@ -51,6 +51,8 @@
 		{ "group": "stdin-source", "verdict": "deny", "command": "while true; do bash; exec -a x <setup.sh; done; git status", "steps": ["true", "bash [stdin]", "git status"] },
 		{ "group": "stdin-source", "verdict": "deny", "command": "for i in 1 2; do bash; eval : <setup.sh; done; git status", "steps": ["bash [stdin]", ":", "git status"] },
 		{ "group": "stdin-source", "verdict": "deny", "command": "a:b() { bash; }; a:b < setup.sh; git status", "steps": ["a:b", "bash [stdin]", "a:b", "git status"] },
+		{ "group": "stdin-source", "verdict": "deny", "command": "echo 'git status' | >/dev/null \nbash", "steps": ["echo git status", "bash [stdin]"] },
+		{ "group": "stdin-source", "verdict": "deny", "command": "echo 'git status' | 2>&1\nbash", "steps": ["echo git status", "bash [stdin]"] },
 		{ "group": "heredoc-fd", "verdict": "deny", "command": "bash 0<<'EOF'\ngit reset --hard\nEOF", "steps": ["git reset --hard"] },
 		{ "group": "heredoc-fd", "verdict": "deny", "command": "bash 3<<'EOF'\ngit status\nEOF", "steps": ["bash [stdin]"] },
 		{ "group": "heredoc-fd", "verdict": "deny", "command": "bash 3<<<'git status'", "steps": ["bash [stdin]"] },
