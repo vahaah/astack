@@ -527,15 +527,25 @@ function lostPaths(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
 	return session
-		? lost.filter((path) => {
-				const at = join(root, path.replace(/\/$/, ""));
-				return isRepoRoot(at) && !sessionRepo(at);
-			})
+		? lost.filter((path) => inUnboundRepo(root, path, sessionRepo))
 		: lost;
+}
+
+function inUnboundRepo(
+	root: string,
+	path: string,
+	sessionRepo: SessionRepoTest,
+): boolean {
+	const parts = path.replace(/\/$/, "").split("/");
+	return parts.some((_, at) => {
+		const folder = join(root, ...parts.slice(0, at + 1));
+		return isRepoRoot(folder) && !sessionRepo(folder);
+	});
 }
 
 function extractionReaches(root: string, nested: string): boolean {
 	const path = nested.replace(/\/$/, "");
+	const folder = `${path.toLowerCase()}/`;
 	const held = runGit(root, [
 		...READ_ONLY_GIT,
 		"ls-tree",
@@ -543,17 +553,22 @@ function extractionReaches(root: string, nested: string): boolean {
 		"--name-only",
 		"-z",
 		"HEAD",
-		"--",
-		path,
 	]);
 	const status = runGit(join(root, path), [
 		...READ_ONLY_GIT,
 		"status",
 		"--porcelain=v1",
 		"-z",
+		"--ignored",
 	]);
 	return (
-		!held.ok || held.stdout.length > 0 || !status.ok || status.stdout.length > 0
+		!held.ok ||
+		held.stdout
+			.toString("utf8")
+			.split("\0")
+			.some((tracked) => `${tracked.toLowerCase()}/`.startsWith(folder)) ||
+		!status.ok ||
+		status.stdout.length > 0
 	);
 }
 
@@ -629,23 +644,12 @@ function tarExtracts(step: ShellStep): boolean {
 const TAR_HERE =
 	/^(?:-|-?[fkmopvx]+|--(?:extract|get|verbose|keep-old-files|file(?:=-)?))$/;
 
-const ARCHIVES_ELSEWHERE = [
-	"--prefix",
-	"--remote",
-	"--add-file",
-	"--add-virtual-file",
-];
-
-function archivesHere(step: ShellStep, git: GitInvocation): boolean {
+function archivesHead(step: ShellStep, tar: ShellStep): boolean {
 	return (
-		!step.words.some((word) => word.dynamic) &&
-		git.args.every((arg) =>
-			arg.startsWith("-")
-				? !ARCHIVES_ELSEWHERE.some((flag) =>
-						isLongForm(arg.split("=")[0] ?? "", flag),
-					)
-				: !arg.includes(":"),
-		)
+		step.env.length === 0 &&
+		step.dir === tar.dir &&
+		step.words.every((word) => !word.dynamic) &&
+		step.values.join(" ") === "git archive HEAD"
 	);
 }
 
@@ -681,7 +685,7 @@ function extractReasons(
 		return [
 			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
 		];
-	const exempt = extractsHere(step) && archivesHere(previous, source.git);
+	const exempt = extractsHere(step) && archivesHead(previous, step);
 	return lossReasons(
 		command,
 		{ lost: "tracked", pathspecs: WHOLE_TREE, reachesNestedRepos: exempt },

@@ -67,6 +67,11 @@ Amended 2026-11-23. The `git archive` step must stay in the tree of the repo too
 With the exemption, the extraction keeps each dirty nested repo and submodule that has no bound record.
 It also keeps each nested repo where HEAD holds a path. A clean nested repo where HEAD holds no path passes, because `tar` writes only the paths of HEAD.
 
+Amended 2026-11-23, after the security review of B37. Only `git archive HEAD` with no other word, in the folder of the `tar` step, keeps the exemption.
+The match of a HEAD path with a nested repo ignores case, because a file system can ignore case.
+A nested repo with an ignored file counts as reached.
+A lost path in a folder of a nested repo with no bound record keeps the deny.
+
 ### D4. A record starts pending, and the next shell call settles it
 
 A new record is pending, because the hook cannot see whether the command ran.

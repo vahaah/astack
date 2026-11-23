@@ -1305,8 +1305,10 @@ describe("a repo that this session made", () => {
 		"git archive --add-file=extra.txt HEAD | tar -xf -",
 		"git archive --add-virtual-file=a.txt:x HEAD | tar -xf -",
 		"git archive HEAD:docs | tar -xf -",
+		"git -C ../other archive HEAD | tar -xf -",
+		"git archive --format=tar HEAD | tar -xf -",
 	])(
-		"[control:sg-session-repo-archive] %s gets no session exemption, because the archive step can write outside the tree of the repo",
+		"[control:sg-session-repo-archive] %s gets no session exemption, because only git archive HEAD in the folder of tar stays in the tree of the repo",
 		(command) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
@@ -1340,6 +1342,51 @@ describe("a repo that this session made", () => {
 		expect(said).toContain("vendor/lib/");
 		expect(said).toContain("sub");
 	});
+
+	test.each<[string, (dir: string, nested: string) => void]>([
+		[
+			"a HEAD path that names the nested repo in another case",
+			(dir) => {
+				const blob = spawnSync("git", ["hash-object", "-w", "--stdin"], {
+					cwd: dir,
+					input: "x\n",
+					encoding: "utf8",
+				}).stdout.trim();
+				git(
+					dir,
+					"update-index",
+					"--add",
+					"--cacheinfo",
+					`100644,${blob},vendor/lib/b.txt`,
+				);
+				git(dir, "commit", "-q", "-m", "held");
+			},
+		],
+		[
+			"an ignored file in the nested repo",
+			(_, nested) => {
+				write(nested, { ".gitignore": "x.log\n" });
+				git(nested, "add", ".gitignore");
+				git(nested, "commit", "-q", "-m", "ignore");
+				write(nested, { "x.log": "x\n" });
+			},
+		],
+	])(
+		"git archive HEAD | tar -xf - keeps a clean nested repo with %s in a session repo",
+		(_, prepare) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			const nested = join(dir, "Vendor/lib");
+			dirtyRepoAt(nested);
+			git(nested, "add", ".");
+			git(nested, "commit", "-q", "-m", "b");
+			expect(sessionRun("git status", dir, state).kind).toBe("allow");
+			prepare(dir, nested);
+			expect(
+				reason(sessionRun("git archive HEAD | tar -xf -", dir, state)),
+			).toMatch(/[Vv]endor\/lib\//);
+		},
+	);
 
 	test("git archive HEAD | tar -xf - passes in a session repo with a clean nested repo that HEAD does not hold, because tar cannot reach it", () => {
 		const { dir, state } = fresh("made");
