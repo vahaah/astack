@@ -155,6 +155,22 @@ describe("astack check-pr", () => {
 		expect(run.out).toBe(out);
 	});
 
+	test("[control:pr-length-tables] a long body with tables and code counts their lines and names one PR comment", () => {
+		const table = [
+			"| Run | Result |",
+			"|---|---|",
+			..."abcdefghijkl".split("").map((run) => `| ${run} | pass |`),
+		];
+		const code = ["```text", "one", "| not a row |", "```"];
+		const body = ["## Summary", ...table, ...code, ..."x".repeat(31).split("")];
+		expect(body.length).toBe(50);
+		const run = astack(["check-pr", "-"], `${body.join("\n")}\n`);
+		expect(run.code).toBe(0);
+		expect(run.out).toBe(
+			"note: PR body has 50 lines, over the 40 lines of astack:write-docs. It has 14 table rows and 2 code lines. Post the tables and code blocks in one PR comment, and link that comment from Verification.\nok: PR body has every heading from the repo's PR templates\n",
+		);
+	});
+
 	test.each(["write-docs/SKILL.md", "write-docs/references/pr-and-commits.md"])(
 		"the PR body line limit of %s is the limit of check-pr",
 		(file) => {
