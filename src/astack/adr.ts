@@ -159,9 +159,8 @@ function proofSpans(text: string): readonly Span[] {
 	let decision = "-";
 	headings.forEach((heading, at) => {
 		if (heading.level <= 3) decision = DECISION.exec(heading.line)?.[1] ?? "-";
-		const until = (level: number) =>
-			headings.slice(at + 1).find((next) => next.level <= level)?.index ??
-			lines.length;
+		const until = (ends: (next: (typeof headings)[number]) => boolean) =>
+			headings.slice(at + 1).find(ends)?.index ?? lines.length;
 		if (
 			heading.level === 4 &&
 			PROOF_TITLES.some((title) => title === heading.title)
@@ -169,10 +168,14 @@ function proofSpans(text: string): readonly Span[] {
 			spans.push({
 				key: `${decision} ${heading.title}`,
 				start: heading.index,
-				end: until(4),
+				end: until((next) => next.level <= 4),
 			});
 		if (heading.level === 2 && KEPT_PARTS.has(heading.title))
-			spans.push({ key: heading.title, start: heading.index, end: until(2) });
+			spans.push({
+				key: heading.title,
+				start: heading.index,
+				end: until((next) => next.level <= 2 || DECISION.test(next.line)),
+			});
 	});
 	return spans;
 }

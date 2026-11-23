@@ -295,6 +295,17 @@ test.each<[string, (text: string) => string | undefined, number[]]>([
 		[25],
 	],
 	[
+		"a decision appended after the Invariant audit table",
+		(text) =>
+			insertAfter(text, "| `AdmitSafe` | restates |", [
+				"",
+				"### D9. Each PR merges with no review",
+				"",
+				"A PR merges when CI is green.",
+			]),
+		[38, 40],
+	],
+	[
 		"a changed Invariant audit row",
 		(text) => text.replace("| restates |", "| independent |"),
 		[],
