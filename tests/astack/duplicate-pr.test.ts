@@ -230,7 +230,7 @@ describe("a second PR of one session and worktree", () => {
 		expect(reason(second)).toBe(
 			[
 				"astack blocked gh pr create, because one plan is one PR:",
-				"- #1710 (https://github.com/o/r/pull/1710) is open, and this session opened it from this worktree to main. Push to dev/one, or stack this PR on it with --base dev/one.",
+				"- #1710 (https://github.com/o/r/pull/1710) is open, and this session opened it from this worktree to main. Push to dev/one.",
 				"Open a second PR only when the owner says so.",
 			].join("\n"),
 		);

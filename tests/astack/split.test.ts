@@ -67,11 +67,11 @@ describe("the one-PR reasons of a create", () => {
 		},
 	);
 
-	test("a Part of reason says to push to the open branch or to stack on it", () => {
+	test("a Part of reason says to push to the open branch and shows no stacked PR", () => {
 		expect(
 			sessionReasons(created("Part of #1710"), NO_SESSION_PRS, [FIRST]),
 		).toEqual([
-			"#1710 (https://github.com/o/r/pull/1710) is open, and the Part of line of this PR links it. Push to dev/one, or stack this PR on it with --base dev/one.",
+			"#1710 (https://github.com/o/r/pull/1710) is open, and the Part of line of this PR links it. Push to dev/one.",
 		]);
 	});
 

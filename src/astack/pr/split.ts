@@ -104,7 +104,7 @@ export function sessionReasons(
 		return cause === undefined
 			? []
 			: [
-					`#${one.number} (${one.url}) is open, and ${cause}. Push to ${one.head}, or stack this PR on it with --base ${one.head}.`,
+					`#${one.number} (${one.url}) is open, and ${cause}. Push to ${one.head}.`,
 				];
 	});
 }
