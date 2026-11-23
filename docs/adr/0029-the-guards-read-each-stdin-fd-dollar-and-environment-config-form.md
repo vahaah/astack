@@ -82,6 +82,8 @@ A working-tree change under the target is a hook skip.
 
 The record stops an agent that pushes red work past the hooks by mistake.
 An agent can still write the record with a tool that the hook does not read.
+A `cp`, `mv`, `rsync` or `tar` step into a parent folder of a record folder also passes, because the hook reads only a path in the record folder.
+Such a step must bring a folder named `gates` or `session-repos`, so it is no plausible mistake.
 It can also edit the profile and run the gates with `--base HEAD`.
 Branch protection, CI and the review of the owner stay the control for a hostile agent.
 
