@@ -2,7 +2,6 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { runGit } from "../git.ts";
 import { err, ok, type Result } from "../result.ts";
-import { parseTrail } from "./check.ts";
 import type { TrailRow } from "./types.ts";
 
 export const TRAIL_KINDS = [
@@ -133,6 +132,24 @@ export function parseTrailBatch(text: string): Result<TrailCells[], string> {
 		rows.push(cells);
 	}
 	return ok(rows);
+}
+
+export function parseTrail(text: string): TrailRow[] {
+	return text
+		.split(/\r?\n/)
+		.slice(1)
+		.filter((line) => line.trim() !== "")
+		.map((line) => {
+			const [
+				ts = "",
+				phase = "",
+				decision = "",
+				why = "",
+				evidence = "",
+				result = "",
+			] = line.split("\t");
+			return { ts, phase, decision, why, evidence, result };
+		});
 }
 
 export function readTrail(path: string | undefined): TrailRow[] | undefined {
