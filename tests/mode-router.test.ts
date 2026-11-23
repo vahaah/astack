@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import {
+	measure,
+	scenarios,
+	workingTree,
+} from "../scripts/skill-load-report.ts";
 import { rowFor } from "./supervision-text.test.ts";
 
 const ROOT = join(import.meta.dir, "..");
@@ -72,11 +77,56 @@ const RULE_HOMES: readonly RuleHome[] = [
 	},
 	{
 		phrase: "Record the grant",
-		home: `${MODE}/references/delegation.md`,
+		home: `${MODE}/SKILL.md`,
 	},
 	{
 		phrase: "Continue to the next step",
-		home: `${MODE}/references/delegation.md`,
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase:
+			"Every change follows [the required proof contract](references/change-proof.md)",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "name each principle that shaped a decision",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "A delegation grant never removes harness restrictions",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Always pause for these irreversible writes",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "this doesn't earn its place",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Write short declarative sentences with one thought each",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Keep a checkpoint reply to 6 lines or fewer",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Owner gates always stop work",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Copy the matched playbook's steps into the task list",
+		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase: "Without astack fallback lines in Triggers",
+		cut: "astack-only triggers omit without-astack fallback clauses",
+	},
+	{
+		phrase: "`astack:comment-judge` holds the comment rules",
+		home: `${MODE}/SKILL.md`,
 	},
 	{
 		phrase: "The plan, the tracker and git hold the state",
@@ -239,5 +289,44 @@ describe("mode router routes and rule homes", () => {
 		const subagents = read(`${MODE}/references/subagents.md`);
 		expect(subagents).toContain("worker.md");
 		expect(rowFor(subagents, "Prompt")).toMatch(/mode folder/i);
+	});
+
+	test("[control:mr-delegate-set] the delegate scenario lists SKILL.md and worker.md at or under 2,000 words, and SKILL.md stays at or under 1,700", () => {
+		const list = scenarios("", () => undefined);
+		const delegate = list.find(
+			(scenario) => scenario.name === "mode delegate or unclear role",
+		);
+		expect(delegate?.after).toEqual([
+			`${MODE}/SKILL.md`,
+			`${MODE}/references/worker.md`,
+		]);
+		const skillWords = measure(read(`${MODE}/SKILL.md`)).words;
+		const workerWords = measure(read(`${MODE}/references/worker.md`)).words;
+		expect(skillWords).toBeLessThanOrEqual(1700);
+		expect(skillWords + workerWords).toBeLessThanOrEqual(2000);
+		const current = workingTree(ROOT);
+		expect(delegate?.after.every((path) => current(path) !== undefined)).toBe(
+			true,
+		);
+	});
+
+	test("[control:mr-principle-index] mode SKILL.md lists each of the 24 principle references once, and principles SKILL.md lists none", () => {
+		const names = readdirSync(
+			join(ROOT, "marketplace/plugins/astack/skills/principles/references"),
+		)
+			.filter((name) => name.endsWith(".md"))
+			.map((name) => name.slice(0, -3))
+			.sort();
+		expect(names.length).toBe(24);
+		const modeSkill = read(`${MODE}/SKILL.md`);
+		const principlesSkill = read(
+			"marketplace/plugins/astack/skills/principles/SKILL.md",
+		);
+		const missing = names.filter(
+			(name) => modeSkill.split(`\`${name}\``).length - 1 !== 1,
+		);
+		expect(missing).toEqual([]);
+		const leaked = names.filter((name) => principlesSkill.includes(name));
+		expect(leaked).toEqual([]);
 	});
 });

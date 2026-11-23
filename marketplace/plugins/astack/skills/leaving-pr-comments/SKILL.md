@@ -45,7 +45,7 @@ So the astack rule against emoji and bold labels does not apply to it.
 - Cite the code, the behavior, the check or the reproduction that supports it.
 - Keep it short. Leave out thanks, filler and status reports.
 - Keep verified facts apart from judgment.
-- Write it in STE. Follow `references/writing-the-reply.md` of `astack:mode`.
+- Write it in STE. Follow Replies of `astack:mode`.
 
 ## Post it
 
