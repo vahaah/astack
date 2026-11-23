@@ -148,7 +148,7 @@ State. later
 Demo. The delegate read set has at most 2,000 words, and the budget gate reports at most 98,100 skill words.
 Depends on. M3, M5.
 Blocks.
-- B31 The mode skill becomes a router of about 20,000 words, and each delegate reads a worker card of at most 300 words. Lane. e. Depends on. B14, B15, B16. Brief. stub.
+- B31 The mode skill becomes a router of about 20,000 words, and each delegate reads a worker card of at most 300 words. Lane. e. Depends on. B14, B15, B16. Brief. B31.md.
 - B32 The coding rules get short, and the types skill holds the law rules. Lane. e. Depends on. B28. Brief. stub.
 - B33 The plan skill centers on the domain record in about 8,000 words. It cuts `plan export` and its `kind:programme` label, and the hand-off comment drops its question count. Lane. e. Depends on. B22, B28. Brief. stub.
 - B34 The tstack entry points fold on zero use only. Lane. e. Depends on. B31. Brief. stub.
