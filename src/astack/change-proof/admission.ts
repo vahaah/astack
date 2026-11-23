@@ -1,4 +1,4 @@
-import { adrProse, decisionSpan } from "../adr.ts";
+import { adrProse, adrStatus, decisionSpan, PROOF_TITLES } from "../adr.ts";
 import type { DomainBlock } from "../domain/notation.ts";
 import {
 	type ContextsCard,
@@ -258,18 +258,25 @@ function adrMetadata(
 	decision: string,
 	expected: "Accepted" | "Proposed",
 ): Check {
-	const prose = adrProse(text);
-	const statuses = [
-		...prose.matchAll(/^(?:Status:|-\s+\*\*Status:\*\*)[ \t]*(.*?)[ \t]*$/gm),
-	].map((match) => match[1] ?? "");
-	const [status] = statuses;
-	if (status === undefined) return fail(`${file} has no Status line`);
-	if (statuses.length !== 1) return fail(`${file} has multiple Status lines`);
-	if (
-		!new RegExp(`^${expected}(?:[ \\t]+·[ \\t]+\\S(?:.*\\S)?)?$`).test(status)
-	)
+	const status = adrStatus(text);
+	if (!status.ok)
+		switch (status.error.kind) {
+			case "missing":
+				return fail(`${file} has no Status line`);
+			case "multiple":
+				return fail(`${file} has multiple Status lines`);
+			case "unknown":
+				return fail(
+					`${file} has status ${JSON.stringify(status.error.text)}, not ${expected}`,
+				);
+			default: {
+				const unreachable: never = status.error;
+				return unreachable;
+			}
+		}
+	if (status.value.lifecycle.kind !== expected)
 		return fail(
-			`${file} has status ${JSON.stringify(status)}, not ${expected}`,
+			`${file} has status ${JSON.stringify(status.value.text)}, not ${expected}`,
 		);
 	const span = decisionSpan(text, decision);
 	if (span === undefined)
@@ -278,13 +285,6 @@ function adrMetadata(
 		? fail(`${file} has no nonempty ${decision} decision text`)
 		: PASS;
 }
-
-const PROOF_TITLES = [
-	"Formal claim",
-	"Category composition",
-	"Implementation correspondence",
-	"Verification",
-] as const;
 
 function sectionBodies(text: string, title: string): readonly string[] {
 	const prose = adrProse(text);
