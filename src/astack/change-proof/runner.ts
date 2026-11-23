@@ -13,6 +13,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
+import type { Env } from "../process.ts";
 import { runProcess } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import { isInside } from "./candidate.ts";
@@ -29,8 +30,6 @@ export const TLC_PIN = {
 export const DEADLINE_CAP_MS = 60_000;
 const OUTPUT_CAP_BYTES = 16 * 1024 * 1024;
 const MINIMUM_JAVA = 17;
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type Checker = {
 	readonly jar: Uint8Array;

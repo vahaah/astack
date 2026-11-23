@@ -10,7 +10,7 @@ import {
 	statSync,
 } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
-import { type GitResult, runGit } from "../git.ts";
+import { type GitResult, gitText, runGit } from "../git.ts";
 import { runProcess } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import type {
@@ -46,15 +46,6 @@ export function gitLines(
 			.split("\0")
 			.filter((path) => path !== ""),
 	);
-}
-
-export function gitText(
-	root: string,
-	args: readonly string[],
-	reader: typeof runGit = runGit,
-): string | undefined {
-	const result = reader(root, [...args]);
-	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
 }
 
 export function resolveCommit(

@@ -14,10 +14,9 @@ import { nonEmpty, runGit } from "./git.ts";
 import { MANAGED_PATHS } from "./managed.ts";
 import type { GitPorts } from "./ports.ts";
 import type { ProfileGate, ToolVersion } from "./pr-review-profile.ts";
+import type { Env } from "./process.ts";
 import { runProcess } from "./process.ts";
 import { sessionFileName, stateDir } from "./state.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type GateOutcome =
 	| { readonly kind: "passed" }

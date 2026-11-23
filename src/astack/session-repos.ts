@@ -9,10 +9,9 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { READ_ONLY_GIT } from "./git.ts";
 import { type FolderId, readOptional, realFile } from "./paths.ts";
 import type { FilePorts, GitPorts, Ports } from "./ports.ts";
+import type { Env } from "./process.ts";
 import { err, ok, type Result } from "./result.ts";
 import { sessionFileName, stateDir } from "./state.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type FolderIdentity = {
 	readonly device: string;

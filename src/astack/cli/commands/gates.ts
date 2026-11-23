@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	gateLabel,
@@ -8,8 +7,9 @@ import {
 	runGates,
 	saveGateRecord,
 } from "../../gates.ts";
-import { repoRoot, runGit } from "../../git.ts";
+import { gitText, repoRoot } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
+import { readOptional } from "../../paths.ts";
 import { processPorts } from "../../ports.ts";
 import { parseProfile, profileGates } from "../../pr-review-profile.ts";
 import { valueAfter } from "../args.ts";
@@ -17,19 +17,6 @@ import type { Command } from "../command.ts";
 import { type Io, usageError } from "../io.ts";
 
 const NAME = "astack gates run";
-
-function gitText(root: string, args: string[]): string | undefined {
-	const result = runGit(root, args);
-	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
-}
-
-function readProfile(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
 
 function runAll(args: readonly string[], io: Io): number {
 	const base = valueAfter(args, "--base");
@@ -39,7 +26,7 @@ function runAll(args: readonly string[], io: Io): number {
 	if (root === undefined)
 		return usageError(io, `${NAME}: ${io.cwd} is not in a git repository`);
 	const path = join(root, MANAGED_PATHS.reviewProfile);
-	const text = readProfile(path);
+	const text = readOptional(path);
 	if (text === undefined)
 		return usageError(io, `${NAME}: ${path} does not exist`);
 	const profile = parseProfile(text);

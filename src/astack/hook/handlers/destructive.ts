@@ -13,6 +13,7 @@ import {
 } from "../../git-command.ts";
 import { realFile, toPosix } from "../../paths.ts";
 import type { FilePorts, GitPorts, Ports } from "../../ports.ts";
+import type { Env } from "../../process.ts";
 import {
 	isSessionRepo,
 	rememberRepos,
@@ -27,7 +28,6 @@ import {
 	combineAll,
 	defineHandler,
 	deny,
-	type Env,
 	type Verdict,
 } from "../events.ts";
 

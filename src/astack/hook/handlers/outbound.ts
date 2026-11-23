@@ -14,6 +14,7 @@ import {
 	type Visibility,
 	visibilityWithGh,
 } from "../../pr/github.ts";
+import type { Env } from "../../process.ts";
 import { PUBLIC_REPO } from "../../public-repo.ts";
 import { type StagedText, shellSteps } from "../../shell.ts";
 import { stagedReader } from "../body-reader.ts";
@@ -23,7 +24,6 @@ import {
 	combineAll,
 	defineHandler,
 	deny,
-	type Env,
 	type EventOf,
 	type Handler,
 	projectDirOf,

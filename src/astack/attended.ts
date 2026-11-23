@@ -1,5 +1,4 @@
-type Env = Readonly<Record<string, string | undefined>>;
-
+import type { Env } from "./process.ts";
 export function unattendedReason(env: Env): string | undefined {
 	if (env.CLAUDE_CODE_SESSION_ATTENDED === "0")
 		return "CLAUDE_CODE_SESSION_ATTENDED=0";

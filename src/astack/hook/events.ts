@@ -1,6 +1,7 @@
 import type { Region } from "../comments/added.ts";
 import type { HookGroup, HookPolicy } from "../hook-profile.ts";
 import type { Ports } from "../ports.ts";
+import type { Env } from "../process.ts";
 
 export const TOOLS = ["claude-code", "cursor"] as const;
 export type Tool = (typeof TOOLS)[number];
@@ -69,8 +70,6 @@ export type Verdict =
 	| { readonly kind: "note"; readonly text: string }
 	| { readonly kind: "deny"; readonly reason: string }
 	| { readonly kind: "continue"; readonly prompt: string };
-
-export type Env = Readonly<Record<string, string | undefined>>;
 
 export type Context = {
 	readonly tool: Tool;

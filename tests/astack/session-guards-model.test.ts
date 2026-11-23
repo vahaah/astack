@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { saveGateRecord } from "../../src/astack/gates.ts";
 import { gitInvocation } from "../../src/astack/git-command.ts";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
-import type { Context, Env, Handler } from "../../src/astack/hook/events.ts";
+import type { Context, Handler } from "../../src/astack/hook/events.ts";
 import {
 	handler as destructive,
 	type Treeish,
@@ -17,6 +17,7 @@ import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { isScratchPath } from "../../src/astack/paths.ts";
 import { processPorts } from "../../src/astack/ports.ts";
 import type { ReadPullRequest } from "../../src/astack/pr/github.ts";
+import type { Env } from "../../src/astack/process.ts";
 import {
 	AUTHORITY,
 	type Change,

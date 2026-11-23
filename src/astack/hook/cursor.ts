@@ -10,6 +10,7 @@ import {
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { hookPolicy } from "../hook-profile.ts";
 import type { FilePorts, Ports } from "../ports.ts";
+import type { Env } from "../process.ts";
 import { sectionOf } from "../profile.ts";
 import { sessionFileName, stateDir } from "../state.ts";
 import {
@@ -32,7 +33,6 @@ import {
 	type Context,
 	combineAll,
 	continueWith,
-	type Env,
 	type Handler,
 	message,
 	type Verdict,

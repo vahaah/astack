@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { DOMAIN_GRAMMAR } from "../../../domain/notation.ts";
 import { repoRoot, runGit } from "../../../git.ts";
+import { readOptional } from "../../../paths.ts";
 import { briefLines, daysOld, readPlan } from "../../../plan/brief.ts";
 import {
 	checkAgainstBase,
@@ -193,7 +193,7 @@ function checkAs(
 			"astack check-plan: --as takes one plan text, a file or - for stdin",
 		);
 	const text =
-		source === "-" ? io.input?.() : readPlanText(resolve(io.cwd, source));
+		source === "-" ? io.input?.() : readOptional(resolve(io.cwd, source));
 	if (text === undefined)
 		return usageError(io, `astack check-plan: cannot read ${source}`);
 	const root = repoRoot(io.cwd) ?? io.cwd;
@@ -210,14 +210,6 @@ function checkAs(
 		file: as,
 	}));
 	return report(io, args, findings, [], 1);
-}
-
-function readPlanText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
 }
 
 export const command: Command = {

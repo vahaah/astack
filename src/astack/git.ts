@@ -34,8 +34,9 @@ export function runGit(
 export function gitText(
 	cwd: string,
 	args: readonly string[],
+	run: (cwd: string, args: readonly string[]) => GitResult = runGit,
 ): string | undefined {
-	const result = runGit(cwd, args);
+	const result = run(cwd, args);
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
 }
 

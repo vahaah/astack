@@ -4,7 +4,6 @@ import {
 	lstatSync,
 	mkdirSync,
 	readdirSync,
-	readFileSync,
 	realpathSync,
 	rmSync,
 	symlinkSync,
@@ -31,6 +30,7 @@ import {
 } from "../../src/astack/commit-style.ts";
 import { SETUP_BRANCH } from "../../src/astack/init.ts";
 import { managedList, RETIRED_PATHS } from "../../src/astack/managed.ts";
+import { readOptional } from "../../src/astack/paths.ts";
 import {
 	type ProfileGate,
 	parseProfile,
@@ -225,14 +225,6 @@ export function locateConflict(
 		: { ...conflict, found: "moved", foundLine: index + 1 };
 }
 
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
-
 const HOOK_VERDICT_TEXT: Record<HookVerdict, string> = {
 	deny: "deny. The astack hook blocks the mandated form at the first edit.",
 	advisory:
@@ -253,7 +245,10 @@ function printConflicts(project: ProjectConfig, repo: string, log: Log): void {
 	);
 	log();
 	for (const conflict of project.commentConflicts) {
-		const check = locateConflict(conflict, readText(join(repo, conflict.file)));
+		const check = locateConflict(
+			conflict,
+			readOptional(join(repo, conflict.file)),
+		);
 		const where =
 			check.found === "at-line"
 				? `${conflict.file}:${conflict.line}`
@@ -414,7 +409,7 @@ async function printFlowConfig(
 	log();
 	const target = instructionFileFor(root);
 	const hasBlock =
-		readText(join(root, target))?.includes("## Agent skills") ?? false;
+		readOptional(join(root, target))?.includes("## Agent skills") ?? false;
 	log(
 		`Proposed edit apply does not make: harnesses that do not read .claude/rules find the same pointers only in ${target}. ${hasBlock ? "Replace the contents of its existing Agent skills section with this block:" : "Add this block to it:"}`,
 	);
@@ -461,7 +456,7 @@ function printCiParity(
 		return [];
 	}
 	const read = readWorkflows(readTextFiles(tree, workflowPaths(tree)), (path) =>
-		readText(join(tree, path)),
+		readOptional(join(tree, path)),
 	);
 	const report = checkCiParity({
 		workflows: read.workflows,
@@ -508,7 +503,7 @@ async function printEnvFiles(
 	const apps = envApps(
 		await trackedPaths(tree, [":(glob)**/.env*"]),
 		(dir) =>
-			packageScripts(dir, readText(join(tree, dir, "package.json")))?.name,
+			packageScripts(dir, readOptional(join(tree, dir, "package.json")))?.name,
 	);
 	const candidates = [
 		...new Set([
@@ -532,14 +527,17 @@ async function printEnvFiles(
 	const packages = (await trackedPaths(tree, [":(glob)**/package.json"]))
 		.filter((path) => !path.includes("node_modules/"))
 		.flatMap((path) => {
-			const entry = packageScripts(dirname(path), readText(join(tree, path)));
+			const entry = packageScripts(
+				dirname(path),
+				readOptional(join(tree, path)),
+			);
 			return entry === undefined ? [] : [entry];
 		});
 	const problems = envFileGaps(
 		apps,
 		gates,
 		new Set(ignored.split("\n").filter(Boolean)),
-		{ packages, read: (path) => readText(join(tree, path)) },
+		{ packages, read: (path) => readOptional(join(tree, path)) },
 	);
 	log("## Env files that a gate reads");
 	log();
@@ -561,15 +559,18 @@ async function printTaskCache(
 	const packages = (await trackedPaths(tree, [":(glob)**/package.json"]))
 		.filter((path) => !path.includes("node_modules/"))
 		.flatMap((path) => {
-			const entry = packageScripts(dirname(path), readText(join(tree, path)));
+			const entry = packageScripts(
+				dirname(path),
+				readOptional(join(tree, path)),
+			);
 			return entry === undefined ? [] : [entry];
 		});
 	const problems = taskCacheGaps(
 		{
 			packages,
 			uncached: uncachedTasks(
-				readText(join(tree, "turbo.json")) ??
-					readText(join(tree, "turbo.jsonc")),
+				readOptional(join(tree, "turbo.json")) ??
+					readOptional(join(tree, "turbo.jsonc")),
 			),
 		},
 		gates,
@@ -592,11 +593,14 @@ async function printPlatformTools(
 	const packages = (await trackedPaths(tree, [":(glob)**/package.json"]))
 		.filter((path) => !path.includes("node_modules/"))
 		.flatMap((path) => {
-			const entry = packageScripts(dirname(path), readText(join(tree, path)));
+			const entry = packageScripts(
+				dirname(path),
+				readOptional(join(tree, path)),
+			);
 			return entry === undefined ? [] : [entry];
 		});
 	const problems = platformToolGaps(
-		{ packages, read: (path) => readText(join(tree, path)) },
+		{ packages, read: (path) => readOptional(join(tree, path)) },
 		gates,
 	);
 	log("## Tools that only one platform ships");
@@ -624,7 +628,7 @@ async function printCitations(
 		.split("\0")
 		.filter(Boolean)
 		.flatMap((path) => {
-			const text = readText(join(tree, path));
+			const text = readOptional(join(tree, path));
 			return text === undefined ? [] : [{ path, text }];
 		});
 	log("## Decision citations in the repo");
@@ -657,7 +661,7 @@ async function printLineCitations(
 		.split("\0")
 		.filter(Boolean)
 		.flatMap((path) => {
-			const text = readText(join(tree, path));
+			const text = readOptional(join(tree, path));
 			return text === undefined ? [] : [{ path, text }];
 		});
 	const problems = managedLineCitations(files, managed);
@@ -680,7 +684,7 @@ async function printRewrites(
 	const packages = [...tracked]
 		.filter((path) => basename(path) === "package.json")
 		.flatMap((path) => {
-			const found = writerPackage(path, readText(join(tree, path)));
+			const found = writerPackage(path, readOptional(join(tree, path)));
 			return found === undefined ? [] : [found];
 		});
 	const scripts = [...tracked]
@@ -689,7 +693,10 @@ async function printRewrites(
 				basename(path) === "package.json" && !path.includes("node_modules/"),
 		)
 		.flatMap((path) => {
-			const entry = packageScripts(dirname(path), readText(join(tree, path)));
+			const entry = packageScripts(
+				dirname(path),
+				readOptional(join(tree, path)),
+			);
 			return entry === undefined ? [] : [entry];
 		});
 	const problems = [
@@ -818,7 +825,7 @@ async function reportOnly(
 		project,
 		(path) =>
 			wouldBe.find((artifact) => artifact.path === path)?.content ??
-			readText(join(repo, path)),
+			readOptional(join(repo, path)),
 		log,
 	);
 	log("## Gates to run once writes are allowed");
@@ -936,7 +943,9 @@ async function planSettings(
 	if (remoteError !== undefined) {
 		return { status: "refused", reason: `${marketplaceRepo}: ${remoteError}` };
 	}
-	const parsed = parseSettings(readText(join(copy, ".claude/settings.json")));
+	const parsed = parseSettings(
+		readOptional(join(copy, ".claude/settings.json")),
+	);
 	if (!parsed.ok) return { status: "refused", reason: parsed.reason };
 	const merged = mergeMarketplaceWiring(parsed.value, marketplaceRepo);
 	if (!merged.ok) return { status: "refused", reason: merged.reason };
@@ -953,7 +962,7 @@ async function planSettings(
 }
 
 function bunPin(copy: string): string | undefined {
-	const text = readText(join(copy, "package.json"));
+	const text = readOptional(join(copy, "package.json"));
 	if (text === undefined) return undefined;
 	try {
 		const manifest: unknown = JSON.parse(text);
@@ -1367,7 +1376,7 @@ async function stageInTree(
 	printConflicts(project, repo, log);
 	const decisionProblems = printDecisions(
 		project,
-		(path) => readText(join(tree, path)),
+		(path) => readOptional(join(tree, path)),
 		log,
 	);
 	printCiOnly(project, where, log);
@@ -1445,7 +1454,7 @@ async function originHead(repo: string): Promise<string | undefined> {
 
 function readTextFiles(root: string, paths: readonly string[]): TextFile[] {
 	return paths.flatMap((path) => {
-		const text = readText(join(root, path));
+		const text = readOptional(join(root, path));
 		return text === undefined ? [] : [{ path, text }];
 	});
 }

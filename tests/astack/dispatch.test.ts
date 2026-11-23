@@ -21,7 +21,6 @@ import {
 	type Context,
 	defineHandler,
 	deny,
-	type Env,
 	type EventKind,
 	type Handler,
 	HOOK_EVENTS,
@@ -34,6 +33,7 @@ import {
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { processPorts } from "../../src/astack/ports.ts";
+import type { Env } from "../../src/astack/process.ts";
 import { fakePorts } from "./fake-ports.ts";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures/hook-input");

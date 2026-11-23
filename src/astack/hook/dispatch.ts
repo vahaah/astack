@@ -1,6 +1,7 @@
 import { hookPolicy } from "../hook-profile.ts";
 import { todayIso } from "../plan/files.ts";
 import { type Ports, processPorts } from "../ports.ts";
+import type { Env } from "../process.ts";
 import { sectionOf } from "../profile.ts";
 import { chainSteps } from "../shell.ts";
 import { decode } from "./decode/index.ts";
@@ -11,7 +12,6 @@ import {
 	type Context,
 	combineAll,
 	deny,
-	type Env,
 	type Handler,
 	type HookEvent,
 	type HookEventName,

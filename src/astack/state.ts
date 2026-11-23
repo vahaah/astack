@@ -1,6 +1,5 @@
 import { join } from "node:path";
-
-type Env = Readonly<Record<string, string | undefined>>;
+import type { Env } from "./process.ts";
 
 export function stateDir(env: Env): string | undefined {
 	if (env.ASTACK_STATE_DIR) return env.ASTACK_STATE_DIR;

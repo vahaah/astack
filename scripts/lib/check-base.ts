@@ -3,9 +3,8 @@ import {
 	changedPaths,
 	historyGit,
 } from "../../src/astack/change-proof/candidate.ts";
+import type { Env } from "../../src/astack/process.ts";
 import { err, ok, type Result } from "../../src/astack/result.ts";
-
-export type Env = Readonly<Record<string, string | undefined>>;
 
 const NO_DEFAULT_BRANCH =
 	"A push proof needs repository.default_branch in the GITHUB_EVENT_PATH payload.";

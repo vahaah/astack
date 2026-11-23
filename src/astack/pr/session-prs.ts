@@ -1,10 +1,9 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Env } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import { sessionFileName, stateDir } from "../state.ts";
 import { NO_SESSION_PRS, type SessionOpen, type SessionPrs } from "./split.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type SessionStore =
 	| { readonly kind: "none" }

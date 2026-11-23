@@ -7,11 +7,10 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import type { Env } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import { sessionFileName, stateDir } from "../state.ts";
 import { type FullStopRecord, type MergeGrant, NO_GRANT } from "./grant.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type GrantStore =
 	| { readonly kind: "none" }

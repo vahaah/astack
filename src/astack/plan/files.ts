@@ -1,9 +1,10 @@
-import { readFileSync, realpathSync } from "node:fs";
+import { realpathSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { parseRegistry } from "../change-proof/registry.ts";
 import { REGISTRY_PATH } from "../change-proof/rung.ts";
 import { type CardFile, parseCard } from "../domain/notation.ts";
 import { repoRoot } from "../git.ts";
+import { readOptional } from "../paths.ts";
 import type { FilePorts, Ports } from "../ports.ts";
 import { type PlanProfile, parseProfile } from "../profile.ts";
 import { err, ok, type Result } from "../result.ts";
@@ -15,14 +16,6 @@ import type { CheckEnv, DomainEnv, Glossary } from "./types.ts";
 
 export function todayIso(at = new Date()): string {
 	return at.toISOString().slice(0, 10);
-}
-
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
 }
 
 function sortedList(files: FilePorts, path: string): string[] {
@@ -186,7 +179,7 @@ export function planFileState(
 	cwd: string,
 ): Result<PlanFileState, string> {
 	const file = realFile(resolve(cwd, target));
-	const text = file === undefined ? undefined : readText(file);
+	const text = file === undefined ? undefined : readOptional(file);
 	if (file === undefined || text === undefined)
 		return err(`cannot read ${target}`);
 	const slug = trailSlug(file, text);
