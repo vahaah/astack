@@ -4,6 +4,7 @@
 [ADR 0010](../adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md) governs scratch writes, commit checks, work loss and attended detection.
 [ADR 0011](../adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md) governs base branch authority, harness frames, MCP merges and guard errors.
 [ADR 0028](../adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) governs the session repo exception to work loss.
+[ADR 0029](../adr/0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md) governs the stdin, fd, `$` and environment config forms and the profile blob of the gate record.
 The [design](../design.md) gives the hook behavior in full.
 
 ## Acceptance criteria
