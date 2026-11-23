@@ -3,6 +3,9 @@ import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { command } from "../../src/astack/cli/commands/check/effects.ts";
 import type { Io } from "../../src/astack/cli/io.ts";
+import { DEFAULT_CODE_ROOTS } from "../../src/astack/domain/profile.ts";
+import { effectReport, findingLine } from "../../src/astack/domain/report.ts";
+import { loadDomainEnv, planProfileFor } from "../../src/astack/plan/files.ts";
 import { git, scratchDir, writeFiles } from "./change-proof-fixture.ts";
 
 const parent = scratchDir("astack-check-effects-");
@@ -113,6 +116,33 @@ describe("astack check effects", () => {
 		} finally {
 			git(root, "checkout", "-q", "--", "src/run.ts");
 		}
+	});
+
+	test("with totality off, as check proof reads it, an alias import gives no report", () => {
+		const aliased = repo("aliased", {
+			"CONTEXT.md": CARD,
+			"src/c.ts": 'import { a } from "@/lib/a";\nexport const c = a;\n',
+		});
+		const read = loadDomainEnv(aliased, planProfileFor(aliased).glossary).card;
+		const card = read.ok && read.value.kind === "card" ? read.value : undefined;
+		if (card === undefined) throw new Error("no card");
+		const lines = (totality: boolean) => {
+			const report = effectReport({
+				root: aliased,
+				codeRoots: DEFAULT_CODE_ROOTS,
+				card,
+				plan: undefined,
+				base: undefined,
+				totality,
+			});
+			return report.ok ? report.value.findings.map(findingLine) : report;
+		};
+		expect({ proof: lines(false), cli: lines(true) }).toEqual({
+			proof: [],
+			cli: [
+				"report: src/c.ts:1: import: the alias import @/lib/a names no module that the check can read, so it gives no class",
+			],
+		});
 	});
 
 	test("--json gives the same findings", () => {

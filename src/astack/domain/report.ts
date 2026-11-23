@@ -31,8 +31,6 @@ export type EffectReport = {
 	readonly findings: readonly EffectFinding[];
 };
 
-const TOTALITY = new Set(["unowned", "context"]);
-
 type Read = {
 	readonly facts: readonly ModuleFacts[];
 	readonly reports: readonly EffectFinding[];
@@ -85,7 +83,7 @@ export function effectReport(
 	const findings = [
 		...head.value.reports,
 		...effectFindings(facts, inputs).filter(
-			(finding) => query.totality || !TOTALITY.has(finding.rule),
+			(finding) => query.totality || finding.kind === "advice",
 		),
 		...(base.value === undefined
 			? []

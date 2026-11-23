@@ -67,8 +67,10 @@ Test files are outside the code roots, so they do not count.
 A rule finding prints as `advice:`. An unowned module, a cross-context import and an unresolved import print as `report:`.
 Each line gives `<path>:<line>: <rule>: <message>`, and a count line follows.
 A bad flag, a bad `--base` ref, an unreadable `--plan` file or a block that does not parse exits 2.
+
 check proof runs the card rules, and with `domain.plan` the block rules and the change rule from its diff base.
 It prints the same advice lines and keeps its exit and its verdict.
+It prints no report of the totality rule, so an alias import gives no line there.
 
 ## Consequences
 
