@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-14
 Ticket: none
 Supersedes: none
-Amended by: 0011 D3 for framed prompts and 0028 D1 for a repo that this session made
+Amended by: 0011 D3 for framed prompts, 0028 D1 for session repos and 0029 for config forms
 
 ## Context
 
