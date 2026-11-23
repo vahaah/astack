@@ -1305,6 +1305,68 @@ describe("a repo that this session made", () => {
 		expect(said).toContain("sub");
 	});
 
+	function withSubmodule(dir: string): void {
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		write(dir, { "a.txt": "c\n" });
+	}
+
+	test.each([
+		["git reset --hard --recurse-submodules", () => {}],
+		["git -c submodule.recurse=true reset --hard", () => {}],
+		[
+			"git reset --hard",
+			(dir: string) => git(dir, "config", "submodule.recurse", "true"),
+		],
+	])(
+		"[control:sg-session-repo-submodule] %s gets no session exemption in a repo with a submodule, because git then resets the work of each submodule",
+		(command, configure) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			withSubmodule(dir);
+			configure(dir);
+			expect(reason(sessionRun(command, dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test("git reset --hard is denied in a session repo for a dirty submodule, because the submodule is a repo root with no bound record", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		git(dir, "config", "submodule.recurse", "false");
+		write(dir, { "sub/a.txt": "c\n" });
+		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+			"discards the uncommitted changes in sub.",
+		);
+	});
+
 	test("[control:sg-session-repo-identity] a reset is denied in a dirty repo that another process made at a dropped pending path", () => {
 		const { dir, state } = fresh("made");
 		const parent = join(dir, "..");

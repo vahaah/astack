@@ -360,7 +360,8 @@
 				"sg-session-repo-nested",
 				"sg-session-repo-bundle",
 				"sg-session-repo-target",
-				"sg-session-repo-clone-name"
+				"sg-session-repo-clone-name",
+				"sg-session-repo-submodule"
 			]
 		},
 		{

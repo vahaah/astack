@@ -96,6 +96,10 @@ The exemption skips the work-loss read of `lostPaths` in a session repo.
 It keeps each nested repo that a `git clean -ffd` removes and that has no bound record.
 A force-push to a shared branch, `supabase db reset` and a hook skip keep their owner gates in a session repo.
 
+Amended 2026-11-23. A lost path that is a repo root, such as a nested repo or a submodule, keeps the deny unless a record binds it.
+A command that recurses into submodules gets no exemption in a repo with a submodule.
+That is `--recurse-submodules`, a `submodule.recurse` key of `-c` and a true `submodule.recurse` setting of git.
+
 ### D8. The record is a mistake guard, not a security boundary
 
 The record file stops an agent that discards work in a repo of another session by mistake.

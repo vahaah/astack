@@ -204,6 +204,10 @@
 			{
 				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
 				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D7"
 			}
 		],
 		"controls": {
@@ -216,6 +220,7 @@
 				"SG-gates-run",
 				"SG-gate-folder",
 				"SG-conformance",
+				"SG-session-repo",
 				"SG-session-repo-identity",
 				"SG-generated",
 				"SG-preserve"

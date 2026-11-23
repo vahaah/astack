@@ -546,6 +546,35 @@ function isRepoRoot(path: string): boolean {
 	}
 }
 
+const SUBMODULE_RECURSE = /^submodule\.recurse(?:=|$)/i;
+
+function hasSubmodules(dir: string): boolean {
+	const staged = runGit(dir, [...READ_ONLY_GIT, "ls-files", "--stage", "-z"]);
+	return (
+		!staged.ok ||
+		staged.stdout
+			.toString("utf8")
+			.split("\0")
+			.some((entry) => entry.startsWith("160000 "))
+	);
+}
+
+function recursesSubmodules(git: GitInvocation): boolean {
+	const recurses =
+		git.args.some((arg) =>
+			isLongForm(arg.split("=")[0] ?? "", "--recurse-submodules"),
+		) ||
+		git.config.some((setting) => SUBMODULE_RECURSE.test(setting)) ||
+		gitText(git.dir, [
+			...READ_ONLY_GIT,
+			"config",
+			"--type=bool",
+			"--get",
+			"submodule.recurse",
+		]) === "true";
+	return recurses && hasSubmodules(git.dir);
+}
+
 function workLossReasons(
 	step: ShellStep,
 	git: GitInvocation,
@@ -554,7 +583,12 @@ function workLossReasons(
 	const loss = workLoss(git, treeishIn(git.dir));
 	return loss === undefined
 		? []
-		: lossReasons(step.values.join(" "), loss, git.dir, sessionRepo);
+		: lossReasons(
+				step.values.join(" "),
+				loss,
+				git.dir,
+				(root) => sessionRepo(root) && !recursesSubmodules(git),
+			);
 }
 
 const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
