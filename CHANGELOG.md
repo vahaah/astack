@@ -6,33 +6,33 @@ This release makes each code plan name its side effects, and checks compare that
 
 ### Domain and effects record
 
-- Each plan that names a code path holds one `## Domain and effects` section with one `domain` fence. The fence names the context, the aggregates, the invariants, each capability and each step as `A -> Eff<R, E, B>`. ADR 0018 records the record.
+- In a repo with a contexts card, each plan that names a code path holds one `## Domain and effects` section with one `domain` fence. The fence names the context, the aggregates, the invariants, each capability and each step as `A -> Eff<R, E, B>`. ADR 0018 records the record.
 - `astack check-plan` parses the fence and checks names, flows, laws and the rung. A tsc witness compares each linked step with its code.
-- `astack check effects` compares the effect classes of each module with the contexts card in `CONTEXT.md` and the plan record. It gives advice today, and a later release makes it fail.
+- `astack check effects` compares the effect classes of each module with the contexts card and the plan record. It gives advice today, and a later release makes it fail.
 - `Result` gets `map`, `andThen` and `all`. Each claimed law runs as a property test on code, as ADR 0017 says.
-- One ADR template holds a domain part and an effects part. `astack check adr` keeps accepted ADR text amend-only.
+- One ADR template gives each new ADR a `Domain and effects` part. `astack check adr` keeps accepted ADR text amend-only.
 
 ### Change proof
 
 - Each change carries its own manifest under `.astack/proof/`, as ADR 0016 says.
-- The touched paths and the laws give the rung from R0 to R4. Only R4 runs TLC, and only for the models of `formal/models.json` that the paths select. A docs-only diff runs no TLC.
+- The touched paths, the laws and the `proof.minRung` floor give the rung from R0 to R4. Only R4 runs TLC. It runs the manifest model and each model of `formal/models.json` that the paths or a `tla` law select. A docs-only diff that no model names runs no TLC.
 - Each proof stop names its cause and the section of its rule.
 - A conformance test drives the real guards from the SessionGuards model table, and fast-check commands drive them beside the model.
 
 ### Guards
 
-- A merge needs a grant from a person's prompt of this turn or the profile on the PR base branch. A harness brief, a working-tree profile edit and an MCP merge tool give none.
+- A merge needs a grant from a person's prompt of this turn or the profile on the PR base branch. A harness brief and a working-tree profile edit give no grant. The guard denies each MCP merge tool, also with a grant.
 - A wrapped command gets the verdict of its plain form. A hook skip needs a HEAD whose gates passed with `astack gates run`.
 - A broad discard passes in a repo or worktree that this session made.
-- Public issue and PR text passes the deny list of the profile.
+- Public GitHub text, such as an issue or a PR body, passes the hashed deny list. `bun run deny sync` copies that list from the companion.
 - A hook reads a body file as its command leaves it, and a denied chain says that nothing ran.
 - The guards stop agent mistakes. Branch protection is the control for a hostile agent.
 
 ### Review, plan and text
 
 - Each PR has one review record. A fix after a clean head gets a delta review.
-- A plan boundary rides in the next session PR, so a session opens no plan-only PR.
-- Wrapper skills fold into their homes. Skill text falls to 115,811 words, and a word budget stops each cap from rising.
+- A session boundary rides in the next session PR, so a session opens no plan-only PR.
+- Wrapper skills fold into their homes. Skill text falls from 141,172 to 115,811 words, and each cap of the word budget falls to its count.
 - `astack doctor` reports the hook trust that Codex enforces and a drifted review profile.
 - The repo review stub holds one install line and no engine copy.
 
@@ -45,7 +45,7 @@ This release makes each code plan name its side effects, and checks compare that
 ### Upgrade
 
 - Move the proof manifest of an open PR to `.astack/proof/<change>.json`, and pass `--base origin/<base>` to the proof in CI.
-- Drop the `comments` key from each companion project profile, because apply now refuses it. Then run `apply --update` in each product repo.
+- Move each pattern of the `comments` key of a companion profile to `keepPatterns` of `projects/<name>.json`. Then drop the key, because apply now refuses it. Then run `bun run apply --project <name> --worktree --update` for each product repo.
 - A code plan in a repo with a contexts card needs its `domain` fence. Run `astack check-plan --template=domain` for the grammar.
 - Turn on branch protection for each base branch that grants standing merge authority.
 
