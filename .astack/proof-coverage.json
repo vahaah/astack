@@ -395,7 +395,7 @@
 		},
 		{
 			"criterion": "SG-stdin-source",
-			"controls": ["sg-stdin-source"]
+			"controls": ["sg-stdin-source", "sg-heredoc-fd"]
 		},
 		{
 			"criterion": "SG-dynamic-word",

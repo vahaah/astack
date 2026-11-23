@@ -75,7 +75,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		tag: string;
 		strip: boolean;
 		quoted: boolean;
-		command: SimpleCommand;
+		command: SimpleCommand | undefined;
 	}[] = [];
 	let substitutions: string[] = [];
 	let redirectNext: Omit<Redirect, "target"> | undefined;
@@ -118,6 +118,13 @@ export function parseShell(src: string): SimpleCommand[] {
 	const readsStdin = (command: SimpleCommand, readable: boolean): void => {
 		command.stdinSources = (command.stdinSources ?? 0) + 1;
 		if (command.stdinSources > 1 || !readable) command.stdinDynamic = true;
+	};
+	const redirectFd = (fallback: number): number => {
+		if (!word || word.dynamic || !/^\d+$/.test(word.value)) return fallback;
+		const fd = Number(word.value);
+		word = undefined;
+		unquoted = "";
+		return fd;
 	};
 	const endCommand = (): void => {
 		endWord();
@@ -174,10 +181,12 @@ export function parseShell(src: string): SimpleCommand[] {
 					if ((doc.strip ? line.replace(/^\t+/, "") : line) === doc.tag) break;
 					lines.push(line);
 				}
-				doc.command.stdin = stripTabs(lines.join("\n"), doc.strip);
-				doc.command.stdinFrom = doc.quoted ? "quoted heredoc" : "heredoc";
-				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(doc.command.stdin))
-					doc.command.stdinDynamic = true;
+				const { command } = doc;
+				if (command === undefined) continue;
+				command.stdin = stripTabs(lines.join("\n"), doc.strip);
+				command.stdinFrom = doc.quoted ? "quoted heredoc" : "heredoc";
+				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(command.stdin))
+					command.stdinDynamic = true;
 			}
 			pendingHeredocs = [];
 			continue;
@@ -290,34 +299,33 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "<" && src.startsWith("<<<", i)) {
+			const fd = redirectFd(STDIN_FD);
 			endWord();
-			hereStringNext = current;
-			readsStdin(current, true);
+			readsStdin(current, fd === STDIN_FD);
+			if (fd === STDIN_FD) hereStringNext = current;
+			else redirectNext = { op: "<<<", fd };
 			i += 3;
 			continue;
 		}
-		if (c === "<" && src.startsWith("<<", i)) {
+		const heredoc =
+			c === "<"
+				? /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i))
+				: null;
+		if (heredoc) {
+			const fd = redirectFd(STDIN_FD);
 			endWord();
-			const match = /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i));
-			if (match) {
-				readsStdin(current, true);
-				pendingHeredocs.push({
-					tag: match[3] ?? "",
-					strip: match[1] === "-",
-					quoted: match[2] !== "",
-					command: current,
-				});
-				i += match[0].length;
-				continue;
-			}
+			readsStdin(current, fd === STDIN_FD);
+			pendingHeredocs.push({
+				tag: heredoc[3] ?? "",
+				strip: heredoc[1] === "-",
+				quoted: heredoc[2] !== "",
+				command: fd === STDIN_FD ? current : undefined,
+			});
+			i += heredoc[0].length;
+			continue;
 		}
 		if (c === "<" || c === ">") {
-			let fd = c === "<" ? STDIN_FD : STDOUT_FD;
-			if (word && !word.dynamic && /^\d+$/.test(word.value)) {
-				fd = Number(word.value);
-				word = undefined;
-				unquoted = "";
-			}
+			const fd = redirectFd(c === "<" ? STDIN_FD : STDOUT_FD);
 			endWord();
 			const opStart = i;
 			while (src[i] === "<" || src[i] === ">" || src[i] === "&") i++;

@@ -325,6 +325,28 @@ describe("the plain form of a git step", () => {
 		},
 	);
 
+	test.each([
+		[
+			"bash 0<<'EOF'\ngit reset --hard\nEOF",
+			"- git reset --hard discards the uncommitted changes in",
+		],
+		[
+			"bash 3<<'EOF'\ngit status\nEOF",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+		],
+		[
+			"bash 3<<<'git status'",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+		],
+	])(
+		"[control:sg-heredoc-fd] %s on a dirty tree reads the fd of its heredoc: fd 0 feeds the shell, and fd 3 leaves its script unread",
+		(command, text) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain(text);
+		},
+	);
+
 	test("a heredoc with 2>&1 stays a readable stdin script, so it gets the verdict of its plain form", () => {
 		expect(
 			reason(
