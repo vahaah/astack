@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { saveGateRecord } from "../../src/astack/gates.ts";
 import { gitInvocation } from "../../src/astack/git-command.ts";
 import { runHook } from "../../src/astack/hook/dispatch.ts";
-import type { Context, Handler } from "../../src/astack/hook/events.ts";
+import type { Context, Env, Handler } from "../../src/astack/hook/events.ts";
 import {
 	handler as destructive,
 	type Treeish,
@@ -258,7 +258,7 @@ describe("[control:sg-conformance-push] the push guard answers each target of th
 });
 
 describe("[control:sg-conformance-merge] the merge guard answers each merge of the model", () => {
-	test("each prompt, source, attended state, base authority and PR gives the merge verdict of the model, and an MCP merge and a failed PR read give a deny", () => {
+	test("each prompt, source, attended state, base authority and PR gives the merge verdict of the model, and an MCP merge, a failed PR read and a session with no state folder give a deny", () => {
 		const project = join(TEMP, "merge-project");
 		mkdirSync(project, { recursive: true });
 		const stateDir = join(TEMP, "merge-state");
@@ -269,12 +269,10 @@ describe("[control:sg-conformance-merge] the merge guard answers each merge of t
 					MODEL.baseAuthorities.flatMap((authority) =>
 						MODEL.prs.map((n) => {
 							const session = `merge-${id++}`;
-							const env = attended
-								? { ASTACK_STATE_DIR: stateDir }
-								: {
-										ASTACK_STATE_DIR: stateDir,
-										CLAUDE_CODE_SESSION_ATTENDED: "0",
-									};
+							const stateless = attended
+								? {}
+								: { CLAUDE_CODE_SESSION_ATTENDED: "0" };
+							const env = { ...stateless, ASTACK_STATE_DIR: stateDir };
 							const pr = pullRequest(n, oneOf(AUTHORITY, authority));
 							const read: ReadPullRequest = () => pr;
 							const deps = (handler: Handler) => ({
@@ -291,12 +289,17 @@ describe("[control:sg-conformance-merge] the merge guard answers each merge of t
 								env,
 								deps(guard),
 							);
-							const passes = (handler: Handler, name: string, input: object) =>
+							const passes = (
+								handler: Handler,
+								name: string,
+								input: object,
+								hookEnv: Env = env,
+							) =>
 								runHook(
 									"claude-code",
 									"PreToolUse",
 									toolPayload(session, project, name, input),
-									env,
+									hookEnv,
 									deps(handler),
 								).exit === 0;
 							const thrown = mergeGuard(() => {
@@ -323,10 +326,17 @@ describe("[control:sg-conformance-merge] the merge guard answers each merge of t
 									passes(thrown, "Bash", {
 										command: `gh pr merge ${pr.number}`,
 									}),
+									passes(
+										guard,
+										"Bash",
+										{ command: `gh pr merge ${pr.number}` },
+										stateless,
+									),
 								],
 								model: [
 									merge(modelState, authority, n, "gh", false),
 									merge(modelState, authority, n, "mcp", false),
+									merge(modelState, authority, n, "gh", true),
 									merge(modelState, authority, n, "gh", true),
 								],
 							};

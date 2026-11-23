@@ -337,10 +337,12 @@ export const PINS = {
 		'PromptGrant(p) == UNION {ClauseGrant(c) : c \\in IF Withholds(p) THEN p \\ {"fullSend"} ELSE p}',
 	ModeOf:
 		'ModeOf(p) == IF p = {"fullStop"} THEN "fullStop" ELSE IF "fullSend" \\in p THEN "fullSend" ELSE "plain"',
+	StartsFullStop:
+		'StartsFullStop(p, source) == source # "frame" /\\ ModeOf(p) = "fullStop"',
 	ProfileCovers:
 		'ProfileCovers(authority, n) == \\/ authority = "standing" \\/ authority = "base" /\\ n = 1',
 	Prompt:
-		"Prompt == /\\ concern = \"merge\" /\\ \\E p \\in Prompts, source \\in Sources : IF HumanPrompt(source, attended) THEN /\\ grant' = PromptGrant(p) /\\ said' = p /\\ saidBy' = source /\\ mode' = ModeOf(p) ELSE UNCHANGED <<grant, said, saidBy, mode>> /\\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged, unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars, pushVars>>",
+		"Prompt == /\\ concern = \"merge\" /\\ \\E p \\in Prompts, source \\in Sources : IF HumanPrompt(source, attended) THEN /\\ grant' = PromptGrant(p) /\\ said' = p /\\ saidBy' = source /\\ mode' = ModeOf(p) ELSE /\\ mode' = IF StartsFullStop(p, source) THEN \"fullStop\" ELSE mode /\\ UNCHANGED <<grant, said, saidBy>> /\\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged, unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars, pushVars>>",
 	Merge:
 		'Merge == /\\ concern = "merge" /\\ mode # "fullStop" /\\ \\E n \\in PRs \\ merged, channel \\in Channels, fault \\in BOOLEAN : /\\ channel = "gh" /\\ ~fault /\\ ProfileCovers(baseAuthority, n) \\/ n \\in grant /\\ merged\' = merged \\cup {n} /\\ mcpMerged\' = (mcpMerged \\/ channel = "mcp") /\\ faultMerged\' = (faultMerged \\/ fault) /\\ unauthorized\' = (unauthorized \\/ ~(ProfileCovers(baseAuthority, n) \\/ (OwnerCovers(said, n) /\\ PersonTyped(saidBy, attended)))) /\\ stopMerged\' = (stopMerged \\/ mode = "fullStop") /\\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, said, saidBy, grant, mode, writeVars, gitVars, pushVars>>',
 	Scratch: "Scratch(f) == ~f.inProject /\\ ~(f.git \\/ f.marked)",
@@ -403,6 +405,10 @@ export function modeOf(p: readonly string[]): string {
 	return p.includes("fullSend") ? "fullSend" : "plain";
 }
 
+export function startsFullStop(p: readonly string[], source: string): boolean {
+	return source !== "frame" && modeOf(p) === "fullStop";
+}
+
 export function profileCovers(authority: string, n: number): boolean {
 	return authority === "standing" || (authority === "base" && n === 1);
 }
@@ -421,9 +427,9 @@ export function prompt(
 	source: string,
 	attended: boolean,
 ): MergeState {
-	return humanPrompt(source, attended)
-		? { grant: promptGrant(model, p), mode: modeOf(p) }
-		: state;
+	if (humanPrompt(source, attended))
+		return { grant: promptGrant(model, p), mode: modeOf(p) };
+	return startsFullStop(p, source) ? { ...state, mode: "fullStop" } : state;
 }
 
 export function merge(

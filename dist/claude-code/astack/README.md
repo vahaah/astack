@@ -90,7 +90,7 @@ Adding a rule pack does not start a reviewer.
 
 On `Stop`, astack examines each reply with the ASD-STE100 deny rules, also a short reply. A reply that fails gets one rewrite. See Simplified Technical English below.
 
-On `UserPromptSubmit`, the merge guard records whether the owner's prompt gives a merge grant for this turn, and whether it starts the full-stop run.
+On `UserPromptSubmit`, the merge guard records whether the owner's prompt gives a merge grant for this turn. It also records whether a prompt from each source starts the full-stop run.
 
 On `SessionStart`, the plan pointer runs `astack check-plan --brief` and lists the repo's active, draft and paused plans. In a headless or SDK session it also says that `/astack:plan` runs unattended there. It prints nothing otherwise.
 
@@ -177,7 +177,8 @@ astack refuses `gh pr merge` in these cases:
 - A closing word with a ticket key is in the PR title, the PR body or the merge commit text.
 - astack cannot read the PR. It reads the PR with `gh pr view` and one `gh api graphql` call.
 - The command has `--admin`, which skips the branch protection rules. This is an owner gate, also with a standing grant.
-- The last prompt of the owner starts the full-stop run, with `/astack:full-stop` at its start or "full stop" as its only instruction. The full-stop run never merges, so this refusal holds also with a standing grant. The next prompt of the owner ends it.
+- A prompt of this session starts the full-stop run, with `/astack:full-stop` at its start or "full stop" as its only instruction. The prompt can come from the owner or from the harness. The full-stop run never merges, so this refusal holds also with a standing grant. Only the next prompt of the owner ends it.
+- astack has no path for the full-stop record, because it finds no state folder or the session id is not a safe file name. Then a standing grant does not cover the merge.
 
 A subagent hand-back, a teammate message and other harness text never give or end a grant, because only a prompt that a person types counts. A workflow brief and a relay message are harness text too. A prompt that opens with a tag, or with a bracket label that is not a Markdown link, is harness text.
 

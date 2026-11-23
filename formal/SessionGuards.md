@@ -12,13 +12,15 @@ The proof sections of both ADRs moved here on 2026-11-22.
 `formal/SessionGuards.tla` examines three groups of finite behaviors under one specification.
 The merge group covers attended and unattended sessions, the three merge authorities of the profile and prompts of one or two clauses.
 The clauses are a merge word, a merge word with one PR number, a negated merge, "full send", a negated "full send", "full stop" and other text.
-The prompt source is `user`, absent or a machine source.
+The prompt source is `user`, absent, a harness frame or a machine source.
 
 A merge grant names PRs that a merge word or an un-negated "full send" clause of a person's prompt covers.
 A "full stop" clause, a negated clause and a machine prompt add no PR to the grant.
 A "full stop" clause or a negated clause also withholds the full-send grant of the whole prompt, as `Withholds` and `PromptGrant` say.
 
-A person's prompt whose only instruction is "full stop" starts the full-stop run. That prompt stands for the command form `/astack:full-stop` too. It also stands for a prompt that adds only filler words, such as "ok" or "please".
+A prompt whose only instruction is "full stop" starts the full-stop run, from each source. That prompt stands for the command form `/astack:full-stop` too. It also stands for a prompt that adds only filler words, such as "ok" or "please".
+A harness frame opens the prompt with its own label, so a framed prompt never has "full stop" as its only instruction. `StartsFullStop` says so.
+Only a person's prompt that does not start the run ends it.
 The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
 
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
@@ -35,7 +37,7 @@ The push or commit skips the hooks or keeps them. It goes to a head, to refs tha
 GrantFromWords       == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson      == grant # {} => PersonTyped(saidBy, attended)
 MergeNeedsAuthority  == each merge has a profile grant or a covering prompt of a person
-FullStopNeverMerges  == no merge happens while the last prompt of a person starts the full-stop run
+FullStopNeverMerges  == no merge happens after a prompt that starts the full-stop run, until a person's prompt that does not start it
 WriteChecksKept      == a write outside the scratch class gets the write checks
 ScratchSkipped       == a write of a scratch file gets no write check
 CommitSurfaceChecked == each commit gets the commit checks
@@ -97,7 +99,7 @@ recordOf     : GateRun -> GateRecord      effects: none
 `startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only instruction is "full stop".
 Filler words, such as "ok", "please" and "now", can stand beside it.
 
-`mergeGuard` saves that grant and the full-stop record for a person's prompt, and it reads both back when a `gh pr merge` call arrives.
+`mergeGuard` saves that grant for a person's prompt. It saves the full-stop record for each prompt that starts the run, and removes it for a person's prompt that does not. It reads both back when a `gh pr merge` call arrives.
 `workLoss` is pure. It takes the treeish reader as a parameter, and the destructive `handler` passes a reader that runs `git rev-parse`.
 
 `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
@@ -121,7 +123,8 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | `Withholds` and `PromptGrant` | `withholdsFullSend`, which drops the full-send grant of each clause when one clause of the prompt withholds it |
 | `HumanPrompt` | `humanPrompt` with `replyInteractive`, and `unattendedReason` in `src/astack/attended.ts` |
 | `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts` |
-| `ModeOf` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for a person's prompt. `preflightReasons` denies each merge while `loadFullStop` finds the record. `--disable-auto` passes |
+| `ModeOf`, `StartsFullStop` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for each prompt that starts the run. `preflightReasons` denies each merge while `loadFullStop` gives `present`. `--disable-auto` passes |
+| The `fault` of `Merge` | A guard error, and a session with no path for the full-stop record. Then `loadFullStop` gives `unknown`, and `grantReasons` denies a merge that rests only on a standing grant. With no path, no grant record exists either, so each merge gets a deny |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
 | `CodeLost` and `RunGit` | `workLoss`, which gives the kind and the pathspecs that one git call loses, and `workLossReasons` with its status reader in `src/astack/hook/handlers/destructive.ts` |

@@ -605,16 +605,15 @@ export function mergeGuard(read: ReadPullRequest): Handler {
 		failed: failedVerdict,
 		run: (event, context) => {
 			switch (event.kind) {
-				case "prompt":
-					if (event.human && event.session) {
+				case "prompt": {
+					if (!event.session) return ALLOW;
+					const fullStop = startsFullStop(event.text);
+					if (event.human || fullStop)
+						saveFullStop(context.env, event.session, fullStop);
+					if (event.human)
 						saveGrant(context.env, event.session, mergeGrantIn(event.text));
-						saveFullStop(
-							context.env,
-							event.session,
-							startsFullStop(event.text),
-						);
-					}
 					return ALLOW;
+				}
 				case "shell":
 					return shellVerdict(event, context, read);
 				case "mcp":

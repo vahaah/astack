@@ -28,6 +28,7 @@ Withholds(p) == p \cap {"negatedMerge", "negatedFullSend", "fullStop"} # {}
 PromptGrant(p) == UNION {ClauseGrant(c) : c \in IF Withholds(p) THEN p \ {"fullSend"} ELSE p}
 ModeOf(p) == IF p = {"fullStop"} THEN "fullStop"
              ELSE IF "fullSend" \in p THEN "fullSend" ELSE "plain"
+StartsFullStop(p, source) == source # "frame" /\ ModeOf(p) = "fullStop"
 
 Files == [inProject : BOOLEAN, inTemp : BOOLEAN, git : BOOLEAN, marked : BOOLEAN]
 IdleFile == [inProject |-> TRUE, inTemp |-> FALSE, git |-> TRUE, marked |-> FALSE]
@@ -155,7 +156,8 @@ Prompt == /\ concern = "merge"
                       /\ said' = p
                       /\ saidBy' = source
                       /\ mode' = ModeOf(p)
-                 ELSE UNCHANGED <<grant, said, saidBy, mode>>
+                 ELSE /\ mode' = IF StartsFullStop(p, source) THEN "fullStop" ELSE mode
+                      /\ UNCHANGED <<grant, said, saidBy>>
           /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged,
                          unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars,
                          pushVars>>

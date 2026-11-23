@@ -459,7 +459,7 @@ describe("the merge guard", () => {
 	const FULL_STOP_DENY: Run = {
 		exit: 2,
 		stderr:
-			"astack blocked gh pr merge:\n- The last prompt of the owner starts the full-stop run, and the full-stop run never merges. Leave the merge to the owner, or wait for the next prompt of the owner.",
+			"astack blocked gh pr merge:\n- A prompt of this session started the full-stop run, and the full-stop run never merges. Leave the merge to the owner, or wait for the next prompt of the owner.",
 	};
 
 	describe("[control:sg-full-stop-merge] the full-stop run", () => {
@@ -514,6 +514,43 @@ describe("the merge guard", () => {
 				bash(handler, "gh pr merge 12", project, "full-stop-lift"),
 			).toEqual(PASS);
 		});
+
+		test("a machine prompt that starts the full-stop run denies the merge", () => {
+			const handler = standingPr();
+			handler.run(
+				{
+					kind: "prompt",
+					text: "/astack:full-stop",
+					human: false,
+					session: "full-stop-machine",
+				},
+				context(project, "full-stop-machine", "UserPromptSubmit"),
+			);
+			expect(
+				bash(handler, "gh pr merge 12", project, "full-stop-machine"),
+			).toEqual(FULL_STOP_DENY);
+		});
+
+		test.each([
+			["no state folder", false, "full-stop-unknown"],
+			["a session id that is not a file name", true, "a/b"],
+		])(
+			"with %s, a standing grant does not merge",
+			(_, hasStateDir, session) => {
+				const verdict = standingPr().run(
+					{ kind: "shell", command: "gh pr merge 12", cwd: project },
+					{
+						...context(project, session, "PreToolUse"),
+						env: hasStateDir ? { ASTACK_STATE_DIR: state } : {},
+					},
+				);
+				expect(outcome(verdict)).toEqual({
+					exit: 2,
+					stderr:
+						"astack blocked gh pr merge:\n- astack has no path for the full-stop record of this session, so it cannot see if the full-stop run is active. Without that record, the standing grant of main does not cover #12. Ask the owner before you merge #12.",
+				});
+			},
+		);
 	});
 
 	const V2_STANDS = committed({ standingBases: ["v2"] });

@@ -319,9 +319,15 @@ export function saveFullStop(
 	writeFileSync(path, "");
 }
 
-export function loadFullStop(env: Env, session: string | undefined): boolean {
+export type FullStopRecord = "present" | "absent" | "unknown";
+
+export function loadFullStop(
+	env: Env,
+	session: string | undefined,
+): FullStopRecord {
 	const path = session === undefined ? undefined : fullStopPath(env, session);
-	return path !== undefined && existsSync(path);
+	if (path === undefined) return "unknown";
+	return existsSync(path) ? "present" : "absent";
 }
 
 export function loadGrant(env: Env, session: string | undefined): MergeGrant {
