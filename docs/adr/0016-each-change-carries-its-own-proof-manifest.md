@@ -5,6 +5,7 @@ Date: 2026-11-22
 Ticket: none
 Supersedes: none
 Amends: 0005 D4
+Amended by: 0035 D4 for mixed CI
 
 ## Context
 
@@ -63,6 +64,8 @@ A ratified reference still needs all four sections in its record.
 The chosen manifest, its proof records and each deleted manifest are proof metadata beside a CI change.
 A second changed manifest stops the classification.
 This decision amends ADR 0005 D4.
+
+> Amended 2026-11-23: D7 said "A second changed manifest stops the classification." [ADR 0035](0035-each-pr-has-one-review-record-and-a-delta-review.md) D4 gives such a PR the mode `ci_mixed`, and each gate of that mode blocks.
 
 ### D8. A scope row that names a manifest path is never idle
 

@@ -4,7 +4,7 @@ Status: Accepted
 Date: 2026-11-23
 Ticket: none
 Supersedes: none
-Amends: none
+Amends: 0005 D4 and 0016 D7
 
 ## Context
 
@@ -42,6 +42,7 @@ A save writes a temporary file and renames it, so a failed save keeps the old re
 ci-pins exits 3 with a `ci_mixed:` last line when its only stops are CI files and another file changes.
 No tool version can change, and no move of the base can change CI.
 A proof record that fails gives `ci_mixed` too.
+This decision amends ADR 0005 D4 and ADR 0016 D7.
 
 ### D5. In mode ci_mixed each gate blocks, and a clean stop needs the CI read-back
 
