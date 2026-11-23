@@ -5,6 +5,7 @@ export interface Word {
 	dynamic: boolean;
 	expands?: boolean;
 	splits?: boolean;
+	quoted?: boolean;
 }
 
 export interface Redirect {
@@ -36,7 +37,7 @@ function dollarExpands(next: string | undefined): boolean {
 
 const EXPANDS_IN_HEREDOC = /[$`\\]/;
 const DEFINES_COMMAND =
-	/\bfunction\b|\balias\b|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
+	/\bfunction\b|\balias\b|\(\s*\)\s*[{(]|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
 
 const UNQUOTED_EXPANSION = /[*?]|\[[^\]]*\]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
 
@@ -101,6 +102,10 @@ export function parseShell(src: string): SimpleCommand[] {
 	const splits = (): void => {
 		if (word) word.splits = true;
 	};
+	const quoted = (): void => {
+		word ??= { value: "", dynamic: false };
+		word.quoted = true;
+	};
 	const endWord = (): void => {
 		if (!word) return;
 		if (UNQUOTED_EXPANSION.test(unquoted)) word.expands = true;
@@ -127,7 +132,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		if (
 			!word ||
 			word.dynamic ||
-			unquoted !== word.value ||
+			word.quoted === true ||
 			!/^\d+$/.test(word.value)
 		)
 			return fallback;
@@ -145,10 +150,19 @@ export function parseShell(src: string): SimpleCommand[] {
 			(one) => one.dynamic || !EXEC_PREFIXES.has(one.value),
 		);
 		const rest = program < 0 ? [] : named.slice(program);
+		const redirected =
+			(current.stdinSources ?? 0) > (current.piped === true ? 1 : 0);
 		if (
-			current.stdinSources !== undefined &&
-			(rest.length === 0 ||
-				(rest.length === 1 && !rest[0]?.dynamic && rest[0]?.value === "exec"))
+			(current.stdinSources !== undefined &&
+				(rest.length === 0 ||
+					(rest.length === 1 &&
+						!rest[0]?.dynamic &&
+						rest[0]?.value === "exec"))) ||
+			(redirected &&
+				words.some(
+					(one) =>
+						!one.dynamic && (one.value === "exec" || one.value === "eval"),
+				))
 		)
 			groupStdin = true;
 		if (words.length > 0 || substitutions.length > 0) commands.push(current);
@@ -216,18 +230,22 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "\\") {
-			if (src[i + 1] !== "\n") append(src[i + 1] ?? "");
+			if (src[i + 1] !== "\n") {
+				append(src[i + 1] ?? "");
+				quoted();
+			}
 			i += 2;
 			continue;
 		}
 		if (c === "'") {
+			quoted();
 			const close = src.indexOf("'", i + 1);
 			append(src.slice(i + 1, close < 0 ? src.length : close));
 			i = close < 0 ? src.length : close + 1;
 			continue;
 		}
 		if (c === '"') {
-			append("");
+			quoted();
 			i++;
 			while (i < src.length && src[i] !== '"') {
 				const d = src[i] ?? "";
@@ -256,6 +274,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "$" && src[i + 1] === "'") {
+			quoted();
 			const close = src.indexOf("'", i + 2);
 			append(
 				src
@@ -267,6 +286,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "$" && src[i + 1] === '"') {
+			quoted();
 			i++;
 			continue;
 		}

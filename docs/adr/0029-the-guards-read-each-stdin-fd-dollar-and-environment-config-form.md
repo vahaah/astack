@@ -40,6 +40,9 @@ A stdin redirect on a group, a subshell, a loop close or a bare `exec` makes the
 Amended 2026-11-23. A shell with no stdin source of its own reads the stdin of the line.
 An earlier step that redirects stdin or runs `exec`, `eval`, `source` or `.` can rebind that stdin, also behind `command` or `builtin`.
 So such a shell after such a step is unreadable, also in a nested body.
+A digit word that a quote or an escape touches is no fd, as bash reads it.
+A step with a stdin redirect and a static `exec` or `eval` word makes the stdin of each step dynamic. A loop can run that step first.
+A bare shell in a text with `()` before `{` or `(` is unreadable, because a function of any name can feed it.
 
 ### D2. Each unknown `$` form is dynamic
 
