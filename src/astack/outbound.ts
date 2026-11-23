@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { ghRepoPrefix, inputString } from "./gh.ts";
 import type { Env } from "./hook/events.ts";
 import {
 	pipeStageText,
@@ -164,10 +165,7 @@ function addBodyFile(value: Word, { step, at, previous }: StepAt, body: Body) {
 }
 
 function envRepo(step: ShellStep, call: ShellCall): OutboundTarget | undefined {
-	const own = step.env
-		.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
-		.filter((value) => value !== undefined)
-		.at(-1);
+	const own = ghRepoPrefix(step.env);
 	if (own !== undefined) return named(own) ?? UNKNOWN;
 	if (/\bGH_REPO=/.test(call.command)) return UNKNOWN;
 	return named(call.env.GH_REPO);
@@ -287,12 +285,6 @@ function stringsIn(value: unknown): string[] {
 	return [];
 }
 
-function field(input: unknown, key: string): string | undefined {
-	if (typeof input !== "object" || input === null) return undefined;
-	const value: unknown = Reflect.get(input, key);
-	return typeof value === "string" ? value : undefined;
-}
-
 function toolWords(tool: string): string[] {
 	return tool
 		.replace(/(?<=[a-z0-9])(?=[A-Z])/g, "_")
@@ -307,16 +299,17 @@ function isMcpWrite(call: McpCall): boolean {
 		return true;
 	if (!words.some((word) => /^issues?$/.test(word))) return false;
 	return (
-		ISSUE_URL.test(field(call.input, "url") ?? "") ||
+		ISSUE_URL.test(inputString(call.input, "url") ?? "") ||
 		!OTHER_TRACKERS.test(call.server)
 	);
 }
 
 function mcpTarget(call: McpCall): OutboundTarget {
-	const url = ISSUE_URL.exec(field(call.input, "url") ?? "");
+	const url = ISSUE_URL.exec(inputString(call.input, "url") ?? "");
 	if (url) return named(`${url[1]}/${url[2]}`) ?? UNKNOWN;
-	const owner = field(call.input, "owner");
-	const repo = field(call.input, "repo") ?? field(call.input, "repository");
+	const owner = inputString(call.input, "owner");
+	const repo =
+		inputString(call.input, "repo") ?? inputString(call.input, "repository");
 	const slug =
 		owner !== undefined && repo !== undefined
 			? named(`${owner}/${repo}`)

@@ -1,4 +1,11 @@
-import { bodyText, ghBody, ghFlags, isGh } from "../../gh.ts";
+import {
+	bodyText,
+	ghBody,
+	ghFlags,
+	ghRepoPrefix,
+	inputString,
+	isGh,
+} from "../../gh.ts";
 import { originSlug, repoRoot, runGit } from "../../git.ts";
 import {
 	duplicateReasons,
@@ -129,10 +136,6 @@ function shellVerdict(
 		steps.flatMap((step, at) => {
 			if (!isGh(step.values, "pr", "create")) return [];
 			const flags = ghFlags(step.words.slice(3));
-			const envRepo = step.env
-				.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
-				.filter((value) => value !== undefined)
-				.at(-1);
 			const body = bodyText(
 				ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
 			);
@@ -143,7 +146,7 @@ function shellVerdict(
 						head: flagValue(step, ["-H", "--head"]) ?? currentBranch(step.dir),
 						body,
 						base: flagValue(step, ["-B", "--base"]),
-						repo: flags.repo ?? envRepo ?? context.env.GH_REPO,
+						repo: flags.repo ?? ghRepoPrefix(step.env) ?? context.env.GH_REPO,
 					},
 					step.dir,
 					list,
@@ -152,12 +155,6 @@ function shellVerdict(
 			];
 		}),
 	);
-}
-
-function field(input: unknown, key: string): string | undefined {
-	if (typeof input !== "object" || input === null) return undefined;
-	const value: unknown = Reflect.get(input, key);
-	return typeof value === "string" ? value : undefined;
 }
 
 function isMcpCreate(event: EventOf<"mcp">): boolean {
@@ -173,14 +170,14 @@ function mcpVerdict(
 ): Verdict {
 	if (!isMcpCreate(event)) return ALLOW;
 	const dir = projectDirOf(context);
-	const owner = field(event.input, "owner");
-	const repo = field(event.input, "repo");
+	const owner = inputString(event.input, "owner");
+	const repo = inputString(event.input, "repo");
 	return verdictOf(
 		event.tool,
 		{
-			head: field(event.input, "head") ?? currentBranch(dir),
-			body: field(event.input, "body"),
-			base: field(event.input, "base"),
+			head: inputString(event.input, "head") ?? currentBranch(dir),
+			body: inputString(event.input, "body"),
+			base: inputString(event.input, "base"),
 			repo: owner && repo ? `${owner}/${repo}` : undefined,
 		},
 		dir,
