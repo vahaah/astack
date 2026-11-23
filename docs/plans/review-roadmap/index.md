@@ -136,7 +136,7 @@ State. later
 Demo. A denied chained command says that nothing ran. A PR with a clean head gets a delta review.
 Depends on. M2.
 Blocks.
-- B08 Hooks read the body that the same command writes (review `B3`, `B2`, `K8`, `K6`, `K3`, `K2`, `K7`). Lane. c. Brief. stub.
+- B08 Hooks read the body that the same command writes (review `B3`, `B2`, `K8`, `K6`, `K3`, `K2`, `K7`). Lane. c. Brief. B08.md.
 - B10 Public issue and PR text passes a hashed deny list (review `K5`, `K4`). Lane. a. Brief. B10.md.
 - B11 The STE hooks and the comment advice soften where telemetry shows false denies (review `B5`, `B6`, `B4`, `K1`). Lane. c. Brief. stub.
 - B12 One review record and a delta review (review `D3`, `D1`, `D2`, `D6`, `D4`). Lane. e. Depends on. B07, B24. Brief. stub.

@@ -224,6 +224,19 @@ export function skillFolderFiles(skillFile: string): string[] {
 	);
 }
 
+export function baseNameMatch(
+	skillFile: string,
+	file: string,
+): string | undefined {
+	const matches = skillFolderFiles(skillFile).filter(
+		(path) => basename(path) === basename(file),
+	);
+	const [only] = matches;
+	return only !== undefined && matches.length === 1
+		? join(dirname(skillFile), only)
+		: undefined;
+}
+
 export function principleSkills(env: SkillPathEnv): Set<string> | undefined {
 	const skill = resolveSkillPath(
 		{ plugin: "astack", skill: "principles" },

@@ -1,4 +1,4 @@
-import { ghBody, ghFlags, isGh } from "../../gh.ts";
+import { bodyText, ghBody, ghFlags, isGh } from "../../gh.ts";
 import { originSlug, repoRoot, runGit } from "../../git.ts";
 import {
 	duplicateReasons,
@@ -13,6 +13,7 @@ import {
 } from "../../pr/session-prs.ts";
 import { sessionReasons, splitInstructionIn } from "../../pr/split.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	type Context,
@@ -123,28 +124,33 @@ function shellVerdict(
 	list: ListOpenPrs,
 ): Verdict {
 	if (!/\bgh\b/.test(event.command)) return ALLOW;
+	const steps = shellSteps(event.command, event.cwd);
 	return combineAll(
-		shellSteps(event.command, event.cwd)
-			.filter((step) => isGh(step.values, "pr", "create"))
-			.map((step) => {
-				const flags = ghFlags(step.words.slice(3));
-				const envRepo = step.env
-					.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
-					.filter((value) => value !== undefined)
-					.at(-1);
-				return verdictOf(
+		steps.flatMap((step, at) => {
+			if (!isGh(step.values, "pr", "create")) return [];
+			const flags = ghFlags(step.words.slice(3));
+			const envRepo = step.env
+				.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
+				.filter((value) => value !== undefined)
+				.at(-1);
+			const body = bodyText(
+				ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+			);
+			return [
+				verdictOf(
 					"gh pr create",
 					{
 						head: flagValue(step, ["-H", "--head"]) ?? currentBranch(step.dir),
-						body: ghBody(flags, step.simple, step.dir),
+						body,
 						base: flagValue(step, ["-B", "--base"]),
 						repo: flags.repo ?? envRepo ?? context.env.GH_REPO,
 					},
 					step.dir,
 					list,
 					context,
-				);
-			}),
+				),
+			];
+		}),
 	);
 }
 

@@ -25,6 +25,21 @@ export interface SimpleCommand {
 	piped?: boolean;
 	wholeStage?: boolean;
 	background?: boolean;
+	andOr?: AndOr;
+	chain?: number;
+	nested?: boolean;
+}
+
+export type AndOr = "&&" | "||";
+
+const OPENS = new Set(["if", "while", "until", "for", "select", "case", "{"]);
+const CLOSES = new Set(["fi", "done", "esac", "}"]);
+
+function commandPosition(words: readonly Word[]): boolean {
+	return (
+		words.every((word) => !word.dynamic && RESERVED.has(word.value)) ||
+		(words.length === 2 && words[0]?.value === "function")
+	);
 }
 
 const ONE_WORD =
@@ -93,6 +108,10 @@ export function parseShell(src: string): SimpleCommand[] {
 	};
 	let i = 0;
 	let unquoted = "";
+	let link: AndOr | undefined;
+	let chain = 0;
+	let depth = 0;
+	let parens = 0;
 
 	const append = (text: string, dynamic = false): void => {
 		word ??= { value: "", dynamic: false };
@@ -119,6 +138,12 @@ export function parseShell(src: string): SimpleCommand[] {
 			current.redirects.push({ ...redirectNext, target: word });
 			redirectNext = undefined;
 		} else {
+			if (!word.dynamic && commandPosition(words)) {
+				if (OPENS.has(word.value)) depth++;
+				if (CLOSES.has(word.value)) depth = Math.max(0, depth - 1);
+				if (OPENS.has(word.value) || CLOSES.has(word.value))
+					current.nested = true;
+			}
 			words.push(word);
 		}
 		word = undefined;
@@ -165,7 +190,16 @@ export function parseShell(src: string): SimpleCommand[] {
 				))
 		)
 			groupStdin = true;
-		if (words.length > 0 || substitutions.length > 0) commands.push(current);
+		if (words.length > 0 || substitutions.length > 0) {
+			if (current.piped !== true) {
+				if (link !== "&&") chain++;
+				if (link !== undefined) current.andOr = link;
+			}
+			current.chain = chain;
+			if (depth > 0) current.nested = true;
+			commands.push(current);
+			link = undefined;
+		}
 		words = [];
 		substitutions = [];
 		current = { words, stdin: undefined, redirects: [], substitutions };
@@ -306,6 +340,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			const stage = current;
 			endCommand();
 			if (src[i + 1] === "|") {
+				link = "||";
 				i += 2;
 				continue;
 			}
@@ -332,11 +367,29 @@ export function parseShell(src: string): SimpleCommand[] {
 			const paired = src[i + 1] === "&";
 			if (!paired) current.background = true;
 			endCommand();
+			link = paired ? "&&" : undefined;
 			i += paired ? 2 : 1;
 			continue;
 		}
-		if (c === ";" || c === "(" || c === ")") {
+		if (c === ";") {
 			endCommand();
+			link = undefined;
+			i++;
+			continue;
+		}
+		if (c === "(") {
+			endCommand();
+			parens++;
+			depth++;
+			i++;
+			continue;
+		}
+		if (c === ")") {
+			endCommand();
+			if (parens > 0) {
+				parens--;
+				depth = Math.max(0, depth - 1);
+			}
 			i++;
 			continue;
 		}
@@ -399,6 +452,18 @@ export function parseShell(src: string): SimpleCommand[] {
 }
 
 export const ENV_ASSIGNMENT = /^[A-Za-z_]\w*=/;
+
+export function chainSteps(command: string): string[] {
+	return parseShell(command).flatMap((simple) => {
+		const word = simple.words.find(
+			(candidate) =>
+				!ENV_ASSIGNMENT.test(candidate.value) &&
+				(candidate.dynamic || !RESERVED.has(candidate.value)),
+		);
+		if (word === undefined) return [];
+		return [word.dynamic && word.value === "" ? "$" : word.value];
+	});
+}
 
 export type Unreadable =
 	| "folder"
@@ -894,7 +959,11 @@ function scriptSteps(
 		}
 		if (plain.env.length > 0 || plain.words.length > 0)
 			steps.push({
-				simple: { ...simple, words: [...env, ...plain.words] },
+				simple: {
+					...simple,
+					words: [...env, ...plain.words],
+					...(depth > 0 ? { nested: true } : {}),
+				},
 				env,
 				unsetsEnv,
 				words: plain.words,
@@ -1026,7 +1095,10 @@ export function fileWrites(steps: readonly ShellStep[]): FileWrite[] {
 		if (name === "tee") {
 			const piped = step.simple.piped === true ? steps[index - 1] : undefined;
 			const fed = piped ? printedText(piped) : undefined;
-			const stdin = step.simple.stdin ?? fed;
+			const stdin =
+				step.simple.stdinDynamic === true
+					? undefined
+					: (step.simple.stdin ?? fed);
 			if (stdin === undefined) return [];
 			return teeTargets(step.words.slice(1)).map((write) => ({
 				step,
@@ -1039,4 +1111,175 @@ export function fileWrites(steps: readonly ShellStep[]): FileWrite[] {
 		const body = name === "cat" ? lineEnded(printed) : printed;
 		return stdoutWrites(step.simple).map((write) => ({ step, ...write, body }));
 	});
+}
+
+export type DiskText = string | undefined;
+
+export type StagedText =
+	| { readonly kind: "text"; readonly text: string }
+	| { readonly kind: "unread"; readonly disk: string }
+	| { readonly kind: "missing" };
+
+type Effect =
+	| { readonly kind: "none" }
+	| { readonly kind: "unread" }
+	| { readonly kind: "writes"; readonly writes: readonly FileWrite[] };
+
+const NONE: Effect = { kind: "none" };
+const UNREAD: Effect = { kind: "unread" };
+
+const READERS = new Set([
+	"cat",
+	"head",
+	"tail",
+	"grep",
+	"wc",
+	"ls",
+	"test",
+	"[",
+	"astack",
+]);
+
+function writeTargets(step: ShellStep): Word[] {
+	const redirected = step.simple.redirects
+		.filter((redirect) => redirect.op.includes(">"))
+		.map((redirect) => redirect.target);
+	const teed =
+		step.values[0] === "tee"
+			? teeTargets(step.words.slice(1)).map((write) => write.target)
+			: [];
+	return [...redirected, ...teed];
+}
+
+function isReader(step: ShellStep): boolean {
+	return (
+		READERS.has(step.values[0] ?? "") &&
+		writeTargets(step).every(
+			(target) => !target.dynamic && target.value === "/dev/null",
+		)
+	);
+}
+
+function hits(step: ShellStep, target: Word, path: string): boolean {
+	if (target.dynamic) return false;
+	return step.unreadable === "folder"
+		? basename(target.value) === basename(path)
+		: resolve(step.dir, target.value) === path;
+}
+
+function namesFile(step: ShellStep, name: string): boolean {
+	const pattern = new RegExp(
+		`(?<![\\w.-])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\w-])`,
+	);
+	return [
+		...step.simple.words.map((word) => word.value),
+		...step.simple.redirects.map((redirect) => redirect.target.value),
+		...(step.simple.stdinFrom === undefined ? [] : [step.simple.stdin ?? ""]),
+	].some((text) => pattern.test(text));
+}
+
+function stepEffect(
+	step: ShellStep,
+	writes: readonly FileWrite[],
+	path: string,
+): Effect {
+	if (isReader(step)) return NONE;
+	const targets = writeTargets(step);
+	if (targets.some((target) => target.dynamic)) return UNREAD;
+	if (step.unreadable !== undefined && step.unreadable !== "folder")
+		return UNREAD;
+	const own = writes.filter((write) => write.step === step);
+	const parsed = own.filter((write) => hits(step, write.target, path));
+	const unparsed = targets.filter(
+		(target) =>
+			hits(step, target, path) && !own.some((write) => write.target === target),
+	);
+	if (unparsed.length > 0) return UNREAD;
+	if (own.length === 0 && namesFile(step, basename(path))) return UNREAD;
+	if (parsed.length === 0) return NONE;
+	return step.unreadable === "folder"
+		? UNREAD
+		: { kind: "writes", writes: parsed };
+}
+
+function pipelineOf(
+	steps: readonly ShellStep[],
+	at: number,
+): { readonly start: number; readonly end: number } {
+	let start = at;
+	while (start > 0 && steps[start]?.simple.piped === true) start--;
+	let end = at;
+	while (steps[end + 1]?.simple.piped === true) end++;
+	return { start, end };
+}
+
+function isCertain(
+	steps: readonly ShellStep[],
+	at: number,
+	body: ShellStep,
+	bodyChain: number | undefined,
+): boolean {
+	const step = steps[at];
+	const { start, end } = pipelineOf(steps, at);
+	const head = steps[start]?.simple;
+	if (step === undefined || head === undefined) return false;
+	if (step.simple.nested === true || head.nested === true) return false;
+	if (steps[end]?.simple.background === true) return false;
+	if (head.andOr === undefined) return true;
+	return (
+		head.andOr === "&&" &&
+		body.simple.nested !== true &&
+		head.chain !== undefined &&
+		head.chain === bodyChain
+	);
+}
+
+export function stagedText(
+	steps: readonly ShellStep[],
+	at: number,
+	path: string,
+	disk: DiskText,
+): StagedText {
+	const body = steps[at];
+	const pipeline = pipelineOf(steps, at);
+	const bodyChain = steps[pipeline.start]?.simple.chain;
+	const later =
+		body?.simple.nested === true ||
+		steps[pipeline.end]?.simple.background === true;
+	const writes = fileWrites(steps);
+	let text: string | undefined = disk;
+	let unread = body === undefined || body.unreadable === "folder";
+	steps.forEach((step, index) => {
+		const concurrent =
+			(index >= pipeline.start && index <= pipeline.end) ||
+			(index > at && later);
+		if (index === at || (index > at && !concurrent) || body === undefined)
+			return;
+		const effect = stepEffect(step, writes, path);
+		if (effect.kind === "none") return;
+		if (
+			effect.kind === "unread" ||
+			concurrent ||
+			!isCertain(steps, index, body, bodyChain)
+		) {
+			unread = true;
+			return;
+		}
+		for (const write of effect.writes) {
+			if (!write.append) {
+				text = write.body;
+				unread = false;
+			} else text = `${text ?? ""}${write.body}`;
+		}
+	});
+	if (
+		body !== undefined &&
+		writeTargets(body).some(
+			(target) => target.dynamic || hits(body, target, path),
+		)
+	)
+		unread = true;
+	if (!unread)
+		return text === undefined ? { kind: "missing" } : { kind: "text", text };
+	return disk === undefined ? { kind: "missing" } : { kind: "unread", disk };
 }

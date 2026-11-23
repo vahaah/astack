@@ -1,4 +1,5 @@
 import {
+	baseNameMatch,
 	defaultSkillPathEnv,
 	parseSkillRef,
 	resolveSkillPath,
@@ -28,6 +29,11 @@ function run(args: readonly string[], io: Io): number {
 		);
 		return 1;
 	}
+	const match = file ? baseNameMatch(skill, file) : undefined;
+	if (match) {
+		io.out(`${match}\n`);
+		return 0;
+	}
 	const files = skillFolderFiles(skill);
 	io.err(
 		[
@@ -47,7 +53,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "skill-path",
 	summary:
-		"Prints the path of a skill file in an installed plugin. Exits 1 when the skill is not installed. Exits 3 when the skill does not hold the file, and lists the .md files of its references/ and playbooks/ folders.",
+		"Prints the path of a skill file in an installed plugin. When the skill does not hold the file, it prints the one .md file of its references/ and playbooks/ folders with the same base name. Exits 1 when the skill is not installed. Exits 3 when no single file matches, and lists the .md files of those folders.",
 	usage: "skill-path <plugin>:<skill> [file inside the skill]",
 	run,
 };

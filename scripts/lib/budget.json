@@ -1,5 +1,5 @@
 {
-	"total": 116755,
+	"total": 116633,
 	"skills": {
 		"architect": 2119,
 		"arena": 1053,
@@ -24,7 +24,7 @@
 		"in-your-own-words": 40,
 		"interrogate": 429,
 		"leaving-pr-comments": 524,
-		"mode": 24220,
+		"mode": 24136,
 		"modernize": 1013,
 		"no-comments": 492,
 		"plan": 14690,
@@ -42,8 +42,8 @@
 		"tdd": 1007,
 		"types": 4992,
 		"why": 1162,
-		"write-docs": 4945,
-		"write-ticket": 4054
+		"write-docs": 4934,
+		"write-ticket": 4027
 	},
 	"lines": {
 		"AGENTS.md": 879

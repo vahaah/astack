@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
-import { readOptional } from "./paths.ts";
-import type { SimpleCommand, Word } from "./shell.ts";
+import type { SimpleCommand, StagedText, Word } from "./shell.ts";
 
 export interface GhFlags {
 	body?: Word;
@@ -82,16 +81,63 @@ export function ghFlags(words: readonly Word[]): GhFlags {
 	return flags;
 }
 
+export type BodyReader = (path: string) => StagedText;
+
+const MISSING: StagedText = { kind: "missing" };
+
+function given(text: string | undefined): StagedText {
+	return text === undefined ? MISSING : { kind: "text", text };
+}
+
 export function ghBody(
 	flags: GhFlags,
 	command: SimpleCommand,
 	dir: string,
-): string | undefined {
-	if (flags.body) return flags.body.dynamic ? undefined : flags.body.value;
-	if (!flags.bodyFile || flags.bodyFile.dynamic) return undefined;
+	read: BodyReader,
+): StagedText {
+	if (flags.body) return flags.body.dynamic ? MISSING : given(flags.body.value);
+	if (!flags.bodyFile || flags.bodyFile.dynamic) return MISSING;
 	return flags.bodyFile.value === "-"
-		? command.stdin
-		: readOptional(resolve(dir, flags.bodyFile.value));
+		? given(command.stdin)
+		: read(resolve(dir, flags.bodyFile.value));
+}
+
+export function bodyText(staged: StagedText): string | undefined {
+	switch (staged.kind) {
+		case "text":
+			return staged.text;
+		case "unread":
+			return staged.disk;
+		case "missing":
+			return undefined;
+	}
+}
+
+function repoSlug(value: string): string {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+		.replace(/^[^@/]+@/, "")
+		.replace(/\/+$/, "")
+		.replace(/\.git$/, "")
+		.split(/[/:]/)
+		.slice(-2)
+		.join("/");
+}
+
+export function sameRepo(named: string, origin: string): boolean {
+	return repoSlug(named) === repoSlug(origin);
+}
+
+export function foreignRepo(
+	named: string | undefined,
+	origin: string | undefined,
+): string | undefined {
+	return named !== undefined &&
+		(origin === undefined || !sameRepo(named, origin))
+		? named
+		: undefined;
 }
 
 export function isGh(

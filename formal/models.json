@@ -643,6 +643,11 @@
 			"control": "hook-registry"
 		},
 		{
+			"path": "src/astack/hook/body-reader.ts",
+			"reason": "It gives the body hooks the text that a command leaves in a body file. A wrong text only denies or advises, and a handler that throws fails open",
+			"control": "hook-staged-body"
+		},
+		{
 			"path": "src/astack/hook/handlers/duplicate-pr.ts",
 			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
 			"control": "hook-fail-open"
