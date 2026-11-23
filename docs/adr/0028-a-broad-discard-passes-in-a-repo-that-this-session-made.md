@@ -108,6 +108,10 @@ Amended 2026-11-23. A lost path that is a repo root, such as a nested repo or a 
 A command that recurses into submodules gets no exemption in a repo with a submodule.
 That is `--recurse-submodules`, a `submodule.recurse` key of `-c` and a true `submodule.recurse` setting of git.
 
+Amended 2026-11-23, after the security review of B37. In a repo with a gitlink, `checkout`, `read-tree`, `reset`, `restore` and `switch` get no exemption.
+Each of them honors `submodule.recurse`, and the hook reads no config for this rule.
+An earlier step of the line, a `GIT_CONFIG` variable, `HOME` or `XDG_CONFIG_HOME` can change the config that git reads.
+
 ### D8. The record is a mistake guard, not a security boundary
 
 The record file stops an agent that discards work in a repo of another session by mistake.

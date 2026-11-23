@@ -568,7 +568,13 @@ function isRepoRoot(path: string): boolean {
 	}
 }
 
-const SUBMODULE_RECURSE = /^submodule\.recurse(?:=|$)/i;
+const RECURSING_VERBS = new Set([
+	"checkout",
+	"read-tree",
+	"reset",
+	"restore",
+	"switch",
+]);
 
 function hasSubmodules(dir: string): boolean {
 	const staged = runGit(dir, [...READ_ONLY_GIT, "ls-files", "--stage", "-z"]);
@@ -582,19 +588,7 @@ function hasSubmodules(dir: string): boolean {
 }
 
 function recursesSubmodules(git: GitInvocation): boolean {
-	const recurses =
-		git.args.some((arg) =>
-			isLongForm(arg.split("=")[0] ?? "", "--recurse-submodules"),
-		) ||
-		git.config.some((setting) => SUBMODULE_RECURSE.test(setting)) ||
-		gitText(git.dir, [
-			...READ_ONLY_GIT,
-			"config",
-			"--type=bool",
-			"--get",
-			"submodule.recurse",
-		]) === "true";
-	return recurses && hasSubmodules(git.dir);
+	return RECURSING_VERBS.has(git.sub) && hasSubmodules(git.dir);
 }
 
 function workLossReasons(

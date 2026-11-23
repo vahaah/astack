@@ -1378,8 +1378,16 @@ describe("a repo that this session made", () => {
 			"git reset --hard",
 			(dir: string) => git(dir, "config", "submodule.recurse", "true"),
 		],
+		[
+			"git config submodule.recurse true; git reset --hard",
+			(dir: string) => git(dir, "config", "submodule.recurse", "false"),
+		],
+		[
+			"git restore :/",
+			(dir: string) => git(dir, "config", "submodule.recurse", "false"),
+		],
 	])(
-		"[control:sg-session-repo-submodule] %s gets no session exemption in a repo with a submodule, because git then resets the work of each submodule",
+		"[control:sg-session-repo-submodule] %s gets no session exemption in a repo with a submodule, because a config that the hook cannot read can make git reset the work of each submodule",
 		(command, configure) => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
@@ -1391,7 +1399,7 @@ describe("a repo that this session made", () => {
 		},
 	);
 
-	test("git reset --hard is denied in a session repo for a dirty submodule, because the submodule is a repo root with no bound record", () => {
+	test("git reset --hard is denied in a session repo with a dirty submodule, because the reset can reach the work of the submodule", () => {
 		const { dir, state } = fresh("made");
 		initedRepo(state, dir);
 		const module = join(dir, "..", "module");
@@ -1411,7 +1419,7 @@ describe("a repo that this session made", () => {
 		git(dir, "config", "submodule.recurse", "false");
 		write(dir, { "sub/a.txt": "c\n" });
 		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
-			"discards the uncommitted changes in sub.",
+			"discards the uncommitted changes in a.txt, sub.",
 		);
 	});
 
