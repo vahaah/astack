@@ -124,7 +124,13 @@ export function parseShell(src: string): SimpleCommand[] {
 		if (command.stdinSources > 1 || !readable) command.stdinDynamic = true;
 	};
 	const redirectFd = (fallback: number): number => {
-		if (!word || word.dynamic || !/^\d+$/.test(word.value)) return fallback;
+		if (
+			!word ||
+			word.dynamic ||
+			unquoted !== word.value ||
+			!/^\d+$/.test(word.value)
+		)
+			return fallback;
 		const fd = Number(word.value);
 		word = undefined;
 		unquoted = "";
@@ -135,12 +141,14 @@ export function parseShell(src: string): SimpleCommand[] {
 		const named = words.filter(
 			(one) => one.dynamic || !RESERVED.has(one.value),
 		);
+		const program = named.findIndex(
+			(one) => one.dynamic || !EXEC_PREFIXES.has(one.value),
+		);
+		const rest = program < 0 ? [] : named.slice(program);
 		if (
 			current.stdinSources !== undefined &&
-			(named.length === 0 ||
-				(named.length === 1 &&
-					!named[0]?.dynamic &&
-					named[0]?.value === "exec"))
+			(rest.length === 0 ||
+				(rest.length === 1 && !rest[0]?.dynamic && rest[0]?.value === "exec"))
 		)
 			groupStdin = true;
 		if (words.length > 0 || substitutions.length > 0) commands.push(current);
@@ -502,6 +510,7 @@ const RESERVED = new Set([
 ]);
 const HEADERS = new Set(["case", "for", "select"]);
 const SHELLS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
+const EXEC_PREFIXES = new Set(["builtin", "command"]);
 const FOLDER_MOVES = new Set(["cd", "popd", "pushd"]);
 const MAX_DEPTH = 4;
 const FED: Word = { value: "", dynamic: true, splits: true };
@@ -692,7 +701,8 @@ function stdinScript(
 	earlier: readonly ShellStep[],
 	defines: boolean,
 ): Body | undefined {
-	if (simple.stdinSources === undefined) return undefined;
+	if (simple.stdinSources === undefined)
+		return defines ? UNREAD_STDIN : undefined;
 	const script = defines ? undefined : literalScript(simple, earlier.at(-1));
 	return script === undefined
 		? UNREAD_STDIN
