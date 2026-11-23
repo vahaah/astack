@@ -32,3 +32,4 @@
 | [0029](0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md) | The guards read each stdin, fd, `$` and environment config form, and a gate record binds to its base profile | Accepted |
 | [0030](0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md) | astack check effects compares the effect classes of the code with the domain record | Accepted |
 | [0031](0031-each-new-adr-follows-one-template-and-accepted-adr-text-changes-only-by-a-dated-block.md) | Each new ADR follows one template, and accepted ADR text changes only by a dated block | Accepted |
+| [0035](0035-each-pr-has-one-review-record-and-a-delta-review.md) | Each PR has one review record, a fix after a clean head gets a delta review, and the rung sizes the reviewer set | Accepted |

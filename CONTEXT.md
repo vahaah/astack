@@ -152,6 +152,27 @@ A bounded review whose ledger owns findings, recurrence, and iteration use.
 Its fixed growth record survives resumes and later runs.
 _Avoid_: Proof admission
 
+### Review record
+
+The one record of a PR at `pr-review-hardening/<branch>.review.json` in the git common dir.
+It keeps `baseSha` and `firstReviewedHead`, and each reviewed head joins the end with its stop decision and its reviewer launches.
+_Avoid_: Growth file, review log
+_Code_: `src/astack/review-record.ts`
+
+### Delta review
+
+A hardening run whose reviewers get only the diff from the last `stop_clean` head of the review record that HEAD holds.
+The run keeps the ledger, the comment gate and each gate.
+_Avoid_: Partial review, quick review
+_Code_: `deltaBase`
+
+### Mixed CI mode
+
+The mode `ci_mixed` of a hardening run whose PR changes CI and another file with the same tool versions.
+Each gate blocks, and a clean stop needs the CI read-back.
+_Avoid_: CI proof mode
+_Code_: `ciMode`
+
 ### Effective decision
 
 A current accepted ADR decision or a ratified proposal with checked authority and history.
