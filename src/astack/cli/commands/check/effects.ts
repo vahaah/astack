@@ -1,4 +1,3 @@
-import { realpathSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import {
 	countLine,
@@ -7,7 +6,7 @@ import {
 	findingLine,
 } from "../../../domain/report.ts";
 import { repoRoot, runGit } from "../../../git.ts";
-import { readOptional } from "../../../paths.ts";
+import { canonical, readOptional } from "../../../paths.ts";
 import { readPlanBlock } from "../../../plan/domain.ts";
 import { loadDomainEnv, planProfileFor } from "../../../plan/files.ts";
 import { err, ok, type Result } from "../../../result.ts";
@@ -55,7 +54,7 @@ function readPlan(
 	io: Io,
 	file: string,
 ): Result<EffectPlan, string> {
-	const absolute = resolve(io.cwd, file);
+	const absolute = resolve(canonical(io.cwd), file);
 	const text = readOptional(absolute);
 	if (text === undefined) return err(`cannot read the plan ${file}`);
 	const path = relative(root, absolute);
@@ -69,7 +68,7 @@ function run(args: readonly string[], io: Io): number {
 	const top = repoRoot(io.cwd);
 	if (top === undefined)
 		return usageError(io, `${NAME}: not inside a git repository`);
-	const root = realpathSync(top);
+	const root = canonical(top);
 	const { plan, base, json } = parsed.value;
 	const domain = loadDomainEnv(root, planProfileFor(root).glossary);
 	if (!domain.card.ok)
