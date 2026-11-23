@@ -138,6 +138,79 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[write("gh issue create", NAMED, ["Plan", "notes"])],
 		],
 		[
+			"a switch cluster that ends in an attached body",
+			shell('gh pr create -db"notes"'),
+			[write("gh pr create", REMOTES, ["notes"])],
+		],
+		[
+			"an unknown flag",
+			shell("gh issue comment 21 --bogus -b notes"),
+			[
+				write("gh issue comment", UNKNOWN, [
+					"notes",
+					"issue",
+					"comment",
+					"21",
+					"--bogus",
+					"-b",
+					"notes",
+				]),
+			],
+		],
+		[
+			"a selector that only a variable gives",
+			shell('gh issue comment "$N" -b notes'),
+			[
+				write("gh issue comment", UNKNOWN, [
+					"notes",
+					"issue",
+					"comment",
+					"-b",
+					"notes",
+				]),
+			],
+		],
+		[
+			"a repo that only a variable gives",
+			shell('gh issue comment 21 -R "$REPO" -b notes'),
+			[
+				write("gh issue comment", UNKNOWN, [
+					"notes",
+					"issue",
+					"comment",
+					"21",
+					"-R",
+					"-b",
+					"notes",
+				]),
+			],
+		],
+		[
+			"an action that only a variable gives",
+			shell('gh issue "$A" 21 -b notes'),
+			[write("gh issue", UNKNOWN, ["issue", "21", "-b", "notes"])],
+		],
+		[
+			"a flag before the group",
+			shell("gh -R o/r issue comment 21 -b notes"),
+			[
+				write("gh", UNKNOWN, [
+					"-R",
+					"o/r",
+					"issue",
+					"comment",
+					"21",
+					"-b",
+					"notes",
+				]),
+			],
+		],
+		[
+			"a gh api switch cluster that ends in a field",
+			shell("gh api repos/o/r/issues -ifbody=notes"),
+			[write("gh api repos/o/r/issues", NAMED, ["notes"])],
+		],
+		[
 			"a comment body piped from a literal echo",
 			shell('echo "the notes" | gh issue comment 21 -F -'),
 			[write("gh issue comment", REMOTES, ["the notes\n"])],

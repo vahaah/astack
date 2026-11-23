@@ -41,6 +41,7 @@ Each string at each depth of an MCP input is a text.
 ### D4. Only a private or internal target passes a text with a listed name
 
 The target is an issue URL, else `--repo`, else `GH_REPO`, else the endpoint or input repo, else each GitHub remote of the folder.
+The reader reads short flags as pflag does. A word that it cannot parse, such as an unknown flag or a variable selector, gives the unknown target.
 On a hit, gh reads the visibility of each target other than `PUBLIC_REPO`. An answer other than private or internal denies.
 
 ### D5. A body that only a variable hides and an unread body file keep their verdict
