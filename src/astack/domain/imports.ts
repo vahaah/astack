@@ -80,6 +80,19 @@ const DECLARES = new Set([
 	"enum",
 ]);
 
+const PREFIXES = [
+	"?",
+	"await",
+	"void",
+	"typeof",
+	"delete",
+	"yield",
+	"!",
+	"-",
+	"+",
+	"~",
+];
+
 type Names = "all" | readonly string[];
 
 type Clause = {
@@ -124,21 +137,35 @@ function moduleUses(
 	return uses;
 }
 
-function bracesEnd(tokens: readonly Token[], open: number): number {
+function closeOf(
+	tokens: readonly Token[],
+	open: number,
+	pair: readonly [string, string] = ["{", "}"],
+): number {
 	let depth = 0;
 	for (let at = open; at < tokens.length; at++) {
-		if (is(tokens[at], "{")) depth++;
-		if (is(tokens[at], "}")) depth--;
+		if (is(tokens[at], pair[0])) depth++;
+		if (is(tokens[at], pair[1])) depth--;
 		if (depth === 0) return at;
 	}
 	return tokens.length;
+}
+
+function namesProperty(tokens: readonly Token[], at: number): boolean {
+	const next = tokens[at + 1];
+	if (is(next, ":") || is(next, "?") || is(next, "=")) return true;
+	if (!is(next, "(")) return false;
+	const after = tokens[closeOf(tokens, at + 1, ["(", ")"]) + 1];
+	const before = tokens[at - 1];
+	const operand = PREFIXES.some((prefix) => is(before, prefix));
+	return is(after, "{") || (is(after, ":") && !operand);
 }
 
 function namedList(
 	tokens: readonly Token[],
 	open: number,
 ): { readonly names: string[]; readonly typed: number; readonly end: number } {
-	const end = bracesEnd(tokens, open);
+	const end = closeOf(tokens, open);
 	const names: string[] = [];
 	let typed = 0;
 	let start = true;
@@ -365,7 +392,7 @@ function readTokens(tokens: readonly Token[]): Draft {
 	while (at < tokens.length) {
 		const token = tokens[at];
 		if (token !== undefined && !isMember(tokens, at)) {
-			if (is(token, "import")) {
+			if (is(token, "import") && !namesProperty(tokens, at)) {
 				at = readImport(tokens, at, draft);
 				continue;
 			}

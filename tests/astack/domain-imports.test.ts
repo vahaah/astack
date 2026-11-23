@@ -56,6 +56,11 @@ describe("moduleFacts", () => {
 		["a bare fetch call", "await fetch(url);", ["network"]],
 		["node:os", 'import { homedir } from "node:os";', ["env"]],
 		["process.env", "const home = process.env.HOME;", ["env"]],
+		[
+			"an object key named import beside process.env",
+			"const options = { import: mode, home() { return process.env.HOME; } };",
+			["env"],
+		],
 		["process.cwd", "const dir = process.cwd();", ["env"]],
 		["Date.now", "const at = Date.now();", ["clock"]],
 		["a bare new Date()", "const at = new Date();", ["clock"]],
@@ -96,6 +101,7 @@ describe("moduleFacts", () => {
 				"export function run(): void {}",
 				"export const LIMIT = 1;",
 				'type Local = { a: typeof import("./t.ts") };',
+				"class Loader { import(path: string): void {} }",
 			].join("\n"),
 		);
 		expect({
