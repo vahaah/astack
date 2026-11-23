@@ -41,6 +41,8 @@ When a tstack rule goes against an astack rule, the astack rule wins.
 astack does not ship `pr-wait`. `astack watch-pr` stays the one PR watcher.
 The port of the useful `pr-wait` features to `astack watch-pr` is a follow-up.
 
+> Note 2026-11-23: No ticket tracks the port of the `pr-wait` features. `astack watch-pr` stays the one PR watcher.
+
 ### D4. An un-negated "full send" clause is a merge grant for the current prompt
 
 The merge guard reads a "full send" clause with no negation as a merge grant of kind `any`.

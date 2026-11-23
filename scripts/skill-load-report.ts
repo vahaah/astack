@@ -28,6 +28,7 @@ const STUB = "templates/pr-review-hardening.stub.SKILL.md";
 const skill = (name: string) => `${PLUGIN}/${name}/SKILL.md`;
 const reference = (name: string, file: string) =>
 	`${PLUGIN}/${name}/references/${file}`;
+const skillFile = (name: string, file: string) => `${PLUGIN}/${name}/${file}`;
 const MODE_SECTIONS = [
 	"non-negotiables.md",
 	"autonomy.md",
@@ -229,7 +230,10 @@ export function scenarios(
 			name: "write-docs, ADR",
 			entry: skill("write-docs"),
 			before: [skill("write-docs"), reference("write-docs", "adr.md")],
-			after: [skill("write-docs"), reference("write-docs", "adr.md")],
+			after: [
+				skill("write-docs"),
+				skillFile("domain-modeling", "ADR-FORMAT.md"),
+			],
 		},
 		{
 			name: "write-docs, PR body or commit message",

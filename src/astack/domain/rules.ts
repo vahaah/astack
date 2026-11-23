@@ -165,8 +165,12 @@ function capFindings(block: DomainBlock, card: ContextsCard): DomainFinding[] {
 	return findings;
 }
 
-function lawFindings(block: DomainBlock, facts: DomainFacts): DomainFinding[] {
-	const caps = allCaps(block, facts.card);
+function lawFindings(
+	block: DomainBlock,
+	card: ContextsCard,
+	registry: ModelRegistry | undefined,
+): DomainFinding[] {
+	const caps = allCaps(block, card);
 	const findings: DomainFinding[] = [];
 	const tagged = (tag: string): boolean =>
 		block.laws.some((law) => law.tag === tag);
@@ -185,7 +189,7 @@ function lawFindings(block: DomainBlock, facts: DomainFacts): DomainFinding[] {
 		if (!tagged(name))
 			findings.push({ line, message: `the write cap ${name} has no law` });
 	for (const law of block.laws)
-		findings.push(...oneLaw(law, block, caps, facts.registry));
+		findings.push(...oneLaw(law, block, caps, registry));
 	for (const map of block.maps)
 		if (map.equation === undefined || map.check?.kind !== "prop")
 			findings.push({
@@ -261,11 +265,11 @@ function linkFindings(block: DomainBlock, facts: DomainFacts): DomainFinding[] {
 	return findings;
 }
 
-export function domainFindings(
+export function recordFindings(
 	block: DomainBlock,
-	facts: DomainFacts,
+	card: ContextsCard,
+	registry: ModelRegistry | undefined,
 ): readonly DomainFinding[] {
-	const { card } = facts;
 	const findings: DomainFinding[] = [];
 	if (!card.contexts.some((context) => context.name === block.context.name))
 		findings.push({
@@ -274,9 +278,19 @@ export function domainFindings(
 		});
 	findings.push(
 		...capFindings(block, card),
-		...lawFindings(block, facts),
-		...linkFindings(block, facts),
+		...lawFindings(block, card, registry),
 	);
+	return findings.sort((a, b) => a.line - b.line);
+}
+
+export function domainFindings(
+	block: DomainBlock,
+	facts: DomainFacts,
+): readonly DomainFinding[] {
+	const findings: DomainFinding[] = [
+		...recordFindings(block, facts.card, facts.registry),
+		...linkFindings(block, facts),
+	];
 	const derived = derivedRung(block, facts);
 	if (block.rung === undefined)
 		findings.push({

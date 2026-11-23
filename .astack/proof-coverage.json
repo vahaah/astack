@@ -16,7 +16,8 @@
 		"docs/reference/source-scan.md",
 		"docs/reference/pr-recipes.md",
 		"docs/reference/domain-record.md",
-		"docs/reference/review-stub.md"
+		"docs/reference/review-stub.md",
+		"docs/reference/adr-lifecycle.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -99,7 +100,12 @@
 		"tests/astack/domain-effect-change.test.ts",
 		"tests/astack/check-effects-cli.test.ts",
 		"tests/property/grant-store.test.ts",
-		"tests/property/grant-monoid.test.ts"
+		"tests/property/grant-monoid.test.ts",
+		"tests/property/adr-amend-only.test.ts",
+		"tests/astack/adr-record.test.ts",
+		"tests/astack/adr-cli.test.ts",
+		"tests/adr-numbers.test.ts",
+		"tests/apply/ci-parity-apply.test.ts"
 	],
 	"links": [
 		{
@@ -997,6 +1003,44 @@
 				"grant-save-fail",
 				"sg-grant-save-allows"
 			]
+		},
+		{
+			"criterion": "AL-amend-only",
+			"controls": [
+				"adr-amend-only",
+				"adr-amend-pr17",
+				"adr-amend-cases",
+				"adr-amend-audit",
+				"adr-amend-proposed"
+			]
+		},
+		{
+			"criterion": "AL-status",
+			"controls": ["adr-status", "adr-status-tree", "adr-status-cli"]
+		},
+		{
+			"criterion": "AL-covers",
+			"controls": ["rl-covers-adr"]
+		},
+		{
+			"criterion": "AL-relations",
+			"controls": ["adr-relations"]
+		},
+		{
+			"criterion": "AL-index",
+			"controls": ["adr-index", "adr-tree"]
+		},
+		{
+			"criterion": "AL-template",
+			"controls": ["adr-template", "adr-template-edit", "adr-cli-template"]
+		},
+		{
+			"criterion": "AL-base",
+			"controls": ["adr-cli"]
+		},
+		{
+			"criterion": "AL-citations",
+			"controls": ["apply-citation-note"]
 		}
 	]
 }

@@ -16,9 +16,10 @@
 		"ste": "bun scripts/ste.ts",
 		"budget": "bun scripts/budget.ts",
 		"charts": "bun scripts/check-readme-charts.ts",
+		"check:adr": "bun scripts/check-adr.ts",
 		"check:proof": "bun scripts/check-proof.ts",
 		"check:fast": "bun scripts/check-fast.ts",
-		"check": "biome ci . && tsc -p . && bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run budget && bun run charts && bun run check:proof && bun run test",
+		"check": "biome ci . && tsc -p . && bun run build && bun run bundle && bun run validate && bun run dist && bun run neutral && bun run secrets && bun run ste && bun run budget && bun run charts && bun run check:adr && bun run check:proof && bun run test",
 		"check:drift": "bun scripts/drift.ts"
 	},
 	"devDependencies": {

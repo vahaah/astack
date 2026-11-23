@@ -9,7 +9,7 @@ Each card context groups the code owners of one area under this glossary.
 
 ```domain
 context Kernel shared : src/astack/result.ts, src/astack/glob.ts, src/astack/git.ts, src/astack/json-format.ts, src/astack/headings.ts, src/astack/print.ts
-context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr.ts, src/astack/spec-drift.ts, src/astack/cli/commands/check/proof.ts, src/astack/cli/commands/check/spec-drift.ts, src/astack/cli/commands/check/effects.ts
+context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr.ts, src/astack/spec-drift.ts, src/astack/cli/commands/check/proof.ts, src/astack/cli/commands/check/spec-drift.ts, src/astack/cli/commands/check/effects.ts, src/astack/cli/commands/check/adr.ts, src/astack/cli/commands/check/adr-base.ts
 context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
 context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
 context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
@@ -155,6 +155,20 @@ _Avoid_: Proof admission
 A current accepted ADR decision or a ratified proposal with checked authority and history.
 Its history remains available after a later ADR replaces it.
 _Avoid_: Deleted decision
+
+### ADR template
+
+The one form of a new ADR: the header lines, then Context, Decisions, Domain and effects, Consequences and Alternatives considered.
+Its Domain and effects part names glossary terms on a `Terms.` line and holds one `domain` fence.
+_Avoid_: ADR format, record skeleton
+_Code_: `templateProblems` in `src/astack/adr.ts`
+
+### Dated block
+
+A blockquote that starts with `> Note YYYY-MM-DD:` or `> Amended YYYY-MM-DD:` and changes the words of an ADR past Proposed.
+It is the only way that the prose of an accepted decision changes.
+_Avoid_: Inline edit, errata
+_Code_: `amendProblems` in `src/astack/adr.ts`
 
 ### Ratified proposal
 

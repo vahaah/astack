@@ -336,9 +336,11 @@
 				"docs/adr/0017-law-claims-run-on-code.md"
 			],
 			"covers": [
+				"src/astack/adr.ts",
 				"src/astack/change-proof/**",
 				"src/astack/cli/commands/check/proof.ts",
 				"scripts/check-proof.ts",
+				"scripts/lib/check-base.ts",
 				"src/astack/result.ts",
 				"src/astack/hook/events.ts",
 				"src/astack/domain/**"
