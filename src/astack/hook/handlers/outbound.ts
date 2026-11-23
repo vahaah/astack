@@ -1,6 +1,5 @@
 import { HashMatcher } from "../../deny-list.ts";
 import { denyStore, readDenyList } from "../../deny-store.ts";
-import { bodyText } from "../../gh.ts";
 import { githubSlug, runGit } from "../../git.ts";
 import {
 	type BodyFile,
@@ -15,7 +14,7 @@ import {
 	visibilityWithGh,
 } from "../../pr/github.ts";
 import { PUBLIC_REPO } from "../../public-repo.ts";
-import { shellSteps } from "../../shell.ts";
+import { type StagedText, shellSteps } from "../../shell.ts";
 import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
@@ -34,7 +33,21 @@ type OutboundEvent = EventOf<"shell" | "mcp">;
 
 const PASSES: ReadonlySet<Visibility> = new Set(["private", "internal"]);
 
-type ReadBody = (file: BodyFile) => string | undefined;
+type ReadBody = (file: BodyFile) => StagedText;
+
+type Unread = { readonly cause: string; readonly fix: string };
+
+const MISSING: StagedText = { kind: "missing" };
+
+const UNREAD_BODY: Unread = {
+	cause: "astack cannot read its body from piped stdin or a variable file",
+	fix: "Write the body in the command or in a file, or let the owner post it.",
+};
+
+const UNREAD_FILE: Unread = {
+	cause: "astack cannot read the body file that an earlier step writes",
+	fix: "Write the file in an earlier command, or let the owner post it.",
+};
 
 function callOf(event: OutboundEvent, env: Env, dir: string): OutboundCall {
 	switch (event.kind) {
@@ -96,10 +109,10 @@ function bodyReader(event: OutboundEvent): ReadBody {
 	switch (event.kind) {
 		case "shell": {
 			const steps = shellSteps(event.command, event.cwd);
-			return ({ path, step }) => bodyText(stagedReader(steps, step)(path));
+			return ({ path, step }) => stagedReader(steps, step)(path);
 		}
 		case "mcp":
-			return () => undefined;
+			return () => MISSING;
 	}
 }
 
@@ -110,23 +123,27 @@ function writeVerdict(
 	visibility: ReadVisibility,
 	read: ReadBody,
 ): Verdict {
-	if (write.unread) {
+	const staged = write.bodyFiles.map(read);
+	const unread = write.unread
+		? UNREAD_BODY
+		: staged.some((body) => body.kind !== "text")
+			? UNREAD_FILE
+			: undefined;
+	if (unread !== undefined) {
 		const targets = exposed(write.target, dir, visibility);
-		if (targets.length > 0)
-			return deny(
-				[
-					`astack blocked ${write.subject}, because astack cannot read its body from piped stdin or a variable file.`,
-					`- Public or unknown targets: ${targets.join(", ")}`,
-					"Write the body in the command or in a file, or let the owner post it.",
-				].join("\n"),
-			);
+		return targets.length === 0
+			? ALLOW
+			: deny(
+					[
+						`astack blocked ${write.subject}, because ${unread.cause}.`,
+						`- Public or unknown targets: ${targets.join(", ")}`,
+						unread.fix,
+					].join("\n"),
+				);
 	}
 	const texts = [
 		...write.texts,
-		...write.bodyFiles.flatMap((file) => {
-			const text = read(file);
-			return text === undefined ? [] : [text];
-		}),
+		...staged.flatMap((body) => (body.kind === "text" ? [body.text] : [])),
 	];
 	const prefixes = [
 		...new Set(texts.flatMap((text) => matcher.listedPrefixes(text))),

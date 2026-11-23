@@ -45,6 +45,7 @@ beforeAll(() => {
 	});
 	writeFileSync(join(repo, "notes.md"), `Notes for ${NAME}\n`);
 	writeFileSync(join(repo, "body.json"), JSON.stringify({ body: NAME }));
+	writeFileSync(join(repo, "old.md"), "the old notes\n");
 	mkdirSync(join(listed, "deny"), { recursive: true });
 	copyFileSync(
 		join(ROOT, "examples/companion/deny/names.sha256"),
@@ -297,6 +298,28 @@ describe("the outbound guard", () => {
 			),
 			none: ALLOW,
 		});
+	});
+
+	test("[control:outbound-staged] a body file that an earlier step writes and astack cannot read denies to a public target", () => {
+		const stagedDeny = deny(
+			[
+				"astack blocked gh issue create, because astack cannot read the body file that an earlier step writes.",
+				"- Public or unknown targets: o/r (public)",
+				"Write the file in an earlier command, or let the owner post it.",
+			].join("\n"),
+		);
+		const staged = (file: string, repoFlag = ""): HookEvent =>
+			shell(
+				`printf "$X" > ${file}; gh issue create ${repoFlag}-t x -F ${file}`,
+			);
+		expect({
+			unread: guard.run(staged("old.md"), context(listed)),
+			missing: guard.run(staged("fresh.md"), context(listed)),
+			private: guard.run(
+				staged("old.md", "--repo acme/private "),
+				context(listed),
+			),
+		}).toEqual({ unread: stagedDeny, missing: stagedDeny, private: ALLOW });
 	});
 
 	test("[control:outbound-fault] a throw of the guard denies each GitHub text write and passes other calls", () => {

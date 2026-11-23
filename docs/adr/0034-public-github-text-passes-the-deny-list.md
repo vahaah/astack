@@ -46,7 +46,8 @@ On a hit, gh reads the visibility of each target other than `PUBLIC_REPO`. An an
 
 ### D5. A text that only a variable hides keeps its verdict, and a body from piped stdin or a variable file denies
 
-The guards stop agent mistakes, so `--body "$BODY"` passes. The guard cannot read a body from piped stdin or a variable file. So its target is unknown, and a copy of the list denies it. A host tool with no repo field takes the remotes of the project folder.
+The guards stop agent mistakes, so `--body "$BODY"` passes. The guard cannot read a body from piped stdin or a variable file. So its target is unknown, and a copy of the list denies it.
+A body file that an earlier step writes in a form that the guard cannot read denies a public or unknown target. So does a missing body file. A host tool with no repo field takes the remotes of the project folder.
 
 ### D6. A Part of link to an open PR of the author is a one-PR reason
 
