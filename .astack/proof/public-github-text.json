@@ -76,6 +76,10 @@
 			"obligation": "OB-sync"
 		},
 		{
+			"path": "src/astack/gh.ts",
+			"obligation": "OB-public-text"
+		},
+		{
 			"path": "src/astack/hook/handlers/duplicate-pr.ts",
 			"obligation": "SP-second-pr"
 		},
