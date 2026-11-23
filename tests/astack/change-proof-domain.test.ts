@@ -200,7 +200,10 @@ describe("a manifest that cites a plan record", () => {
 				);
 			expect({
 				clean: run(PLAN_FILES),
-				advised: run({ ...stamped, "CONTEXT.md": pure(stamped["CONTEXT.md"]) }),
+				advised: run({
+					...stamped,
+					"CONTEXT.md": pure(PLAN_FILES["CONTEXT.md"]),
+				}),
 			}).toEqual({
 				clean: {
 					code: 0,
