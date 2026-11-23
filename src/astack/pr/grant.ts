@@ -1,13 +1,3 @@
-import {
-	mkdirSync,
-	readFileSync,
-	renameSync,
-	rmSync,
-	writeFileSync,
-} from "node:fs";
-import { join } from "node:path";
-import { sessionFileName, stateDir } from "../state.ts";
-
 export type MergeGrant =
 	| { readonly kind: "none" }
 	| { readonly kind: "any" }
@@ -228,53 +218,5 @@ export function grantCovers(grant: MergeGrant, number: number): boolean {
 			return true;
 		case "prs":
 			return grant.numbers.includes(number);
-	}
-}
-
-type Env = Readonly<Record<string, string | undefined>>;
-
-function grantPath(env: Env, session: string): string | undefined {
-	const dir = stateDir(env);
-	const name = sessionFileName(session);
-	return dir && name ? join(dir, "merge-grants", `${name}.json`) : undefined;
-}
-
-export function saveGrant(env: Env, session: string, grant: MergeGrant): void {
-	const path = grantPath(env, session);
-	if (!path) return;
-	if (grant.kind === "none") {
-		rmSync(path, { force: true });
-		return;
-	}
-	mkdirSync(join(path, ".."), { recursive: true });
-	const temporary = `${path}.${process.pid}.tmp`;
-	writeFileSync(temporary, JSON.stringify(grant));
-	renameSync(temporary, path);
-}
-
-function parseGrant(value: unknown): MergeGrant {
-	if (typeof value !== "object" || value === null) return NO_GRANT;
-	if ("kind" in value && value.kind === "any") return { kind: "any" };
-	if (
-		"kind" in value &&
-		value.kind === "prs" &&
-		"numbers" in value &&
-		Array.isArray(value.numbers)
-	) {
-		const numbers = value.numbers.filter(
-			(entry): entry is number => typeof entry === "number",
-		);
-		return numbers.length > 0 ? { kind: "prs", numbers } : NO_GRANT;
-	}
-	return NO_GRANT;
-}
-
-export function loadGrant(env: Env, session: string | undefined): MergeGrant {
-	const path = session === undefined ? undefined : grantPath(env, session);
-	if (!path) return NO_GRANT;
-	try {
-		return parseGrant(JSON.parse(readFileSync(path, "utf8")));
-	} catch {
-		return NO_GRANT;
 	}
 }

@@ -20,8 +20,9 @@ import { SILENT } from "../../src/astack/hook/encode/base.ts";
 import type { HookEventName } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
 import { readOptional } from "../../src/astack/paths.ts";
-import { loadGrant } from "../../src/astack/pr/grant.ts";
+import { grantStore, loadGrant } from "../../src/astack/pr/grant-store.ts";
 import { profileProblems } from "../../src/astack/profile.ts";
+import { ok } from "../../src/astack/result.ts";
 import { currentTurn } from "../../src/astack/ste/state.ts";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -213,14 +214,15 @@ test("disabled STE has no ledger or reply claims while turn state and cron grant
 	expect(
 		flow.native("UserPromptSubmit", { prompt: "merge 12", source: "user" }),
 	).toEqual(SILENT);
-	expect(loadGrant(flow.env, flow.session)).toEqual({
-		kind: "prs",
-		numbers: [12],
-	});
+	expect(loadGrant(grantStore(flow.env, flow.session))).toEqual(
+		ok({ kind: "prs", numbers: [12] }),
+	);
 	expect(
 		flow.native("UserPromptSubmit", { prompt: "continue", source: "user" }),
 	).toEqual(SILENT);
-	expect(loadGrant(flow.env, flow.session)).toEqual({ kind: "none" });
+	expect(loadGrant(grantStore(flow.env, flow.session))).toEqual(
+		ok({ kind: "none" }),
+	);
 	expect(
 		flow.native("Stop", {
 			last_assistant_message: "It's done.",
@@ -231,7 +233,9 @@ test("disabled STE has no ledger or reply claims while turn state and cron grant
 	expect(flow.native("UserPromptSubmit", { prompt: "merge 12" })).toEqual(
 		SILENT,
 	);
-	expect(loadGrant(flow.env, flow.session)).toEqual({ kind: "none" });
+	expect(loadGrant(grantStore(flow.env, flow.session))).toEqual(
+		ok({ kind: "none" }),
+	);
 	expect(currentTurn(sessionDir)).toBe(3);
 	expect(readFileSync(join(sessionDir, "crons.json"), "utf8")).toBe(
 		'["merge 12"]\n',

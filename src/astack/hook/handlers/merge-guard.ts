@@ -5,7 +5,8 @@ import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
 } from "../../pr/github.ts";
-import { loadGrant, mergeGrantIn, saveGrant } from "../../pr/grant.ts";
+import { mergeGrantIn, NO_GRANT } from "../../pr/grant.ts";
+import { grantStore, loadGrant, saveGrant } from "../../pr/grant-store.ts";
 import {
 	mergeDenial,
 	parseMergeCall,
@@ -294,11 +295,12 @@ function mergeVerdict(
 ): Verdict {
 	const call = parseMergeCall(step.simple, merge.args, step.dir);
 	if (call.disableAuto) return ALLOW;
+	const loaded = loadGrant(grantStore(context.env, context.session));
 	const inputs = {
 		call,
 		chained,
 		setsEnv: merge.setsEnv,
-		grant: loadGrant(context.env, context.session),
+		grant: loaded.ok ? loaded.value : NO_GRANT,
 		unattendedReason: unattendedReason(context.env),
 	};
 	const preflight = preflightReasons(inputs);
@@ -599,7 +601,10 @@ export function mergeGuard(read: ReadPullRequest): Handler {
 			switch (event.kind) {
 				case "prompt":
 					if (event.human && event.session)
-						saveGrant(context.env, event.session, mergeGrantIn(event.text));
+						saveGrant(
+							mergeGrantIn(event.text),
+							grantStore(context.env, event.session),
+						);
 					return ALLOW;
 				case "shell":
 					return shellVerdict(event, context, read);
