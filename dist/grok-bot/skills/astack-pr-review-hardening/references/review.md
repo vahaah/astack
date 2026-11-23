@@ -97,7 +97,7 @@ Each entry holds:
 
 - `id`, `iteration` and `source` (the reviewer's name, `checklist`, `comment-gate`, `gate`, `thread` or `prepass`);
 - `severity` as claimed, `file` and `line`;
-- `class`, the id of the item of `references/checklist.md` that the finding fits, or `none`;
+- `class`, the id of the class that the finding fits, or `none`. The class is an item of `references/checklist.md`, or of the questions for astack changes of `docs/review-lessons.md` in astack;
 - `claim`, one line, and `claim_hash`, the SHA-256 of the reviewer's text with whitespace collapsed;
 - `reproduction` and its result;
 - `status`: `open`, `fixed`, `advisory`, `out-of-scope` or `recurring`, with the `reason`;

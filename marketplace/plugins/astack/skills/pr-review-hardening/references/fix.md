@@ -24,7 +24,7 @@ A fix can make a sentence false when it changes behaviour, or deletes or renames
 
 ## Lessons of earlier runs
 
-Before you fix a finding, read the item of `references/checklist.md` for its `class`. The item names the guard in the astack repo that enforces the class.
+Before you fix a finding, read the item of its `class`. The item is in `references/checklist.md`, or in the questions for astack changes of `docs/review-lessons.md` in the astack repo. The item names the guard in the astack repo that enforces the class.
 
 - When the finding is in a file that astack writes, the guard missed it. Fix the source and extend the guard in the astack repo, as "Files that astack writes" says.
 - When the class is `none`, the finding is a candidate for a new class and a new guard. Fix it as this reference says. The final report lists it. `docs/review-lessons.md` in the astack repo says how to add a lesson.

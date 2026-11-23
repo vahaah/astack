@@ -7,9 +7,10 @@ Each finding is in one class. A class has a rule and one or more guards. A guard
 ## Use this file
 
 - Before you change a profile, the engine, the stub or an apply check, read the rule of each class that the change touches.
-- The hardening engine holds the question of each class in `marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md`. The reviewer and the fixer of each run of the engine go through it.
+- Each class has one question. The hardening engine holds the question of a class that a product repo PR can show, in `marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md`. The reviewer and the fixer of each run of the engine go through it.
+- Only a change of astack can show the other classes. Their questions are in the section "Questions for astack changes" below. The Standards axis of `astack:code-review` asks them of an astack diff.
 - `bun run check` runs each guard of the kind `test` and `hook`. An `apply-check` guard runs in `bun run apply`, also with `--dry-run`, against the product repo. A `cli-check` guard runs in the gates of the product repo.
-- `tests/review-lessons.test.ts` examines this file. Each guard file must exist and hold each part of its locator, and a source file must define its check function. Each class must have a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. The checklist and the classes table must name the same classes. The prose states no count of findings, rounds or classes.
+- `tests/review-lessons.test.ts` examines this file. Each guard file must exist and hold each part of its locator, and a source file must define its check function. Each class must have a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. Each class must have one question in one of the two homes, and each question must name a class. The prose states no count of findings, rounds or classes.
 - The file holds no run of 7 or more hex digits, such as the id of a review comment, a run or a commit.
 
 ## Guard kinds
@@ -27,7 +28,7 @@ A locator names the text that the guard file holds. ` > ` separates its parts, s
 
 ## Add a lesson
 
-When a review finds a new problem, find its class in the classes table. When a class fits, add or extend a guard of that class, so that the guard fails on the finding. Run the guard before the fix. Record its failure. When no class fits, add a class with its rule and a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. Then add the item of the class to the checklist of the engine.
+When a review finds a new problem, find its class in the classes table. When a class fits, add or extend a guard of that class, so that the guard fails on the finding. Run the guard before the fix. Record its failure. When no class fits, add a class with its rule and a guard of the kind `test`, `apply-check`, `cli-check` or `hook`. When a product repo PR can show the class, add its question to the checklist of the engine. Else add it to the questions for astack changes.
 
 Give each product repo a synthetic name. Never write the id of a review comment, a run, a commit or a PR. Then run `bun run check`.
 
@@ -350,3 +351,91 @@ The Class and Rule cells are empty on the second guard of a class and on each gu
 | `apply-copy-scope` | The dry run of apply copies the product repo with the files that git ignores, such as `node_modules`, because its gates need them. It copies no worktree that git records inside the repo, such as a worktree in `.claude/worktrees`. The copy uses the filesystem API and preserves modes and relative links. Writes to copied regular files leave the source unchanged. | `test` | `tests/apply/ci-parity-apply.test.ts` | `apply --dry-run copies the repo for its checks > the copy preserves tracked and ignored files, modes, and links, skips nested worktrees, and isolates writes` |
 | `terminal-control-text` | Each command prints a field from GitHub, such as a comment body, a check name or a query failure, with each C0 control character, DEL and C1 control character escaped. The JSON output escapes them too, and a parser reads the same value back. | `test` | `tests/astack/watch-pr/render.test.ts` | `control characters in GitHub text > pretty output escapes each control character of %s` |
 |  |  | `test` | `tests/astack/watch-pr/render.test.ts` | `control characters in GitHub text > JSON output escapes DEL and C1 characters, and parses back to the same verdict` |
+
+## Questions for astack changes
+
+Ask the question of each class whose area an astack diff changes. Each question names the guard of its class.
+
+### review-target-identity
+
+Does each step that acts on a PR compare the local head with the head of the PR, and diff against the fetched base? Does it stop on each failure of gh that is not the no-PR answer? Does each push for a PR from a fork go to the head repository, so that the run never pushes a branch to `origin`? Does a fork that does not allow edits from maintainers stop the run with no fix commit? Does each step take the checkout of a PR from a fork by its local branch, never by its head branch name? Does each sentence that names the head branch of the PR belong to a run that reads it?
+
+Guard: "a failed gh is never a run with no PR" and "each diff runs against the fetched base" in `tests/hardening-consistency.test.ts`. They scan each astack text and profile. "the branch of the fix commits" in the same file reads SKILL.md and each reference. It finds the head branch of the PR in a sentence outside a run with `--pr`. Only a sentence in the section of `--pr`, or a sentence that starts with "In a run with `--pr`" or "With `--pr`", is in such a run. The read of the fork fields in the preflight, and a sentence that starts with "When `isCrossRepository` is true", also pass. Its origin scan reads each astack text and each profile. The playbooks of the mode that push a PR are astack texts too. It finds each sentence that names `origin` as the remote of `git push` or as the target of a push or of the fix commits. It exempts the push sentence of a run with no PR or a PR from the same repository. It exempts the negation in the push for a PR from a fork, and nothing else. "a run that names a PR reviews that PR" in the same file finds each sentence that takes a checkout by the name of the head branch.
+
+### clean-stop-criteria
+
+Can the run stop clean on an empty diff, or on a commit that no reviewer saw? Can it stop clean on a local head that the PR does not have? Does the goal condition ask for an output that a run with `metrics: null` never prints?
+
+Guard: "the proof of a clean stop" in `tests/hardening-consistency.test.ts`. It maps each condition of a clean stop to a field of `GATE_SUMMARY` with its definition, and to a clause of the goal condition. It finds each sentence of the goal condition that asks for the metrics output with no "If metrics ran".
+
+### ledger-continuity
+
+Does each ledger entry get a blob that a later iteration and a later run can compare, also for a file that the branch deletes? Does only the preflight load and reset the ledger, so that `stop_recurring` sees the findings of each iteration? Does a run after a run that was cut off resume its ledger, whatever `ledger.carry_over` says?
+
+Guard: "the ledger keeps the evidence of the whole run" in `tests/hardening-consistency.test.ts`. Its positive control shows that the blob command of the ledger fails on a deleted file. Its scan finds each form of the command with a placeholder or a variable, such as `HEAD:<path>` or `HEAD:$file`. Each text that holds a form must give the blob of a deleted file for that form. It also finds a word that renames, empties, resets or loads the ledger in the gate run, the baseline or a step of an iteration. In `references/gate.md` and `references/review.md`, it finds such a sentence outside the rule of the preflight. Each preflight must resume a ledger whose `stopped` is `null` before it renames a ledger. The steps after the stop record the decision.
+
+### contradicting-commit-rules
+
+Does an astack text tell the agent to put a failing check in a commit apart from its fix?
+
+Guard: "commits of a finding" in `tests/hardening-consistency.test.ts`. It scans astack instruction text and profiles.
+
+### tracker-tool-schema
+
+Does each text that uses an optional field of `save_issue` check the schema first and name the fallback field?
+
+Guard: "save_issue fields that some Linear servers lack" in `tests/tracker-schema.test.ts`. It scans each shipped text, the stub and the profiles included.
+
+### flow-doc-register
+
+Do the agent docs keep the assignee claim of a map ticket, which the frontier query reads? Does each other claim of the repo get a line of its own? Does a bug label without the word bug say how the hook finds a bug? Does the domain doc send each source file name to the repo file with that role, such as its glossary or context map? Does apply fail on a domain path that is missing or of the wrong kind? Does the domain doc tell a skill to name a missing file, never to proceed silently?
+
+Guard: "a GitHub tracker keeps the assignee claim that the frontier query reads, and puts each other claim on a line of its own", "a bug label without the word bug says that the hook takes such a bug from its headings or its title", "the domain doc of $name sends CONTEXT.md and GLOSSARY.md to its glossary", "reports a context map, a reading path or an ADR dir that is missing or of the wrong kind" and "tells a skill to name a missing file in its output" in `tests/apply/flow-config.test.ts`. The path check of apply is `domainProblems` in `scripts/lib/flow-config.ts`.
+
+### restated-value
+
+Does a doc state a count that a table or another file holds, such as the number of findings of a table? The next row makes such a count false. Does a doc of record restate an astack rule, or cite a line number of a file that apply writes? Each apply update moves that line.
+
+Guard: "the prose states no count of findings, rounds or classes" in `tests/review-lessons.test.ts`. It reads `docs/review-lessons.md` of the astack repo. `managedLineCitations` in `scripts/lib/line-citations.ts` fails apply on a tracked Markdown file that cites a file that apply writes with a line number.
+
+### comment-keep-forms
+
+Does each decision citation in the repo pass the comment hook with the keep patterns of the repo? Does a rule set a length limit that cuts a legal or license header?
+
+Guard: the citation note of apply, `unkeptCitations` in `scripts/lib/keep-forms.ts`. "a legal or license header has no length limit" in `tests/astack/hook.test.ts` reads each text that sets the limit, and runs the hook on a long license header.
+
+### managed-file-lifecycle
+
+Does apply delete each stale copy of a file that it writes, and name each deletion in its commit subject? Does a commit that adds no file say update and name only the files that it changes? Does the subject name the hardening profile and the review stub apart?
+
+Guard: the stray-copy check of apply, `strayCopies` in `scripts/lib/removals.ts`, and "commitSubject with removals" in `tests/astack/commit-style.test.ts`. "the setup commit and the next steps" in `tests/apply/worktree.test.ts` gives each kind of file its own part of the subject.
+
+### astack-provenance
+
+Does each apply into a product repo come from a committed astack tree, and name that commit? Does the commit text of a repo with `neutralCommit` hold no substring of `lint.denySubstrings`? Does such a repo, when it merges after a clean stop, set the subject and the body of the squash commit?
+
+Guard: `astackSource` in `scripts/lib/project-apply.ts`, and "apply --worktree reads the state of the astack tree that it writes from" and "apply --worktree with a neutral commit text, as a repo that must not name the tool" in `tests/apply/worktree.test.ts`.
+
+### upstream-licence
+
+Does each package or standalone skill carry its notices? Do the notices name each copied file and hold each upstream's copyright and permission notices?
+
+Guard: "the upstreams that the run scan reads" and "text that apply copies from upstream" in `tests/apply/notices.test.ts`.
+
+### profile-scan-reach
+
+Does each scan of the profiles in the astack repo read each profile that apply writes, also the profile of a branch overlay?
+
+Guard: "the profile scans" in `tests/hardening-consistency.test.ts`. It compares the list in `tests/profile-paths.ts`, which each profile scan reads, with the profile of each project and of each branch overlay.
+
+### apply-copy-scope
+
+Does a step of apply copy a worktree that git records inside the product repo, such as the worktree of an agent session? Does the copy of the dry run still hold each file that git ignores and a gate needs, such as `node_modules`?
+
+Guard: "apply --dry-run copies the repo for its checks" in `tests/apply/ci-parity-apply.test.ts`. The dry run reads the nested worktrees with `nestedWorktrees` in `scripts/lib/project-apply.ts`, and copies each other entry of the repo.
+
+### terminal-control-text
+
+Does a command print a field from GitHub with its control characters, such as a comment body, a check name or a branch name? Does its JSON output leave a DEL or a C1 character raw?
+
+Guard: "control characters in GitHub text" in `tests/astack/watch-pr/render.test.ts`. It renders a review thread, a failed check, a status-query blocker and a query failure that hold ESC, BEL, CR, LF, DEL and C1 characters.
