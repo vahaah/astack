@@ -233,6 +233,7 @@ describe("shell parsing", () => {
 		expect(body).toEqual({
 			value: "## Why\nBecause.\n\n## What changes\nA thing.",
 			dynamic: false,
+			quoted: true,
 		});
 	});
 
