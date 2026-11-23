@@ -141,6 +141,11 @@ describe("the outbound guard", () => {
 		],
 		["a PR review", shell(`gh pr review 12 -r -b "${NAME}"`), "gh pr review"],
 		[
+			"an issue close with --comment",
+			shell(`gh issue close 21 --comment "Fixed for ${NAME}"`),
+			"gh issue close",
+		],
+		[
 			"a gh api comment with -f body=",
 			shell(`gh api repos/o/r/issues/21/comments -f body='${NAME}'`),
 			"gh api repos/o/r/issues/21/comments",

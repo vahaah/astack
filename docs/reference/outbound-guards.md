@@ -6,7 +6,7 @@ The [design](../design.md) gives the hook behavior in full.
 
 ## Acceptance criteria
 
-- [criterion:OB-public-text] Given a state copy of the list, each public GitHub text write with a listed name gets the deny-list deny. The forms are gh issue and PR creates, comments, edits and reviews, `gh api` writes and GitHub MCP write tools. The reason names only the hash prefix and holds no text line.
+- [criterion:OB-public-text] Given a state copy of the list, each public GitHub text write with a listed name gets the deny-list deny. The forms are gh issue and PR creates, comments, edits, reviews, close and reopen comments, `gh api` writes and GitHub MCP write tools. The reason names only the hash prefix and holds no text line.
 - [criterion:OB-mcp-fields] Each string at each depth of the input of an MCP write tool is a text.
 - [criterion:OB-private-pass] An issue to a private repo, a clean text, `--body "$TEXT"`, a Linear `save_issue`, `gh issue list` and a private comment get no deny-list deny.
 - [criterion:OB-fail-closed] A bad line in the copy, an unread visibility on a hit and a throw of the handler deny each GitHub text write. No copy gives no check.

@@ -42,8 +42,17 @@ type Flag = {
 const UNKNOWN: OutboundTarget = { kind: "unknown" };
 
 const GH_GROUPS = new Set(["issue", "pr"]);
-const GH_WRITES = new Set(["create", "new", "edit", "comment", "review"]);
-const GH_TEXT_FLAGS = new Set(["-t", "--title", "-b", "--body"]);
+const BODY_TEXT_FLAGS = new Set(["-t", "--title", "-b", "--body"]);
+const CLOSE_TEXT_FLAGS = new Set(["-c", "--comment"]);
+const GH_WRITES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+	["create", BODY_TEXT_FLAGS],
+	["new", BODY_TEXT_FLAGS],
+	["edit", BODY_TEXT_FLAGS],
+	["comment", BODY_TEXT_FLAGS],
+	["review", BODY_TEXT_FLAGS],
+	["close", CLOSE_TEXT_FLAGS],
+	["reopen", CLOSE_TEXT_FLAGS],
+]);
 const GH_FILE_FLAGS = new Set(["-F", "--body-file"]);
 const REPO_FLAGS = new Set(["-R", "--repo"]);
 const ISSUE_URL =
@@ -146,13 +155,14 @@ function ghWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
 		flag = flagAt(words, at);
 	}
 	const action = words[at]?.value ?? "";
-	if (!GH_WRITES.has(action)) return undefined;
+	const textFlags = GH_WRITES.get(action);
+	if (textFlags === undefined) return undefined;
 	const body: Body = { texts: [], bodyFiles: [] };
 	let url: OutboundTarget | undefined;
 	for (at++; at < words.length; ) {
 		const flag = flagAt(words, at);
 		const { value } = flag;
-		if (value !== undefined && GH_TEXT_FLAGS.has(flag.name))
+		if (value !== undefined && textFlags.has(flag.name))
 			body.texts.push(value.value);
 		else if (value !== undefined && GH_FILE_FLAGS.has(flag.name))
 			addBodyFile(value, step, body);

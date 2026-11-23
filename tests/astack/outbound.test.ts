@@ -78,6 +78,21 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[write("gh pr review", REMOTES, ["notes"])],
 		],
 		[
+			"a PR review whose -c is a comment switch",
+			shell("gh pr review 12 -c -b notes"),
+			[write("gh pr review", REMOTES, ["notes"])],
+		],
+		[
+			"an issue close with --comment",
+			shell("gh issue close 21 --reason completed --comment notes"),
+			[write("gh issue close", REMOTES, ["notes"])],
+		],
+		[
+			"a PR reopen with -c",
+			shell("gh pr reopen 12 -c notes"),
+			[write("gh pr reopen", REMOTES, ["notes"])],
+		],
+		[
 			"a gh api comment with -f body=",
 			shell("gh api repos/o/r/issues/21/comments -f body='the notes'"),
 			[write("gh api repos/o/r/issues/21/comments", NAMED, ["the notes"])],
