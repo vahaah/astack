@@ -125,6 +125,13 @@ describe("the outbound guard", () => {
 			"gh pr create",
 		],
 		[
+			"an issue create whose body file an earlier step writes",
+			shell(
+				`cat > staged.md <<'EOF'\nfor ${NAME}\nEOF\ngh issue create -t x -F staged.md`,
+			),
+			"gh issue create",
+		],
+		[
 			"an issue comment",
 			shell(`gh issue comment 21 --body "${NAME}"`),
 			"gh issue comment",

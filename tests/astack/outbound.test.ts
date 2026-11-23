@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import {
+	type BodyFile,
 	type OutboundCall,
 	type OutboundWrite,
 	outboundWrites,
@@ -25,7 +26,7 @@ function write(
 	subject: string,
 	target: OutboundWrite["target"],
 	texts: readonly string[],
-	bodyFiles: readonly string[] = [],
+	bodyFiles: readonly BodyFile[] = [],
 ): OutboundWrite {
 	return { subject, target, texts, bodyFiles };
 }
@@ -55,7 +56,14 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 		[
 			"a PR create with --body-file",
 			shell("cd sub && gh pr create -t Plan --body-file notes.md"),
-			[write("gh pr create", SUB_REMOTES, ["Plan"], [`${DIR}/sub/notes.md`])],
+			[
+				write(
+					"gh pr create",
+					SUB_REMOTES,
+					["Plan"],
+					[{ path: `${DIR}/sub/notes.md`, step: 0 }],
+				),
+			],
 		],
 		[
 			"an issue comment on an issue URL",
@@ -125,7 +133,7 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 					"gh api /repos/{owner}/{repo}/pulls/12",
 					REMOTES,
 					[],
-					[`${DIR}/body.json`],
+					[{ path: `${DIR}/body.json`, step: 0 }],
 				),
 			],
 		],

@@ -18,5 +18,6 @@ The [design](../design.md) gives the hook behavior in full.
 ## Claim boundary
 
 The guard stops an agent mistake. It is no boundary against a hostile agent, which can hide a name in a variable or a file that the hook cannot read.
+The guard reads a body file as the earlier steps of its command leave it, as [ADR 0033](../adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md) says.
 Release notes, gists, discussions, wiki text and commit text are out of scope. The pre-push scan reads pushed commit text, and the guard reads the subject and body of `gh pr merge`.
 A stale or missing state copy turns the outbound check off with no message.

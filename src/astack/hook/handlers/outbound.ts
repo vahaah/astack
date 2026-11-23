@@ -1,19 +1,22 @@
 import { HashMatcher } from "../../deny-list.ts";
 import { denyStore, readDenyList } from "../../deny-store.ts";
+import { bodyText } from "../../gh.ts";
 import { githubSlug, runGit } from "../../git.ts";
 import {
+	type BodyFile,
 	type OutboundCall,
 	type OutboundTarget,
 	type OutboundWrite,
 	outboundWrites,
 } from "../../outbound.ts";
-import { readOptional } from "../../paths.ts";
 import {
 	type ReadVisibility,
 	type Visibility,
 	visibilityWithGh,
 } from "../../pr/github.ts";
 import { PUBLIC_REPO } from "../../public-repo.ts";
+import { shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	type Context,
@@ -30,6 +33,8 @@ import {
 type OutboundEvent = EventOf<"shell" | "mcp">;
 
 const PASSES: ReadonlySet<Visibility> = new Set(["private", "internal"]);
+
+type ReadBody = (file: BodyFile) => string | undefined;
 
 function callOf(event: OutboundEvent, env: Env, dir: string): OutboundCall {
 	switch (event.kind) {
@@ -87,16 +92,28 @@ function exposed(
 	});
 }
 
+function bodyReader(event: OutboundEvent): ReadBody {
+	switch (event.kind) {
+		case "shell": {
+			const steps = shellSteps(event.command, event.cwd);
+			return ({ path, step }) => bodyText(stagedReader(steps, step)(path));
+		}
+		case "mcp":
+			return () => undefined;
+	}
+}
+
 function writeVerdict(
 	write: OutboundWrite,
 	matcher: HashMatcher,
 	dir: string,
 	visibility: ReadVisibility,
+	read: ReadBody,
 ): Verdict {
 	const texts = [
 		...write.texts,
-		...write.bodyFiles.flatMap((path) => {
-			const text = readOptional(path);
+		...write.bodyFiles.flatMap((file) => {
+			const text = read(file);
 			return text === undefined ? [] : [text];
 		}),
 	];
@@ -135,8 +152,9 @@ function run(
 		);
 	if (list.value.kind === "none") return ALLOW;
 	const matcher = new HashMatcher(list.value.hashes);
+	const read = bodyReader(event);
 	return combineAll(
-		writes.map((write) => writeVerdict(write, matcher, dir, visibility)),
+		writes.map((write) => writeVerdict(write, matcher, dir, visibility, read)),
 	);
 }
 
