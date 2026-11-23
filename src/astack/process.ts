@@ -26,7 +26,7 @@ export type StartFailure = { readonly cause: string };
 export function runProcess(
 	program: string,
 	args: readonly string[],
-	options: ProcessOptions = {},
+	options: ProcessOptions,
 ): Result<ProcessOutput, StartFailure> {
 	const output = options.output ?? "pipe";
 	const result = spawnSync(program, args, {

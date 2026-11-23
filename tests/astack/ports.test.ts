@@ -55,110 +55,112 @@ function counted(links: Readonly<Record<string, string>>) {
 	return { raw, reads, roots };
 }
 
-describe("[control:ports-profile-once] one Ports value", () => {
-	test("reads the profile of each canonical folder once and gives that value again", () => {
-		const { raw, reads } = counted({ "/var/r": "/private/var/r" });
-		const ports = portsFrom(raw);
-		const first = ports.profile.readProfile("/private/var/r");
-		expect(first).toEqual({ ste: { mode: "deny" } });
-		expect(ports.profile.readProfile("/var/r")).toBe(first);
-		expect(ports.profile.readProfile("/private/var/r")).toBe(first);
-		expect(reads).toEqual(["/private/var/r"]);
+describe("[control:ports-profile-once] profile reads", () => {
+	describe("one Ports value", () => {
+		test("reads the profile of each canonical folder once and gives that value again", () => {
+			const { raw, reads } = counted({ "/var/r": "/private/var/r" });
+			const ports = portsFrom(raw);
+			const first = ports.profile.readProfile("/private/var/r");
+			expect(first).toEqual({ ste: { mode: "deny" } });
+			expect(ports.profile.readProfile("/var/r")).toBe(first);
+			expect(ports.profile.readProfile("/private/var/r")).toBe(first);
+			expect(reads).toEqual(["/private/var/r"]);
+		});
+
+		test("a folder with no profile is read once too", () => {
+			const { raw, reads } = counted({});
+			const ports = portsFrom(raw);
+			expect(ports.profile.readProfile("/none")).toBeUndefined();
+			expect(ports.profile.readProfile("/none")).toBeUndefined();
+			expect(reads).toEqual(["/none"]);
+		});
+
+		test("the git root of a canonical folder is read once", () => {
+			const { raw, roots } = counted({ "/var/r": "/private/var/r" });
+			const ports = portsFrom(raw);
+			expect(ports.git.gitRoot("/var/r")).toBe("/private/var/r");
+			expect(ports.git.gitRoot("/private/var/r")).toBe("/private/var/r");
+			expect(roots).toEqual(["/var/r"]);
+		});
+
+		test("a second value reads again, so no answer leaks across hook calls", () => {
+			const { raw, reads } = counted({});
+			portsFrom(raw).profile.readProfile("/private/var/r");
+			portsFrom(raw).profile.readProfile("/private/var/r");
+			expect(reads).toEqual(["/private/var/r", "/private/var/r"]);
+		});
 	});
 
-	test("a folder with no profile is read once too", () => {
-		const { raw, reads } = counted({});
-		const ports = portsFrom(raw);
-		expect(ports.profile.readProfile("/none")).toBeUndefined();
-		expect(ports.profile.readProfile("/none")).toBeUndefined();
-		expect(reads).toEqual(["/none"]);
-	});
+	describe("one hook call", () => {
+		const real = join(scratch, "repo");
+		const linked = join(scratch, "linked");
+		const git = (...args: string[]) => spawnSync("git", args, { cwd: real });
+		mkdirSync(join(real, ".astack"), { recursive: true });
+		symlinkSync(real, linked);
+		git("init", "-q", "-b", "main");
+		git("config", "user.email", "t@example.com");
+		git("config", "user.name", "T");
+		writeFileSync(
+			join(real, ".astack/profile.json"),
+			JSON.stringify({ ste: { mode: "deny" } }),
+		);
+		writeFileSync(join(real, "a.ts"), "export const a = 1;\n");
+		writeFileSync(
+			join(real, "notes.md"),
+			"# Notes\n\nThe tool reads the file.\n",
+		);
+		git("add", ".");
+		git("commit", "-q", "-m", "first");
+		writeFileSync(join(real, "a.ts"), "export const a = 2;\n");
+		git("add", "a.ts");
 
-	test("the git root of a canonical folder is read once", () => {
-		const { raw, roots } = counted({ "/var/r": "/private/var/r" });
-		const ports = portsFrom(raw);
-		expect(ports.git.gitRoot("/var/r")).toBe("/private/var/r");
-		expect(ports.git.gitRoot("/private/var/r")).toBe("/private/var/r");
-		expect(roots).toEqual(["/var/r"]);
-	});
-
-	test("a second value reads again, so no answer leaks across hook calls", () => {
-		const { raw, reads } = counted({});
-		portsFrom(raw).profile.readProfile("/private/var/r");
-		portsFrom(raw).profile.readProfile("/private/var/r");
-		expect(reads).toEqual(["/private/var/r", "/private/var/r"]);
-	});
-});
-
-describe("[control:ports-profile-once] one hook call", () => {
-	const real = join(scratch, "repo");
-	const linked = join(scratch, "linked");
-	const git = (...args: string[]) => spawnSync("git", args, { cwd: real });
-	mkdirSync(join(real, ".astack"), { recursive: true });
-	symlinkSync(real, linked);
-	git("init", "-q", "-b", "main");
-	git("config", "user.email", "t@example.com");
-	git("config", "user.name", "T");
-	writeFileSync(
-		join(real, ".astack/profile.json"),
-		JSON.stringify({ ste: { mode: "deny" } }),
-	);
-	writeFileSync(join(real, "a.ts"), "export const a = 1;\n");
-	writeFileSync(
-		join(real, "notes.md"),
-		"# Notes\n\nThe tool reads the file.\n",
-	);
-	git("add", ".");
-	git("commit", "-q", "-m", "first");
-	writeFileSync(join(real, "a.ts"), "export const a = 2;\n");
-	git("add", "a.ts");
-
-	function reads(dir: string, fields: Readonly<Record<string, unknown>>) {
-		const spy = spyOn(fs, "readFileSync");
-		try {
-			runHook(
-				"claude-code",
-				"PreToolUse",
-				JSON.stringify({ cwd: dir, session_id: "ports", ...fields }),
-				{ ASTACK_STATE_DIR: join(scratch, "state") },
-			);
-			return spy.mock.calls.filter(([path]) =>
-				String(path).endsWith(".astack/profile.json"),
-			).length;
-		} finally {
-			spy.mockRestore();
+		function reads(dir: string, fields: Readonly<Record<string, unknown>>) {
+			const spy = spyOn(fs, "readFileSync");
+			try {
+				runHook(
+					"claude-code",
+					"PreToolUse",
+					JSON.stringify({ cwd: dir, session_id: "ports", ...fields }),
+					{ ASTACK_STATE_DIR: join(scratch, "state") },
+				);
+				return spy.mock.calls.filter(([path]) =>
+					String(path).endsWith(".astack/profile.json"),
+				).length;
+			} finally {
+				spy.mockRestore();
+			}
 		}
-	}
 
-	test.each([
-		["the repo folder", real],
-		["a link to the repo folder", linked],
-	])(
-		"a Write, an Edit and a git commit in %s each read the profile once",
-		(_name, dir) => {
-			expect([
-				reads(dir, {
-					tool_name: "Write",
-					tool_input: {
-						file_path: join(dir, "b.ts"),
-						content: "export const b = 1;\n",
-					},
-				}),
-				reads(dir, {
-					tool_name: "Edit",
-					tool_input: {
-						file_path: join(dir, "notes.md"),
-						old_string: "reads",
-						new_string: "opens",
-					},
-				}),
-				reads(dir, {
-					tool_name: "Bash",
-					tool_input: { command: 'git commit -m "feat: change a"' },
-				}),
-			]).toEqual([1, 1, 1]);
-		},
-	);
+		test.each([
+			["the repo folder", real],
+			["a link to the repo folder", linked],
+		])(
+			"a Write, an Edit and a git commit in %s each read the profile once",
+			(_name, dir) => {
+				expect([
+					reads(dir, {
+						tool_name: "Write",
+						tool_input: {
+							file_path: join(dir, "b.ts"),
+							content: "export const b = 1;\n",
+						},
+					}),
+					reads(dir, {
+						tool_name: "Edit",
+						tool_input: {
+							file_path: join(dir, "notes.md"),
+							old_string: "reads",
+							new_string: "opens",
+						},
+					}),
+					reads(dir, {
+						tool_name: "Bash",
+						tool_input: { command: 'git commit -m "feat: change a"' },
+					}),
+				]).toEqual([1, 1, 1]);
+			},
+		);
+	});
 });
 
 describe("[control:ports-one-edge] each hook call", () => {
