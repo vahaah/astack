@@ -93,6 +93,11 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[write("gh pr reopen", REMOTES, ["notes"])],
 		],
 		[
+			"a PR merge with a subject and a body",
+			shell("gh pr merge 12 --squash --subject Plan -b notes"),
+			[write("gh pr merge", REMOTES, ["Plan", "notes"])],
+		],
+		[
 			"a gh api comment with -f body=",
 			shell("gh api repos/o/r/issues/21/comments -f body='the notes'"),
 			[write("gh api repos/o/r/issues/21/comments", NAMED, ["the notes"])],

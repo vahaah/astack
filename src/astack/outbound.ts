@@ -44,6 +44,7 @@ const UNKNOWN: OutboundTarget = { kind: "unknown" };
 const GH_GROUPS = new Set(["issue", "pr"]);
 const BODY_TEXT_FLAGS = new Set(["-t", "--title", "-b", "--body"]);
 const CLOSE_TEXT_FLAGS = new Set(["-c", "--comment"]);
+const MERGE_TEXT_FLAGS = new Set(["-t", "--subject", "-b", "--body"]);
 const GH_WRITES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
 	["create", BODY_TEXT_FLAGS],
 	["new", BODY_TEXT_FLAGS],
@@ -52,6 +53,7 @@ const GH_WRITES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
 	["review", BODY_TEXT_FLAGS],
 	["close", CLOSE_TEXT_FLAGS],
 	["reopen", CLOSE_TEXT_FLAGS],
+	["merge", MERGE_TEXT_FLAGS],
 ]);
 const GH_FILE_FLAGS = new Set(["-F", "--body-file"]);
 const REPO_FLAGS = new Set(["-R", "--repo"]);

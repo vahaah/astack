@@ -33,7 +33,7 @@ No copy gives no check. A bad line or a throw of the handler denies each GitHub 
 
 ### D3. A GitHub text write is a gh issue or PR write, a gh api write or an MCP write tool
 
-A gh write is a create, edit, comment or review of an issue or a PR. A close or reopen with `-c` or `--comment` is one too. A `gh api` write to an issue, pull or graphql path counts too.
+A gh write is a create, edit, comment or review of an issue or a PR. A close or reopen with `-c` or `--comment` is one too, and so is a merge with a subject or a body. A `gh api` write to an issue, pull or graphql path counts too.
 An MCP write tool has a write verb in its name, and its server name holds github or its tool name holds `pull_request`.
 An issue write tool counts too, when its `url` is a GitHub issue URL or its server is no other known tracker.
 Each string at each depth of an MCP input is a text.
