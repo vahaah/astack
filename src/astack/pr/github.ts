@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runProcess } from "../process.ts";
 import { PROFILE_PATH } from "../profile.ts";
 import { type MergeProfile, parseMergeProfile } from "./profile.ts";
 
@@ -162,15 +162,18 @@ export function pullRequestFrom(
 
 const GH_TIMEOUT_MS = 4000;
 
+function ghText(dir: string, args: readonly string[]): string | undefined {
+	const run = runProcess("gh", args, { cwd: dir, timeoutMs: GH_TIMEOUT_MS });
+	return run.ok && run.value.status === 0
+		? run.value.stdout.toString("utf8")
+		: undefined;
+}
+
 export function ghJson(dir: string, args: readonly string[]): unknown {
-	const result = spawnSync("gh", args, {
-		cwd: dir,
-		encoding: "utf8",
-		timeout: GH_TIMEOUT_MS,
-	});
-	if (result.status !== 0 || !result.stdout) return undefined;
+	const stdout = ghText(dir, args);
+	if (!stdout) return undefined;
 	try {
-		return JSON.parse(result.stdout);
+		return JSON.parse(stdout);
 	} catch {
 		return undefined;
 	}
@@ -213,11 +216,7 @@ export type ReadVisibility = (slug: string, dir: string) => Visibility;
 const VISIBILITIES: readonly Visibility[] = ["public", "private", "internal"];
 
 export const visibilityWithGh: ReadVisibility = (slug, dir) => {
-	const result = spawnSync(
-		"gh",
-		["api", `repos/${slug}`, "--jq", ".visibility"],
-		{ cwd: dir, encoding: "utf8", timeout: GH_TIMEOUT_MS },
-	);
-	const answer = result.status === 0 ? result.stdout.trim() : "";
+	const answer =
+		ghText(dir, ["api", `repos/${slug}`, "--jq", ".visibility"])?.trim() ?? "";
 	return VISIBILITIES.find((one) => one === answer) ?? "unknown";
 };

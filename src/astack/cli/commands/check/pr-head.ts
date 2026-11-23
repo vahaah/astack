@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runProcess } from "../../../process.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import { valueAfter } from "../../args.ts";
 import type { Command } from "../../command.ts";
@@ -43,28 +43,23 @@ function spawnText(
 	program: string,
 	args: readonly string[],
 ): Result<string, Failure> {
-	const result = spawnSync(program, args, {
+	const run = runProcess(program, args, {
 		cwd: io.cwd,
 		env: io.env,
-		encoding: "utf8",
 		maxBuffer: Infinity,
-		stdio: ["ignore", "pipe", "pipe"],
+		stdin: "ignore",
 	});
-	if (result.error !== undefined)
-		return err({
-			kind: "lost",
-			reason: result.error.message,
-			stderr: result.stderr ?? "",
-		});
-	if (result.status === null)
-		return err({
-			kind: "lost",
-			reason: `ended by signal ${result.signal}`,
-			stderr: result.stderr ?? "",
-		});
-	return result.status === 0
-		? ok(result.stdout)
-		: err({ kind: "exited", code: result.status, stderr: result.stderr });
+	if (!run.ok)
+		return err({ kind: "lost", reason: run.error.cause, stderr: "" });
+	const { status, signal, stopped } = run.value;
+	const stderr = run.value.stderr.toString("utf8");
+	if (stopped !== undefined)
+		return err({ kind: "lost", reason: stopped, stderr });
+	if (status === null)
+		return err({ kind: "lost", reason: `ended by signal ${signal}`, stderr });
+	return status === 0
+		? ok(run.value.stdout.toString("utf8"))
+		: err({ kind: "exited", code: status, stderr });
 }
 
 function stopped(io: Io, label: string, failure: Failure): number {

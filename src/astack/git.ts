@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseUnifiedDiff } from "./comments/added.ts";
+import { runProcess } from "./process.ts";
 
 const MAX_BUFFER = 256 * 1024 * 1024;
 
@@ -21,8 +21,14 @@ export function runGit(
 	args: readonly string[],
 	input?: string,
 ): GitResult {
-	const result = spawnSync("git", args, { cwd, input, maxBuffer: MAX_BUFFER });
-	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
+	const run = runProcess("git", args, {
+		cwd,
+		...(input === undefined ? {} : { input }),
+		maxBuffer: MAX_BUFFER,
+	});
+	return run.ok
+		? { ok: run.value.status === 0, stdout: run.value.stdout }
+		: { ok: false, stdout: Buffer.alloc(0) };
 }
 
 export function gitText(

@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import type { Io } from "./cli/io.ts";
+import { runProcess } from "./process.ts";
 import { err, ok, type Result } from "./result.ts";
 import {
 	parseStackRecord,
@@ -24,14 +24,12 @@ function spawnText(
 	program: string,
 	args: readonly string[],
 ): Result<string, string> {
-	const result = spawnSync(program, args, {
-		cwd: io.cwd,
-		env: io.env,
-		encoding: "utf8",
-	});
-	if (result.error !== undefined) return err(result.error.message);
-	if (result.status !== 0) return err(result.stderr.trim());
-	return ok(result.stdout);
+	const run = runProcess(program, args, { cwd: io.cwd, env: io.env });
+	if (!run.ok) return err(run.error.cause);
+	if (run.value.stopped !== undefined) return err(run.value.stopped);
+	if (run.value.status !== 0)
+		return err(run.value.stderr.toString("utf8").trim());
+	return ok(run.value.stdout.toString("utf8"));
 }
 
 function isMissing(error: unknown): boolean {

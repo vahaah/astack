@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { ghJson } from "./github.ts";
 import { partOf } from "./links.ts";
 
 export type OpenPr = {
@@ -41,12 +41,9 @@ export function openPrsFrom(value: unknown): readonly OpenPr[] | undefined {
 	);
 }
 
-const GH_TIMEOUT_MS = 4000;
-
-export const listOpenPrsWithGh: ListOpenPrs = (dir, repo) => {
-	const result = spawnSync(
-		"gh",
-		[
+export const listOpenPrsWithGh: ListOpenPrs = (dir, repo) =>
+	openPrsFrom(
+		ghJson(dir, [
 			"pr",
 			"list",
 			"--author",
@@ -58,16 +55,8 @@ export const listOpenPrsWithGh: ListOpenPrs = (dir, repo) => {
 			...(repo ? ["--repo", repo] : []),
 			"--json",
 			"number,url,headRefName,title,body",
-		],
-		{ cwd: dir, encoding: "utf8", timeout: GH_TIMEOUT_MS },
+		]),
 	);
-	if (result.status !== 0 || !result.stdout) return undefined;
-	try {
-		return openPrsFrom(JSON.parse(result.stdout));
-	} catch {
-		return undefined;
-	}
-};
 
 export function ticketKeys(body: string | undefined): readonly string[] {
 	if (body === undefined) return [];

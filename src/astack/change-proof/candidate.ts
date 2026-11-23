@@ -1,5 +1,4 @@
 import { isUtf8 } from "node:buffer";
-import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	lstatSync,
@@ -12,6 +11,7 @@ import {
 } from "node:fs";
 import { isAbsolute, join, relative, sep } from "node:path";
 import { type GitResult, runGit } from "../git.ts";
+import { runProcess } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import type {
 	ChangedPath,
@@ -197,7 +197,7 @@ export function readCommittedFile(
 }
 
 export function historyGit(root: string, args: readonly string[]): GitResult {
-	const result = spawnSync(
+	const run = runProcess(
 		"git",
 		["--no-replace-objects", "--no-lazy-fetch", ...args],
 		{
@@ -206,7 +206,9 @@ export function historyGit(root: string, args: readonly string[]): GitResult {
 			env: { ...process.env, GIT_GRAFT_FILE: "" },
 		},
 	);
-	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
+	return run.ok
+		? { ok: run.value.status === 0, stdout: run.value.stdout }
+		: { ok: false, stdout: Buffer.alloc(0) };
 }
 
 export function readIntegrationHistory(

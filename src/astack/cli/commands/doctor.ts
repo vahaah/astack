@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import {
 	accessSync,
 	appendFileSync,
@@ -34,6 +33,7 @@ import { MANAGED_PATHS } from "../../managed.ts";
 import { ghJson } from "../../pr/github.ts";
 import { parseMergeProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
+import { runProcess } from "../../process.ts";
 import { loadProfile, PROFILE_PATH, readProfileJson } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
@@ -99,11 +99,9 @@ function skippedProfiles(home: string): string[] {
 
 function nodeMajor(path: string): number | undefined {
 	if (basename(path).startsWith("bun")) return undefined;
-	const result = spawnSync(path, ["--version"], {
-		encoding: "utf8",
-		timeout: 5000,
-	});
-	const major = /^v?(\d+)\./.exec(result.stdout ?? "")?.[1];
+	const run = runProcess(path, ["--version"], { timeoutMs: 5000 });
+	const stdout = run.ok ? run.value.stdout.toString("utf8") : "";
+	const major = /^v?(\d+)\./.exec(stdout)?.[1];
 	return major === undefined ? undefined : Number(major);
 }
 
