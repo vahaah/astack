@@ -18,6 +18,8 @@ context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/
 cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
 cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write), loadFullStop(read), saveFullStop(write)
 cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
+cap  DenyStore [fs-read, fs-write] @ src/astack/deny-store.ts: readDenyList(read), writeDenyList(write)
+cap  SessionStore [fs-read, fs-write] @ src/astack/pr/session-prs.ts: loadSessionPrs(read), saveSessionPrs(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
@@ -26,6 +28,9 @@ pure src/astack/domain/imports.ts
 pure src/astack/domain/effects.ts
 pure src/astack/domain/effect-change.ts
 pure src/astack/pr/grant.ts
+pure src/astack/deny-list.ts
+pure src/astack/outbound.ts
+pure src/astack/pr/split.ts
 ```
 
 ## Language

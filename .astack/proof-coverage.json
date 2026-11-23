@@ -17,7 +17,8 @@
 		"docs/reference/pr-recipes.md",
 		"docs/reference/domain-record.md",
 		"docs/reference/review-stub.md",
-		"docs/reference/adr-lifecycle.md"
+		"docs/reference/adr-lifecycle.md",
+		"docs/reference/outbound-guards.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -105,7 +106,13 @@
 		"tests/astack/adr-record.test.ts",
 		"tests/astack/adr-cli.test.ts",
 		"tests/adr-numbers.test.ts",
-		"tests/apply/ci-parity-apply.test.ts"
+		"tests/apply/ci-parity-apply.test.ts",
+		"tests/astack/deny-store.test.ts",
+		"tests/astack/outbound.test.ts",
+		"tests/astack/outbound-hook.test.ts",
+		"tests/astack/split.test.ts",
+		"tests/astack/duplicate-pr.test.ts",
+		"tests/property/session-prs.test.ts"
 	],
 	"links": [
 		{
@@ -1041,6 +1048,43 @@
 		{
 			"criterion": "AL-citations",
 			"controls": ["apply-citation-note"]
+		},
+		{
+			"criterion": "OB-public-text",
+			"controls": ["outbound-text", "outbound-writes"]
+		},
+		{
+			"criterion": "OB-mcp-fields",
+			"controls": ["outbound-writes"]
+		},
+		{
+			"criterion": "OB-private-pass",
+			"controls": ["outbound-text"]
+		},
+		{
+			"criterion": "OB-fail-closed",
+			"controls": ["outbound-fail-closed", "outbound-fault"]
+		},
+		{
+			"criterion": "OB-sync",
+			"controls": ["deny-sync", "deny-list-roundtrip"]
+		},
+		{
+			"criterion": "SP-second-pr",
+			"controls": ["duplicate-pr-session", "part-of-open", "session-pr-rule"]
+		},
+		{
+			"criterion": "SP-allowed",
+			"controls": [
+				"duplicate-pr-session",
+				"split-instruction",
+				"part-of-open",
+				"session-pr-rule"
+			]
+		},
+		{
+			"criterion": "SP-no-session",
+			"controls": ["duplicate-pr-session", "session-prs-roundtrip"]
 		}
 	]
 }
