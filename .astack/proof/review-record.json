@@ -64,6 +64,10 @@
 			"obligation": "WB-ratchet"
 		},
 		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "SG-preserve"
+		},
+		{
 			"path": "formal/CiProofRecords.tla",
 			"obligation": "RV-ci-mixed"
 		},
