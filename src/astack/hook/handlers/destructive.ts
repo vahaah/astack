@@ -1211,7 +1211,6 @@ const GATE_READERS = new Set([
 	"cat",
 	"cmp",
 	"diff",
-	"find",
 	"grep",
 	"head",
 	"jq",
@@ -1226,17 +1225,18 @@ const GATE_READERS = new Set([
 	"tail",
 	"wc",
 ]);
-const FIND_ACTIONS =
-	/^-(?:delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)$/;
-
 function readsOnly(step: ShellStep): boolean {
 	const [program, ...args] = step.words;
 	if (program === undefined || program.dynamic) return false;
-	const name = basename(program.value);
 	return (
-		GATE_READERS.has(name) &&
-		(name !== "find" ||
-			args.every((arg) => !arg.dynamic && !FIND_ACTIONS.test(arg.value)))
+		GATE_READERS.has(basename(program.value)) &&
+		args.every(
+			(arg) =>
+				!arg.dynamic &&
+				arg.expands !== true &&
+				arg.splits !== true &&
+				!arg.value.includes("\\"),
+		)
 	);
 }
 

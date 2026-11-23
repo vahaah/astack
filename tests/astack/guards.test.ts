@@ -891,6 +891,12 @@ describe("the gate record folder", () => {
 		["a cp with no git word", () => shell(`cp a.json ${gates}/`, records)],
 		["a find with -delete", () => shell(`find ${gates} -delete`, records)],
 		[
+			"a find that names no action",
+			() => shell(`find ${gates} -name '*.json'`, records),
+		],
+		["a cat with a glob", () => shell(`cat ${gates}/*.json`, records)],
+		["a cat with a variable", () => shell(`cat ${gates}/a.json $X`, records)],
+		[
 			"a cp through a relative path",
 			() => shell("cp a.json ../gate-folder-state/gates/b.json", records),
 		],
@@ -905,7 +911,6 @@ describe("the gate record folder", () => {
 
 	test.each([
 		["cat GATES/a.json"],
-		["find GATES -name '*.json'"],
 		["diff GATES/a.json GATES/a.json"],
 		["shasum -a 256 GATES/a.json"],
 		["astack gates run --base main"],
