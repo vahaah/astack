@@ -29,3 +29,4 @@
 | [0026](0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md) | One lexer reads TypeScript and JavaScript comments for the comment hook and the type hook | Accepted |
 | [0027](0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md) | The review stub needs the plugin, and commentKeep is the one keep list | Accepted |
 | [0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) | A broad discard passes in a repo that this session made | Accepted |
+| [0030](0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md) | astack check effects compares the effect classes of the code with the domain record | Accepted |

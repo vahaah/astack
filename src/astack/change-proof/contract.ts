@@ -657,12 +657,10 @@ function readComposition(fields: Fields): Composition {
 	}
 	if (cited === undefined)
 		return { kind: "category", category: readCategory(fields) };
-	const path = plan.text(
-		"plan",
-		PLAN_REF,
-		`a repository path to a Markdown plan, with an optional ${PLAN_ANCHOR}`,
-	);
-	return { kind: "plan", plan: path.replace(PLAN_ANCHOR, "") };
+	const shape = `a repository path to a Markdown plan outside .git, with an optional ${PLAN_ANCHOR}`;
+	const path = plan.text("plan", PLAN_REF, shape).replace(PLAN_ANCHOR, "");
+	if (path !== "" && !isRepoPath(path)) plan.fail("plan", `must be ${shape}`);
+	return { kind: "plan", plan: path };
 }
 
 function readProof(fields: Fields): ChangeProof {

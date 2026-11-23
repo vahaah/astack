@@ -176,6 +176,54 @@ describe("a manifest that cites a plan record", () => {
 		heavyTestTimeout,
 	);
 
+	test(
+		"[control:proof-effects-advice] each effects finding prints as an advice line, and the exit and the verdict equal those of a tree with no finding",
+		() => {
+			const stamped = {
+				...PLAN_FILES,
+				"src/gate.ts": `${PLAN_FILES["src/gate.ts"] ?? ""}export const stamp = (): number => Date.now();\n`,
+			};
+			const run = (files: Readonly<Record<string, string>>) => {
+				const out = proof(planProofRepo(scratch, () => {}, files).root);
+				return {
+					code: out.code,
+					last: lastLine(out.out).split(" at ")[0],
+					advice: out.out
+						.split("\n")
+						.filter((line) => line.startsWith("advice:")),
+				};
+			};
+			const pure = (text: string | undefined): string =>
+				(text ?? "").replace(
+					"context Gate : src/**\n",
+					"context Gate : src/**\npure src/gate.ts\n",
+				);
+			expect({
+				clean: run(PLAN_FILES),
+				advised: run({
+					...stamped,
+					"CONTEXT.md": pure(PLAN_FILES["CONTEXT.md"]),
+				}),
+			}).toEqual({
+				clean: {
+					code: 0,
+					last: "ok: proof gate-admission admitted",
+					advice: [],
+				},
+				advised: {
+					code: 0,
+					last: "ok: proof gate-admission admitted",
+					advice: [
+						"advice: src/gate.ts:10: pure: a pure line of CONTEXT.md names this module, but it has clock (clock by Date.now)",
+						"advice: src/gate.ts:10: step: step parseGate allows none by its row, but its module has clock (clock by Date.now)",
+						"advice: src/gate.ts:10: step: step admitGate allows none by its row, but its module has clock (clock by Date.now)",
+					],
+				},
+			});
+		},
+		heavyTestTimeout,
+	);
+
 	test("[control:proof-plan-record-schema] a manifest needs domain.plan or category, and not both", () => {
 		const both = {
 			...planRecordProof(validProof("a".repeat(40))),
@@ -202,5 +250,25 @@ describe("a manifest that cites a plan record", () => {
 				},
 			},
 		]);
+	});
+
+	test.each<[string, string]>([
+		["a parent path", "../outside.md#domain-and-effects"],
+		["an absolute path", "/tmp/outside.md"],
+		["a path in .git", ".git/outside.md#domain-and-effects"],
+	])("a domain.plan at %s stops at schema", (_name, plan) => {
+		const valid = validProof("a".repeat(40));
+		const manifest = {
+			...planRecordProof(valid),
+			domain: { ...valid.domain, context: "Gate", plan },
+		};
+		expect(parseChangeProof(JSON.stringify(manifest))).toEqual({
+			ok: false,
+			error: {
+				stage: "schema",
+				message:
+					"domain.plan must be a repository path to a Markdown plan outside .git, with an optional #domain-and-effects",
+			},
+		});
 	});
 });

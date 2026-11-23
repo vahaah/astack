@@ -1,0 +1,353 @@
+{
+	"version": 1,
+	"change": "check-effects",
+	"base": "5b107e76dd24a4f5db4a7945017f8e9fb0a8ce0c",
+	"scope": [
+		{
+			"path": "src/astack/domain/imports.ts",
+			"obligation": "DR-effect-classes"
+		},
+		{
+			"path": "src/astack/domain/sources.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "src/astack/domain/effects.ts",
+			"obligation": "DR-effect-card"
+		},
+		{
+			"path": "src/astack/domain/effect-change.ts",
+			"obligation": "DR-effect-change"
+		},
+		{
+			"path": "src/astack/domain/report.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "src/astack/cli/commands/check/effects.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "src/astack/cli/commands/check/index.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "src/astack/cli/commands/check/proof.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "src/astack/pr/grant.ts",
+			"obligation": "GM-MONOID"
+		},
+		{
+			"path": "src/astack/pr/grant-store.ts",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "tests/astack/domain-imports.test.ts",
+			"obligation": "DR-effect-classes"
+		},
+		{
+			"path": "tests/astack/domain-sources.test.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "tests/astack/domain-effects.test.ts",
+			"obligation": "DR-effect-card"
+		},
+		{
+			"path": "tests/astack/domain-effect-change.test.ts",
+			"obligation": "DR-effect-change"
+		},
+		{
+			"path": "tests/astack/check-effects-cli.test.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "tests/astack/change-proof-domain.test.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "tests/astack/registry.test.ts",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "tests/astack/hook-profile.test.ts",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "tests/property/grant-store.test.ts",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "tests/property/grant-monoid.test.ts",
+			"obligation": "GM-MONOID"
+		},
+		{
+			"path": "tests/property/grants.ts",
+			"obligation": "GM-MONOID"
+		},
+		{
+			"path": "tests/fixtures/domain/effects/**",
+			"obligation": "DR-effect-card"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "DR-effect-card"
+		},
+		{
+			"path": "README.md",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "DR-effect-card"
+		},
+		{
+			"path": "docs/adr/0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "docs/reference/domain-record.md",
+			"obligation": "DR-effect-advice"
+		},
+		{
+			"path": "docs/reference/law-controls.md",
+			"obligation": "GM-MONOID"
+		},
+		{
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "formal/SessionGuards.md",
+			"obligation": "SG-grant-store"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Guards",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B29.md#domain-and-effects",
+		"aggregate": {
+			"path": "src/astack/pr/grant.ts",
+			"symbol": "MergeGrant"
+		},
+		"terms": [
+			"Effect class",
+			"Grant store",
+			"Merge grant",
+			"Contexts card",
+			"Domain block",
+			"Law control"
+		],
+		"invariants": [
+			{
+				"name": "Each PR of a grant has a merge word or an un-negated full send of a person's prompt",
+				"modelRef": "GrantFromWords"
+			},
+			{
+				"name": "Each merge has a profile grant or a covering prompt of a person",
+				"modelRef": "MergeNeedsAuthority"
+			},
+			{
+				"name": "No merge happens after a prompt that starts the full-stop run, until a person's prompt that does not start it",
+				"modelRef": "FullStopNeverMerges"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"decision": "D7"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"DR-effect-classes",
+				"DR-effect-advice",
+				"DR-effect-card",
+				"DR-effect-change",
+				"DR-plan-record",
+				"GM-MONOID",
+				"SG-grant-store",
+				"SG-preserve",
+				"SG-generated"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The token reader of each module, the class table, the import resolution, the fixed point of the classes through imports, the git listing of the modules, and the state files of the grant and the full-stop record.",
+		"callersKnow": [
+			"effectReport gives each finding as advice or report with its path, its line and its rule, or a SourceStop when git cannot list the modules.",
+			"The check and check proof never change an exit or a verdict for a finding.",
+			"saveGrant and saveFullStop return an error with the path, and the merge guard still allows the prompt.",
+			"loadGrant never fails. A store with no state folder or no session id loads no grant, and loadFullStop gives unknown.",
+			"grant.ts holds the pure grant rules and imports no node module."
+		],
+		"deletionTest": "Without the check, a pure line and a cap of the card are prose that no check compares with the imports. Without the grant store, grant.ts keeps node:fs, and its pure line gets advice.",
+		"alternatives": [
+			{
+				"name": "A stop now",
+				"rejectedBecause": "No window counted the false findings yet, and B36 sets the exit after 7 days."
+			},
+			{
+				"name": "A regex over the module text",
+				"rejectedBecause": "It reads the throw words of strings and comments."
+			},
+			{
+				"name": "The classes through imports for the change rule",
+				"rejectedBecause": "One change in git.ts then asks the block to name 56 modules."
+			},
+			{
+				"name": "The old save and load parameters",
+				"rejectedBecause": "They keep node:fs in grant.ts, so its pure line fails."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
+				},
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant-store.ts",
+					"symbol": "saveGrant"
+				},
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant-store.ts",
+					"symbol": "loadGrant"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant-store.ts",
+					"symbol": "loadFullStop"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"modelAction": "Merge"
+			}
+		],
+		"omitted": [
+			"The model takes the grant record as a set of PRs, so it has no file, no save error and no load.",
+			"astack check effects decides no verdict, so no action of the model stands for it. Its controls examine it.",
+			"The property controls examine the grant monoid and the store round trip on the real functions."
+		]
+	},
+	"model": {
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+			"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
+			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"McpMergeDenied",
+			"GuardErrorDenies",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss",
+			"HookSkipNeedsGates",
+			"SessionRepoPasses"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/SessionGuards.tla",
+		"action": "Push",
+		"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+		"replacement": "/\\ ~skips \\/ target = \"head\"",
+		"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
+		"expect": {
+			"kind": "invariant",
+			"name": "HookSkipNeedsGates"
+		}
+	},
+	"limits": [
+		"The class table gives no class to a timer, console, the standard streams, a Bun file call or an Effect platform service.",
+		"A class through imports covers a whole module, so a pure function beside an effectful import gets a finding too.",
+		"A failed grant save keeps the earlier grant file, so a merge that it names still passes in a later turn.",
+		"The finite model takes the clause grammar, the prompt source and the grant record as true observations.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

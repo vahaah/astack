@@ -12,6 +12,7 @@ Each control runs on the real function with generated inputs.
 - [criterion:LAW-CLAIMED] A manifest lists the laws that it claims and the laws that its composites and its carrier need. A missing row of another law parses, and a missing needed row stops at stage category. A manifest with eight rows parses, and a `model:` law witness still admits.
 - [criterion:LAW-MONOID] A monoid claim needs witnesses for both `monoid-id` and `monoid-assoc`. A claim with one of them stops at stage category.
 - [criterion:ADMIT-ORDER] Admission examines the domain, then the category, then the controls, then the model. A manifest with two faults stops at the first stage of the two.
+- [criterion:GM-MONOID] `joinGrants` and `NO_GRANT` form a monoid under `grantCovers` on generated grants. `NO_GRANT` covers no PR, and a join covers a PR when one side covers it.
 
 ## Claim boundary
 

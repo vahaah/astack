@@ -130,7 +130,7 @@ CLI and CI quality checks remain independent.
 - `combine` is a monoid. `allow` is the identity. `deny` absorbs `note` and joins the reasons. A property test proves the laws.
 - The base encoder denies with exit 2 and the reason on stderr. Claude Code, Codex, Cursor and Grok Build all accept that form.
 - Per-tool JSON adapters cover the rest. Claude Code notes use `hookSpecificOutput.additionalContext`. A Stop rewrite prints `{"decision":"block","reason":...}` with exit 0, because Codex runs the same `hooks.json` command as Claude Code, and both read that form. Cursor stop prints `followup_message`. Cursor permission events always print valid JSON, so fail open prints `{"permission":"allow"}`. The launcher prints the same when it finds no runtime, or when the CLI prints nothing.
-- The command registry is `src/astack/cli/commands/*.ts`. Each module exports `{ name, summary, usage, run }`, and `commands/index.ts` lists them. The commands are `hook`, `check <comments|types|ste|ticket|pr|plan|migrations|stack-config|ci-pins|pr-head|review-growth|spec-drift|proof|hardening-profile>`, `plan`, `plan-ticket`, `session`, `stack`, `board`, `skill-path`, `managed`, `doctor`, `print`, `init` and `watch-pr`.
+- The command registry is `src/astack/cli/commands/*.ts`. Each module exports `{ name, summary, usage, run }`, and `commands/index.ts` lists them. The commands are `hook`, `check <comments|types|ste|ticket|pr|plan|migrations|stack-config|ci-pins|pr-head|review-growth|spec-drift|proof|hardening-profile|effects>`, `plan`, `plan-ticket`, `session`, `stack`, `board`, `skill-path`, `managed`, `doctor`, `print`, `init` and `watch-pr`.
 - Deferred. The `release`, `gates` and `ste` commands are not built yet. Section 5.5 describes `release`, and section 9.1 describes `ste review`.
 - The CLI stays pure toward trackers. It never holds a Linear or GitHub credential. Reads come as tracker JSON on stdin. Writes come out as a typed write plan that the skill runs through the Linear MCP or `gh`.
 - One exception covers reads of PR state. `watch-pr`, the merge guard and `check pr-head` run `gh` as a child process. `gh` holds the credential, and the CLI never reads or stores it. `check pr-head` also runs `git fetch origin <headRefOid>`, which writes Git objects and `FETCH_HEAD`. It reads the PR again at every call.
@@ -329,7 +329,7 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 | no `any`, no unsafe cast, no `!`, no compiler silencing, strict base tsconfig flags | the type hook (8.1), the comment hook, tsc, `astack doctor types` |
 | brands only in the parser, types from the owning schema, parse once at the edge | review, the cast deny |
 | records for products, unions for sums, full matches, literal unions over `enum` | tsc, Biome `useExhaustiveSwitchCases` (never its fix), the hook |
-| readonly data, expected failure as a value, one `Result` type per repo, pure domain | Biome, review, repo architecture tests, a note on `throw` in `pureCore` globs |
+| readonly data, expected failure as a value, one `Result` type per repo, pure domain | Biome, review, repo architecture tests, `astack check effects` on the `pure` lines of the contexts card |
 | combine and empty, round trips, idempotent normalizers, total-order comparators | fast-check laws, `effect` FastCheck in a repo that uses Effect |
 
 ### 8.1 The type hook
