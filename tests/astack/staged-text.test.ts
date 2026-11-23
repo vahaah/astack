@@ -102,7 +102,8 @@ const UNREAD = [
 		`python3 - <<'EOF'${join}\nopen("body.md", "w").write("x")\nEOF`,
 	(join: string) => `cp draft.md ./body.md${join}`,
 	(join: string) => `bash -c "$SCRIPT"${join}`,
-	(join: string) => `tee body.md > /dev/null <<EOF${join}\n$(cat draft.md)\nEOF`,
+	(join: string) =>
+		`tee body.md > /dev/null <<EOF${join}\n$(cat draft.md)\nEOF`,
 	(join: string) => `tee body.md > /dev/null <<< "$DRAFT"${join}`,
 	(join: string) => `echo x &> body.md${join}`,
 	(join: string) => `printf '%s' x &>> body.md${join}`,
