@@ -1,0 +1,223 @@
+{
+	"version": 1,
+	"change": "plan-skill-record",
+	"base": "c97dc7612b7f57ca735928d90a24a57a3da6a40d",
+	"scope": [
+		{
+			"path": "src/astack/cli/commands/plan.ts",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "src/astack/plan/**",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/**",
+			"obligation": "PLAN-RECORD"
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "README.md",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "PLAN-RECORD"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "docs/adr/**",
+			"obligation": "PLAN-RECORD"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "docs/reference/plan-boundary.md",
+			"obligation": "PLAN-RECORD"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "tests/astack/plan-helpers.ts",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "tests/astack/plan-session.test.ts",
+			"obligation": "HANDOFF-COUNT"
+		},
+		{
+			"path": "tests/astack/plan-tracker.test.ts",
+			"obligation": "PLAN-CUT"
+		},
+		{
+			"path": "tests/plan-skill-text.test.ts",
+			"obligation": "PLAN-RECORD"
+		},
+		{
+			"path": "tests/tracker-schema.test.ts",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Plan",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B33.md#domain-and-effects",
+		"aggregate": {
+			"path": "src/astack/plan/types.ts",
+			"symbol": "Plan"
+		},
+		"terms": ["Domain block", "Session boundary", "Plan state folder"],
+		"invariants": [
+			{
+				"name": "Each merge except the last runs at most one session boundary",
+				"modelRef": "OneBoundaryPerMerge"
+			},
+			{
+				"name": "A graduated row leaves live rows only with a resolving ADR heading",
+				"modelRef": "RowLeavesWithAuthority"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
+				"decision": "D2"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"PLAN-RECORD",
+				"PLAN-CUT",
+				"HANDOFF-COUNT",
+				"BOUNDARY-ONCE",
+				"WB-ratchet",
+				"SG-preserve",
+				"SG-generated"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The domain record stage ownership across S3 to S6, the removal of plan export and plan drift sync modules, the trail parser placement in trail.ts, and the 4-line session handoff formatter.",
+		"callersKnow": [
+			"astack plan export and astack plan drift exit 2, while astack plan keys, astack board and astack session resume stay intact.",
+			"astack session handoff returns a 4-line comment with no open-question count.",
+			"The plan skill holds 11 files under 8,000 words with S3 to S6 owning the domain record."
+		],
+		"deletionTest": "Without ADR 0037 cuts and stage ownership, plan carries 14,684 words of repeated checker rules, 1,068 lines of unused export/drift sync code, and a handoff line that hides waiting items behind a count.",
+		"alternatives": [
+			{
+				"name": "Keep plan export and plan drift as opt-in commands",
+				"rejectedBecause": "They add 1,068 lines and 1,171 words for low use and high defect rate."
+			},
+			{
+				"name": "Cut astack plan keys together with export",
+				"rejectedBecause": "Filed programme decision issues still need key write-back into plan files."
+			},
+			{
+				"name": "Print up to 3 open questions in the handoff comment",
+				"rejectedBecause": "That duplicates Catch up inside a tracker comment."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/plan/check.ts",
+					"symbol": "checkPlan"
+				},
+				"modelAction": "Graduate"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/plan/session.ts",
+					"symbol": "handoff"
+				},
+				"modelAction": "Resume"
+			}
+		],
+		"omitted": [
+			"PlanBoundary does not model plan export/drift removal, skill word counts or handoff line counts. The PLAN-CUT, PLAN-RECORD and HANDOFF-COUNT controls enforce those invariants.",
+			"Tracker JSON parsing for board and session resume stays outside the model and is guarded by plan-tracker.test.ts and plan-session.test.ts."
+		]
+	},
+	"model": {
+		"module": "formal/PlanBoundary.tla",
+		"config": "formal/PlanBoundary.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Three sessions, two decision rows and four heading forms.",
+			"Each order of the merge, boundary, resume, ADR write and graduate steps."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"OneBoundaryPerMerge",
+			"NoBoundaryAfterLast",
+			"EachMergeCarriesItsBoundary",
+			"RowLeavesWithAuthority",
+			"LastPrDeletesPlan"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/PlanBoundary.tla",
+		"action": "Graduate",
+		"original": "Resolves(heading[r])",
+		"replacement": "TRUE",
+		"defect": "A check that drops the heading test lets a row leave the live rows with an ADR heading that does not resolve.",
+		"expect": {
+			"kind": "invariant",
+			"name": "RowLeavesWithAuthority"
+		}
+	},
+	"limits": [
+		"Static text controls prove stage pointers and removed terms, not live agent plan quality.",
+		"src/astack/profile.ts continues to accept plan.team until product profiles migrate.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

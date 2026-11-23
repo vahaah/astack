@@ -1,6 +1,6 @@
 ---
 name: "astack-plan"
-description: "Use for /astack-plan, \"I am building X\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves. It also resumes a plan by slug, path or ticket key, and exports a plan to Linear or GitHub on request."
+description: "Use for /astack-plan, \"I am building X\", a ticket key, or /plan with new work. Plans work from one ticket in one PR to a programme of many months. It asks for the goal and the one decision that the work drives. It grills the owner on their calls. It writes one plan file that astack check-plan proves, and resumes a plan by slug, path or ticket key."
 license: "MIT"
 metadata:
   astack-version: "0.4.0"
@@ -10,212 +10,142 @@ metadata:
 # Plan
 
 Plan the work in the user's request, or resume the plan it names.
-The owner makes the decisions.
-You find the facts and design the contested shapes.
-Test the plan against `astack-principles`.
-Keep the decision record.
-This skill produces a plan.
-It never builds code.
+The owner decides, and you find facts and design contested shapes against `astack-principles`.
+This skill writes a plan and never builds code.
 
 Each fact has one home.
-The plan file holds the structure.
-The tracker holds status, claims and comments.
-ADRs and the glossary hold what must outlive the plan.
-The trail records each decision's reason.
-`astack check-plan` proves the structure.
-The last PR of the plan deletes the plan.
+The plan holds structure and the domain record, and the tracker holds status and comments.
+ADRs and the glossary hold durable facts, and the trail holds decision reasons.
+`astack check-plan` proves the structure, and the last PR deletes the plan.
 
-## The units
+## Units and delivery
 
-| Unit | What it is | Handle | Limit |
+| Unit | Meaning | Handle | Limit |
 |---|---|---|---|
-| Programme | A destination that needs more than one milestone | slug | 8 live milestones |
-| Milestone | A state that a person can watch, with one demo sentence and one proof command | `M<n>` | 1 to 6 weeks |
-| Block | One capability slice with a brief. A single ticket is a block with no programme | `B<nn>` | 1 to 5 sessions |
-| Session | One PR and one integrator run | `S<n>`, or `B<nn>/S<n>` in a programme | warn past 12 steps, never split |
-| Step | One commit with an Exit check and a checkpoint | its number in the session | about half a day |
-| Decision | A settled answer | `D<n>` | about 300 characters per row |
+| Programme | Destination needing more than one milestone | slug | 8 live milestones |
+| Milestone | Observable state with demo and proof | `M<n>` | 1 to 6 weeks |
+| Block | Capability slice with a brief | `B<nn>` | 1 to 5 sessions |
+| Session | One PR and one integrator run | `S<n>` or `B<nn>/S<n>` | warn past 12 steps, never split |
+| Step | One commit with Exit and checkpoint | number | approximately half a day |
+| Decision | Settled answer | `D<n>` | approximately 300 chars |
 
-Wave, Lane and Kind are labels.
-A wave is a batch of steps that run in parallel.
-A lane partitions the work between workers.
+Wave batches parallel steps, and lane partitions workers. Accept "bucket" and `W<n>` from the owner.
 
-"Step" is the word astack uses. The owner also says "bucket" and `W<n>`. Accept the words of the owner and never correct them.
-
-## The delivery shape
-
-The usual shape is one big PR for each session.
-Parallel step workers build it in worktrees, in waves.
-`references/sessions.md` has the full protocol.
-
-- The integrator lane is the main thread. It lands the step commits on the session branch in plan order, runs the scoped gates and resolves conflicts.
-- One editor works on each hot-file region in a wave. The checker fails a plan when two steps of one wave list the same region.
-- A PR can serve more than one ticket. Split a PR only when the owner says so.
-- `checkpoints: report` is the default. The package goes to the PR as a comment. Chat gets 6 lines or fewer and the link. Then the session continues.
-- `approve ui` and `approve one-way` stop the session for the owner. Use them only for a step of UI taste and for a one-way door.
-- A session with more than 8 steps has one checkpoint for each wave. A smaller session has one for each step.
+- Usual shape: one PR per session built by parallel worktree workers in waves (`references/sessions.md`).
+- Main thread is the `integrator` lane. It lands step commits in order, runs scoped gates and resolves conflicts.
+- One editor per hot-file region in a wave. Split a PR only when the owner asks.
+- `checkpoints: report` is default: post the package on the PR, give chat 6 lines or fewer, and continue.
+- `approve ui` and `approve one-way` stop for UI taste and one-way doors.
+- Sessions over 8 steps checkpoint per wave. Smaller sessions checkpoint per step.
 
 ## The delegation grant
 
-"go", "do your recommendation" and "use best practices and our previous decisions" are a delegation grant.
+"go", "do your recommendation" and "use best practices and our previous decisions" grant delegation.
 
-1. Run `astack plan delegate <plan> on` at once. It writes `delegate: on` and `checkpoints: report`, and it logs a trail row.
-2. Decide the agent calls. Decide the owner calls that have one clear best option. Record each one as a `delegated` row with its reason.
-3. The grant lasts for the session, and a resume keeps it. "ask me" ends it with `astack plan delegate <plan> off`.
-4. The owner gates in the frontmatter always stop the work. Under a grant, "go" also grants execution of the `now` session.
+1. Run `astack plan delegate <plan> on` at once (`delegate: on`, `checkpoints: report`, trail row).
+2. Decide agent calls and clear owner calls as `delegated` rows with reasons.
+3. Resume keeps the grant. "ask me" ends it via `astack plan delegate <plan> off`.
+4. Owner gates always stop work. Under a grant, "go" also grants execution of `now`.
 
 ## Rules for the whole run
 
-1. Sort each open question by kind with `references/routing.md` before it reaches the owner.
-   Find facts yourself.
-   Resolve forks that a test can settle.
-   Design forks reach the owner for ratification.
-   Agent calls go on the veto list.
-2. Grill only in the main thread.
-   Never answer your own question.
-   At S0, run `astack plan attended`.
-   When nobody can answer, follow `references/unattended.md`.
-3. Write each answer as a decision row in the same turn. Log it with `astack plan trail`. An answer never lives only in the chat.
-4. Never use AskUserQuestion for a round. A round is plain text in the format below.
-5. Keep progress out of the plan. Write no checkboxes, no `Status:` lines, no register tables and no dates outside the frontmatter. The astack hook denies the first three.
-6. Plan handles are legal in plans, trackers, PR titles and commit subjects. Never put a handle in code or in a code comment. A TODO cites an issue key.
-7. Planning never builds. Only an owner answer or a delegation grant sets `execute:`.
-8. Guard the main context. Subagents read the code and return pointers. The main thread keeps the answers, the plan file and the checker output.
-9. Every plan ends with its unresolved questions.
+1. Classify every open question with `references/routing.md`. Find facts yourself, test empirical forks, ratify design forks, and put agent calls on the veto list.
+2. Grill only in the main thread and never answer your own question. Run `astack plan attended` at S0. On `unattended`, follow `references/unattended.md`.
+3. Write each answer as a decision row in the same turn. Log it with `astack plan trail`.
+4. Never use AskUserQuestion for a round. Use the plain-text round format below.
+5. Write no checkboxes, `Status:` lines, register tables or body dates.
+6. Plan handles belong in plans, trackers, PR titles and commits, never in code or comments.
+7. Only an owner answer or grant sets `execute:`.
+8. Subagents read code and return pointers to protect main context.
+9. End every plan with `## Unresolved questions`.
 
 ## Plan mode
 
-`/plan` with "I am building" is this skill inside plan mode.
+`/plan` with "I am building" runs this skill inside plan mode.
 
-1. Run S0 to S3, S5 and S6 against the plan text.
-   Write nothing.
-   Check the text with `astack check-plan --as docs/plans/<slug>.md -`.
-   That command reads the plan from stdin.
-2. Keep the plan-mode plan concise.
-   Put the unresolved questions last.
-3. After the owner approves with ExitPlanMode, the first action writes `docs/plans/<slug>.md` and commits it.
-4. Then write the trail rows, the glossary and the ADRs. A plan never stays only in `~/.claude/plans` or in memory, because other tools cannot read them.
+1. Run S0 to S3, S5 and S6 without writing files. Check stdin via `astack check-plan --as docs/plans/<slug>.md -`.
+2. Keep the plan-mode plan short with unresolved questions last.
+3. After ExitPlanMode approval, first write and commit `docs/plans/<slug>.md`, then write trail, glossary and ADRs.
+4. Never leave a plan only in `~/.claude/plans` or memory, because other tools cannot read them.
 
-## How much the plan writes to the tracker
+## Tracker footprint
 
-| Tier | New tracker objects | What the plan writes |
-|---|---|---|
-| quick | none | One comment with the decisions on the ticket |
-| standard | none | The status of the existing ticket and one hand-off comment |
-| programme | session sub-issues, decision issues | Through `astack plan export`, after a dry run |
-
-In the standard tier, the PR fixes each in-scope defect and lists it in its body.
-Put each out-of-scope finding in the drafts file with `astack plan draft <plan> "<title>" "<why>"`.
-The owner files those findings with "agree" through `astack-write-ticket`.
-Never edit the description of a product spec ticket.
-Put an addendum in a comment.
-
-Export a plan to Linear or GitHub only when the owner asks. `references/tracker.md` has `astack plan export`, `drift` and `keys`.
+- `quick`: one decision comment on the ticket.
+- `standard`: status and one hand-off comment on the existing ticket. Put out-of-scope findings in `astack plan draft <plan> "<title>" "<why>"` (filed via `astack-write-ticket` after "agree"). Never edit a spec ticket description. Add an addendum comment.
+- `programme`: file map and decision issues via `astack-write-ticket` when asked, and write keys back with `astack plan keys` (`references/tracker.md`).
 
 ## Pick the mode
 
-First look for a plan that covers the work.
-Run `astack check-plan --brief`.
-Read the plan directory.
-When the argument is a ticket key, read the tracker.
+Run `astack check-plan --brief`. Read the plan directory, and read the tracker for a ticket key.
 
 | Mode | When | Do |
 |---|---|---|
-| new | No plan covers the work | The tiers and stages below |
-| resume | The argument names a live plan | `references/upkeep.md`, Resume |
-| session boundary | The PR of the `now` session merged | `references/upkeep.md`, Session boundary |
-| milestone exit | Each session of the `now` milestone merged | `references/upkeep.md`, Milestone exit |
-| diverge | A divergence trigger fired | `references/upkeep.md`, Diverge |
-| pause | The owner says "pause" | `references/upkeep.md`, Pause and close |
-| tracker | The owner asks to export or check drift | `references/tracker.md` |
-| map | The argument is a `wayfinder:map` issue that no plan holds | `references/programme.md`, Work through a map |
+| new | No plan covers the work | Tiers and stages below |
+| resume | Argument names a live plan | `references/upkeep.md`, Resume |
+| session boundary | `now` session PR merged | `references/upkeep.md`, Session boundary |
+| milestone exit | All `now` milestone sessions merged | `references/upkeep.md`, Milestone exit |
+| diverge | Divergence trigger fired | `references/upkeep.md`, Diverge |
+| pause | Owner says "pause" | `references/upkeep.md`, Pause and close |
+| keys | Owner asks to write tracker keys back | `references/tracker.md` |
+| map | Argument is a `wayfinder:map` issue with no plan | `references/programme.md`, Work through a map |
 
 ## Pick the tier
 
-| Tier | Fits when | Output |
+| Tier | Signals | Output |
 |---|---|---|
-| quick | One session, no one-way door, at most two rounds, and someone to answer | No file. A plan of 15 lines or fewer in the chat or in plan mode |
-| standard | One block. One ticket or more. Usually one PR | `<plan dir>/<slug>.md` |
-| programme | More than one milestone | `<plan dir>/<slug>/index.md` and a brief for each block, written at most two sessions ahead |
+| quick | One session, one subsystem, no one-way door, at most two rounds, someone to answer | Chat or plan-mode plan (15 lines or fewer), questions last |
+| standard | One block, usually one PR | `<plan dir>/<slug>.md` |
+| programme | More than one milestone, over approximately 8 PRs, or multi-week lanes | `<plan dir>/<slug>/index.md` and briefs at most two sessions ahead |
 
-`references/tiers.md` has the signals and the changes between tiers.
-Propose a tier with its signals as Q1 of round 1.
-`--tier` skips that question.
-A change of one or two files with an obvious approach gets no plan.
-Say so.
-Then stop.
+Propose the tier as Q1 of round 1 (`--tier` skips it).
+Skip planning for obvious one- or two-file edits. Say so and stop.
+
+- `quick` escalates to `standard` past two rounds, past one session, or at a one-way door (log `tier` trail row).
+- `standard` escalates to `programme` past round 4 or past one milestone.
+- A programme chart with no fog drops to `standard`.
+- An unattended run writes a draft standard plan, never `quick`.
 
 ## Run the stages
 
-Every change follows `astack-mode references/change-proof.md`, including quick work and docs.
-A plan whose Files name a code path holds one `## Domain and effects` H2 with one `domain` fence.
-`astack check-plan --template=domain` prints its grammar.
-The fence names a context of the contexts card, and the caps, steps, flows and laws of the change.
-Each step links one Files cell `<module>#<name>`, and a manifest cites the block with `domain.plan`.
+Every change follows `astack-mode references/change-proof.md`.
+A code plan holds `## Domain and effects` with one `domain` fence (`astack check-plan --template=domain`).
+S3 to S6 each own one part of that domain record.
 
-S0 runs first.
-S1 runs in the background while S2 asks round 1.
-S3 runs during each round.
-Then run S4 and a ratification round.
-Follow with S5, S6 and the final round.
-Run S7 and S8 last.
-`references/stages.md` has the steps, the subagent briefs and the models.
+Run S0 first, then S1 in background while S2 asks round 1.
+Run S3 during rounds, then S4, S5, S6, final round, S7 and S8 (`references/stages.md`).
 
 | Stage | Thread | What runs | Exit |
 |---|---|---|---|
-| S0 Intake | main | The interview. The goal and the one decision the work drives, `astack-in-your-own-words` and `astack-sharpen`, `astack plan attended` | The goal is one sentence, the decision is named, and the done check is false today |
-| S1 Facts | subagents | `astack-how`, `astack-why`, `astack-recall`, the research brief | A facts brief under one page, with each open question sorted by kind |
-| S2 Grill | main | `astack-grilling` over the whole frontier, at most 7 questions in a round | The frontier is empty and the owner agrees |
-| S3 Words | main | `astack-domain-modeling` writes each term at once | Each `terms:` entry is in the glossary |
-| S4 Design | lead subagent | `astack-architect` phases A and B with checkpoint | A sketch branch that compiles, and its open questions sorted |
-| S5 Sequence | main | Sessions, steps, waves, lanes and hot-file regions | The checker passes, and the first session can start now |
-| S6 Spec review | lead subagent | `references/spec-review.md` on the plan, plus a premise check when needed | Each required property has a verification obligation and no owner choice is open |
-| S7 Tracker | main | The footprint of the tier | The standard tier writes no new object |
-| S8 Hand-off | main | The final round, the execution grant, the plan commit | The reply below |
+| S0 Intake | main | Goal, decision, `astack-in-your-own-words`, `astack-sharpen`, `astack plan attended` | One-sentence goal, decision named, done check false today |
+| S1 Facts | subagents | `astack-how`, `astack-why`, `astack-recall`, research brief | Facts brief under one page, questions sorted |
+| S2 Grill | main | `astack-grilling` over frontier (at most 7 questions) | Frontier empty and owner agrees |
+| S3 Words | main | `astack-domain-modeling` writes terms and names the `CONTEXT.md` card context | `terms:` in glossary and context named |
+| S4 Design | lead | `astack-architect` phases A and B; draft the `domain` block (`--template=domain`) | Sketch compiles, `domain` block drafted |
+| S5 Sequence | main | Sessions, steps, waves, lanes; link each block `step` to one `Files` cell `<module>#<name>` | Checker passes and `now` can start |
+| S6 Spec review | lead | `references/spec-review.md`; give each `inv` and write `cap` a `law` on code | Obligations set, no open owner choice |
+| S7 Tracker | main | Tier footprint (`astack-write-ticket` and `astack plan keys`) | Tracker matches tier |
+| S8 Hand-off | main | Final round, execution grant, plan commit | Reply below |
 
-S1 and S6 always start at least one subagent.
-S4 starts one when its trigger holds.
-Skip S4 only when the work stays inside one function and adds no module, seam or schema.
-Then write `exhaust the design space. n/a. <reason>` under `## Gates`.
+S1 and S6 each start a subagent. Skip S4 only inside one function with no new module, seam or schema, and log `exhaust the design space. n/a. <reason>` under `## Gates`.
 
 ## Read the skills of the stage
 
-Read a skill when its stage starts, and not before.
-A mode other than new reads only what its reference names.
-Tell each subagent to read its own skill, as the briefs in `references/stages.md` do.
-When a stage runs inline with no subagent, the main thread reads the skills of that stage.
+Read each skill only when its stage starts. Non-new modes read only their reference.
 
 | Stage | Load | Read by path |
 |---|---|---|
-| S0 | `astack-write-docs`, for the prose of the plan. ASD-STE100 takes priority over its other prose rules | `astack-in-your-own-words`, `astack-sharpen`. `astack-show-me-your-work` before the first trail row |
-| S1 | None | The S1 subagents read `astack-how`, `astack-why` and `astack-recall`. A fact outside the repo takes the research brief of `references/stages.md` |
-| S2 and S3 | `astack-grilling` and `astack-domain-modeling`, together, for each round | None |
-| S4 | `astack-codebase-design` for the depth words | The S4 lead reads `astack-architect` and `astack-arena`. A prototype fork reads `astack-mode playbooks/prototype.md`, with its "Person-judged prototype" section when a person must judge it |
-| S5 | None | `astack-principles` and each reference that its index says applies. `astack-figure-it-out` for a large migration or an unattended run. `references/programme.md`, in a programme |
-| S6 | None | The S6 lead reads `references/spec-review.md`. It reads `astack-principles references/attack-the-premise.md` when needed |
-| S7 | `astack-write-ticket` for each ticket | Its umbrella template, when the owner asks for a spec |
-| S8 | `astack-write-docs` for ADRs, the glossary and PR bodies | None |
+| S0 | `astack-write-docs` (STE wins) | `astack-in-your-own-words`, `astack-sharpen`, `astack-show-me-your-work` |
+| S1 | None | `astack-how`, `astack-why`, `astack-recall` |
+| S2, S3 | `astack-grilling`, `astack-domain-modeling` | None |
+| S4 | `astack-codebase-design` | `astack-architect`, `astack-arena`, `astack-mode playbooks/prototype.md` |
+| S5 | None | `astack-principles`, `astack-figure-it-out`, `references/programme.md` |
+| S6 | None | `references/spec-review.md`, `astack-principles references/attack-the-premise.md` |
+| S7 | `astack-write-ticket` | Map or umbrella template when needed |
+| S8 | `astack-write-docs` | None |
 
-The other skills set `disable-model-invocation`, so the model cannot invoke them.
-Read their SKILL.md by path:
-
-```sh
-astack skill-path astack:architect
-astack skill-path astack:mode playbooks/prototype.md
-```
-
-Each command prints an absolute path.
-Read that file.
-Run each `astack` command as its own Bash call.
-Never chain it with `&&` or `cd`.
-Then one allow rule, `Bash(astack:*)`, covers them all.
-When `astack` is not on the PATH, run `bunx github:vahaah/astack#v0.4.0`.
-A nonzero exit means that the skill or reference is unavailable.
-Say so once.
-Use `references/fallbacks.md`.
-
-Name `/astack-reflect` when it fits, because the user runs it. Never copy it.
-Each ticket still goes through `astack-write-ticket`.
+Read by-path skills with `astack skill-path <plugin>:<skill> [<path>]`.
+Run each `astack` command as its own Bash call (never chained) so `Bash(astack:*)` covers it.
+When `astack` is off PATH, run `bunx github:vahaah/astack#v0.4.0`. On nonzero exit, say so once and use `references/fallbacks.md`. Name `/astack-reflect` when it fits.
 
 ## Recover after a compaction
 
@@ -231,67 +161,39 @@ Read the skills of the recovered mode again, because earlier reads can be gone.
 
 ## Write the plan
 
-Start from `astack check-plan --template`, `--template=programme` or `--template=brief`.
-`references/template.md` has each rule.
-Run `astack check-plan <file>` after each batch of edits.
-Fix each line it prints.
-Before `status: active`, run it with `--strict`.
-`--strict` fails on a warning, but never on a size note or a count of steps.
-Never split a session to clear a note.
-
-Log each gate verdict as a trail row. The pass of interrogate and of exhaust the design space needs the result of a subagent as its evidence. A gate that fails, does not apply or has a waiver gets one line under `## Gates`.
-The historical `interrogate` gate now records the S6 spec review.
+Start from `astack check-plan --template`, `--template=programme`, `--template=brief` or `--template=domain` (`references/template.md`).
+Run `astack check-plan <file>` after edits, and `--strict` before `status: active`. Never split a session to clear a note.
+Log gate verdicts in the trail (or fail, n/a or waiver lines under `## Gates`).
 
 ## Round format
 
-A round is plain text. Ask the whole frontier, at most 7 questions.
-Use the round format of `astack-grilling`, and add `(principle <name>)` to the recommended option.
-`<name>` is a principle reference name from the `astack-principles` index, such as `fix-root-causes`.
-Run `astack skill-path astack:principles references/<name>.md` for its file.
-Read the path it prints.
-
-End the round with the veto list. It holds the agent calls that you wrote as `default` rows since the last round:
+Plain text, at most 7 questions (`astack-grilling` format) with `(principle <name>)` from `astack-principles` on the recommendation.
+End with the veto list of new `default` rows:
 
 ```text
 Defaults. I decided these because each is cheap to reverse. One "agree" keeps them all.
 - <Decision>. Because <evidence>. Rejected. <Option>.
 ```
 
-Under a delegation grant, send no round for agent calls. List the `delegated` rows since the last round in one line each, at the next checkpoint.
-
-After the answers, write each decision as a row with `Settled` set to `user R<n>`.
-A default that the owner accepts becomes `user R<n>` too.
-Log one `answer` trail row for each decision.
-Then send a read-only subagent to test the answers' factual claims against the code.
-A contradiction becomes a question in the next round.
-
-When an answer settles a class of questions, such as who holds a role, write one decision row for the class.
-Apply it to each queued question before the next round.
+Under a grant, report new `delegated` rows in one line each at the next checkpoint.
+Record answers as `user R<n>`, log `answer` trail rows, and verify factual claims with a read-only subagent.
 
 ## Reply
 
-- An attended round. Use the round format, with no line limit, and wait.
-- An attended quick plan. 15 lines or fewer. The unresolved questions come last.
-- At each other run end, use 6 plain lines or fewer, in this order:
-  - The plan path.
-  - The summary line of the checker.
-  - The `now` session and its start command, `astack session start <plan>`.
-  - Each failed gate.
-  - What the run wrote to the tracker.
-  - Last, `Unresolved questions. <N> in <plan path>.`.
+- Attended round: plain round format, then wait.
+- Attended quick plan: 15 lines or fewer, questions last.
+- Other ends: 6 plain lines or fewer in order (plan path, checker summary, `now` session and `astack session start <plan>`, failed gates, tracker writes, `Unresolved questions. <N> in <plan path>.`).
 
-Use no headings, no bold labels and no colons in the middle of a sentence. Then stop. The build starts only when the owner says so, or under a delegation grant.
+Use no headings, bold labels or mid-sentence colons. Stop until the owner or grant starts the build.
 
 ## References
 
-- `references/tiers.md`: the tiers, the interview ritual, plan mode and the tracker footprint.
-- `references/stages.md`: S0 to S8, with the subagent briefs and the models.
-- `references/template.md`: the plan file, the caps, the checker, the trail and the life of a plan.
-- `references/sessions.md`: the session protocol, waves, the integrator lane, checkpoints and `astack session`.
-- `references/programme.md`: the index, milestones, blocks, briefs, decision issues and `astack board`.
-- `references/tracker.md`: `astack plan export`, `drift` and `keys`, with the Linear and GitHub maps.
-- `references/upkeep.md`: resume, the session boundary, the milestone exit, diverge, pause and close.
-- `references/phase-boundaries.md`: when to continue, clear, hand off, delegate or compact at a phase boundary.
+- `references/stages.md`: S0 to S8, subagent briefs and models.
+- `references/template.md`: plan file, caps, checker, trail and life of a plan.
+- `references/sessions.md`: session protocol, waves, checkpoints and `astack session`.
+- `references/programme.md`: index, milestones, blocks, briefs, maps and `astack board`.
+- `references/tracker.md`: one-home rule, `astack plan keys`, tracker JSON and PR rules.
+- `references/upkeep.md`: resume, session boundary with context moves, milestone exit, diverge, pause and close.
 - `references/unattended.md`: runs with nobody to answer.
-- `references/routing.md`: the kinds of question and who settles each.
-- `references/fallbacks.md`: what to do when a skill or capability is unavailable.
+- `references/routing.md`: question kinds and tie rules.
+- `references/fallbacks.md`: fallbacks for missing skills.
