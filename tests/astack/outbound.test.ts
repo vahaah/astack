@@ -93,6 +93,16 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[write("gh pr reopen", REMOTES, ["notes"])],
 		],
 		[
+			"short flags with attached values",
+			shell('gh issue create -t"Plan" -b"notes" -Ro/r'),
+			[write("gh issue create", NAMED, ["Plan", "notes"])],
+		],
+		[
+			"a comment body piped from a literal echo",
+			shell('echo "the notes" | gh issue comment 21 -F -'),
+			[write("gh issue comment", REMOTES, ["the notes\n"])],
+		],
+		[
 			"a PR merge with a subject and a body",
 			shell("gh pr merge 12 --squash --subject Plan -b notes"),
 			[write("gh pr merge", REMOTES, ["Plan", "notes"])],
@@ -101,6 +111,11 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			"a gh api comment with -f body=",
 			shell("gh api repos/o/r/issues/21/comments -f body='the notes'"),
 			[write("gh api repos/o/r/issues/21/comments", NAMED, ["the notes"])],
+		],
+		[
+			"a gh api comment with an attached -f value",
+			shell("gh api repos/o/r/issues -fbody='the notes' -XPOST"),
+			[write("gh api repos/o/r/issues", NAMED, ["the notes"])],
 		],
 		[
 			"a gh api edit with --input",

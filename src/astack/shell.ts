@@ -739,9 +739,13 @@ function literalScript(
 			simple.stdinFrom === "here-string"
 			? simple.stdin
 			: undefined;
-	return previous?.simple.wholeStage === true
-		? literalPrint(previous)
-		: undefined;
+	return pipeStageText(previous);
+}
+
+export function pipeStageText(
+	stage: ShellStep | undefined,
+): string | undefined {
+	return stage?.simple.wholeStage === true ? literalPrint(stage) : undefined;
 }
 
 type ShellState = { readonly defines: boolean; readonly rebound: boolean };

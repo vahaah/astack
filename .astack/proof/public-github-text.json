@@ -112,6 +112,10 @@
 			"obligation": "SP-allowed"
 		},
 		{
+			"path": "src/astack/shell.ts",
+			"obligation": "OB-public-text"
+		},
+		{
 			"path": "tests/apply/companion-flag.test.ts",
 			"obligation": "OB-sync"
 		},

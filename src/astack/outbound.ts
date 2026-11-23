@@ -1,6 +1,11 @@
 import { resolve } from "node:path";
 import type { Env } from "./hook/events.ts";
-import { type ShellStep, shellSteps, type Word } from "./shell.ts";
+import {
+	pipeStageText,
+	type ShellStep,
+	shellSteps,
+	type Word,
+} from "./shell.ts";
 
 export type OutboundTarget =
 	| { readonly kind: "named"; readonly slug: string }
@@ -118,22 +123,39 @@ function remotes(dir: string): OutboundTarget {
 	return { kind: "remotes", dir };
 }
 
-function flagAt(words: readonly Word[], index: number): Flag {
+function flagAt(
+	words: readonly Word[],
+	index: number,
+	takesValue: ReadonlySet<string>,
+): Flag {
 	const word = words[index];
 	const text = word?.value ?? "";
 	const eq = text.indexOf("=");
-	return word !== undefined && text.startsWith("--") && eq > 0
-		? {
-				name: text.slice(0, eq),
-				value: { ...word, value: text.slice(eq + 1) },
-				next: index + 1,
-			}
-		: { name: text, value: words[index + 1], next: index + 2 };
+	if (word !== undefined && text.startsWith("--") && eq > 0)
+		return {
+			name: text.slice(0, eq),
+			value: { ...word, value: text.slice(eq + 1) },
+			next: index + 1,
+		};
+	const short = text.slice(0, 2);
+	if (word !== undefined && text.length > 2 && takesValue.has(short))
+		return {
+			name: short,
+			value: { ...word, value: text.slice(2).replace(/^=/, "") },
+			next: index + 1,
+		};
+	return { name: text, value: words[index + 1], next: index + 2 };
 }
 
-function addBodyFile(value: Word, step: ShellStep, body: Body): void {
+type Stdin = {
+	readonly step: ShellStep;
+	readonly previous: ShellStep | undefined;
+};
+
+function addBodyFile(value: Word, { step, previous }: Stdin, body: Body) {
 	if (value.value === "-") {
-		if (step.simple.stdin !== undefined) body.texts.push(step.simple.stdin);
+		const text = step.simple.stdin ?? pipeStageText(previous);
+		if (text !== undefined) body.texts.push(text);
 	} else if (!value.dynamic)
 		body.bodyFiles.push(resolve(step.dir, value.value));
 }
@@ -148,27 +170,29 @@ function envRepo(step: ShellStep, call: ShellCall): OutboundTarget | undefined {
 	return named(call.env.GH_REPO);
 }
 
-function ghWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
+function ghWrite(stdin: Stdin, call: ShellCall): OutboundWrite | undefined {
+	const { step } = stdin;
 	const { words } = step;
 	let at = 2;
 	let repo: OutboundTarget | undefined;
-	for (let flag = flagAt(words, at); REPO_FLAGS.has(flag.name); ) {
+	for (let flag = flagAt(words, at, REPO_FLAGS); REPO_FLAGS.has(flag.name); ) {
 		repo = named(flag.value?.value) ?? repo;
 		at = flag.next;
-		flag = flagAt(words, at);
+		flag = flagAt(words, at, REPO_FLAGS);
 	}
 	const action = words[at]?.value ?? "";
 	const textFlags = GH_WRITES.get(action);
 	if (textFlags === undefined) return undefined;
+	const valueFlags = new Set([...textFlags, ...GH_FILE_FLAGS, ...REPO_FLAGS]);
 	const body: Body = { texts: [], bodyFiles: [] };
 	let url: OutboundTarget | undefined;
 	for (at++; at < words.length; ) {
-		const flag = flagAt(words, at);
+		const flag = flagAt(words, at, valueFlags);
 		const { value } = flag;
 		if (value !== undefined && textFlags.has(flag.name))
 			body.texts.push(value.value);
 		else if (value !== undefined && GH_FILE_FLAGS.has(flag.name))
-			addBodyFile(value, step, body);
+			addBodyFile(value, stdin, body);
 		else if (REPO_FLAGS.has(flag.name)) repo = named(value?.value) ?? repo;
 		else {
 			const match = ISSUE_URL.exec(flag.name);
@@ -185,22 +209,23 @@ function ghWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
 	};
 }
 
-function addField(value: Word, raw: boolean, step: ShellStep, body: Body) {
+function addField(value: Word, raw: boolean, stdin: Stdin, body: Body) {
 	const eq = value.value.indexOf("=");
 	const field = eq < 0 ? value.value : value.value.slice(eq + 1);
 	if (!raw && field.startsWith("@"))
-		addBodyFile({ ...value, value: field.slice(1) }, step, body);
+		addBodyFile({ ...value, value: field.slice(1) }, stdin, body);
 	else body.texts.push(field);
 }
 
-function apiWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
+function apiWrite(stdin: Stdin, call: ShellCall): OutboundWrite | undefined {
+	const { step } = stdin;
 	const { words } = step;
 	const body: Body = { texts: [], bodyFiles: [] };
 	let endpoint: string | undefined;
 	let method: string | undefined;
 	let sends = false;
 	for (let at = 2; at < words.length; ) {
-		const flag = flagAt(words, at);
+		const flag = flagAt(words, at, API_VALUE_FLAGS);
 		const { value } = flag;
 		if (!API_VALUE_FLAGS.has(flag.name)) {
 			if (!flag.name.startsWith("-")) endpoint ??= flag.name;
@@ -212,10 +237,10 @@ function apiWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
 		if (flag.name === "-X" || flag.name === "--method")
 			method = value.value.toUpperCase();
 		else if (flag.name === "-f" || flag.name === "--raw-field")
-			addField(value, true, step, body);
+			addField(value, true, stdin, body);
 		else if (flag.name === "-F" || flag.name === "--field")
-			addField(value, false, step, body);
-		else if (flag.name === "--input") addBodyFile(value, step, body);
+			addField(value, false, stdin, body);
+		else if (flag.name === "--input") addBodyFile(value, stdin, body);
 		else continue;
 		if (flag.name !== "-X" && flag.name !== "--method") sends = true;
 	}
@@ -232,19 +257,18 @@ function apiWrite(step: ShellStep, call: ShellCall): OutboundWrite | undefined {
 	return { subject: `gh api ${endpoint}`, target, ...body };
 }
 
-function stepWrite(
-	step: ShellStep,
-	call: ShellCall,
-): OutboundWrite | undefined {
-	if (step.values[0] !== "gh") return undefined;
-	if (step.values[1] === "api") return apiWrite(step, call);
-	return GH_GROUPS.has(step.values[1] ?? "") ? ghWrite(step, call) : undefined;
+function stepWrite(stdin: Stdin, call: ShellCall): OutboundWrite | undefined {
+	const { values } = stdin.step;
+	if (values[0] !== "gh") return undefined;
+	if (values[1] === "api") return apiWrite(stdin, call);
+	return GH_GROUPS.has(values[1] ?? "") ? ghWrite(stdin, call) : undefined;
 }
 
 function shellWrites(call: ShellCall): OutboundWrite[] {
 	if (!/\bgh\b/.test(call.command)) return [];
-	return shellSteps(call.command, call.cwd).flatMap((step) => {
-		const write = stepWrite(step, call);
+	const steps = shellSteps(call.command, call.cwd);
+	return steps.flatMap((step, at) => {
+		const write = stepWrite({ step, previous: steps[at - 1] }, call);
 		return write === undefined ? [] : [write];
 	});
 }
