@@ -95,4 +95,22 @@ describe("the plain form of each shell step", () => {
 			["notes.md", "hi\n"],
 		]);
 	});
+
+	test("&> and &>> write the stdout of the step to their target, and no step runs in the background", () => {
+		const steps = shellSteps("echo hi &> a.md; echo ho &>> b.md", "/work");
+		expect(steps.map((step) => step.simple.background === true)).toEqual([
+			false,
+			false,
+		]);
+		expect(
+			fileWrites(steps).map((write) => [
+				write.target.value,
+				write.append,
+				write.body,
+			]),
+		).toEqual([
+			["a.md", false, "hi\n"],
+			["b.md", true, "ho\n"],
+		]);
+	});
 });

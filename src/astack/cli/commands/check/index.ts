@@ -1,4 +1,5 @@
 import type { Command } from "../../command.ts";
+import { command as adr } from "./adr.ts";
 import { command as ciPins } from "./ci-pins.ts";
 import { command as comments } from "./comments.ts";
 import { command as effects } from "./effects.ts";
@@ -31,4 +32,5 @@ export const CHECKS: readonly Command<number | Promise<number>>[] = [
 	proof,
 	hardeningProfile,
 	effects,
+	adr,
 ];

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	realpathSync,
@@ -12,9 +13,11 @@ import { join } from "node:path";
 import {
 	type FreeTarget,
 	loadSessionRepos,
+	type MadeFacts,
+	type MadeProbe,
+	probeMadeRepo,
 	probeRepo,
 	type RepoIdentity,
-	type RepoProbe,
 	type SessionRepos,
 	saveSessionRepos,
 	sessionRepoAt,
@@ -25,18 +28,37 @@ const IDENTITY: RepoIdentity = {
 	gitDir: "/w/made/.git",
 	device: "1",
 	inode: "2",
-	birth: "3",
+	birth: "3000000000",
+	gitDirNode: { device: "1", inode: "5", birth: "3000000000" },
+	head: "c0ffee",
+	index: "3000000001",
+	objects: "3+0",
 };
 
-const MISSING: FreeTarget = { kind: "missing", since: "3" };
+const SINCE = "3000000000";
+const MISSING: FreeTarget = { kind: "missing", since: SINCE };
+const FRESH = { birth: "3000000000", ctime: "3000000009" };
+const MADE: MadeFacts = {
+	root: FRESH,
+	gitDir: FRESH,
+	marker: FRESH,
+	head: FRESH,
+	oldest: "3000000000",
+};
 
 function probe(
 	root: string,
 	gitDir: string,
 	commonDir: string,
 	birth = IDENTITY.birth,
-): RepoProbe {
-	return { root, commonDir, identity: { ...IDENTITY, gitDir, birth } };
+	made: Partial<MadeFacts> = {},
+): MadeProbe {
+	return {
+		root,
+		commonDir,
+		identity: { ...IDENTITY, gitDir, birth },
+		made: { ...MADE, root: { ...FRESH, birth }, ...made },
+	};
 }
 
 describe("[control:sg-session-repo-store] the settle of the session repo record", () => {
@@ -44,7 +66,7 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		{ kind: "bound", path: "/w/old", identity: IDENTITY },
 	];
 
-	test.each<[string, RepoProbe | undefined, SessionRepos]>([
+	test.each<[string, MadeProbe | undefined, SessionRepos]>([
 		[
 			"a repo root with its own git dir binds",
 			probe("/w/made", "/w/made/.git", "/w/made/.git"),
@@ -52,7 +74,49 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		],
 		[
 			"a repo root born before the call drops",
-			probe("/w/made", "/w/made/.git", "/w/made/.git", "2"),
+			probe("/w/made", "/w/made/.git", "/w/made/.git", "2999999999"),
+			[],
+		],
+		[
+			"a git dir born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				gitDir: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"a .git marker born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				marker: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"a HEAD born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				head: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"an index entry or a reflog entry older than the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				oldest: "2999999999",
+			}),
+			[],
+		],
+		[
+			"a birth of 0 is unknown, so it drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				head: { birth: "0", ctime: "3000000009" },
+			}),
+			[],
+		],
+		[
+			"a birth equal to its ctime is unknown, so it drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				marker: { birth: "3000000005", ctime: "3000000005" },
+			}),
 			[],
 		],
 		[
@@ -96,14 +160,19 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		["a folder with another inode drops", { ...IDENTITY, inode: "9" }, []],
 		["a folder with another birth drops", { ...IDENTITY, birth: "9" }, []],
 	])("%s", (_, seen, settled) => {
-		const empty: FreeTarget = { kind: "empty", folder: IDENTITY };
+		const empty: FreeTarget = { kind: "empty", folder: IDENTITY, since: SINCE };
 		expect(
 			settleRepos(
 				[{ kind: "pending", path: "/w/made", free: empty }],
 				new Map([
 					[
 						"/w/made",
-						{ root: "/w/made", commonDir: "/w/made/.git", identity: seen },
+						{
+							root: "/w/made",
+							commonDir: "/w/made/.git",
+							identity: seen,
+							made: MADE,
+						},
 					],
 				]),
 			),
@@ -143,6 +212,30 @@ describe("[control:sg-session-repo-match] the match of a session repo", () => {
 			"another birth time does not match",
 			"/w/made",
 			{ ...IDENTITY, birth: "9" },
+			false,
+		],
+		[
+			"another git dir node at the same path does not match",
+			"/w/made",
+			{ ...IDENTITY, gitDirNode: { ...IDENTITY.gitDirNode, inode: "9" } },
+			false,
+		],
+		[
+			"another HEAD does not match",
+			"/w/made",
+			{ ...IDENTITY, head: "f00" },
+			false,
+		],
+		[
+			"another index time does not match",
+			"/w/made",
+			{ ...IDENTITY, index: "3000000002" },
+			false,
+		],
+		[
+			"another object count does not match",
+			"/w/made",
+			{ ...IDENTITY, objects: "4+0" },
 			false,
 		],
 	])("%s", (_, root, identity, matches) => {
@@ -276,6 +369,21 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 		expect(seen?.commonDir).toBe(join(made, ".git"));
 		expect(seen?.identity.gitDir).toBe(join(made, ".git"));
 		expect(seen?.identity.inode).toMatch(/^\d+$/);
+	});
+
+	test("a probe of a made repo runs no fsmonitor command of the repo config", () => {
+		const made = join(root, "monitored");
+		const marker = join(root, "fsmonitor-ran");
+		const monitor = join(root, "monitor.sh");
+		writeFileSync(monitor, `#!/bin/sh\ntouch '${marker}'\n`, { mode: 0o755 });
+		spawnSync("git", ["init", "-q", made]);
+		spawnSync("git", ["config", "core.fsmonitor", monitor], { cwd: made });
+		writeFileSync(join(made, "a.txt"), "a\n");
+		spawnSync("git", ["-c", "core.fsmonitor=false", "add", "a.txt"], {
+			cwd: made,
+		});
+		expect(probeMadeRepo(made)?.root).toBe(made);
+		expect(existsSync(marker)).toBe(false);
 	});
 
 	test.each([

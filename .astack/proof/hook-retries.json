@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "hook-retries",
-	"base": "65bc7ffc5295e365411ac2e79b427e334075e2dd",
+	"base": "1b0063b1750e687ad049fc0c17e41c3a8955291e",
 	"scope": [
 		{
 			"path": "src/astack/shell.ts",

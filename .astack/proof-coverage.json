@@ -17,6 +17,7 @@
 		"docs/reference/pr-recipes.md",
 		"docs/reference/domain-record.md",
 		"docs/reference/review-stub.md",
+		"docs/reference/adr-lifecycle.md",
 		"docs/reference/hook-retries.md"
 	],
 	"tests": [
@@ -101,6 +102,11 @@
 		"tests/astack/check-effects-cli.test.ts",
 		"tests/property/grant-store.test.ts",
 		"tests/property/grant-monoid.test.ts",
+		"tests/property/adr-amend-only.test.ts",
+		"tests/astack/adr-record.test.ts",
+		"tests/astack/adr-cli.test.ts",
+		"tests/adr-numbers.test.ts",
+		"tests/apply/ci-parity-apply.test.ts",
 		"tests/astack/staged-text.test.ts",
 		"tests/astack/pr-body.test.ts",
 		"tests/astack/skill-path.test.ts",
@@ -373,7 +379,8 @@
 				"sg-session-repo-nested",
 				"sg-session-repo-bundle",
 				"sg-session-repo-target",
-				"sg-session-repo-clone-name"
+				"sg-session-repo-clone-name",
+				"sg-session-repo-submodule"
 			]
 		},
 		{
@@ -387,7 +394,11 @@
 				"sg-session-repo-hook-env",
 				"sg-session-repo-place-target",
 				"sg-session-repo-store",
-				"sg-session-repo-match"
+				"sg-session-repo-match",
+				"sg-session-repo-archive",
+				"sg-session-repo-copied",
+				"sg-session-repo-record",
+				"sg-session-repo-made"
 			]
 		},
 		{
@@ -407,6 +418,14 @@
 			"controls": ["sg-plain-form", "sg-wrapper-law"]
 		},
 		{
+			"criterion": "SG-stdin-source",
+			"controls": ["sg-stdin-source", "sg-heredoc-fd"]
+		},
+		{
+			"criterion": "SG-unknown-dollar",
+			"controls": ["sg-unknown-dollar"]
+		},
+		{
 			"criterion": "SG-dynamic-word",
 			"controls": ["sg-dynamic-word"]
 		},
@@ -416,11 +435,19 @@
 		},
 		{
 			"criterion": "SG-hook-skip",
-			"controls": ["sg-hook-skip"]
+			"controls": ["sg-hook-skip", "sg-hook-skip-env"]
+		},
+		{
+			"criterion": "SG-hooks-path",
+			"controls": ["sg-hooks-path"]
 		},
 		{
 			"criterion": "SG-gates-run",
 			"controls": ["sg-gates-run"]
+		},
+		{
+			"criterion": "SG-gate-folder",
+			"controls": ["sg-gate-folder"]
 		},
 		{
 			"criterion": "SG-generated",
@@ -982,6 +1009,44 @@
 				"grant-save-fail",
 				"sg-grant-save-allows"
 			]
+		},
+		{
+			"criterion": "AL-amend-only",
+			"controls": [
+				"adr-amend-only",
+				"adr-amend-pr17",
+				"adr-amend-cases",
+				"adr-amend-audit",
+				"adr-amend-proposed"
+			]
+		},
+		{
+			"criterion": "AL-status",
+			"controls": ["adr-status", "adr-status-tree", "adr-status-cli"]
+		},
+		{
+			"criterion": "AL-covers",
+			"controls": ["rl-covers-adr"]
+		},
+		{
+			"criterion": "AL-relations",
+			"controls": ["adr-relations"]
+		},
+		{
+			"criterion": "AL-index",
+			"controls": ["adr-index", "adr-tree"]
+		},
+		{
+			"criterion": "AL-template",
+			"controls": ["adr-template", "adr-template-edit", "adr-cli-template"]
+		},
+		{
+			"criterion": "AL-base",
+			"controls": ["adr-cli"]
+		},
+		{
+			"criterion": "AL-citations",
+			"controls": ["apply-citation-note"]
 		},
 		{
 			"criterion": "HR-staged",

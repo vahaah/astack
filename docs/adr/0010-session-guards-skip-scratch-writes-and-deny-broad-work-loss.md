@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-11-14
 Ticket: none
 Supersedes: none
+Amended by: 0011 D3 for framed prompts, 0028 D1 for session repos and 0029 for config forms
 
 ## Context
 
@@ -68,6 +69,8 @@ A push of a source that `astack gates run` recorded as green can skip the hooks.
 A commit and a config write with a hook skip stay owner gates, because a new commit has no gate record.
 
 > Amended 2026-11-22: [ADR 0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) amends D3. A broad discard passes in a repo or worktree that this session made, and each other repo keeps this gate.
+
+> Amended 2026-11-23: [ADR 0029](0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md) amends D3. It adds the stdin, fd, `$` and environment config forms of a hook skip, and it binds the gate record to its base profile.
 
 ### D4. Attended detection stays fail-safe, and the merge denial names its cause
 

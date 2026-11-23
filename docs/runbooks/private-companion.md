@@ -54,4 +54,6 @@ An overlay sets only `gates`, `ciOnlyGates` and `ciParity`, and each other key c
 An apply whose `--base` names that branch uses the overlay for the CI parity check and writes the profile of the overlay.
 An update takes the overlay from `--overlay <branch>`, and the README gives the rule that refuses an update without it.
 A decision citation is a comment that cites an ADR, such as `ADR-0006`, or a comment line that starts with `Source:`.
-Apply sends each citation of the repo through the comment hook with `keepPatterns`, and fails on a citation that the hook does not keep.
+Apply sends each citation of the repo through the comment hook with `keepPatterns`.
+It prints a note for each citation that the hook does not keep.
+The note does not fail apply, because a citation alone keeps no comment.

@@ -96,6 +96,8 @@ Current scope, controls, models, raw-input freshness, and every ordinary deliver
 Semantic review still establishes process meaning and the actual authority grant.
 The default integrated-proposal route retains complete governing-byte equality.
 
+> Note 2026-11-23: ADR 0007 amended [ADR 0005](0005-every-change-carries-domain-and-formal-proof.md) D5 for integrated proposals, and this ADR supersedes ADR 0007. D3 carries that amendment, so ADR 0005 names this ADR in its `Amended by:` line.
+
 [criterion:proof-ratification] Reject invalid authority, status, decisions, paths, history, and proof records. Preserve strict defaults outside the explicit landing option.
 
 ## Consequences

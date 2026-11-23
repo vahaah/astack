@@ -132,7 +132,7 @@ Guard: the parity check of apply, `envFileWrites`, `exportVerdicts`, `serviceVer
 
 Does each decision citation in the repo pass the comment hook with the keep patterns of the repo? Does a rule set a length limit that cuts a legal or license header?
 
-Guard: the citation check of apply, `unkeptCitations` in `scripts/lib/keep-forms.ts`. "a legal or license header has no length limit" in `tests/astack/hook.test.ts` reads each text that sets the limit, and runs the hook on a long license header.
+Guard: the citation note of apply, `unkeptCitations` in `scripts/lib/keep-forms.ts`. "a legal or license header has no length limit" in `tests/astack/hook.test.ts` reads each text that sets the limit, and runs the hook on a long license header.
 
 ### managed-file-lifecycle
 

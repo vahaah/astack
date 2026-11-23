@@ -19,6 +19,8 @@ The owner's own code and text are MIT.
 
 This covers pstack, flow and each copied ECC item. Each such item names its upstream in `NOTICE`.
 
+> Note 2026-11-23: No ECC item ships, and `upstream/lock.json` pins no ECC snapshot. D2 still covers each upstream that astack copies.
+
 ### D3. The owner alone holds the copyright in the astack code and text
 
 No employer or client has a claim, so the owner can grant the MIT licence.

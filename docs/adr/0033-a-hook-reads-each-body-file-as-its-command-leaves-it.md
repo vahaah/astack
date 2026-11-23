@@ -29,6 +29,7 @@ So each answer must come from the command text at PreToolUse.
 A file that no earlier step touches gives the disk text.
 A write that can skip gives an unread body with the disk text.
 A static write is a cat heredoc, an `echo`, a `printf` or a `tee` that `fileWrites` reads.
+`fileWrites` reads `&>` and `&>>` as writes of stdout, as `>` and `>>`.
 A `cat` or a `tee` with a heredoc or a here-string that holds a variable or a substitution is not a static write.
 
 A write is certain when its pipeline starts an and-or list.
@@ -40,7 +41,7 @@ A write inside `if`, `case`, a loop, a group, a subshell, a function, a substitu
 
 A step gives an unread body when its folder or a write target is dynamic.
 A step that names the base name of the body file in a form that `fileWrites` does not parse also gives one.
-So `sed -i`, `diff`, `cp`, an `&>` write and a python heredoc that writes `body.md` give an unread `./body.md`.
+So `sed -i`, `diff`, `cp` and a python heredoc that writes `body.md` give an unread `./body.md`.
 A heredoc counts only in a step that `fileWrites` does not parse.
 A reader step never gives one. The reader steps are `cat` with no redirect, `head`, `tail`, `grep`, `wc`, `ls`, `test`, `[` and `astack`.
 

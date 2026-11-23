@@ -6,6 +6,7 @@ This record holds the proof sections of the session guards.
 The proof sections of both ADRs moved here on 2026-11-22.
 [ADR 0011](../docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md) keeps its own sections.
 [ADR 0028](../docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) amends ADR 0010 D3 with the session repo rule, and this record holds its proof.
+[ADR 0029](../docs/adr/0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md) amends ADR 0010 D3 with the profile blob of the gate record, and this record holds its proof.
 
 ### Formal claim
 
@@ -31,6 +32,7 @@ It covers each set of tracked, staged, mixed and untracked changes in a named fi
 It also covers one repo that the session makes, the record of its path, the settle window and a repo of another process.
 
 The push group covers a HEAD whose gates pass or fail, a gate run and one push or commit.
+The profile of the gate run is the profile of the merge base, or an edited profile that can record red gates.
 The push or commit skips the hooks or keeps them. It goes to a head, to refs that a record cannot cover, or into a new commit.
 
 ```tla
@@ -58,6 +60,8 @@ The session repo rule holds under three premises.
 - The host keeps one session id for the life of a session, also across a compaction.
 
 The model takes the identity of a repo as one value. The code compares the root, the git dir, the device, the inode and the birth time.
+It also compares the device, the inode and the birth time of the git dir.
+The settle also needs the git dir, the `.git` marker, `HEAD`, each index entry and the first reflog entry at or after the call.
 
 The [model](SessionGuards.tla) and its [configuration](SessionGuards.cfg) examine these invariants with no fairness.
 The model takes the observations of the hooks as true: the clause grammar, the prompt source, the path facts and the `git status` entries.
@@ -90,13 +94,15 @@ shellSteps   : HookCall -> ShellStep      effects: none
 readGit      : ShellStep -> GitRead       effects: none
 workLoss     : (GitInvocation, Treeish) -> WorkLoss | undefined          effects: none
 madeRepoTarget   : ShellStep -> AbsolutePath | undefined                   effects: none
-settleRepos      : (SessionRepos, Map<Path, RepoProbe>) -> SessionRepos      effects: none
+settleRepos      : (SessionRepos, Map<Path, MadeProbe>) -> SessionRepos      effects: none
 sessionRepoAt    : (SessionRepos, Root, RepoIdentity) -> boolean            effects: none
 probeRepo        : Path -> RepoProbe | undefined                           effects: spawn, fs-read
+probeMadeRepo    : Path -> MadeProbe | undefined                           effects: spawn, fs-read
 loadSessionRepos : (Env, SessionId) -> SessionRepos                        effects: fs-read
 saveSessionRepos : (Env, SessionId, SessionRepos) -> Result<void, string>   effects: fs-write
 runGates     : ProfileGate -> GateRun     effects: spawn, fs-read, fs-write, env
 recordOf     : GateRun -> GateRecord      effects: none
+sameProfile  : (GateRecord, string, string) -> boolean   effects: none
 ```
 
 `mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
@@ -140,7 +146,9 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | `Appear` | A repo that another process makes. No function of astack maps to it |
 | `GitLost` and `After` | The documented effect of each git command on the index, the work tree and untracked files |
 | `GatesRun` and `green` | `runGates`, `recordOf` and `saveGateRecord` in `src/astack/gates.ts`. A gate run records HEAD only when each gate that applies exits 0 |
+| The `edited` profile of `GatesRun` | A profile at HEAD that differs from the profile at the merge base. `astack gates run` records nothing then, and the record holds the blob of the merge base |
 | `Push` and `Targets` | `gitReasons` in `src/astack/hook/handlers/destructive.ts`, which reads `loadGateRecord` for each pushed source |
+| The `~edited` guard of `Push` | `sameProfile` in `src/astack/gates.ts`, which needs the blob of the record at the source and at its merge base with the record base |
 | The plain form, which the model takes as given | `shellSteps` in `src/astack/shell.ts` and `readGit` in `src/astack/git-command.ts` |
 
 These links describe the abstraction relation.

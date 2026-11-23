@@ -17,7 +17,7 @@ Use this skill where the repo has no convention.
 
 Read the reference for the document that you write, and no other document type:
 
-- ADR, or a change that reverses a decision: `references/adr.md`.
+- ADR, or a change that reverses a decision: the path that `astack skill-path astack:domain-modeling ADR-FORMAT.md` prints.
 - `AGENTS.md`, `CLAUDE.md` or another instruction file: `references/instruction-files.md`.
 - Any prose: `references/technical-writing.md`, then `references/unslop.md`.
 - PR bodies and commit messages: this file holds the rules, and `references/pr-and-commits.md` holds a worked example and the first-line rules.
@@ -65,26 +65,13 @@ Update documents in the same PR as the behavior they describe:
 | Change visible user behavior | User documentation |
 
 Encode an enforceable constraint in a type or test.
-If it also needs words, apply the three ADR tests below.
+If it also needs words, apply the three ADR tests of `ADR-FORMAT.md`.
 If it fails those tests, put the reason in the commit body.
 A code comment can state a constraint only when a keep clause covers it, such as a vendor or protocol requirement.
 
 ## Record decisions in ADRs
 
-Write an ADR only when all three conditions hold:
-
-1. Reversal would require substantial work.
-2. A future reader would find the code surprising without the reason.
-3. The choice came from a real trade-off between alternatives.
-
-When a condition fails, use another location.
-Put enforceable constraints in types or tests, terms in the glossary, and history in commits or PRs.
-
-During design discussions, `astack:domain-modeling` updates the glossary and proposes ADRs with the same tests.
-This skill owns their file names and format.
-Keep an existing `GLOSSARY.md` name.
-Otherwise use `CONTEXT.md`.
-Read `references/adr.md` for the title, the numbering, notes, amendments, supersession and the template.
+`ADR-FORMAT.md` of `astack:domain-modeling` holds the three ADR tests, the one ADR template, the numbering and the lifecycle.
 
 ## Keep instruction files lean
 

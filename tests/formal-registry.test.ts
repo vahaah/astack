@@ -209,6 +209,26 @@ describe("the model registry of astack", () => {
 		},
 	);
 
+	test("[control:rl-covers-adr] a diff of src/astack/adr.ts with a PlanBoundary manifest runs PlanBoundary and then ProofAdmission at R4", () => {
+		const manifest = REGISTRY.models.find(
+			(entry) => entry.name === "PlanBoundary",
+		);
+		if (manifest === undefined) throw new Error("no PlanBoundary model");
+		const ladder = deriveLadder({
+			changed: [{ path: "src/astack/adr.ts", present: true }],
+			registry: { base: REGISTRY, tree: REGISTRY },
+			floor: { base: "R0", tree: "R0" },
+			manifest,
+			laws: [],
+			inTree: (file) => TRACKED_SET.has(file),
+		});
+		expect(
+			ladder.ok && ladder.value.kind === "ladder"
+				? [ladder.value.rung, ...ladder.value.runs.map((run) => run.name)]
+				: ladder,
+		).toEqual(["R4", "PlanBoundary", "ProofAdmission"]);
+	});
+
 	test("[control:rl-fail-closed-new] a new file under a fail-closed folder of astack stops, also next to the unmodelled encoders", () => {
 		const [manifest] = REGISTRY.models;
 		if (manifest === undefined) throw new Error("the registry has no model");

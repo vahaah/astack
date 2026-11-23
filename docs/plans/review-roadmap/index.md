@@ -128,7 +128,7 @@ Blocks.
 - B29 `astack check effects` compares capabilities with imports, as advice, and the grant monoid gets its control when grant.ts splits. Lane. g. Depends on. B28. Brief. B29.md.
 - B35 Hook handlers reach files, git and the profile through ports. Lane. a. Depends on. B08, B10, B29. Brief. stub.
 - B36 `astack check effects` fails after its advice window. Lane. g. Depends on. B29, B35. Brief. stub.
-- B30 One ADR template with a domain part and an effects part, and `astack check adr` on the reader of src/astack/adr.ts. Lane. e. Depends on. B07. Brief. stub.
+- B30 One ADR template with a domain part and an effects part, and `astack check adr` on the reader of src/astack/adr.ts. Lane. e. Depends on. B07. Brief. B30.md.
 
 ### M6 Hooks deny less, and each PR has one review budget
 
@@ -140,7 +140,7 @@ Blocks.
 - B10 Public issue and PR text passes a hashed deny list (review `K5`, `K4`). Lane. a. Brief. stub.
 - B11 The STE hooks and the comment advice soften where telemetry shows false denies (review `B5`, `B6`, `B4`, `K1`). Lane. c. Brief. stub.
 - B12 One review record and a delta review (review `D3`, `D1`, `D2`, `D6`, `D4`). Lane. e. Depends on. B07, B24. Brief. stub.
-- B37 The shell reader and the destructive guard close the stdin, fd and environment config forms. Lane. a. Brief. stub.
+- B37 The shell reader and the destructive guard close the stdin, fd and environment config forms. Lane. a. Brief. B37.md.
 
 ### M7 A pstack-shaped router and short hot-path text
 

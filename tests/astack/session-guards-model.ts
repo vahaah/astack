@@ -364,7 +364,9 @@ export const PINS = {
 		"Touched(cmd, t) == {c \\in t : GitScope(cmd.scope, c.place) /\\ Touches(cmd.effect, c.kind)}",
 	After:
 		'After(cmd, t) == (t \\ Touched(cmd, t)) \\cup {[c EXCEPT !.kind = Rest(cmd.effect, c.kind)] : c \\in {d \\in Touched(cmd, t) : Rest(cmd.effect, d.kind) # "gone"}}',
-	Push: 'Push == /\\ concern = "push" /\\ ~acted /\\ \\E skips \\in BOOLEAN, target \\in Targets : /\\ ~skips \\/ (target = "head" /\\ recorded) /\\ acted\' = TRUE /\\ ungated\' = (skips /\\ ~(target = "head" /\\ green)) /\\ UNCHANGED <<concern, green, recorded, mergeVars, writeVars, gitVars>>',
+	GatesRun:
+		'GatesRun == /\\ concern = "push" /\\ ~acted /\\ recorded\' = (recorded \\/ green \\/ edited) /\\ UNCHANGED <<concern, green, acted, ungated, edited, mergeVars, writeVars, gitVars>>',
+	Push: 'Push == /\\ concern = "push" /\\ ~acted /\\ \\E skips \\in BOOLEAN, target \\in Targets : /\\ ~skips \\/ (target = "head" /\\ recorded /\\ ~edited) /\\ acted\' = TRUE /\\ ungated\' = (skips /\\ ~(target = "head" /\\ green)) /\\ UNCHANGED <<concern, green, recorded, edited, mergeVars, writeVars, gitVars>>',
 } as const;
 
 export function pinFailures(text: string): readonly string[] {
@@ -527,8 +529,9 @@ export function push(
 	skips: boolean,
 	target: string,
 	recorded: boolean,
+	edited: boolean,
 ): boolean {
-	return !skips || (target === "head" && recorded);
+	return !skips || (target === "head" && recorded && !edited);
 }
 
 export function oneOf<T>(table: Readonly<Record<string, T>>, name: string): T {

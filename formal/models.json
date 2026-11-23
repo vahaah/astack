@@ -336,9 +336,11 @@
 				"docs/adr/0017-law-claims-run-on-code.md"
 			],
 			"covers": [
+				"src/astack/adr.ts",
 				"src/astack/change-proof/**",
 				"src/astack/cli/commands/check/proof.ts",
 				"scripts/check-proof.ts",
+				"scripts/lib/check-base.ts",
 				"src/astack/result.ts",
 				"src/astack/hook/events.ts",
 				"src/astack/domain/**"
@@ -447,7 +449,7 @@
 					"Each combination of four path facts for one write and an optional commit.",
 					"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
 					"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
-					"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+					"A HEAD whose gates pass or fail under the base profile or an edited profile, one gate run, and one push or commit with or without a hook skip to three targets."
 				],
 				"fairness": [],
 				"invariants": [
@@ -471,9 +473,9 @@
 			"negative": {
 				"file": "formal/SessionGuards.tla",
 				"action": "Push",
-				"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
-				"replacement": "/\\ ~skips \\/ target = \"head\"",
-				"defect": "The destructive guard passes a hook-skip push of HEAD with no gate record, so a push whose gates did not pass skips the git hooks.",
+				"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded /\\ ~edited)",
+				"replacement": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+				"defect": "The destructive guard passes a hook-skip push whose gate record holds another profile blob than the source and its merge base, so a push under an edited profile skips the git hooks.",
 				"expect": {
 					"kind": "invariant",
 					"name": "HookSkipNeedsGates"
@@ -495,6 +497,7 @@
 				"src/astack/git-command.ts",
 				"src/astack/session-repos.ts",
 				"src/astack/gates.ts",
+				"src/astack/cli/commands/gates.ts",
 				"src/astack/paths.ts",
 				"src/astack/hook/handlers/comments.ts",
 				"src/astack/hook/handlers/types.ts",
