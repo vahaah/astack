@@ -552,11 +552,11 @@ bun run check:fast
 bun run check
 ```
 
-Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` passes `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so the proof stops on each path that a merge of main brings in.
+Java 17 or later must be on `PATH`, because `check` runs the repo's own change proof once. In CI, `scripts/check-proof.ts` and `scripts/check-adr.ts` pass `--base`. On your machine, it reads `origin/HEAD`. A clean HEAD that the default branch holds diffs from `HEAD^`. Each other HEAD diffs from the merge base with the default branch. With no `origin/HEAD`, the run diffs from the manifest base, so the proof stops on each path that a merge of main brings in.
 
 Each README chart is a `mermaid` block, and `docs/charts/<name>.mmd` keeps its source. When you change a chart, change the `.mmd` file and the README block together. `bun run charts` fails when they differ.
 
-`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget and the change proof. It runs the tests last, in parallel.
+`check:drift` compares fresh build output with the committed files and does not rewrite them. `check` runs formatting, lint and type checks first, so a type error fails in about 1 s. Then it builds every target and runs validation, neutrality and secret scans, STE checks, the skill word budget, the ADR check and the change proof. It runs the tests last, in parallel.
 
 The word budget of `check`, `bun run budget`, counts the words of the Markdown files in each skill tree. It fails when a skill or the total passes its cap in `scripts/lib/budget.json`. `lines` of `scripts/lib/budget.json` caps the longest line of `AGENTS.md`, and the gate also fails over that cap. [ADR 0013](docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md) gives the cap rule. The authenticated Claude load test of `bun run validate` needs an API key or OAuth token. It is reported as skipped without one.
 
