@@ -11,7 +11,7 @@
 - [criterion:RV-converge] `astack check hardening-profile` passes `converge: true` and `converge: false`, and it refuses a number.
 - [criterion:RV-defer-hold] `stop_clean` needs 0 open deferred entries, and no merge follows `stop_converged`. A deferred entry stays open in each later run until an iteration reproduces it again and its failure does not occur.
 - [criterion:RV-rung] With `select: applicable`, a run at R0 launches one agent, and R1 and up launch the applicable set.
-- [criterion:RV-rung-floor] A full run with 0 reviewer launches never ends in `stop_clean`.
+- [criterion:RV-rung-floor] A run with 0 reviewer launches never ends in `stop_clean`, unless its review range is empty.
 - [criterion:RV-ci-mixed] A PR that changes a workflow and `src/a.ts` with no tool change gets exit 3 and `ci_mixed:` from ci-pins. Each gate of that mode blocks, and a clean stop needs `ciReadBack: pass`.
 
 ## Claim boundary

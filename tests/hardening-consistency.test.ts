@@ -1868,18 +1868,18 @@ describe("the review range and the reviewer set", () => {
 			expect(launch).toContain(sentence);
 	});
 
-	test("[control:rung-floor] a full run with 0 reviewer launches never stops clean", () => {
+	test("[control:rung-floor] a full or delta run with 0 reviewer launches over a review range that is not empty never stops clean", () => {
 		expect(
 			paragraphStarting(
 				sentencesFrom(engineSkill, "## Decide", "## After the stop"),
 				"The iteration is clean when",
 			),
 		).toContain(
-			"A clean stop of a full run also needs `reviewerLaunches` above 0.",
+			"A clean stop also needs `reviewerLaunches` above 0, or an empty `reviewRange`.",
 		);
 		expect(
 			paragraphStarting(read(`${engine}/references/gate.md`), "/goal Run"),
-		).toContain("reviewerLaunches above 0 in a full run");
+		).toContain("It shows reviewerLaunches above 0, or an empty reviewRange.");
 	});
 
 	test("the run reads the review checklist only for a diff of the profile, of CI, of a package.json or of a gate script", () => {
@@ -2092,9 +2092,9 @@ describe("the proof of a clean stop", () => {
 		},
 		{
 			condition:
-				"A clean stop of a full run also needs `reviewerLaunches` above 0",
+				"A clean stop also needs `reviewerLaunches` above 0, or an empty `reviewRange`",
 			fields: ["reviewerLaunches", "reviewRange"],
-			goal: ["reviewerLaunches above 0 in a full run"],
+			goal: ["reviewerLaunches above 0, or an empty reviewRange"],
 		},
 		{
 			condition: "A clean stop also needs `deferredFindings` to be 0",

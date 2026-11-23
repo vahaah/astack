@@ -59,7 +59,7 @@ The text globs of the model add the hardening `SKILL.md` and `gate.md`.
 The run reads the `rung:` line of the last change-proof gate output. With no such line, a diff of Markdown files only is R0.
 With `select: applicable`, R0 launches `comment-analyzer` when the profile lists it, else the first listed agent.
 R1 and up launch the applicable set. An extra reviewer with `when: rung R<n>` applies from that rung up.
-A clean stop of a full run needs at least one reviewer launch.
+A clean stop needs at least one reviewer launch, unless the review range is empty.
 
 ### D8. The opt-in key converge reviews only the commits after a fix
 
