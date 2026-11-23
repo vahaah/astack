@@ -172,7 +172,7 @@ describe("commits of a finding", () => {
 		"marketplace/plugins/astack/skills/coding-guide/SKILL.md",
 		`${engine}/SKILL.md`,
 		`${engine}/references/fix.md`,
-		"marketplace/plugins/astack/skills/mode/references/comments-triage.md",
+		"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
 	];
 
 	test("the coding rule puts the failing check in the commit of the fix, so every commit is green", () => {
@@ -655,10 +655,8 @@ describe("a run that names a PR reviews that PR", () => {
 	test.each([
 		["SKILL.md", engineSkill],
 		[
-			"the comments triage of the mode",
-			read(
-				"marketplace/plugins/astack/skills/mode/references/comments-triage.md",
-			),
+			"the Babysit playbook of the mode",
+			read("marketplace/plugins/astack/skills/mode/playbooks/babysit.md"),
 		],
 	])(
 		"%s reads isCrossRepository and checks out a PR from a fork on a local branch of its own",
@@ -738,9 +736,9 @@ describe("the head of the PR on every path", () => {
 		for (const [, text] of scopes)
 			for (const sentence of commandHeadCheck.slice(2, 7))
 				expect(text).toContain(sentence);
-		const triage =
-			"marketplace/plugins/astack/skills/mode/references/comments-triage.md";
-		expect(others).toContain(triage);
+		const babysit =
+			"marketplace/plugins/astack/skills/mode/playbooks/babysit.md";
+		expect(others).toContain(babysit);
 		expect(
 			others.filter(
 				(path) =>
@@ -749,7 +747,7 @@ describe("the head of the PR on every path", () => {
 		).toEqual([]);
 		const actsAfterStop =
 			"After `stop: HEAD does not hold PR_HEAD`, reply on each thread.";
-		const mutated = read(triage).replace(repairSentence, actsAfterStop);
+		const mutated = read(babysit).replace(repairSentence, actsAfterStop);
 		const mutatedLines = mutated
 			.split("\n")
 			.filter((line) => line.includes(actsAfterStop));
@@ -841,8 +839,8 @@ describe("the branch of the fix commits", () => {
 	const playbooks = [
 		["the create-pr playbook of the mode", createPr],
 		[
-			"the comments triage playbook of the mode",
-			read(`${mode}/comments-triage.md`),
+			"the Babysit playbook of the mode",
+			read("marketplace/plugins/astack/skills/mode/playbooks/babysit.md"),
 		],
 	] as const;
 	const readsForkFields =
@@ -859,7 +857,7 @@ describe("the branch of the fix commits", () => {
 		headRepositoryUrl,
 	];
 	const forkLink =
-		"the fork rules of steps 1 and 7 of [`create-pr.md`](create-pr.md)";
+		"the fork rules of steps 1 and 7 of [`create-pr.md`](../references/create-pr.md)";
 	const holdsForkRules = (text: string): boolean =>
 		text.includes(forkLink) || forkRules.every((rule) => text.includes(rule));
 
@@ -874,12 +872,14 @@ describe("the branch of the fix commits", () => {
 				.filter(([, text]) => !holdsForkRules(text))
 				.map(([name]) => name),
 		).toEqual([]);
-		const triage = read(`${mode}/comments-triage.md`);
+		const babysit = read(
+			"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
+		);
 		expect(
 			holdsForkRules(
 				forkRules.reduce(
 					(text, rule) => text.replaceAll(rule, ""),
-					triage.replace(forkLink, ""),
+					babysit.replace(forkLink, ""),
 				),
 			),
 		).toBe(false);
@@ -1029,7 +1029,7 @@ describe("the branch of the fix commits", () => {
 				`${engine}/SKILL.md`,
 				`${engine}/references/fix.md`,
 				`${mode}/create-pr.md`,
-				`${mode}/comments-triage.md`,
+				"marketplace/plugins/astack/skills/mode/playbooks/babysit.md",
 				"rules/astack.md",
 			]),
 		);
@@ -1412,8 +1412,7 @@ describe("a failed gh is never a run with no PR", () => {
 		),
 	];
 	const resume = "marketplace/plugins/astack/skills/mode/references/resume.md";
-	const triage =
-		"marketplace/plugins/astack/skills/mode/references/comments-triage.md";
+	const babysit = "marketplace/plugins/astack/skills/mode/playbooks/babysit.md";
 	const createPr =
 		"marketplace/plugins/astack/skills/mode/references/create-pr.md";
 
@@ -1455,8 +1454,8 @@ describe("a failed gh is never a run with no PR", () => {
 		expect(read(createPr)).toContain(noPrListRule);
 		expect(
 			missingRules(
-				triage,
-				read(triage)
+				babysit,
+				read(babysit)
 					.replace(
 						"`gh pr view --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`",
 						"`gh pr list --head <branch> --state open --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`",

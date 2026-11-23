@@ -15,7 +15,7 @@
 **/skills/astack-setup-models/SKILL.md:CLAUDE_[A-Z_]+|\.claude\b|\bClaude\b|\bAskUserQuestion\b:the skill writes the model rule of Claude Code and lists the Claude models
 **/skills/astack-arena/**:\bClaude\b:arena compares Claude models with the models of other families
 **/skills/astack-no-comments/SKILL.md:\bAskUserQuestion\b:names a Claude Code tool for the approval question, and other tools ask in plain text
-**/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the non-negotiables and autonomous-run rules, and other tools ask in plain text
+**/skills/astack-mode/**:\bAskUserQuestion\b:names a Claude Code tool in the Triggers and autonomous-run rules, and other tools ask in plain text
 **/skills/astack-arena/references/external-seats.md:\bclaude -p\b:the sol-loop reviewer seat runs the claude CLI through the shell, also in a Codex session
 **/skills/astack-setup-models/SKILL.md:\bclaude -p\b:setup-models checks the claude CLI before it writes a claude seat for the sol-loop reviewer
 **/skills/astack-sol-loop/SKILL.md:CLAUDE_CONFIG_DIR|~/\.claude\b:sol-loop reads the model rule at the path that setup-models writes, because Codex does not load that folder

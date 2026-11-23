@@ -36,4 +36,5 @@
 | [0033](0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md) | A hook reads each body file as its command leaves it, and a denied chain says that nothing ran | Accepted |
 | [0034](0034-public-github-text-passes-the-deny-list.md) | Public GitHub text passes the deny list, and a second PR of one session needs a split instruction | Accepted |
 | [0035](0035-each-pr-has-one-review-record-and-a-delta-review.md) | Each PR has one review record, a fix after a clean head gets a delta review, and the rung sizes the reviewer set | Accepted |
+| [0036](0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md) | The mode skill routes, and each delegate reads a worker card | Accepted |
 | [0037](0037-the-plan-skill-centers-on-the-domain-record-and-plan-export-goes.md) | The plan skill centers on the domain record, and plan export and drift go | Accepted |

@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "plan-skill-record",
-	"base": "c97dc7612b7f57ca735928d90a24a57a3da6a40d",
+	"base": "919f10d242ec3049705d6dae44bcccc50624ef0c",
 	"scope": [
 		{
 			"path": "src/astack/cli/commands/plan.ts",

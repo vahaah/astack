@@ -11,6 +11,7 @@ Do not request or emit a private reasoning transcript.
 ## Roles
 
 Use `subagent_type: "astack-delegate"` for every subagent that you spawn inside a playbook step.
+Each delegate reads `SKILL.md` and `references/worker.md`.
 This includes delegates that write code and helpers for other tasks.
 The chat that receives `/astack-mode` runs the playbook.
 Never spawn an `astack-delegate` to run the playbook itself.
@@ -32,7 +33,7 @@ A role with no line keeps its default.
 | Effort | `effort` accepts `low`, `medium`, `high`, `xhigh`, or `max`. The agent's frontmatter `effort:` sets its default. The per-call `effort` overrides it. When `CLAUDE_CODE_EFFORT_LEVEL` is set, every subagent uses that level. The Agent tool then has no `effort` parameter. Fast mode is a session setting (`/fast`), not a spawn parameter. |
 | Background | Use `run_in_background: true` by default. Run in the foreground only when the next step needs the result and nothing else can run meanwhile. A completion arrives as a notification. |
 | Isolation | `isolation: "worktree"` gives the agent its own git worktree under `.claude/worktrees/`. Use it for every writer that shares a checkout with another writer. Use it for every lane that needs the PR head. Give each isolated agent the rule in "Commands in a worktree" below. `isolation: "remote"` runs the agent in a cloud environment. Its availability is gated, so never require it. |
-| Prompt | Use file pointers instead of context pasted into the prompt. Every `astack-delegate` prompt must carry this file's absolute path. |
+| Prompt | Use file pointers instead of context pasted into the prompt. Every `astack-delegate` prompt must carry the absolute path of the mode folder. |
 | Follow-up | `name` makes a running agent addressable through `SendMessage`. Use `ListAgents` to see what is live. Use `TaskStop` to stop it. |
 | Nesting | Agents nest to depth 3. The main chat is depth 0. An agent at depth 3 has no Agent tool. Set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` before launch to raise the cap. Fit every tree inside the budget. State the depth of each role. |
 | Cross-family reviewer | Use Bash, not Agent, as `astack skill-path astack:arena references/external-seats.md` says. Run `codex exec --sandbox read-only "<prompt>"` when `command -v codex` succeeds. Or use `cursor-agent -p --mode ask --model <model> "<prompt>"`. A role value of `codex`, `codex:<model>`, or `cursor-agent:<model>` names such a seat, and the `sol-loop reviewer` also takes `claude` and `claude:<model>`. Point the reviewer at the diff or a read-only checkout. |

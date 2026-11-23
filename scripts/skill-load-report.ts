@@ -156,7 +156,7 @@ export function scenarios(
 				MODE_PLAYBOOKS,
 				skill("principles"),
 			],
-			after: [skill("mode"), ...MODE_SECTIONS, skill("principles")],
+			after: [skill("mode")],
 		},
 		{
 			name: "mode router with a routed request",
@@ -168,12 +168,7 @@ export function scenarios(
 				MODE_ROUTES,
 				skill("principles"),
 			],
-			after: [
-				skill("mode"),
-				...MODE_SECTIONS,
-				MODE_ROUTES,
-				skill("principles"),
-			],
+			after: [skill("mode"), MODE_ROUTES],
 		},
 		{
 			name: "mode delegate or unclear role",
@@ -185,13 +180,7 @@ export function scenarios(
 				MODE_ROUTES,
 				skill("principles"),
 			],
-			after: [
-				skill("mode"),
-				...MODE_SECTIONS,
-				MODE_PLAYBOOKS,
-				MODE_ROUTES,
-				skill("principles"),
-			],
+			after: [skill("mode"), reference("mode", "worker.md")],
 		},
 		{
 			name: "hardening engine, exit 0 of the CI pin check",

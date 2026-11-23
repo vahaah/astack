@@ -19,7 +19,7 @@ These rules apply in every session. A stricter repo rule wins, then astack. `$as
 | `/goal`, "continue the board" | Programme tier and the `astack:mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
 | a hotfix, "I need it fast" | Quick tier. One grill round at most |
 | a bug, an error report, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
-| "comments", "check github comments" | `references/comments-triage.md` |
+| "comments", "check github comments" | `astack:mode` Babysit playbook |
 | `/pr-review-hardening` | `astack:pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
 | "create pr" | `references/create-pr.md`. Then one hardening run when the profile sets it |
 | "update from main" | `references/refresh.md` |
