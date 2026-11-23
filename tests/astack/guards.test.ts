@@ -1367,6 +1367,58 @@ describe("a repo that this session made", () => {
 		);
 	});
 
+	test.each([
+		"git init NEW && cp -R OWNER/. NEW",
+		"git init NEW && rm -rf NEW/.git && mv OWNER/.git NEW/.git",
+	])(
+		"[control:sg-session-repo-copied] after %s a reset in the new repo is denied, because the line writes into the target",
+		(command) => {
+			const { dir, state } = fresh("new");
+			const parent = join(dir, "..");
+			const owner = join(parent, "owner");
+			dirtyRepoAt(owner);
+			const made = command.replaceAll("OWNER", owner).replaceAll("NEW", dir);
+			expect(sessionRun(made, parent, state).kind).toBe("allow");
+			expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test.each([
+		[
+			"a Write call",
+			(state: string) =>
+				({
+					kind: "write",
+					path: join(state, "session-repos", "s.json"),
+					before: undefined,
+					after: "[]",
+				}) as const,
+		],
+		[
+			"an echo redirect",
+			(state: string, cwd: string) =>
+				shell(`echo '[]' > ${state}/session-repos/s.json`, cwd),
+		],
+	])(
+		"[control:sg-session-repo-record] %s into the session repo record folder is denied",
+		(_, event) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			const said = reason(
+				destructive.run(event(state, dir), {
+					...context(dir),
+					env: { ASTACK_STATE_DIR: state },
+					session: "session-1",
+				}),
+			);
+			expect(said).toContain("session repo record folder");
+		},
+	);
+
 	test("[control:sg-session-repo-identity] a reset is denied in a dirty repo that another process made at a dropped pending path", () => {
 		const { dir, state } = fresh("made");
 		const parent = join(dir, "..");

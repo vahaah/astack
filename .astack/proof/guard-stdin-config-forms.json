@@ -208,6 +208,10 @@
 			{
 				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
 				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D8"
 			}
 		],
 		"controls": {

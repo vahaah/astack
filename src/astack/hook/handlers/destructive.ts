@@ -1187,9 +1187,28 @@ const GATE_READERS = new Set([
 	"wc",
 ]);
 
-function gateFolder(env: Env): string | undefined {
+type RecordFolder = {
+	readonly path: string;
+	readonly name: string;
+	readonly writer: string;
+};
+
+function recordFolders(env: Env): readonly RecordFolder[] {
 	const state = stateDir(env);
-	return state === undefined ? undefined : canonicalFile(join(state, "gates"));
+	return state === undefined
+		? []
+		: [
+				{
+					path: canonicalFile(join(state, "gates")),
+					name: "gate record folder",
+					writer: "astack gates run writes a gate record",
+				},
+				{
+					path: canonicalFile(join(state, "session-repos")),
+					name: "session repo record folder",
+					writer: "the destructive hook writes a session repo record",
+				},
+			];
 }
 
 function inFolder(folder: string, path: string): boolean {
@@ -1197,42 +1216,68 @@ function inFolder(folder: string, path: string): boolean {
 	return inside === "" || (!inside.startsWith("..") && !isAbsolute(inside));
 }
 
-function gateFolderReason(what: string, folder: string): string {
-	return `${what} writes into the gate record folder ${folder}, and only astack gates run writes a gate record. ${OWNER_GATE}`;
+function folderReason(what: string, folder: RecordFolder): string {
+	return `${what} writes into the ${folder.name} ${folder.path}, and only ${folder.writer}. ${OWNER_GATE}`;
 }
 
-function gateFolderReasons(
+function wordPaths(step: ShellStep, word: Word, env: Env): readonly string[] {
+	if (word.dynamic) return [];
+	return [word.value, word.value.slice(word.value.indexOf("=") + 1)]
+		.filter((text) => text !== "")
+		.map((text) =>
+			resolve(
+				step.dir,
+				text.startsWith("~/") && env.HOME
+					? join(env.HOME, text.slice(2))
+					: text,
+			),
+		);
+}
+
+function recordFolderReasons(
 	steps: readonly ShellStep[],
-	folder: string,
+	folders: readonly RecordFolder[],
 	env: Env,
 ): readonly string[] {
 	return steps.flatMap((step) => {
-		const there = (word: Word) =>
-			!word.dynamic &&
-			[word.value, word.value.slice(word.value.indexOf("=") + 1)].some(
-				(text) =>
-					text !== "" &&
-					inFolder(
-						folder,
-						resolve(
-							step.dir,
-							text.startsWith("~/") && env.HOME
-								? join(env.HOME, text.slice(2))
-								: text,
-						),
-					),
-			);
 		const program = step.words[0];
 		const reads =
 			program !== undefined &&
 			!program.dynamic &&
 			GATE_READERS.has(basename(program.value));
-		return step.simple.redirects.some(
-			(redirect) => redirect.op.includes(">") && there(redirect.target),
-		) ||
-			(!reads && step.words.some(there))
-			? [gateFolderReason(shown(step.words), folder)]
-			: [];
+		return folders.flatMap((folder) => {
+			const there = (word: Word) =>
+				wordPaths(step, word, env).some((path) => inFolder(folder.path, path));
+			return step.simple.redirects.some(
+				(redirect) => redirect.op.includes(">") && there(redirect.target),
+			) ||
+				(!reads && step.words.some(there))
+				? [folderReason(shown(step.words), folder)]
+				: [];
+		});
+	});
+}
+
+const COPIERS = new Set(["cp", "mv", "rsync", "tar"]);
+
+function copiesInto(
+	steps: readonly ShellStep[],
+	target: string,
+	env: Env,
+): boolean {
+	const folder = canonicalFile(target);
+	return steps.some((step) => {
+		const program = step.words[0];
+		return (
+			program !== undefined &&
+			!program.dynamic &&
+			COPIERS.has(basename(program.value)) &&
+			step.words.some(
+				(word) =>
+					word.dynamic ||
+					wordPaths(step, word, env).some((path) => inFolder(folder, path)),
+			)
+		);
 	});
 }
 
@@ -1240,19 +1285,26 @@ export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell", "write", "edit"],
 	run: (event, context) => {
-		const folder = gateFolder(context.env);
+		const folders = recordFolders(context.env);
 		if (event.kind !== "shell")
-			return folder !== undefined &&
-				inFolder(folder, resolve(context.cwd, event.path))
-				? denial([
-						gateFolderReason(
+			return denial(
+				folders
+					.filter((folder) =>
+						inFolder(folder.path, resolve(context.cwd, event.path)),
+					)
+					.map((folder) =>
+						folderReason(
 							`A ${event.kind === "write" ? "Write" : "Edit"} call to ${event.path}`,
 							folder,
 						),
-					])
-				: ALLOW;
+					),
+			);
 		const repos = settledRepos(context.env, context.session);
-		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates)\b/i.test(event.command))
+		if (
+			!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates|session-repos)\b/i.test(
+				event.command,
+			)
+		)
 			return ALLOW;
 		const steps = shellSteps(event.command, event.cwd);
 		const placed = placedLine(steps, context.env);
@@ -1267,18 +1319,19 @@ export const handler = defineHandler({
 					}),
 				),
 			),
-			denial(
-				folder === undefined
-					? []
-					: gateFolderReasons(steps, folder, context.env),
-			),
+			denial(recordFolderReasons(steps, folders, context.env)),
 		]);
 		if (verdict.kind !== "deny" && !placed)
 			rememberRepos(
 				context.env,
 				context.session,
 				repos,
-				steps.flatMap((step) => madeRepoTarget(step) ?? []),
+				steps.flatMap((step) => {
+					const target = madeRepoTarget(step);
+					return target === undefined || copiesInto(steps, target, context.env)
+						? []
+						: [target];
+				}),
 			);
 		return verdict;
 	},
