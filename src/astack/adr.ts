@@ -382,7 +382,7 @@ function headerLine(text: string, key: string): RelationLine | undefined {
 	return undefined;
 }
 
-function recordOf(file: AdrFile, number: string): AdrRecord {
+function adrRecordOf(file: AdrFile, number: string): AdrRecord {
 	return {
 		file,
 		number,
@@ -619,7 +619,7 @@ function relationProblems(
 function records(folder: AdrFolder): Map<string, AdrRecord> {
 	const found = new Map<string, AdrRecord>();
 	for (const [number, [file]] of byNumber(folder))
-		if (file !== undefined) found.set(number, recordOf(file, number));
+		if (file !== undefined) found.set(number, adrRecordOf(file, number));
 	return found;
 }
 
