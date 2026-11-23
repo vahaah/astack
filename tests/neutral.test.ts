@@ -107,11 +107,15 @@ function companion(files: Record<string, string>): string {
 	return root;
 }
 
-function run(script: string, args: readonly string[]) {
+function run(
+	script: string,
+	args: readonly string[],
+	env: Readonly<Record<string, string>> = {},
+) {
 	const result = spawnSync(
 		process.execPath,
 		[join(repoRoot, "scripts", script), ...args],
-		{ encoding: "utf8", env: envWithoutCompanion() },
+		{ encoding: "utf8", env: { ...envWithoutCompanion(), ...env } },
 	);
 	return {
 		status: result.status,
@@ -538,11 +542,13 @@ describe("the tree scan", () => {
 });
 
 describe("deny add", () => {
+	const state = { ASTACK_STATE_DIR: join(companion({}), "state") };
+
 	test("refuses the example companion and leaves its list as it was", () => {
 		const list = join(exampleCompanionRoot, "deny", "names.sha256");
 		const before = readFileSync(list, "utf8");
 		const refusal = writable(companionFrom(undefined, {}));
-		expect(run("deny.ts", ["add", "initech"])).toEqual({
+		expect(run("deny.ts", ["add", "initech"], state)).toEqual({
 			status: 1,
 			stdout: "",
 			stderr: `${refusal.ok ? "" : refusal.error}\n`,
@@ -553,17 +559,26 @@ describe("deny add", () => {
 	test("writes the hash of the joined words, prints only the hash prefix, and adds a name once", () => {
 		const root = companion({});
 		const list = `${root}/deny/names.sha256`;
+		const copy = `${state.ASTACK_STATE_DIR}/deny/names.sha256`;
 		const runs = [
 			["add", "Acme Widgets", "--companion", root],
 			["add", "initech", "--companion", root],
 			["add", "acmeWidgets", "--companion", root],
-		].map((args) => run("deny.ts", args));
+		].map((args) => run("deny.ts", args, state));
 		expect(runs).toEqual([
-			{ status: 0, stdout: `added hash 1ddead9e to ${list}\n`, stderr: "" },
-			{ status: 0, stdout: `added hash 4cdc1a42 to ${list}\n`, stderr: "" },
 			{
 				status: 0,
-				stdout: `hash 1ddead9e is already in ${list}\n`,
+				stdout: `added hash 1ddead9e to ${list}\nwrote 1 hash(es) to ${copy}\n`,
+				stderr: "",
+			},
+			{
+				status: 0,
+				stdout: `added hash 4cdc1a42 to ${list}\nwrote 2 hash(es) to ${copy}\n`,
+				stderr: "",
+			},
+			{
+				status: 0,
+				stdout: `hash 1ddead9e is already in ${list}\nwrote 2 hash(es) to ${copy}\n`,
 				stderr: "",
 			},
 		]);
@@ -574,12 +589,11 @@ describe("deny add", () => {
 
 	test("refuses a name with more words than the scan reads", () => {
 		expect(
-			run("deny.ts", [
-				"add",
-				"one two three four five",
-				"--companion",
-				companion({}),
-			]),
+			run(
+				"deny.ts",
+				["add", "one two three four five", "--companion", companion({})],
+				state,
+			),
 		).toEqual({
 			status: 2,
 			stdout: "",
