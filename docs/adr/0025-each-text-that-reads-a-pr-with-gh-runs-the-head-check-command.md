@@ -42,6 +42,8 @@ Each other stop result stops the text.
 The setup seed keeps the manual head check and the no-PR rule, because a product repo can have no astack.
 The engine and the stub fallback keep their own forms, and B24 owns the fallback.
 
+> Note 2026-11-23: [ADR 0036](0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md) D5 merged the comments triage reference into `playbooks/babysit.md` as `triage` mode, so the repair sentence now lives in `playbooks/babysit.md`.
+
 #### Formal claim
 
 A text acts on a PR only when gh read that PR and HEAD holds its head.

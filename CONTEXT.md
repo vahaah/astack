@@ -446,3 +446,17 @@ A slash after a value is a division. A word after `.` or `?.` ends a value, and 
 A scan that a token does not close gives no comments, and the comment hook reads no part of that file.
 _Avoid_: Comment lexer, JS lexer
 _Code_: `src/astack/types/scan.ts`
+
+### Worker card
+
+The short rule file `references/worker.md` of `astack:mode`, capped at 300 words, that every delegate reads after `SKILL.md`.
+Its first rule keeps the four fixed rules in every bar, and its remaining rules make the brief's bar the whole bar.
+_Avoid_: Delegate manual, worker prompt
+_Code_: `marketplace/plugins/astack/skills/mode/references/worker.md`
+
+### Delegate read set
+
+The explicit direct-file read set for `astack:delegate` and any unclear role, measured by `scripts/skill-load-report.ts`.
+It holds `mode/SKILL.md` and `mode/references/worker.md`, capped at 2,000 source words in total.
+_Avoid_: Full mode load, prompt token count
+_Code_: `scripts/skill-load-report.ts`

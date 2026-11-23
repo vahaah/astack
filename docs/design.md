@@ -81,8 +81,8 @@ The `managed` list names each primary and mirrored stub.
 
 Skills name their conditional reads.
 `astack:plan` lists the skills that each stage reads, and a mode other than new reads only what its reference names.
-The main router of `astack:mode` reads the route table and the playbook index only when a route needs them.
-An `astack:delegate`, and a role that cannot name itself, reads the complete set, as `agents/delegate.md` requires.
+The main router of `astack:mode` reads only `SKILL.md` with no argument, and adds `references/routes.md` for a routed request.
+An `astack:delegate`, and a role that cannot name itself, reads the delegate read set: `SKILL.md` and `references/worker.md`, as `agents/delegate.md` requires.
 Branch-specific detail sits in direct references of `astack:types`, `astack:write-docs`, `astack:control-ui` and the hardening engine.
 `scripts/skill-load-report.ts` measures source words and bytes of these read sets.
 It is a source metric, not a token, call, time or cost figure, and `docs/runbooks/skill-load-measurement.md` names the limits.
