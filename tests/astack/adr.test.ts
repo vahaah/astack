@@ -172,7 +172,10 @@ const BASE = [
 const ADR_PATH = "docs/adr/0005-every-change-carries-proof.md";
 
 function folder(text: string | undefined): AdrFolder {
-	return { files: text === undefined ? [] : [{ path: ADR_PATH, text }] };
+	return {
+		files: text === undefined ? [] : [{ path: ADR_PATH, text }],
+		index: undefined,
+	};
 }
 
 function insertAfter(

@@ -199,6 +199,7 @@ const edit: fc.Arbitrary<Edit> = fc.oneof(
 
 const folder = (text: string): AdrFolder => ({
 	files: [{ path: PATH, text }],
+	index: undefined,
 });
 
 describe("an Accepted ADR changes only by a dated block or a base span edit", () => {

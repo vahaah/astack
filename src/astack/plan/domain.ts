@@ -16,7 +16,7 @@ import {
 import { anyGlob } from "../glob.ts";
 import { err, ok, type Result } from "../result.ts";
 import { parsePlan, sectionByTitle } from "./parse.ts";
-import type { CheckEnv, Line, Plan } from "./types.ts";
+import type { CheckEnv, Plan } from "./types.ts";
 
 export const DOMAIN_SECTION = "Domain and effects";
 
@@ -43,7 +43,7 @@ type Fence = { readonly line: number; readonly lines: readonly BlockLine[] };
 
 const OPEN = /^ {0,3}(`{3,}|~{3,})\s*(\S*)\s*$/;
 
-export function domainFences(lines: readonly Line[]): Fence[] {
+export function domainFences(lines: readonly BlockLine[]): Fence[] {
 	const fences: Fence[] = [];
 	let open:
 		| { line: number; marker: string; domain: boolean; lines: BlockLine[] }
