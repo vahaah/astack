@@ -177,3 +177,4 @@ The audit of 2026-11-22 reads `formal/ProofLadder.cfg`. Each row names an invari
 | `ManifestFirst` | restates | `Start` | `rl-select`, `rl-registry-diff` |
 | `RegistryRunsAll` | independent | It joins `Selected` of `Derive` with the guard of `Admit` |  |
 | `DeletedRegistryStops` | restates | `Derive` | `rl-registry-gone` |
+| `TlaLawSelects` | restates | `Derive` | `rung-law`, `ladder-law-cuts` |
