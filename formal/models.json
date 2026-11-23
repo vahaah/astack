@@ -8,11 +8,16 @@
 				"dependencies": [],
 				"bounds": [
 					"Four diff classes and nine record cases: valid or one of eight failed guards.",
-					"Tool equality, moved base, and independent proof validity are Boolean.",
+					"Tool equality, moved base, independent proof validity, a red gate and the CI read-back are Boolean.",
 					"One classification followed by one independent proof decision."
 				],
 				"fairness": [],
-				"invariants": ["TypeOK", "CiRecordsSafe", "CurrentProofRequired"],
+				"invariants": [
+					"TypeOK",
+					"CiRecordsSafe",
+					"CurrentProofRequired",
+					"MixedKeepsGates"
+				],
 				"properties": []
 			},
 			"negative": {
@@ -34,7 +39,10 @@
 				"src/astack/change-proof/manifest.ts",
 				"src/astack/cli/commands/check/ci-pins.ts"
 			],
-			"text": []
+			"text": [
+				"marketplace/plugins/astack/skills/pr-review-hardening/SKILL.md",
+				"marketplace/plugins/astack/skills/pr-review-hardening/references/gate.md"
+			]
 		},
 		{
 			"name": "DoctorTrust",
