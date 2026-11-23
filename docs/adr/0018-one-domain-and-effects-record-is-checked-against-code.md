@@ -22,6 +22,8 @@ check-plan compares the block with the contexts card and the plan steps.
 The tsc witness compares each linked step with the code.
 The rung derives from the laws of the block and the registry.
 
+> Amended 2026-11-23: `astack check effects` also compares the record with the code. It reads the effect classes of each module from its imports, and it compares them with the `pure` lines, the caps and the step rows. Its findings are advice. [ADR 0030](0030-check-effects-compares-the-effect-classes-of-the-code-with-the-domain-record.md) holds these decisions.
+
 ### D2. The block has one line for each item, and one parser reads it
 
 The block holds at most 15 lines.
