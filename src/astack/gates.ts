@@ -12,6 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { runGit } from "./git.ts";
+import { MANAGED_PATHS } from "./managed.ts";
 import type { ProfileGate, ToolVersion } from "./pr-review-profile.ts";
 import { sessionFileName, stateDir } from "./state.ts";
 
@@ -28,6 +29,7 @@ export type GateRecord = {
 	readonly head: string;
 	readonly base: string;
 	readonly baseSha: string;
+	readonly profile: string;
 	readonly ran: readonly string[];
 	readonly skipped: readonly string[];
 };
@@ -78,6 +80,7 @@ export function recordOf(
 	head: string,
 	base: string,
 	baseSha: string,
+	profile: string,
 ): GateRecord | undefined {
 	const green = runs.every(
 		(run) => run.outcome.kind === "passed" || run.outcome.kind === "skipped",
@@ -89,9 +92,52 @@ export function recordOf(
 		head,
 		base,
 		baseSha,
+		profile,
 		ran: named("passed"),
 		skipped: named("skipped"),
 	};
+}
+
+export function sameProfile(
+	record: GateRecord,
+	sourceBlob: string,
+	baseBlob: string,
+): boolean {
+	return record.profile === sourceBlob && record.profile === baseBlob;
+}
+
+function gitLine(root: string, args: string[]): string | undefined {
+	const result = runGit(root, args);
+	const line = result.ok ? result.stdout.toString("utf8").trim() : "";
+	return line === "" ? undefined : line;
+}
+
+export type ProfileBlobs = {
+	readonly mergeBase: string;
+	readonly source: string;
+	readonly base: string;
+};
+
+export function profileBlobs(
+	root: string,
+	source: string,
+	baseSha: string,
+): ProfileBlobs | undefined {
+	const mergeBase = gitLine(root, ["merge-base", baseSha, source]);
+	const blob = (commit: string) =>
+		gitLine(root, [
+			"rev-parse",
+			"--verify",
+			"--quiet",
+			`${commit}:${MANAGED_PATHS.reviewProfile}`,
+		]);
+	const sourceBlob = blob(source);
+	const baseBlob = mergeBase === undefined ? undefined : blob(mergeBase);
+	return mergeBase === undefined ||
+		sourceBlob === undefined ||
+		baseBlob === undefined
+		? undefined
+		: { mergeBase, source: sourceBlob, base: baseBlob };
 }
 
 export type GateIo = {
@@ -306,13 +352,15 @@ export function loadGateRecord(env: Env, head: string): GateRecord | undefined {
 	const field = (key: string): unknown => Reflect.get(parsed, key);
 	const base = field("base");
 	const baseSha = field("baseSha");
+	const profile = field("profile");
 	const ran = names(field("ran"));
 	const skipped = names(field("skipped"));
 	return field("head") === head &&
 		typeof base === "string" &&
 		typeof baseSha === "string" &&
+		typeof profile === "string" &&
 		ran !== undefined &&
 		skipped !== undefined
-		? { head, base, baseSha, ran, skipped }
+		? { head, base, baseSha, profile, ran, skipped }
 		: undefined;
 }

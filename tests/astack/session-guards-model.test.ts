@@ -113,6 +113,8 @@ describe("the SessionGuards model reader", () => {
 		test.each([
 			["ModeOf", 'IF p = {"fullStop"}', 'IF "fullStop" \\in p'],
 			["Merge", '/\\ mode # "fullStop"\n', ""],
+			["Push", "recorded /\\ ~edited)", "recorded)"],
+			["GatesRun", "green \\/ edited)", "green)"],
 			[
 				"Scratch",
 				"~f.inProject /\\ ~(f.git",
@@ -220,39 +222,55 @@ describe("[control:sg-conformance-push] the push guard answers each target of th
 		git(dir, "init", "-q", "-b", "main");
 		git(dir, "config", "user.email", "t@example.com");
 		git(dir, "config", "user.name", "T");
-		git(dir, "commit", "-q", "--allow-empty", "-m", "base");
+		mkdirSync(join(dir, ".claude"), { recursive: true });
+		writeFileSync(join(dir, ".claude/pr-review-hardening.profile.md"), "x\n");
+		git(dir, "add", ".");
+		git(dir, "commit", "-q", "-m", "base");
 		const head = git(dir, "rev-parse", "HEAD");
-		const states = [false, true].map((recorded) => {
-			const env = { ASTACK_STATE_DIR: join(TEMP, `push-${recorded}`) };
+		const blob = git(
+			dir,
+			"rev-parse",
+			"HEAD:.claude/pr-review-hardening.profile.md",
+		);
+		const states = [
+			{ recorded: false, edited: false },
+			{ recorded: true, edited: false },
+			{ recorded: true, edited: true },
+		].map(({ recorded, edited }) => {
+			const env = {
+				ASTACK_STATE_DIR: join(TEMP, `push-${recorded}-${edited}`),
+			};
 			if (recorded)
 				saveGateRecord(env, {
 					head,
 					base: "main",
 					baseSha: head,
+					profile: edited ? "0".repeat(40) : blob,
 					ran: [],
 					skipped: [],
 				});
-			return { recorded, env };
+			return { recorded, edited, env };
 		});
 		const verdicts = MODEL.targets.flatMap((target) =>
-			states.flatMap(({ recorded, env }) =>
+			states.flatMap(({ recorded, edited, env }) =>
 				[false, true].map((skips) => {
 					const command = oneOf(PUSH_FORMS, target)[skips ? 1 : 0] ?? "";
 					return {
 						target,
 						recorded,
+						edited,
 						skips,
 						code:
 							destructive.run(
 								{ kind: "shell", command, cwd: dir },
 								context(dir, env),
 							).kind !== "deny",
-						model: push(skips, target, recorded),
+						model: push(skips, target, recorded, edited),
 					};
 				}),
 			),
 		);
-		expect(verdicts.length).toBe(MODEL.targets.length * 4);
+		expect(verdicts.length).toBe(MODEL.targets.length * 6);
 		expect(verdicts.filter(({ code, model }) => code !== model)).toEqual([]);
 	});
 });

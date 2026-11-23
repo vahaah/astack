@@ -1,7 +1,7 @@
-import { realpathSync, statSync } from "node:fs";
+import { lstatSync, realpathSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
-import { loadGateRecord } from "../../gates.ts";
-import { repoRoot, runGit } from "../../git.ts";
+import { loadGateRecord, profileBlobs, sameProfile } from "../../gates.ts";
+import { READ_ONLY_GIT, repoRoot, runGit } from "../../git.ts";
 import {
 	type GitInvocation,
 	type GitRead,
@@ -14,6 +14,7 @@ import {
 } from "../../git-command.ts";
 import {
 	canonical,
+	canonicalFile,
 	canonicalRelative,
 	readOptional,
 	toPosix,
@@ -22,9 +23,11 @@ import {
 	isSessionRepo,
 	rememberRepos,
 	type SessionRepos,
+	saveSessionRepos,
 	settledRepos,
 } from "../../session-repos.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
+import { stateDir } from "../../state.ts";
 import {
 	ALLOW,
 	combineAll,
@@ -39,7 +42,6 @@ const SHARED_BRANCH =
 const RUNNERS = new Set(["npx", "bunx", "pnpx"]);
 const PACKAGE_MANAGERS = new Set(["npm", "pnpm", "yarn", "bun"]);
 const OWNER_GATE = "This is an owner gate, so stop and ask the owner.";
-const READ_ONLY_GIT = ["--no-optional-locks", "-c", "core.fsmonitor=false"];
 
 function denial(reasons: readonly string[]): Verdict {
 	return reasons.length === 0
@@ -147,6 +149,7 @@ export interface WorkLoss {
 	readonly excludes?: readonly string[];
 	readonly keepsUntrackedFolders?: boolean;
 	readonly removesNestedRepos?: boolean;
+	readonly reachesNestedRepos?: boolean;
 	readonly target?: string;
 }
 
@@ -509,15 +512,99 @@ function lostPaths(
 	const excluded = excludedPaths(dir, loss);
 	const overwritten =
 		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
-	const lost = [...changedPaths(dir, loss), ...overwritten].filter(
+	const changed = [...changedPaths(dir, loss), ...overwritten];
+	const session =
+		(changed.length > 0 || loss.reachesNestedRepos === true) &&
+		sessionRepo(root);
+	const nested =
+		session && loss.reachesNestedRepos === true
+			? changedPaths(dir, {
+					lost: "untracked",
+					pathspecs: loss.pathspecs,
+					removesNestedRepos: true,
+				}).filter((path) => path.endsWith("/") && extractionReaches(root, path))
+			: [];
+	const lost = [...changed, ...nested].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
-	return lost.length > 0 && sessionRepo(root)
-		? lost.filter(
-				(path) =>
-					path.endsWith("/") && !sessionRepo(join(root, path.slice(0, -1))),
-			)
+	return session
+		? lost.filter((path) => inUnboundRepo(root, path, sessionRepo))
 		: lost;
+}
+
+function inUnboundRepo(
+	root: string,
+	path: string,
+	sessionRepo: SessionRepoTest,
+): boolean {
+	const parts = path.replace(/\/$/, "").split("/");
+	return parts.some((_, at) => {
+		const folder = join(root, ...parts.slice(0, at + 1));
+		return isRepoRoot(folder) && !sessionRepo(folder);
+	});
+}
+
+function extractionReaches(root: string, nested: string): boolean {
+	const path = nested.replace(/\/$/, "");
+	const folder = `${path.toLowerCase()}/`;
+	const held = runGit(root, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-r",
+		"--name-only",
+		"-z",
+		"HEAD",
+	]);
+	const status = runGit(join(root, path), [
+		...READ_ONLY_GIT,
+		"status",
+		"--porcelain=v1",
+		"-z",
+		"--ignored",
+	]);
+	return (
+		!held.ok ||
+		held.stdout
+			.toString("utf8")
+			.split("\0")
+			.some((tracked) => `${tracked.toLowerCase()}/`.startsWith(folder)) ||
+		!status.ok ||
+		status.stdout.length > 0
+	);
+}
+
+function isRepoRoot(path: string): boolean {
+	try {
+		return (
+			lstatSync(path, { throwIfNoEntry: false })?.isDirectory() === true &&
+			lstatSync(join(path, ".git"), { throwIfNoEntry: false }) !== undefined
+		);
+	} catch {
+		return true;
+	}
+}
+
+const RECURSING_VERBS = new Set([
+	"checkout",
+	"read-tree",
+	"reset",
+	"restore",
+	"switch",
+]);
+
+function hasSubmodules(dir: string): boolean {
+	const staged = runGit(dir, [...READ_ONLY_GIT, "ls-files", "--stage", "-z"]);
+	return (
+		!staged.ok ||
+		staged.stdout
+			.toString("utf8")
+			.split("\0")
+			.some((entry) => entry.startsWith("160000 "))
+	);
+}
+
+function recursesSubmodules(git: GitInvocation): boolean {
+	return RECURSING_VERBS.has(git.sub) && hasSubmodules(git.dir);
 }
 
 function workLossReasons(
@@ -528,7 +615,12 @@ function workLossReasons(
 	const loss = workLoss(git, treeishIn(git.dir));
 	return loss === undefined
 		? []
-		: lossReasons(step.values.join(" "), loss, git.dir, sessionRepo);
+		: lossReasons(
+				step.values.join(" "),
+				loss,
+				git.dir,
+				(root) => sessionRepo(root) && !recursesSubmodules(git),
+			);
 }
 
 const TAR_LIST = /^(?:--list|-[A-Za-z]*t[A-Za-z]*|[A-Za-z]*t[A-Za-z]*)$/;
@@ -552,6 +644,15 @@ function tarExtracts(step: ShellStep): boolean {
 
 const TAR_HERE =
 	/^(?:-|-?[fkmopvx]+|--(?:extract|get|verbose|keep-old-files|file(?:=-)?))$/;
+
+function archivesHead(step: ShellStep, tar: ShellStep): boolean {
+	return (
+		step.env.length === 0 &&
+		step.dir === tar.dir &&
+		step.words.every((word) => !word.dynamic) &&
+		step.values.join(" ") === "git archive HEAD"
+	);
+}
 
 function extractsHere(step: ShellStep): boolean {
 	return (
@@ -585,11 +686,12 @@ function extractReasons(
 		return [
 			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
 		];
+	const exempt = extractsHere(step) && archivesHead(previous, step);
 	return lossReasons(
 		command,
-		{ lost: "tracked", pathspecs: WHOLE_TREE },
+		{ lost: "tracked", pathspecs: WHOLE_TREE, reachesNestedRepos: exempt },
 		step.dir,
-		extractsHere(step) ? sessionRepo : NO_SESSION_REPO,
+		exempt ? sessionRepo : NO_SESSION_REPO,
 	);
 }
 
@@ -611,7 +713,10 @@ function lossReasons(
 	];
 }
 
+const SKIP_NAME = /^(?:HUSKY|LEFTHOOK)(?:=|$)/i;
 const SKIP_VARIABLE = /^(?:HUSKY|LEFTHOOK)=(?:0|false)$/i;
+const CONFIG_NAME = /^GIT_CONFIG(?:_\w+)?(?==|$)/;
+const INCLUDE_KEY = /^include(?:if\..*)?\.path$/i;
 const PUSHES_UNRECORDED = ["--all", "--branches", "--mirror", "--tags"];
 const PUSH_VALUE_FLAGS = [
 	"-o",
@@ -628,7 +733,50 @@ type ShellState = {
 };
 
 function isSkipVariable(word: Word): boolean {
-	return !word.dynamic && SKIP_VARIABLE.test(word.value);
+	return (
+		SKIP_NAME.test(word.value) &&
+		(word.dynamic ||
+			!word.value.includes("=") ||
+			SKIP_VARIABLE.test(word.value))
+	);
+}
+
+type EnvConfig = {
+	readonly words: readonly Word[];
+	readonly settings: readonly string[];
+	readonly unread: boolean;
+};
+
+function envConfig(env: readonly Word[]): EnvConfig {
+	const words = env.filter((word) => CONFIG_NAME.test(word.value));
+	const latest = new Map<string, Word>();
+	for (const word of words)
+		latest.set(CONFIG_NAME.exec(word.value)?.[0] ?? "", word);
+	const value = (name: string): string | undefined => {
+		const word = latest.get(name);
+		return word === undefined || word.dynamic || !word.value.includes("=")
+			? undefined
+			: word.value.slice(name.length + 1);
+	};
+	const count = value("GIT_CONFIG_COUNT");
+	const pairs = count !== undefined && /^\d+$/.test(count) ? Number(count) : -1;
+	const read = new Set(["GIT_CONFIG_COUNT"]);
+	const settings: string[] = [];
+	for (let at = 0; at < pairs && at * 2 < latest.size; at++) {
+		const key = value(`GIT_CONFIG_KEY_${at}`);
+		const setting = value(`GIT_CONFIG_VALUE_${at}`);
+		if (key === undefined || setting === undefined) break;
+		settings.push(`${key}=${setting}`);
+		read.add(`GIT_CONFIG_KEY_${at}`).add(`GIT_CONFIG_VALUE_${at}`);
+	}
+	return {
+		words,
+		settings,
+		unread:
+			words.length > 0 &&
+			(settings.length !== pairs ||
+				[...latest.keys()].some((name) => !read.has(name))),
+	};
 }
 
 function gitText(dir: string, args: string[]): string | undefined {
@@ -672,7 +820,9 @@ function isExecutable(path: string): boolean {
 	return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
 }
 
-function activeHooks(root: string): readonly string[] | undefined {
+type ActiveHooks = { readonly dir: string; readonly names: readonly string[] };
+
+function activeHooks(root: string): ActiveHooks | undefined {
 	const folder = gitText(root, [
 		...READ_ONLY_GIT,
 		"rev-parse",
@@ -681,12 +831,15 @@ function activeHooks(root: string): readonly string[] | undefined {
 	]);
 	if (folder === undefined) return undefined;
 	const dir = resolve(root, folder);
-	return HOOK_NAMES.filter((name) => isExecutable(join(dir, name)));
+	return {
+		dir,
+		names: HOOK_NAMES.filter((name) => isExecutable(join(dir, name))),
+	};
 }
 
-const EXECUTABLE_BLOB = /^100755 blob [0-9a-f]+\t([\s\S]*)$/;
+const EXECUTABLE_BLOB = /^100755 blob ([0-9a-f]+)\t([\s\S]*)$/;
 
-function headHooks(root: string, path: string): ReadonlySet<string> {
+function headHooks(root: string, path: string): ReadonlyMap<string, string> {
 	const prefix = path === "" ? "" : `${path}/`;
 	const listed = runGit(root, [
 		...READ_ONLY_GIT,
@@ -697,21 +850,48 @@ function headHooks(root: string, path: string): ReadonlySet<string> {
 		"--",
 		...HOOK_NAMES.map((name) => `:(literal)${prefix}${name}`),
 	]);
-	if (!listed.ok) return new Set();
-	return new Set(
+	if (!listed.ok) return new Map();
+	return new Map(
 		listed.stdout
 			.toString("utf8")
 			.split("\0")
-			.flatMap((entry) => {
-				const tracked = EXECUTABLE_BLOB.exec(entry)?.[1];
+			.flatMap((entry): [string, string][] => {
+				const [, blob, tracked] = EXECUTABLE_BLOB.exec(entry) ?? [];
 				const name = tracked?.slice(prefix.length);
-				return tracked === `${prefix}${name}` &&
+				return blob !== undefined &&
+					tracked === `${prefix}${name}` &&
 					name !== undefined &&
 					HOOK_NAMES.includes(name)
-					? [name]
+					? [[name, blob]]
 					: [];
 			}),
 	);
+}
+
+function blobIds(root: string, files: readonly string[]): readonly string[] {
+	if (files.length === 0) return [];
+	const hashed = gitText(root, [
+		...READ_ONLY_GIT,
+		"hash-object",
+		"--no-filters",
+		"--",
+		...files,
+	]);
+	return hashed === undefined ? [] : hashed.split("\n");
+}
+
+function changedUnder(root: string, path: string): boolean {
+	const status = runGit(root, [
+		...READ_ONLY_GIT,
+		"status",
+		"--porcelain=v1",
+		"-z",
+		"--untracked-files=all",
+		"--ignored",
+		"--",
+		`:(literal)${path === "" ? "." : path}`,
+	]);
+	return !status.ok || status.stdout.length > 0;
 }
 
 function realFolder(path: string): string | undefined {
@@ -737,16 +917,26 @@ function tracksHooks(dir: string, folder: string): boolean {
 	const active = root === undefined ? undefined : activeHooks(root);
 	if (root === undefined || path === undefined || active === undefined)
 		return false;
+	if (realFolder(active.dir) === realFolder(join(root, path))) return true;
 	const tracked = headHooks(root, path);
-	return tracked.size > 0 && active.every((name) => tracked.has(name));
+	if (tracked.size === 0 || changedUnder(root, path)) return false;
+	const ids = blobIds(
+		root,
+		active.names.map((name) => join(active.dir, name)),
+	);
+	return (
+		ids.length === active.names.length &&
+		active.names.every((name, at) => tracked.get(name) === ids[at])
+	);
 }
 
 function turnsHooksOff(setting: string, dir: string): boolean {
 	const at = setting.indexOf("=");
 	const key = at < 0 ? setting : setting.slice(0, at);
 	return (
-		HOOKS_PATH_KEY.test(key) &&
-		!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1))
+		INCLUDE_KEY.test(key) ||
+		(HOOKS_PATH_KEY.test(key) &&
+			!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1)))
 	);
 }
 
@@ -765,12 +955,16 @@ function skipForm(
 	shell: ShellState,
 ): string | undefined {
 	if (noVerify(git, flags)) return `git ${git.sub} --no-verify`;
-	const variables = [...shell.exported, ...step.env]
-		.filter(isSkipVariable)
-		.map((word) => word.value);
-	return variables.length > 0 ||
-		git.config.some((setting) => turnsHooksOff(setting, git.dir))
-		? [...variables, ...step.values].join(" ")
+	const env = [...shell.exported, ...step.env];
+	const config = envConfig(env);
+	const turnsOff = (setting: string) => turnsHooksOff(setting, git.dir);
+	const fromEnv = config.unread || config.settings.some(turnsOff);
+	const shown = [
+		...env.filter(isSkipVariable),
+		...(fromEnv ? config.words : []),
+	].map((word) => word.value);
+	return shown.length > 0 || git.config.some(turnsOff)
+		? [...shown, ...step.values].join(" ")
 		: undefined;
 }
 
@@ -783,7 +977,16 @@ function recorded(spec: string, dir: string, env: Env): boolean {
 		"--quiet",
 		`${source}^{commit}`,
 	]);
-	return sha !== undefined && loadGateRecord(env, sha) !== undefined;
+	const record = sha === undefined ? undefined : loadGateRecord(env, sha);
+	const blobs =
+		sha === undefined || record === undefined
+			? undefined
+			: profileBlobs(dir, sha, record.baseSha);
+	return (
+		record !== undefined &&
+		blobs !== undefined &&
+		sameProfile(record, blobs.source, blobs.base)
+	);
 }
 
 function skipPushReasons(
@@ -822,7 +1025,8 @@ function hooksPathReasons(
 	const verbs = ["get", "list", "set", "unset"];
 	const action = verbs.includes(plain[0] ?? "") ? plain[0] : undefined;
 	const [key, value] = action === undefined ? plain : plain.slice(1);
-	if (key === undefined || !HOOKS_PATH_KEY.test(key)) return [];
+	if (key === undefined || !(HOOKS_PATH_KEY.test(key) || INCLUDE_KEY.test(key)))
+		return [];
 	const unsets =
 		action === "unset" || flags.some((flag) => /^--unset(?:-all)?$/.test(flag));
 	const reads =
@@ -830,7 +1034,13 @@ function hooksPathReasons(
 		action === "list" ||
 		flags.some((flag) => /^(?:--get|--list|-l)/.test(flag)) ||
 		(!unsets && value === undefined);
-	if (reads || (!unsets && value !== undefined && tracksHooks(git.dir, value)))
+	if (
+		reads ||
+		(!unsets &&
+			value !== undefined &&
+			HOOKS_PATH_KEY.test(key) &&
+			tracksHooks(git.dir, value))
+	)
 		return [];
 	return [
 		`${step.values.join(" ")} skips the git hooks of the repo. ${OWNER_GATE}`,
@@ -937,11 +1147,47 @@ function stepReasons(
 	}
 }
 
-function exportedSkips(steps: readonly ShellStep[], index: number): Word[] {
-	return steps
-		.slice(0, index)
-		.filter((step) => step.values[0] === "export")
-		.flatMap((step) => step.words.slice(1).filter(isSkipVariable));
+function isAllExport(option: string): boolean {
+	return option.replaceAll("_", "").toLowerCase() === "allexport";
+}
+
+const ZSH_OPTIONS = /^options\[/;
+
+function exportsVariables(step: ShellStep): boolean {
+	const [name = "", ...args] = step.values;
+	if (ZSH_OPTIONS.test(name)) return true;
+	switch (name) {
+		case "export":
+			return true;
+		case "declare":
+		case "typeset":
+			return args.some((arg) => /^-[A-Za-z]*x/.test(arg));
+		case "set":
+			return args.some(
+				(arg, at) =>
+					/^-[A-Za-z]*a/.test(arg) ||
+					(arg === "-o" && isAllExport(args[at + 1] ?? "")),
+			);
+		case "setopt":
+		case "unsetopt":
+			return true;
+		default:
+			return false;
+	}
+}
+
+function exportedWords(steps: readonly ShellStep[], index: number): Word[] {
+	const earlier = steps.slice(0, index);
+	const forms = earlier.filter(exportsVariables);
+	if (forms.length === 0) return [];
+	const hookWord = (word: Word) =>
+		SKIP_NAME.test(word.value) || CONFIG_NAME.test(word.value);
+	return [
+		...forms.flatMap((step) => step.words.slice(1).filter(hookWord)),
+		...earlier
+			.filter((step) => step.words.length === 0)
+			.flatMap((step) => step.env.filter(hookWord)),
+	];
 }
 
 function placedLine(steps: readonly ShellStep[], env: Env): boolean {
@@ -960,33 +1206,258 @@ function sessionRepoTest(
 	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root);
 }
 
+const GATE_READERS = new Set([
+	"cat",
+	"cmp",
+	"diff",
+	"grep",
+	"head",
+	"jq",
+	"ls",
+	"md5",
+	"md5sum",
+	"sha1sum",
+	"sha256sum",
+	"shasum",
+	"stat",
+	"tail",
+	"wc",
+]);
+function readsOnly(step: ShellStep): boolean {
+	const [program, ...args] = step.words;
+	if (program === undefined || program.dynamic) return false;
+	return (
+		GATE_READERS.has(program.value) &&
+		args.every(
+			(arg) =>
+				!arg.dynamic &&
+				arg.expands !== true &&
+				arg.splits !== true &&
+				!arg.value.includes("\\"),
+		)
+	);
+}
+
+type RecordFolder = {
+	readonly path: string;
+	readonly name: string;
+	readonly writer: string;
+};
+
+function recordFolders(env: Env): readonly RecordFolder[] {
+	const state = stateDir(env);
+	return state === undefined
+		? []
+		: [
+				{
+					path: canonicalFile(join(state, "gates")),
+					name: "gate record folder",
+					writer: "astack gates run writes a gate record",
+				},
+				{
+					path: canonicalFile(join(state, "session-repos")),
+					name: "session repo record folder",
+					writer: "the destructive hook writes a session repo record",
+				},
+			];
+}
+
+function inFolder(folder: string, path: string): boolean {
+	const inside = relative(folder, canonicalFile(path));
+	return inside === "" || (!inside.startsWith("..") && !isAbsolute(inside));
+}
+
+function folderReason(what: string, folder: RecordFolder): string {
+	return `${what} writes into the ${folder.name} ${folder.path}, and only ${folder.writer}. ${OWNER_GATE}`;
+}
+
+const GLOB_START = /[*?[{]/;
+
+function globFolder(text: string): string {
+	const head = text.slice(0, Math.max(0, text.search(GLOB_START)));
+	return head.slice(0, head.lastIndexOf("/") + 1) || ".";
+}
+
+function wordPaths(step: ShellStep, word: Word, env: Env): readonly string[] {
+	if (word.dynamic) return [];
+	const home = (text: string) =>
+		env.HOME && (text === "~" || text.startsWith("~/"))
+			? join(env.HOME, text.slice(1))
+			: text;
+	const texts = [
+		word.value,
+		word.value.slice(word.value.indexOf("=") + 1),
+	].filter((text) => text !== "");
+	return [
+		...texts,
+		...(word.expands === true ? texts.map(globFolder) : []),
+	].map((text) => resolve(step.dir, home(text)));
+}
+
+function outputTargets(step: ShellStep): readonly Word[] {
+	return step.simple.redirects
+		.filter((redirect) => redirect.op.includes(">"))
+		.map((redirect) => redirect.target);
+}
+
+function isGit(word: Word | undefined): boolean {
+	return word !== undefined && !word.dynamic && word.value === "git";
+}
+
+function reaches(folder: string, path: string): boolean {
+	return inFolder(folder, path) || inFolder(canonicalFile(path), folder);
+}
+
+const STATE_VARIABLE =
+	/\$(?:\{(HOME|XDG_STATE_HOME|ASTACK_STATE_DIR)\}|(HOME|XDG_STATE_HOME|ASTACK_STATE_DIR)(?!\w))/g;
+const PLAIN_PATH = /^[\w./@+-]+$/;
+
+function expandStateVariables(command: string, env: Env): string {
+	return command.replace(
+		STATE_VARIABLE,
+		(match, braced: string | undefined, bare: string | undefined) => {
+			const value = env[braced ?? bare ?? ""];
+			return value !== undefined && PLAIN_PATH.test(value) ? value : match;
+		},
+	);
+}
+
+function namesRecordFolder(command: string, env: Env): boolean {
+	const state = stateDir(env);
+	return (
+		/gates|session-repos/i.test(command) ||
+		(state !== undefined &&
+			(command.includes(state) || command.includes(canonical(state))))
+	);
+}
+
+const SCRIPT_FLAG = /^(?:-[A-Za-z]*[ce]|--eval|--command)$/;
+
+function recordFolderReasons(
+	command: string,
+	cwd: string,
+	folders: readonly RecordFolder[],
+	env: Env,
+): readonly string[] {
+	if (folders.length === 0) return [];
+	const expanded = expandStateVariables(command, env);
+	const names = namesRecordFolder(expanded, env);
+	return shellSteps(expanded, cwd).flatMap((step) => {
+		const reads = readsOnly(step);
+		const words = [...outputTargets(step), ...(reads ? [] : step.words)];
+		const runsScript =
+			!reads &&
+			!isGit(step.words[0]) &&
+			step.words.slice(1).some((word) => SCRIPT_FLAG.test(word.value));
+		if (names && (runsScript || words.some((word) => word.dynamic)))
+			return [
+				`astack cannot read where ${shown(step.words)} writes. The command names a record folder of astack, the gate record folder or the session repo record folder. ${OWNER_GATE}`,
+			];
+		return folders.flatMap((folder) =>
+			words.some((word) =>
+				wordPaths(step, word, env).some((path) => reaches(folder.path, path)),
+			)
+				? [folderReason(shown(step.words), folder)]
+				: [],
+		);
+	});
+}
+
+function touchesRepo(
+	steps: readonly ShellStep[],
+	root: string,
+	env: Env,
+): boolean {
+	const folder = canonicalFile(root);
+	const inside = (path: string) => inFolder(folder, path);
+	return steps.some((step) => {
+		const [program, ...args] = step.words;
+		const targets = outputTargets(step);
+		if (program === undefined || (readsOnly(step) && targets.length === 0))
+			return false;
+		const unknown = step.unreadable === "folder";
+		const here = unknown || inside(step.dir);
+		if (
+			here &&
+			(program.dynamic || (step.unreadable !== undefined && !unknown))
+		)
+			return true;
+		if (isGit(program)) return false;
+		const words = [...args, ...targets];
+		const paths = words.flatMap((word) =>
+			wordPaths(step, word, env).filter(
+				(path) => !basename(path).startsWith("-"),
+			),
+		);
+		return (
+			(here || paths.some(inside)) &&
+			(unknown
+				? words.length > 0
+				: words.some((word) => word.dynamic) ||
+					paths.some((path) => !inside(path)))
+		);
+	});
+}
+
 export const handler = defineHandler({
 	id: "destructive",
-	on: ["shell"],
+	on: ["shell", "write", "edit"],
 	run: (event, context) => {
-		const repos = settledRepos(context.env, context.session);
-		if (!/\b(?:supabase|git|npm|pnpm|yarn|bun)\b/i.test(event.command))
-			return ALLOW;
+		const folders = recordFolders(context.env);
+		if (event.kind !== "shell")
+			return denial(
+				folders
+					.filter((folder) =>
+						inFolder(folder.path, resolve(context.cwd, event.path)),
+					)
+					.map((folder) =>
+						folderReason(
+							`A ${event.kind === "write" ? "Write" : "Edit"} call to ${event.path}`,
+							folder,
+						),
+					),
+			);
+		const records = denial(
+			recordFolderReasons(event.command, event.cwd, folders, context.env),
+		);
 		const steps = shellSteps(event.command, event.cwd);
+		const settled = settledRepos(context.env, context.session);
+		const repos = settled.filter(
+			(repo) => !touchesRepo(steps, repo.path, context.env),
+		);
+		if (repos.length !== settled.length)
+			saveSessionRepos(context.env, context.session, repos);
+		if (
+			!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates|session-repos)\b/i.test(
+				event.command,
+			)
+		)
+			return records;
 		const placed = placedLine(steps, context.env);
 		const sessionRepo = sessionRepoTest(repos, placed);
-		const verdict = combineAll(
-			steps.map((step, index) =>
+		const verdict = combineAll([
+			...steps.map((step, index) =>
 				denial(
 					stepReasons(step, steps[index - 1], {
-						exported: exportedSkips(steps, index),
+						exported: exportedWords(steps, index),
 						env: context.env,
 						sessionRepo,
 					}),
 				),
 			),
-		);
+			records,
+		]);
 		if (verdict.kind !== "deny" && !placed)
 			rememberRepos(
 				context.env,
 				context.session,
 				repos,
-				steps.flatMap((step) => madeRepoTarget(step) ?? []),
+				steps.flatMap((step) => {
+					const target = madeRepoTarget(step);
+					return target === undefined || touchesRepo(steps, target, context.env)
+						? []
+						: [target];
+				}),
 			);
 		return verdict;
 	},

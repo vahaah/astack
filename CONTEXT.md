@@ -255,20 +255,23 @@ _Code_: `sessionRepoAt`
 
 The command that a shell step runs, after astack drops reserved words and braces and unwraps a known wrapper or a static shell body.
 A step that a variable hides is unreadable.
+So is a shell that reads its script from a file, an fd or a second stdin source.
 _Avoid_: Normalized command, raw command
 _Code_: `shellSteps`
 
 ### Hook skip
 
 A git commit or push that runs without the git hooks of the repo.
-It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder where HEAD does not hold each active hook as an executable file. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too.
+It is `--no-verify`, `HUSKY=0`, `LEFTHOOK=0` or a `core.hooksPath` folder that does not hold the active hooks. Such a folder needs each active hook in HEAD as an executable file with the same bytes, and no working-tree change. A `core.hooksPath` with a `..` segment or a symlink is a hook skip too. Git config from the environment and an include key are hook skips, unless static `GIT_CONFIG_KEY_<n>` pairs set no hook key. So are an exported or a dynamic `HUSKY` or `LEFTHOOK` value.
 _Avoid_: Bypass, quiet push
 _Code_: `skipForm`
 
 ### Gate record
 
 The record that `astack gates run` writes in the state folder when each gate that applies exits 0 at a clean HEAD.
-A hook-skip push of a recorded source passes.
+It holds the blob of the hardening profile at the merge base of the base and HEAD.
+A hook-skip push of a recorded source passes when the source and its merge base hold that blob.
+It is a mistake guard, not a security boundary.
 _Avoid_: Green stamp, gate cache
 _Code_: `GateRecord`
 

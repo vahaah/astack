@@ -367,7 +367,8 @@
 				"sg-session-repo-nested",
 				"sg-session-repo-bundle",
 				"sg-session-repo-target",
-				"sg-session-repo-clone-name"
+				"sg-session-repo-clone-name",
+				"sg-session-repo-submodule"
 			]
 		},
 		{
@@ -381,7 +382,11 @@
 				"sg-session-repo-hook-env",
 				"sg-session-repo-place-target",
 				"sg-session-repo-store",
-				"sg-session-repo-match"
+				"sg-session-repo-match",
+				"sg-session-repo-archive",
+				"sg-session-repo-copied",
+				"sg-session-repo-record",
+				"sg-session-repo-made"
 			]
 		},
 		{
@@ -401,6 +406,14 @@
 			"controls": ["sg-plain-form", "sg-wrapper-law"]
 		},
 		{
+			"criterion": "SG-stdin-source",
+			"controls": ["sg-stdin-source", "sg-heredoc-fd"]
+		},
+		{
+			"criterion": "SG-unknown-dollar",
+			"controls": ["sg-unknown-dollar"]
+		},
+		{
 			"criterion": "SG-dynamic-word",
 			"controls": ["sg-dynamic-word"]
 		},
@@ -410,11 +423,19 @@
 		},
 		{
 			"criterion": "SG-hook-skip",
-			"controls": ["sg-hook-skip"]
+			"controls": ["sg-hook-skip", "sg-hook-skip-env"]
+		},
+		{
+			"criterion": "SG-hooks-path",
+			"controls": ["sg-hooks-path"]
 		},
 		{
 			"criterion": "SG-gates-run",
 			"controls": ["sg-gates-run"]
+		},
+		{
+			"criterion": "SG-gate-folder",
+			"controls": ["sg-gate-folder"]
 		},
 		{
 			"criterion": "SG-generated",

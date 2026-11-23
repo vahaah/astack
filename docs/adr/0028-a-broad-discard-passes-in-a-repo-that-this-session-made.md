@@ -62,6 +62,16 @@ A `git archive` pipe keeps the exemption only when its `tar` step stays in the f
 Each word of that step must be an extract, verbose, keep, mode or stdin file flag, and the step must have no env.
 So `-C`, `--directory`, `-P` and each other `tar` flag give the verdict of ADR 0010 D3.
 
+Amended 2026-11-23. The `git archive` step must stay in the tree of the repo too.
+`--prefix`, `--remote`, `--add-file`, `--add-virtual-file` and a tree-ish with a path, such as `HEAD:sub`, give the verdict of ADR 0010 D3.
+With the exemption, the extraction keeps each dirty nested repo and submodule that has no bound record.
+It also keeps each nested repo where HEAD holds a path. A clean nested repo where HEAD holds no path passes, because `tar` writes only the paths of HEAD.
+
+Amended 2026-11-23, after the security review of B37. Only `git archive HEAD` with no other word, in the folder of the `tar` step, keeps the exemption.
+The match of a HEAD path with a nested repo ignores case, because a file system can ignore case.
+A nested repo with an ignored file counts as reached.
+A lost path in a folder of a nested repo with no bound record keeps the deny.
+
 ### D4. A record starts pending, and the next shell call settles it
 
 A new record is pending, because the hook cannot see whether the command ran.
@@ -79,6 +89,17 @@ A bind needs the git dir `<root>/.git`, or a folder under `worktrees/` of the co
 A discard passes only when its root and that identity equal a bound record.
 So a symlink at the path or a new repo at the path of a removed session repo gets the deny.
 
+Amended 2026-11-23. The record also holds the device, inode and birth time of the git dir, so a swapped git dir gets the deny.
+A bind needs the git dir, the `.git` marker of the root and the `HEAD` of the git dir born at or after the call.
+An empty target holds that time too.
+A bind also needs each index entry and the first `HEAD` reflog entry at or after that time.
+A repo with a commit and no reflog does not bind.
+A birth time of 0, or a birth time equal to the ctime, is unknown, and such a repo does not bind.
+
+Amended 2026-11-23, after the security review of B37. The record also holds the HEAD commit, the modification time of the index and the object count at the bind.
+A discard passes only when they are the same.
+So a commit, an add or an index write after the bind drops the exemption.
+
 ### D6. Each record failure fails closed
 
 No session id, a refused id, no state folder, a bad file or a failed probe gives no exemption.
@@ -92,11 +113,31 @@ The exemption skips the work-loss read of `lostPaths` in a session repo.
 It keeps each nested repo that a `git clean -ffd` removes and that has no bound record.
 A force-push to a shared branch, `supabase db reset` and a hook skip keep their owner gates in a session repo.
 
+Amended 2026-11-23. A lost path that is a repo root, such as a nested repo or a submodule, keeps the deny unless a record binds it.
+A command that recurses into submodules gets no exemption in a repo with a submodule.
+That is `--recurse-submodules`, a `submodule.recurse` key of `-c` and a true `submodule.recurse` setting of git.
+
+Amended 2026-11-23, after the security review of B37. In a repo with a gitlink, `checkout`, `read-tree`, `reset`, `restore` and `switch` get no exemption.
+Each of them honors `submodule.recurse`, and the hook reads no config for this rule.
+An earlier step of the line, a `GIT_CONFIG` variable, `HOME` or `XDG_CONFIG_HOME` can change the config that git reads.
+
 ### D8. The record is a mistake guard, not a security boundary
 
 The record file stops an agent that discards work in a repo of another session by mistake.
 An agent can write the record file by hand, as ADR 0011 D6 says for the grant file.
 Branch protection and the review of the owner stay the control for a hostile agent.
+
+Amended 2026-11-23. A Write call, an Edit call and a shell write into `<state>/session-repos/` get a deny, as the gate folder does in ADR 0029 D6.
+A line that writes into a new target with `cp`, `mv`, `rsync` or `tar` from a path outside it, or with a dynamic word, records no target for it.
+A copy with each path inside the target, such as `cp .env.example .env`, keeps the record.
+
+Amended 2026-11-23, after the security review of B37. Each shell call also drops a bound record when a step of the line touches its folder.
+A step touches the folder when it writes in it and also names a path outside it or a dynamic word.
+A step in the folder with a dynamic program or a wrapper that the hook cannot read touches it too.
+So does a step with an operand after a `cd` to a folder that the hook cannot read.
+A git step and a read with no output redirect do not touch it.
+The same rule decides which new target a line records, so the hook has no list of copy programs.
+The record stays a mistake guard, as the gate record of ADR 0029 D8.
 
 ## Consequences
 
@@ -109,6 +150,8 @@ Branch protection and the review of the owner stay the control for a hostile age
 - Limit: a repo that the call copies to a missing target across file systems has a new birth time and binds. The source keeps its work.
 - Limit: two hook processes of one session can save the record at the same time, and one entry can go. A lost entry only gives a deny.
 - Limit: a Cursor session has no session id, so it gets no exemption.
+- Harder: a commit or an add after the bind drops the exemption, so a later discard gets the owner gate.
+- Harder: a step in the repo that names a path outside it, such as `node ../x.js`, drops the exemption.
 
 ## Alternatives considered
 
