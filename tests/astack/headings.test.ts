@@ -120,6 +120,19 @@ describe("tickets", () => {
 			),
 		).toEqual(["j***@customer.co.uk"]);
 	});
+
+	test.each([
+		["Pin react-native@0.76.5.patch in the lock file.", []],
+		["Run `npx @scope/pkg@1.2.3.tgz` again.", []],
+		["typescript@5.4.2.md is the notes file.", []],
+		["Mail `jane@customer.dev` the log.", ["j***@customer.dev"]],
+		["Reported by li@163.com today.", ["l***@163.com"]],
+	])(
+		"[control:email-version-forms] %p gives the addresses %p",
+		(text, found) => {
+			expect(emailAddresses(text)).toEqual(found);
+		},
+	);
 });
 
 describe("repo templates", () => {
@@ -169,6 +182,26 @@ describe("repo templates", () => {
 		expect(issueHeadings(undefined, "bug").headings).toEqual(
 			TICKET_HEADINGS.bug,
 		);
+	});
+
+	test("[control:template-bug-headings] a lone template with bug headings and a neutral name serves a bug and no feature", () => {
+		const lone = mkdtempSync(join(tmpdir(), "astack-lone-template-"));
+		try {
+			writeFileSync(
+				join(lone, "ISSUE_TEMPLATE.md"),
+				"## Summary\n## Steps to reproduce\n## Expected\n## Actual\n",
+			);
+			expect(issueHeadings(lone, "bug")).toEqual({
+				source: "ISSUE_TEMPLATE.md",
+				headings: ["Summary", "Steps to reproduce", "Expected", "Actual"],
+			});
+			expect(issueHeadings(lone, "feature")).toEqual({
+				source: "the feature ticket standard",
+				headings: TICKET_HEADINGS.feature,
+			});
+		} finally {
+			rmSync(lone, { recursive: true, force: true });
+		}
 	});
 
 	test("a lone template applies only to its own kind, or to every kind when it names none", () => {

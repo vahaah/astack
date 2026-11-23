@@ -2,6 +2,7 @@ import { hookPolicy } from "../hook-profile.ts";
 import { readOptional } from "../paths.ts";
 import { todayIso } from "../plan/files.ts";
 import { profileSection } from "../profile.ts";
+import { chainSteps } from "../shell.ts";
 import { decode } from "./decode/index.ts";
 import type { HookOutput } from "./encode/base.ts";
 import { encode } from "./encode/index.ts";
@@ -9,6 +10,7 @@ import {
 	ALLOW,
 	type Context,
 	combineAll,
+	deny,
 	type Env,
 	type Handler,
 	type HookEvent,
@@ -68,14 +70,27 @@ export function judgeEach(
 	);
 }
 
+function chainLine(events: readonly HookEvent[]): string | undefined {
+	const steps = events.flatMap((event) =>
+		event.kind === "shell" ? chainSteps(event.command) : [],
+	);
+	return steps.length < 2
+		? undefined
+		: `Nothing in this command ran. It had ${steps.length} steps. ${steps.join(", ")}.`;
+}
+
 export function judge(
 	handlers: readonly Handler[],
 	events: readonly HookEvent[],
 	context: Context,
 ): Verdict {
-	return combineAll(
+	const verdict = combineAll(
 		judgeEach(handlers, events, context).map(({ verdict }) => verdict ?? ALLOW),
 	);
+	const line = verdict.kind === "deny" ? chainLine(events) : undefined;
+	return line === undefined || verdict.kind !== "deny"
+		? verdict
+		: deny(`${line}\n${verdict.reason}`);
 }
 
 function verdictFor(

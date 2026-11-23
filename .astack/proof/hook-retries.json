@@ -1,0 +1,365 @@
+{
+	"version": 1,
+	"change": "hook-retries",
+	"base": "1b0063b1750e687ad049fc0c17e41c3a8955291e",
+	"scope": [
+		{
+			"path": "src/astack/shell.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "src/astack/hook/body-reader.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "src/astack/gh.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "src/astack/ste/commit.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "src/astack/ste/targets.ts",
+			"obligation": "HR-unread"
+		},
+		{
+			"path": "src/astack/hook/handlers/ste-artifact.ts",
+			"obligation": "HR-unread"
+		},
+		{
+			"path": "src/astack/hook/handlers/duplicate-pr.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "src/astack/hook/handlers/pr-body.ts",
+			"obligation": "HR-origin"
+		},
+		{
+			"path": "src/astack/hook/handlers/ticket.ts",
+			"obligation": "HR-origin"
+		},
+		{
+			"path": "src/astack/hook/dispatch.ts",
+			"obligation": "HR-chain"
+		},
+		{
+			"path": "src/astack/skill-path.ts",
+			"obligation": "HR-skill-path"
+		},
+		{
+			"path": "src/astack/cli/commands/skill-path.ts",
+			"obligation": "HR-skill-path"
+		},
+		{
+			"path": "src/astack/headings.ts",
+			"obligation": "HR-ticket-text"
+		},
+		{
+			"path": "src/astack/cli/commands/check/pr.ts",
+			"obligation": "HR-pr-length"
+		},
+		{
+			"path": "tests/astack/staged-text.test.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "tests/astack/hook.test.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "tests/astack/ste-hook.test.ts",
+			"obligation": "HR-unread"
+		},
+		{
+			"path": "tests/astack/pr-body.test.ts",
+			"obligation": "HR-origin"
+		},
+		{
+			"path": "tests/astack/dispatch.test.ts",
+			"obligation": "HR-chain"
+		},
+		{
+			"path": "tests/astack/cursor-hook.test.ts",
+			"obligation": "HR-chain"
+		},
+		{
+			"path": "tests/astack/skill-path.test.ts",
+			"obligation": "HR-skill-path"
+		},
+		{
+			"path": "tests/doc-facts.test.ts",
+			"obligation": "HR-skill-path"
+		},
+		{
+			"path": "tests/astack/headings.test.ts",
+			"obligation": "HR-ticket-text"
+		},
+		{
+			"path": "tests/astack/check-cli.test.ts",
+			"obligation": "HR-pr-length"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/card.md",
+			"obligation": "HR-skill-path"
+		},
+		{
+			"path": "rules/astack.md",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/SKILL.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/mode/references/create-pr.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/write-docs/SKILL.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/write-ticket/SKILL.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "docs/reference/hook-retries.md",
+			"obligation": "HR-staged"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Guards",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B08.md#domain-and-effects",
+		"aggregate": {
+			"path": "src/astack/shell.ts",
+			"symbol": "StagedText"
+		},
+		"terms": [
+			"Staged body",
+			"Plain form",
+			"Session guard",
+			"Finding event",
+			"Scratch file"
+		],
+		"invariants": [
+			{
+				"name": "A write outside the scratch class gets the write checks",
+				"modelRef": "WriteChecksKept"
+			},
+			{
+				"name": "Each commit message gets the STE check of the commit surface",
+				"modelRef": "CommitSurfaceChecked"
+			},
+			{
+				"name": "Each merge has a profile grant or a covering prompt of a person",
+				"modelRef": "MergeNeedsAuthority"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0033-a-hook-reads-each-body-file-as-its-command-leaves-it.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+				"decision": "D1"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"HR-staged",
+				"HR-unread",
+				"HR-conditional",
+				"HR-chain",
+				"HR-origin",
+				"HR-skill-path",
+				"HR-ticket-text",
+				"HR-pr-length",
+				"SG-preserve",
+				"SG-generated",
+				"WB-ratchet"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The fold of the earlier steps of a command over one body file, the and-or links and the nesting of each parsed command, the names of the reader steps, and the slug form of a repo name.",
+		"callersKnow": [
+			"stagedText gives text, unread with the disk text, or missing. A caller judges text, judges the disk text of an unread body, and skips a missing body.",
+			"stagedReader is the one disk read at the hook edge. ghBody and commitMessage take it as a parameter.",
+			"The STE hook adds one note and one unread-body event for each unread body. The other 3 body hooks keep the disk check with no note.",
+			"judge adds the chain line only to a deny of a shell event with 2 or more top-level commands, after combineAll.",
+			"foreignRepo gives the named repo only when no origin exists or sameRepo is false."
+		],
+		"deletionTest": "Without stagedText, each of the 4 body hooks must parse the steps before its body step, or keep the disk read that misses a body that the same command writes. Without chainSteps, the chain line needs a second parse in dispatch.ts.",
+		"alternatives": [
+			{
+				"name": "The disk read of each body hook",
+				"rejectedBecause": "A body that the same command writes passes with the old text."
+			},
+			{
+				"name": "Each write as certain",
+				"rejectedBecause": "A write after || or inside if can skip, so the hook judges text that the command does not send."
+			},
+			{
+				"name": "A skip of an unread body",
+				"rejectedBecause": "8 denies of the hook before this change become an allow."
+			},
+			{
+				"name": "The shellSteps count for the chain line",
+				"rejectedBecause": "It drops cd, so the line names fewer steps than the command holds."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/shell.ts",
+					"symbol": "stagedText"
+				},
+				"modelAction": "Commit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/ste/commit.ts",
+					"symbol": "commitMessage"
+				},
+				"modelAction": "Commit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/ste-artifact.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "Commit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/dispatch.ts",
+					"symbol": "judge"
+				},
+				"modelAction": "Merge"
+			}
+		],
+		"omitted": [
+			"The model takes the commit message as a true observation, so it has no staged body, no unread body and no note.",
+			"The chain line changes no verdict kind, so no action of the model stands for it. The chain-deny-line controls examine it.",
+			"The PR body, ticket and duplicate PR hooks are unmodelled in the registry. Their controls examine the staged read and the origin rule.",
+			"skill-path, the email note, the template kind and the PR length note decide no guard verdict. Their controls examine them."
+		]
+	},
+	"model": {
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+			"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
+			"A HEAD whose gates pass or fail under the base profile or an edited profile, one gate run, and one push or commit with or without a hook skip to three targets."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"McpMergeDenied",
+			"GuardErrorDenies",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss",
+			"HookSkipNeedsGates",
+			"SessionRepoPasses"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/SessionGuards.tla",
+		"action": "Push",
+		"original": "/\\ ~skips \\/ (target = \"head\" /\\ recorded /\\ ~edited)",
+		"replacement": "/\\ ~skips \\/ (target = \"head\" /\\ recorded)",
+		"defect": "The destructive guard passes a hook-skip push whose gate record holds another profile blob than the source and its merge base, so a push under an edited profile skips the git hooks.",
+		"expect": {
+			"kind": "invariant",
+			"name": "HookSkipNeedsGates"
+		}
+	},
+	"limits": [
+		"The hook reads the command text at PreToolUse and never sees the result of a step.",
+		"A redirect on a compound command, such as done > body.md, is no step, so the hook reads the disk.",
+		"A write in a nested shell, a substitution or a function gives an unread body, also when it always runs.",
+		"A deny masks the unread note, as ADR 0022 says for each advice finding.",
+		"The finite model takes the commit message and the prompt source as true observations.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

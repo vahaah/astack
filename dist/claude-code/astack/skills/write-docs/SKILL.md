@@ -138,7 +138,7 @@ Delete empty optional sections instead of writing "n/a".
 - Put the ticket key in a `Refs: ABC-123` trailer. Exclude it from the subject.
 - Explain the reason, behavior change and rejected alternatives in the body. Do not repeat the subject. Put discovery history and earlier attempts here rather than in code comments.
 - Keep agent-added trailers such as `Co-Authored-By` and session links.
-- Write the message to a file. Run `astack check ste <file> --surface commit`. Fix each deny finding, then run `git commit -F <file>`.
+- Write the message to a file, then run `git commit -F <file>`.
 - Apply the subject rules to PR titles, because a squash merge uses that title on the main branch.
 - Small ordered branch commits are valid. Put a fix and its test or script together so every commit passes its checks.
 

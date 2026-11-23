@@ -10,20 +10,20 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/plan` | Plan mode, concise, unresolved questions last. With "I am building", run `astack:plan` in plan mode. After approval, first write `docs/plans/<slug>.md` |
 | `/grilling` | `astack:grilling` on the frontier. One recommendation and lettered options for each question |
 | "go", "do your recommendation", "use best practices and our previous decisions" | A delegation grant. Write `delegate: on` in the plan. "agree", "next" and "approve" continue |
-| "resume", "status", "what waits on me" | `resume.md`. A status ask gets Catch up, which only reads and starts no work |
+| "resume", "status", "what waits on me" | `references/resume.md`. A status ask gets Catch up, which only reads and starts no work |
 | `/goal`, "continue the board" | Programme tier and the `astack:mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
 | a hotfix, "I need it fast" | Quick tier. One grill round at most |
 | a bug, an error report, a tester report | The `astack:mode` Bug fix playbook and `astack:diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
-| "comments", "check github comments" | Mode playbook `comments-triage.md` |
+| "comments", "check github comments" | `references/comments-triage.md` |
 | `/pr-review-hardening` | `astack:pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
-| "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
-| "update from main" | Mode playbook `refresh.md` |
+| "create pr" | `references/create-pr.md`. Then one hardening run when the profile sets it |
+| "update from main" | `references/refresh.md` |
 | "merge", "merge when green", "merge and release" | The `astack:mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
 | "full send", "full stop", "council", "sol loop" | That astack skill. Only "full send" grants a merge |
 | UI polish, mobile | `astack:control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack:mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack:mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <name>.md`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
 
 ## Standing rules
 
@@ -36,5 +36,5 @@ A user rule in the rules folder can add routes, and it never removes one. Read a
 - Change proof. Every code, configuration, or docs change has a DDD contract and a proof rung. Briefs and handoffs cite the record at `astack skill-path astack:pr-review-hardening references/proof-contract.md`. Delivery needs a pass of `astack check proof`.
 - State. The plan, the tracker and git hold the state, never a transcript. Record `git status --porcelain` and `git stash list` before a fan-out.
 - Replies. Write every reply in ASD-STE100 Simplified Technical English, also a short one. Give the result first. Do not repeat agreed items. A checkpoint reply has 6 lines or fewer.
-- STE. Use 20 words or fewer in an instruction and 25 or fewer in a description. Use the active voice and one instruction in each sentence. Do not use contractions, semicolons, long dashes, "e.g.", "i.e.", "etc." or "and/or". Write "make sure", not "ensure", and "use", not "utilize". Keep code, paths and names as they are. Quote text that is not yours. Put a cited title, a log line, a header value and the user's words in backticks or double quotes.
+- STE. Use 20 words or fewer in an instruction and 25 or fewer in a description. Use the active voice and one instruction in each sentence. Do not use contractions, semicolons, long dashes, "e.g.", "i.e.", "etc." or "and/or". Write "make sure", not "ensure", and "use", not "utilize". Keep code, paths and names as they are. Quote text that is not yours. Put a cited title, a log line, a header value and the user's words in backticks or double quotes. When no astack hook runs, run `astack check ste <file> --surface <reply|commit|pr|ticket>` on each draft first.
 - Repair. Fix a skill or rule in astack, never in a project copy or an installed copy.

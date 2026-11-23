@@ -1,5 +1,5 @@
-import type { GhFlags } from "../gh.ts";
-import { ghBody } from "../gh.ts";
+import type { BodyReader, GhFlags } from "../gh.ts";
+import { bodyText, ghBody } from "../gh.ts";
 import type { ShellStep, Word } from "../shell.ts";
 import type { LineRange } from "./check.ts";
 import type { Enforcement, Surface } from "./types.ts";
@@ -129,16 +129,26 @@ function ghFields(words: readonly Word[]): GhFlags {
 	};
 }
 
-export function ghTargets(step: ShellStep): readonly Target[] {
+export type UnreadBody = { readonly file: string; readonly surface: Surface };
+
+export type GhTargets = {
+	readonly targets: readonly Target[];
+	readonly unread: readonly UnreadBody[];
+};
+
+const NO_TARGETS: GhTargets = { targets: [], unread: [] };
+
+export function ghTargets(step: ShellStep, read: BodyReader): GhTargets {
 	const [tool, group, action] = step.values;
-	if (tool !== "gh") return [];
+	if (tool !== "gh") return NO_TARGETS;
 	const command = GH_COMMANDS.find(
 		(candidate) => candidate.group === group && candidate.action === action,
 	);
-	if (!command) return [];
+	if (!command) return NO_TARGETS;
 	const fields = ghFields(step.words.slice(3));
-	if (fields.skip) return [];
-	const body = ghBody(fields, step.simple, step.dir);
+	if (fields.skip) return NO_TARGETS;
+	const staged = ghBody(fields, step.simple, step.dir, read);
+	const body = bodyText(staged);
 	const title =
 		fields.title !== undefined && !fields.title.includes("\n")
 			? [
@@ -162,7 +172,13 @@ export function ghTargets(step: ShellStep): readonly Target[] {
 						enforcement: command.enforcement,
 					},
 				];
-	return [...title, ...main];
+	return {
+		targets: [...title, ...main],
+		unread:
+			staged.kind === "unread" && fields.bodyFile !== undefined
+				? [{ file: fields.bodyFile.value, surface: command.surface }]
+				: [],
+	};
 }
 
 type Fields = Readonly<Record<string, unknown>>;

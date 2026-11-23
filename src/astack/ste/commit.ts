@@ -1,10 +1,15 @@
 import { resolve } from "node:path";
+import type { BodyReader } from "../gh.ts";
 import type { Word } from "../shell.ts";
 
 export type CommitMessage =
 	| { readonly kind: "none" }
 	| { readonly kind: "dynamic" }
-	| { readonly kind: "static"; readonly text: string };
+	| {
+			readonly kind: "static";
+			readonly text: string;
+			readonly unread: readonly string[];
+	  };
 
 const REUSE_FLAGS = new Set([
 	"-C",
@@ -88,12 +93,13 @@ export function commitMessage(
 	args: readonly Word[],
 	stdin: string | undefined,
 	dir: string,
-	readText: (path: string) => string | undefined,
+	read: BodyReader,
 ): CommitMessage {
 	const found = parts(args);
 	if (found.length === 0 || found.some((part) => part.kind === "reuse"))
 		return { kind: "none" };
 	const texts: string[] = [];
+	const unread: string[] = [];
 	for (const part of found) {
 		if (part.kind === "reuse") return { kind: "none" };
 		if (part.word.dynamic) return { kind: "dynamic" };
@@ -101,12 +107,17 @@ export function commitMessage(
 			texts.push(part.word.value);
 			continue;
 		}
-		const content =
-			part.word.value === "-" ? stdin : readText(resolve(dir, part.word.value));
-		if (content === undefined) return { kind: "dynamic" };
-		texts.push(content);
+		if (part.word.value === "-") {
+			if (stdin === undefined) return { kind: "dynamic" };
+			texts.push(stdin);
+			continue;
+		}
+		const staged = read(resolve(dir, part.word.value));
+		if (staged.kind === "missing") return { kind: "dynamic" };
+		if (staged.kind === "unread") unread.push(part.word.value);
+		texts.push(staged.kind === "text" ? staged.text : staged.disk);
 	}
-	return { kind: "static", text: texts.join("\n\n") };
+	return { kind: "static", text: texts.join("\n\n"), unread };
 }
 
 export function commitProse(message: string): string | undefined {

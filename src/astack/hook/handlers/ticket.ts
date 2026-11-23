@@ -1,5 +1,5 @@
-import { ghBody, ghFlags, isGh } from "../../gh.ts";
-import { repoRoot } from "../../git.ts";
+import { bodyText, foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
+import { originSlug, repoRoot } from "../../git.ts";
 import {
 	detectTicketKind,
 	emailAddresses,
@@ -13,6 +13,7 @@ import {
 	ticketFooter,
 } from "../../headings.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	combineAll,
@@ -29,17 +30,22 @@ function notesVerdict(notes: readonly string[]): Verdict {
 	return notes.length > 0 ? note(notes.join("\n\n")) : ALLOW;
 }
 
-function issueCreateVerdict(step: ShellStep): Verdict {
+function issueCreateVerdict(steps: readonly ShellStep[], at: number): Verdict {
+	const step = steps[at];
+	if (step === undefined) return ALLOW;
 	const flags = ghFlags(step.words.slice(3));
 	if (flags.skip) return ALLOW;
-	const body = ghBody(flags, step.simple, step.dir);
+	const body = bodyText(
+		ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+	);
 	if (body === undefined) return ALLOW;
 	const kind = detectTicketKind({
 		title: flags.title,
 		labels: flags.labels,
 		body,
 	});
-	const source = issueHeadings(repoRoot(step.dir), kind);
+	const root = repoRoot(step.dir);
+	const source = issueHeadings(root, kind);
 	const missing = missingHeadings(body, source.headings);
 	const gap: HeadingGap | undefined =
 		missing.length > 0
@@ -52,8 +58,12 @@ function issueCreateVerdict(step: ShellStep): Verdict {
 			: undefined;
 	const emails = emailAddresses(`${flags.title ?? ""}\n${body}`);
 	const notes = emails.length > 0 ? [personalDataNote(emails)] : [];
-	if (gap && flags.repo)
-		return notesVerdict([headingAdvice(SUBJECT, gap, flags.repo), ...notes]);
+	const foreign = foreignRepo(
+		flags.repo,
+		root === undefined ? undefined : originSlug(root),
+	);
+	if (gap && foreign)
+		return notesVerdict([headingAdvice(SUBJECT, gap, foreign), ...notes]);
 	if (gap) return deny([headingDeny(SUBJECT, gap), ...notes].join("\n\n"));
 	return notesVerdict(notes);
 }
@@ -132,13 +142,17 @@ export const handler = defineHandler({
 	on: ["shell", "mcp"],
 	run: (event) => {
 		switch (event.kind) {
-			case "shell":
+			case "shell": {
 				if (!/\bgh\b/.test(event.command)) return ALLOW;
+				const steps = shellSteps(event.command, event.cwd);
 				return combineAll(
-					shellSteps(event.command, event.cwd)
-						.filter((step) => isGh(step.values, "issue", "create"))
-						.map(issueCreateVerdict),
+					steps.flatMap((step, at) =>
+						isGh(step.values, "issue", "create")
+							? [issueCreateVerdict(steps, at)]
+							: [],
+					),
 				);
+			}
 			case "mcp":
 				return linearVerdict(event);
 		}

@@ -161,3 +161,44 @@ describe("the GitHub MCP PR tools", () => {
 		expect(foreign.kind).toBe("note");
 	});
 });
+
+describe("a --repo that names origin", () => {
+	test.each([
+		["acme/widget", "origin", "deny"],
+		["Acme/Widget", "origin", "deny"],
+		["github.com/acme/widget", "origin", "deny"],
+		["https://github.com/Acme/widget.git", "origin", "deny"],
+		["other/lib", "origin", "note"],
+		["acme/widget", "none", "note"],
+	] as const)(
+		"[control:repo-origin] gh pr create --repo %s in a repo with %s origin gives a %s for a heading gap",
+		(named, origin, kind) => {
+			const dir = mkdtempSync(join(root, "origin-"));
+			repo(dir, {});
+			if (origin === "origin")
+				spawnSync(
+					"git",
+					["remote", "add", "origin", "git@github.com:acme/widget.git"],
+					{ cwd: dir },
+				);
+			expect(create("No headings.", dir, `--repo ${named} `).kind).toBe(kind);
+		},
+	);
+});
+
+describe("a body file that the hook cannot read as the command leaves it", () => {
+	const GH = "gh pr create --title t --body-file body.md";
+	test.each([
+		`python3 - <<'EOF'\nopen("body.md", "w").write("x")\nEOF\n${GH}`,
+		`sed -i 's/a/b/' body.md\n${GH}`,
+		`diff old.md body.md\n${GH}`,
+		`npm test > "$LOG"\n${GH}`,
+		`false || printf '%s' x > body.md\n${GH}`,
+		`if true; then printf '%s' x > body.md; fi\n${GH}`,
+		`printf '%s' x | tee body.md | ${GH}`,
+		`printf '%s' x > body.md &\n${GH}`,
+	])("%s keeps the heading check of the file on disk", (command) => {
+		writeFileSync(join(loose, "body.md"), "No headings.\n");
+		expect(reason(run(command, loose))).toContain("the body is missing Why");
+	});
+});
