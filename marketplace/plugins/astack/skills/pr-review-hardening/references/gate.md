@@ -105,11 +105,13 @@ The gate is green when all of these hold:
 
 A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed. It is also a finding when the same command is green on the base branch. Name the files in the failure output. Otherwise it is a pre-existing red. List it, and never fix it. The run cannot stop clean while it stays red.
 
-In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red. The required current proof gate stays blocking. No attribution makes a failed proof advisory. The proof names the changed line of the CI diff that the gate does not mirror. It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0. The run gives the command what the changed line gives, such as an `env` value. When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change. Then stop with principled incompletion, and name the step.
+In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red. The required current proof gate stays blocking. No attribution makes a failed proof advisory. The proof names the changed line of the CI diff that the gate does not mirror. It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0. The run gives the command what the changed line gives, such as an `env` value.
 
 Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof. Each other red gate blocks, as in the mode `standard`. CI on `PR_HEAD` still gates the merge.
 
 In mode `ci_mixed`, the PR also changes a file outside CI, so a red gate can come from that file. No gate of that mode is advisory, and each red gate blocks.
+
+In mode `ci_proof` or `ci_mixed`, a PR can remove a CI step that runs a gate command. The gates then no longer mirror CI, so the profile must change. Stop with principled incompletion, and name the step.
 
 ## Iteration output
 

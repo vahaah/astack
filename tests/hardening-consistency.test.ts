@@ -1690,8 +1690,6 @@ describe("a PR that changes CI", () => {
 		"The proof names the changed line of the CI diff that the gate does not mirror.",
 		"It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0.",
 		"The run gives the command what the changed line gives, such as an `env` value.",
-		"When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change.",
-		"Then stop with principled incompletion, and name the step.",
 		"Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof.",
 		"Each other red gate blocks, as in the mode `standard`.",
 		"CI on `PR_HEAD` still gates the merge.",
@@ -1794,7 +1792,7 @@ describe("a PR that changes CI", () => {
 		);
 	});
 
-	test("[control:ci-mixed-gates] the preflight takes exit 3 with a ci_mixed: last line, a clean stop of that mode needs ciReadBack: pass, and no gate of the mode is advisory", () => {
+	test("[control:ci-mixed-gates] the preflight takes exit 3 with a ci_mixed: last line, a clean stop of that mode needs ciReadBack: pass, no gate of the mode is advisory, and a removed CI gate step stops the run", () => {
 		expect(sentencesFrom(engineSkill, "## Preflight", "## Baseline")).toContain(
 			"When it exits 3 and its last line starts with `ci_mixed:`, the run goes on in mode `ci_mixed`.",
 		);
@@ -1809,6 +1807,14 @@ describe("a PR that changes CI", () => {
 		const green = sentencesFrom(gate, "## Green", "## Iteration output");
 		expect(green).toContain(
 			"In mode `ci_mixed`, the PR also changes a file outside CI, so a red gate can come from that file. No gate of that mode is advisory, and each red gate blocks.",
+		);
+		expect(green).toContain(
+			"In mode `ci_proof` or `ci_mixed`, a PR can remove a CI step that runs a gate command. The gates then no longer mirror CI, so the profile must change. Stop with principled incompletion, and name the step.",
+		);
+		expect(
+			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+		).toContain(
+			"  - In mode `ci_proof` or `ci_mixed`, the PR removes a CI step that runs a gate command.",
 		);
 		expect(green).toContain(
 			"every gate that ran exited 0, or is an advisory gate of mode `ci_proof`.",

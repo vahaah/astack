@@ -47,6 +47,7 @@ A proof record that fails gives `ci_mixed` too.
 
 No gate of mode `ci_mixed` is advisory.
 A clean stop and a merge need the CI read-back, so a run of that mode with no PR cannot stop clean.
+As in mode `ci_proof`, a PR that removes a CI step that runs a gate command stops the run.
 
 ### D6. CiProofRecords models the mode ci_mixed
 
