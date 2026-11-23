@@ -88,11 +88,4 @@ Exclude specifications, scratch notes and implementation decisions.
 
 ### Offer ADRs only when needed
 
-Offer an ADR only when all three conditions hold:
-
-1. A later reversal would cost substantial work.
-2. A future reader would find the code surprising without the reason.
-3. The decision chose between real alternatives for specific reasons.
-
-If any condition fails, do not offer an ADR.
-Use [ADR-FORMAT.md](./ADR-FORMAT.md) for a qualifying decision.
+Read [ADR-FORMAT.md](./ADR-FORMAT.md) for the three ADR tests, the one ADR template and the lifecycle of an ADR.

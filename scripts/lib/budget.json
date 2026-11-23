@@ -14,7 +14,7 @@
 		"council": 841,
 		"deslop": 373,
 		"diagnosing-bugs": 1286,
-		"domain-modeling": 1253,
+		"domain-modeling": 1791,
 		"figure-it-out": 646,
 		"file-pr": 541,
 		"full-send": 1212,
@@ -42,7 +42,7 @@
 		"tdd": 1007,
 		"types": 4992,
 		"why": 1162,
-		"write-docs": 5790,
+		"write-docs": 4945,
 		"write-ticket": 4054
 	},
 	"lines": {
