@@ -66,6 +66,7 @@ After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack c
 5. Read the PR, then handle conflicts, review threads, and CI.
 
    Find the PR with `gh pr view --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`.
+   When the owner names a PR, put its number after `view`, and carry that PR number into every later command.
    The local branch of the PR is `headRefName`, or `pr-<n>` when `isCrossRepository` is true. A branch of a fork can have the name of a local branch, such as `main`.
    When the current branch is not the local branch of the PR, work in the worktree that holds it in `git worktree list --porcelain`. When none holds it, run `git worktree add --detach <dir>` with a new directory outside this checkout, then `gh pr checkout <n> --branch <local branch>` in it. Never fix the threads of a PR on another branch.
    When `isCrossRepository` is true, follow the fork rules of steps 1 and 7 of [`create-pr.md`](../references/create-pr.md).
@@ -75,7 +76,7 @@ After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack c
    gh api graphql -f query='query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { id isResolved isOutdated path line comments(first: 20) { nodes { databaseId author { login } body url } } } } } } }' -f owner=<owner> -f name=<repo> -F number=<number>
    ```
 
-   Read failing checks with `gh pr checks` and `gh run view <run-id> --log-failed`.
+   Read failing checks with `gh pr checks <number>` and `gh run view <run-id> --log-failed`.
    Batch all known fixes into one push wave.
    Report a conflict instead of resolving it in the babysit.
    Name the branch that needs a rebase and stop.

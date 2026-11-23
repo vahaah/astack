@@ -383,4 +383,12 @@ describe("mode router routes and rule homes", () => {
 			]),
 		).toEqual(["marketplace/plugins/astack/skills/council/SKILL.md"]);
 	});
+
+	test("babysit triage keeps the explicit PR selector when a PR number is named", () => {
+		const babysit = read(`${MODE}/playbooks/babysit.md`);
+		expect(babysit).toContain(
+			"When the owner names a PR, put its number after `view`",
+		);
+		expect(babysit).toContain("gh pr checks <number>");
+	});
 });
