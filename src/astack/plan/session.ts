@@ -494,7 +494,6 @@ export function handoff(
 		.filter((step) => finished.has(step.id))
 		.map((step) => step.id);
 	const next = pendingSteps(session, record)[0];
-	const open = plan.questions.length;
 	const last = record.checkpoints.at(-1);
 	const lines = [
 		`Hand-off for ${record.session} on branch ${record.branch}${record.pr ? `, PR #${record.pr}` : ""}.`,
@@ -502,7 +501,6 @@ export function handoff(
 		next
 			? `Next. Step ${stepLine(next)}${next.wave ? ` in ${next.wave}` : ""}.`
 			: "Next. The whole-work proof, then mark the PR ready.",
-		`Open. ${open} unresolved question${open === 1 ? "" : "s"} in the plan.`,
 		`Resume. astack session resume ${record.plan}.${record.ultracode ? ` ${ULTRACODE}` : ""}`,
 	];
 	const body = lines.join("\n");

@@ -97,7 +97,7 @@ astack session handoff <plan> [<session>]
 astack session resume <plan> [<session>] [--tracker <file|->]
 ```
 
-- The hand-off comment has 5 lines or fewer. They give the branch and the PR, the steps done and the next step. Then come the count of open questions and the resume command.
+- The hand-off comment has 4 lines. They give the branch and the PR, the steps done, the next step and the resume command, with no question count.
 - In the standard tier, post it on the existing ticket. That is the only comment the plan adds there. Also post it on the PR.
 - The resume prompt names the plan, the session, the branch, the PR and the next step. It says whether delegation is on, and it names the owner gates. It ends with "Use ultracode." when the session ran workflows.
 - The session record lives in the local git directory.
