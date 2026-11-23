@@ -176,6 +176,14 @@ describe("the outbound guard", () => {
 			"pull_request_create",
 		],
 		[
+			"a host comment_on_issue",
+			mcp("cocode", "comment_on_issue", {
+				url: "https://github.com/o/r/issues/21",
+				body: NAME,
+			}),
+			"comment_on_issue",
+		],
+		[
 			"a host pull_request_respond",
 			mcp("cocode", "pull_request_respond", { comments: [{ body: NAME }] }),
 			"pull_request_respond",

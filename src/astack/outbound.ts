@@ -57,6 +57,7 @@ const GH_FILE_FLAGS = new Set(["-F", "--body-file"]);
 const REPO_FLAGS = new Set(["-R", "--repo"]);
 const ISSUE_URL =
 	/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/\d+/;
+const OTHER_TRACKERS = /linear|jira|atlassian|gitlab|sentry/i;
 
 const API_VALUE_FLAGS = new Set([
 	"-X",
@@ -260,16 +261,28 @@ function field(input: unknown, key: string): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
-function isMcpWrite(server: string, tool: string): boolean {
-	if (!/github/i.test(server) && !/pull_?request/i.test(tool)) return false;
+function toolWords(tool: string): string[] {
 	return tool
 		.replace(/(?<=[a-z0-9])(?=[A-Z])/g, "_")
 		.toLowerCase()
-		.split(/[^a-z]+/)
-		.some((word) => WRITE_VERBS.has(word));
+		.split(/[^a-z]+/);
+}
+
+function isMcpWrite(call: McpCall): boolean {
+	const words = toolWords(call.tool);
+	if (!words.some((word) => WRITE_VERBS.has(word))) return false;
+	if (/github/i.test(call.server) || /pull_?request/i.test(call.tool))
+		return true;
+	if (!words.some((word) => /^issues?$/.test(word))) return false;
+	return (
+		ISSUE_URL.test(field(call.input, "url") ?? "") ||
+		!OTHER_TRACKERS.test(call.server)
+	);
 }
 
 function mcpTarget(call: McpCall): OutboundTarget {
+	const url = ISSUE_URL.exec(field(call.input, "url") ?? "");
+	if (url) return named(`${url[1]}/${url[2]}`) ?? UNKNOWN;
 	const owner = field(call.input, "owner");
 	const repo = field(call.input, "repo") ?? field(call.input, "repository");
 	const slug =
@@ -286,7 +299,7 @@ export function outboundWrites(call: OutboundCall): readonly OutboundWrite[] {
 		case "shell":
 			return shellWrites(call);
 		case "mcp":
-			return isMcpWrite(call.server, call.tool)
+			return isMcpWrite(call)
 				? [
 						{
 							subject: call.tool,

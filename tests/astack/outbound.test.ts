@@ -152,6 +152,24 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[write("pull_request_respond", NAMED, ["o/r", "notes"])],
 		],
 		[
+			"a host create_issue with no repo field",
+			mcp("cocode", "create_issue", { title: "Plan", body: "notes" }),
+			[write("create_issue", REMOTES, ["Plan", "notes"])],
+		],
+		[
+			"a host comment_on_issue on an issue URL",
+			mcp("cocode", "comment_on_issue", {
+				url: "https://github.com/O/R/issues/21",
+				body: "notes",
+			}),
+			[
+				write("comment_on_issue", NAMED, [
+					"https://github.com/O/R/issues/21",
+					"notes",
+				]),
+			],
+		],
+		[
 			"each nested MCP string",
 			mcp("github", "create_pull_request_review", {
 				owner: "o",
@@ -179,6 +197,11 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			[],
 		],
 		["a Linear save_issue", mcp("linear", "save_issue", { title: "x" }), []],
+		[
+			"a Sentry issue note",
+			mcp("plugin_sentry_sentry", "add_issue_note", { text: "x" }),
+			[],
+		],
 		["a GitHub MCP read", mcp("github", "get_issue", { owner: "o" }), []],
 	])("[control:outbound-writes] %s", (_, call, writes) => {
 		expect(outboundWrites(call)).toEqual(writes);
