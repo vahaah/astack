@@ -70,10 +70,10 @@ After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack c
    The local branch of the PR is `headRefName`, or `pr-<n>` when `isCrossRepository` is true. A branch of a fork can have the name of a local branch, such as `main`.
    When the current branch is not the local branch of the PR, work in the worktree that holds it in `git worktree list --porcelain`. When none holds it, run `git worktree add --detach <dir>` with a new directory outside this checkout, then `gh pr checkout <n> --branch <local branch>` in it. Never fix the threads of a PR on another branch.
    When `isCrossRepository` is true, follow the fork rules of steps 1 and 7 of [`create-pr.md`](../references/create-pr.md).
-   Read all review threads in one GraphQL call:
+   Read every review thread, the review bodies and the general PR comments in one GraphQL call:
 
    ```sh
-   gh api graphql -f query='query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { id isResolved isOutdated path line comments(first: 20) { nodes { databaseId author { login } body url } } } } } } }' -f owner=<owner> -f name=<repo> -F number=<number>
+   gh api graphql -f query='query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { id isResolved isOutdated path line comments(first: 20) { nodes { databaseId author { login } body url } } } } reviews(first: 100) { nodes { databaseId author { login } state body url } } comments(first: 100) { nodes { databaseId author { login } body url } } } } }' -f owner=<owner> -f name=<repo> -F number=<number>
    ```
 
    Read failing checks with `gh pr checks <number>` and `gh run view <run-id> --log-failed`.

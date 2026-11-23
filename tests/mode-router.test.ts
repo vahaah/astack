@@ -391,4 +391,12 @@ describe("mode router routes and rule homes", () => {
 		);
 		expect(babysit).toContain("gh pr checks <number>");
 	});
+
+	test("babysit triage reads review bodies and general PR comments alongside review threads", () => {
+		const babysit = read(`${MODE}/playbooks/babysit.md`);
+		expect(babysit).toContain("review bodies");
+		expect(babysit).toContain("general PR comments");
+		expect(babysit).toContain("reviews(first: 100)");
+		expect(babysit).toContain("comments(first: 100)");
+	});
 });
