@@ -802,7 +802,7 @@ describe("a PR that changes CI and no tool version runs in mode ci_proof", () =>
 			],
 		],
 	] as const)(
-		"[control:ci-mixed-mode] a PR that changes a workflow and src/a.ts exits 1 when it also changes %s",
+		"[control:ci-mixed-stops] a PR that changes a workflow and src/a.ts exits 1 when it also changes %s",
 		(_, head, mainMoves, lines) => {
 			expect(
 				ciPins(pullRequest(mainFiles, withA(head, "2"), mainMoves)),

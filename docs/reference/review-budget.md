@@ -12,6 +12,7 @@
 - [criterion:RV-defer-hold] `stop_clean` needs 0 open deferred entries, a deferred entry stays open in each later run, and no merge follows `stop_converged`.
 - [criterion:RV-rung] With `select: applicable`, a run at R0 launches one agent, and R1 and up launch the applicable set.
 - [criterion:RV-rung-floor] A full run with 0 reviewer launches never ends in `stop_clean`.
+- [criterion:RV-ci-mixed] A PR that changes a workflow and `src/a.ts` with no tool change gets exit 3 and `ci_mixed:` from ci-pins. Each gate of that mode blocks, and a clean stop needs `ciReadBack: pass`.
 
 ## Claim boundary
 

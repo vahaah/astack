@@ -98,7 +98,7 @@ describe("astack review", () => {
 	});
 
 	test.each(["a rebase", "a replace ref"])(
-		"[control:review-cli-delta] after %s, HEAD holds no clean head, so the base is full: with exit 3",
+		"[control:review-cli-full] after %s, HEAD holds no clean head, so the base is full: with exit 3",
 		(kind) => {
 			const repo = cleanBranch();
 			review(
@@ -131,7 +131,7 @@ describe("astack review", () => {
 		},
 	);
 
-	test("[control:review-cli-delta] a branch with no record gives full: with exit 3", () => {
+	test("[control:review-cli-no-record] a branch with no record gives full: with exit 3", () => {
 		const repo = cleanBranch();
 		expect(review(repo.root, "base", "--head", "HEAD")).toEqual({
 			code: 3,
@@ -140,7 +140,7 @@ describe("astack review", () => {
 		});
 	});
 
-	test("[control:review-cli-delta] an unreadable record exits 1, and record never writes over it", () => {
+	test("[control:review-cli-unreadable] an unreadable record exits 1, and record never writes over it", () => {
 		const repo = cleanBranch();
 		review(repo.root, "record", "--base", "main", "--head", "HEAD");
 		writeFileSync(repo.path, "{");

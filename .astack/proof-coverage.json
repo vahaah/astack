@@ -17,7 +17,8 @@
 		"docs/reference/pr-recipes.md",
 		"docs/reference/domain-record.md",
 		"docs/reference/review-stub.md",
-		"docs/reference/adr-lifecycle.md"
+		"docs/reference/adr-lifecycle.md",
+		"docs/reference/review-budget.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -105,7 +106,10 @@
 		"tests/astack/adr-record.test.ts",
 		"tests/astack/adr-cli.test.ts",
 		"tests/adr-numbers.test.ts",
-		"tests/apply/ci-parity-apply.test.ts"
+		"tests/apply/ci-parity-apply.test.ts",
+		"tests/astack/review-record.test.ts",
+		"tests/astack/review-cli.test.ts",
+		"tests/astack/ci-pins.test.ts"
 	],
 	"links": [
 		{
@@ -1041,6 +1045,47 @@
 		{
 			"criterion": "AL-citations",
 			"controls": ["apply-citation-note"]
+		},
+		{
+			"criterion": "RV-record",
+			"controls": ["review-record-append", "review-cli-delta"]
+		},
+		{
+			"criterion": "RV-store-atomic",
+			"controls": [
+				"review-store-atomic",
+				"review-store-roundtrip",
+				"review-cli-unreadable"
+			]
+		},
+		{
+			"criterion": "RV-delta",
+			"controls": [
+				"review-delta-base",
+				"review-cli-delta",
+				"review-cli-full",
+				"review-cli-no-record"
+			]
+		},
+		{
+			"criterion": "RV-converge",
+			"controls": ["profile-converge"]
+		},
+		{
+			"criterion": "RV-defer-hold",
+			"controls": ["defer-hold"]
+		},
+		{
+			"criterion": "RV-rung",
+			"controls": ["review-rung"]
+		},
+		{
+			"criterion": "RV-rung-floor",
+			"controls": ["rung-floor"]
+		},
+		{
+			"criterion": "RV-ci-mixed",
+			"controls": ["ci-mixed-mode", "ci-mixed-stops", "ci-mixed-gates"]
 		}
 	]
 }
