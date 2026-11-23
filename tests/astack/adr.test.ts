@@ -306,6 +306,14 @@ test.each<[string, (text: string) => string | undefined, number[]]>([
 		[38, 40],
 	],
 	[
+		"an Amended by: line in the body of a decision",
+		(text) =>
+			insertAfter(text, "Review stays required.", [
+				"Amended by: 0011 the gate now admits a change with no review.",
+			]),
+		[26],
+	],
+	[
 		"a changed Invariant audit row",
 		(text) => text.replace("| restates |", "| independent |"),
 		[],

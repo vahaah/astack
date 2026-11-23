@@ -251,6 +251,42 @@ describe("the index and relation rules of an ADR folder", () => {
 			),
 			[],
 		],
+		[
+			"a second Amended by: line in the header",
+			withFile(
+				FOLDER,
+				replaced(
+					ALPHA,
+					"Amended by: 0002 D1\n",
+					"Amended by: 0002 D1\nAmended by: 0002 the rule now skips review.\n",
+				),
+			),
+			[
+				[
+					ALPHA.path,
+					7,
+					"ADR 0001 has a second Amended by: line; name each amending ADR in the one header line",
+				],
+			],
+		],
+		[
+			"an Amended by: line in a decision",
+			withFile(
+				FOLDER,
+				replaced(
+					ALPHA,
+					"Text.\n",
+					"Text.\nAmended by: 0002 the rule now skips review.\n",
+				),
+			),
+			[
+				[
+					ALPHA.path,
+					13,
+					"ADR 0001 has an Amended by: line after the header; it goes before the first ## part",
+				],
+			],
+		],
 	])("[control:adr-relations] %s", (_name, folder, problems) => {
 		expect(
 			treeProblems(folder).map((one) => [one.file, one.line, one.message]),

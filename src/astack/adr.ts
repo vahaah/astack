@@ -275,10 +275,11 @@ function addedPasses(
 	dated: Set<number>,
 	header: number,
 ): boolean {
-	if (text.trim() === "" || AMENDED_BY_LINE.test(text) || dated.has(line))
-		return true;
+	if (text.trim() === "" || dated.has(line)) return true;
+	if (line >= header) return false;
+	if (AMENDED_BY_LINE.test(text)) return true;
 	const status = STATUS_LINE.exec(text)?.[1];
-	if (status === undefined || line >= header) return false;
+	if (status === undefined) return false;
 	const lifecycle = lifecycleOf(status);
 	return lifecycle?.kind === "Superseded" || lifecycle?.kind === "Deprecated";
 }
@@ -669,6 +670,36 @@ function statusProblems(records: ReadonlyMap<string, AdrRecord>): AdrProblem[] {
 	});
 }
 
+function amendedByProblems(
+	records: ReadonlyMap<string, AdrRecord>,
+): AdrProblem[] {
+	return [...records.values()].flatMap(({ file, number }) => {
+		const header = firstPartLine(file.text);
+		return adrProse(file.text)
+			.split("\n")
+			.flatMap((line, index) => (AMENDED_BY_LINE.test(line) ? [index + 1] : []))
+			.flatMap((line, at) =>
+				line >= header
+					? [
+							{
+								file: file.path,
+								line,
+								message: `ADR ${number} has an Amended by: line after the header; it goes before the first ## part`,
+							},
+						]
+					: at > 0
+						? [
+								{
+									file: file.path,
+									line,
+									message: `ADR ${number} has a second Amended by: line; name each amending ADR in the one header line`,
+								},
+							]
+						: [],
+			);
+	});
+}
+
 function records(folder: AdrFolder): Map<string, AdrRecord> {
 	const found = new Map<string, AdrRecord>();
 	for (const [number, [file]] of byNumber(folder))
@@ -680,6 +711,7 @@ export function treeProblems(folder: AdrFolder): readonly AdrProblem[] {
 	const found = records(folder);
 	return sortProblems([
 		...statusProblems(found),
+		...amendedByProblems(found),
 		...indexProblems(folder, found),
 		...relationProblems(found),
 	]);
