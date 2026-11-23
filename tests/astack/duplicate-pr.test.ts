@@ -158,7 +158,7 @@ describe("the duplicate PR guard", () => {
 });
 
 describe("a second PR of one session and worktree", () => {
-	test("[control:duplicate-pr-session] the 3 split forms get the one-PR deny, the 9 split controls pass in order, and a denied create or no session id saves no record", () => {
+	test("[control:duplicate-pr-session] the 3 split forms get the one-PR deny, the 9 split controls pass in order, a split that no person typed clears nothing, and a denied create or no session id saves no record", () => {
 		const list: OpenPr[] = [];
 		const guard = duplicatePr(() => list);
 		const create = (cwd: string, session: string | undefined, flags: string) =>
@@ -169,11 +169,11 @@ describe("a second PR of one session and worktree", () => {
 				{ kind: "mcp", server: "cocode", tool: "pull_request_create", input },
 				context(one, session),
 			).kind;
-		const prompt = (session: string, text: string) =>
-			guard.run(
-				{ kind: "prompt", text, human: true, session },
-				context(one, session),
-			).kind;
+		const prompt = (session: string, text: string, human = true) =>
+			guard.run({ kind: "prompt", text, human, session }, context(one, session))
+				.kind;
+		const savedSplit = (session: string) =>
+			loadSessionPrs(sessionStore({ ASTACK_STATE_DIR: state }, session)).split;
 
 		const verdicts: [string, string][] = [];
 		verdicts.push(["first create", create(one, "s-a", "--head dev/one")]);
@@ -207,6 +207,12 @@ describe("a second PR of one session and worktree", () => {
 			"Part of a closed PR",
 			create(one, "s-b", '--head dev/five -b "Part of #1709"'),
 		]);
+		prompt("s-a", "Split this work into a second PR.", false);
+		verdicts.push([
+			"after a split that no person typed",
+			create(one, "s-a", "--head dev/eleven"),
+		]);
+		const splitOfRelay = savedSplit("s-a");
 		prompt("s-a", "Split this work into a second PR.");
 		verdicts.push(["after the split", create(one, "s-a", "--head dev/six")]);
 		verdicts.push([
@@ -236,6 +242,7 @@ describe("a second PR of one session and worktree", () => {
 			["second worktree", "allow"],
 			["Part of in another session", "deny"],
 			["Part of a closed PR", "allow"],
+			["after a split that no person typed", "deny"],
 			["after the split", "allow"],
 			["Part of after the split", "allow"],
 			["new session", "allow"],
@@ -249,9 +256,11 @@ describe("a second PR of one session and worktree", () => {
 			head,
 		});
 		expect({
+			splitOfRelay,
 			files: readdirSync(join(state, "pr-sessions")).sort(),
 			a: loadSessionPrs(sessionStore({ ASTACK_STATE_DIR: state }, "s-a")),
 		}).toEqual({
+			splitOfRelay: false,
 			files: ["s-a.json", "s-b.json", "s-c.json"],
 			a: {
 				split: true,
