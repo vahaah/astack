@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { rowFor } from "./supervision-text.test.ts";
 
@@ -190,5 +190,54 @@ describe("mode router routes and rule homes", () => {
 			`${MODE}/references/card.md lacks "a phrase no file holds"`,
 			'cut "a cut with no reason" has no reason',
 		]);
+	});
+
+	test("[control:mr-worker-rule] worker.md stays at or under 300 words with the four fixed rules in rule 1, and delegate.md reads only SKILL.md and worker.md", () => {
+		const workerProblems = (text: string): readonly string[] => {
+			const words = text.trim().split(/\s+/).filter(Boolean).length;
+			const problems: string[] = [];
+			if (words > 300) problems.push(`worker.md has ${words} words (> 300)`);
+			const rule1 =
+				/(?:^|\n)1\.\s+([\s\S]*?)(?=\n2\.\s|\n## |$)/.exec(text)?.[1] ?? "";
+			const flatRule1 = flat(rule1);
+			for (const [label, pattern] of [
+				["owner gates", /owner gates/i],
+				["money", /money/i],
+				["legal sign-off", /legal sign-off/i],
+				["merge grant", /merge grant/i],
+				["ChangeProof", /ChangeProof/],
+				["check proof", /astack check proof/],
+				["STE replies", /\bSTE\b/],
+			] as const)
+				if (!pattern.test(flatRule1)) problems.push(`rule 1 lacks ${label}`);
+			return problems;
+		};
+		const workerPath = `${MODE}/references/worker.md`;
+		expect(existsSync(join(ROOT, workerPath))).toBe(true);
+		const worker = read(workerPath);
+		expect(workerProblems(worker)).toEqual([]);
+		expect(
+			workerProblems(worker.replace(/merge grant/gi, "approval")),
+		).toContain("rule 1 lacks merge grant");
+
+		const delegate = read("marketplace/plugins/astack/agents/delegate.md");
+		expect(delegate).toContain("SKILL.md");
+		expect(delegate).toContain("worker.md");
+		const otherModeFiles = [
+			...delegate.matchAll(
+				/\b(?:references|playbooks)\/[a-z0-9-]+\.md\b|\b(?:non-negotiables|autonomy|subagents|paths-and-wakeups|writing-the-reply|delegation|playbooks|routes|card|comments-triage|resume|refresh|create-pr)\.md\b/g,
+			),
+		]
+			.map((match) => match[0])
+			.filter(
+				(name) =>
+					name !== "references/worker.md" &&
+					name !== "references/proof-contract.md",
+			);
+		expect(otherModeFiles).toEqual([]);
+
+		const subagents = read(`${MODE}/references/subagents.md`);
+		expect(subagents).toContain("worker.md");
+		expect(rowFor(subagents, "Prompt")).toMatch(/mode folder/i);
 	});
 });
