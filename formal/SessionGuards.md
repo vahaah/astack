@@ -17,7 +17,8 @@ The prompt source is `user`, absent or a machine source.
 A merge grant names PRs that a merge word or an un-negated "full send" clause of a person's prompt covers.
 A "full stop" clause, a negated clause and a machine prompt add no PR to the grant.
 A "full stop" clause or a negated clause also withholds the full-send grant of the whole prompt, as `Withholds` and `PromptGrant` say.
-A person's prompt whose only clause is "full stop" starts the full-stop run. That prompt stands for the command form `/astack:full-stop` too.
+
+A person's prompt whose only instruction is "full stop" starts the full-stop run. That prompt stands for the command form `/astack:full-stop` too. It also stands for a prompt that adds only filler words, such as "ok" or "please".
 The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
 
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
@@ -93,7 +94,9 @@ recordOf     : GateRun -> GateRecord      effects: none
 ```
 
 `mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
-`startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only clause is "full stop".
+`startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only instruction is "full stop".
+Filler words, such as "ok", "please" and "now", can stand beside it.
+
 `mergeGuard` saves that grant and the full-stop record for a person's prompt, and it reads both back when a `gh pr merge` call arrives.
 `workLoss` is pure. It takes the treeish reader as a parameter, and the destructive `handler` passes a reader that runs `git rev-parse`.
 

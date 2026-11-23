@@ -462,7 +462,7 @@
 	"abstraction": {
 		"hides": "The clause split of a prompt, the full-stop record file beside the grant record, the git rev-parse of the treeish reader and the status reader of the destructive handler.",
 		"callersKnow": [
-			"startsFullStop is true only for the full-stop command at the start of a prompt, or for a prompt whose only clause is full stop.",
+			"startsFullStop is true only for the full-stop command at the start of a prompt, or for a prompt whose only instruction is full stop. Filler words, such as ok, please and now, can stand beside it.",
 			"A person's prompt writes or removes the full-stop record, and a machine prompt keeps it.",
 			"preflightReasons denies each gh pr merge while the record exists, before the PR read, and --disable-auto passes.",
 			"workLoss spawns nothing. The handler passes a reader that runs git rev-parse in the folder of the git call."

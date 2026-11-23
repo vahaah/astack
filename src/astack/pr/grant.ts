@@ -118,7 +118,7 @@ function prNumbers(tokens: readonly string[]): number[] {
 }
 
 const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
-const FULL_SEND_FILLER = new Set([
+const RUN_FILLER = new Set([
 	"ahead",
 	"go",
 	"it",
@@ -132,6 +132,11 @@ const FULL_SEND_FILLER = new Set([
 	"this",
 	"yes",
 ]);
+
+function isRunFiller(word: string): boolean {
+	return RUN_FILLER.has(word) || prNumber(word, undefined).length > 0;
+}
+
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
 const FULL_STOP_INVOKED = /^[/$](?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
@@ -175,12 +180,7 @@ function clauseGrant(
 				...tokens.slice(0, index),
 				...tokens.slice(index + (command ? 1 : 2)),
 			];
-			const bare =
-				!question &&
-				others.every(
-					(word) =>
-						FULL_SEND_FILLER.has(word) || prNumber(word, undefined).length > 0,
-				);
+			const bare = !question && others.every(isRunFiller);
 			if (invoked || bare) return { kind: "any" };
 			continue;
 		}
@@ -226,16 +226,27 @@ export function mergeGrantIn(prompt: string): MergeGrant {
 		.reduce(joinGrants, NO_GRANT);
 }
 
-export function startsFullStop(prompt: string): boolean {
-	const [first, ...rest] = clausesOf(prompt);
-	if (first === undefined) return false;
-	if (FULL_STOP_INVOKED.test(first.tokens[0] ?? "")) return true;
+function bareFullStop({ tokens }: Clause): boolean {
+	const index = tokens.findIndex(
+		(token, at) => token === "full" && tokens[at + 1] === "stop",
+	);
 	return (
-		rest.length === 0 &&
-		!first.question &&
-		first.tokens.length === 2 &&
-		first.tokens[0] === "full" &&
-		first.tokens[1] === "stop"
+		index >= 0 &&
+		[...tokens.slice(0, index), ...tokens.slice(index + 2)].every(isRunFiller)
+	);
+}
+
+export function startsFullStop(prompt: string): boolean {
+	const clauses = clausesOf(prompt);
+	if (FULL_STOP_INVOKED.test(clauses[0]?.tokens[0] ?? "")) return true;
+	const [instruction, ...more] = clauses.filter(
+		({ tokens }) => !tokens.every(isRunFiller),
+	);
+	return (
+		instruction !== undefined &&
+		more.length === 0 &&
+		!clauses.some(({ question }) => question) &&
+		bareFullStop(instruction)
 	);
 }
 

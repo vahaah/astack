@@ -470,6 +470,8 @@ describe("the merge guard", () => {
 		test.each([
 			["/astack:full-stop", "denies", FULL_STOP_DENY],
 			["Full stop.", "denies", FULL_STOP_DENY],
+			["Ok, full stop.", "denies", FULL_STOP_DENY],
+			["Full stop now.", "denies", FULL_STOP_DENY],
 			["Merge #12. Full stop.", "passes", PASS],
 			["No full stop.", "passes", PASS],
 			["Full stop?", "passes", PASS],
