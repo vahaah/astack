@@ -896,6 +896,20 @@ describe("the gate record folder", () => {
 		],
 		["a cat with a glob", () => shell(`cat ${gates}/*.json`, records)],
 		["a cat with a variable", () => shell(`cat ${gates}/a.json $X`, records)],
+		["an rm of a parent folder", () => shell(`rm -rf ${state}`, records)],
+		[
+			"a cp through ASTACK_STATE_DIR",
+			() => shell("cp a.json $ASTACK_STATE_DIR/gates/b.json", records),
+		],
+		[
+			"a cp to a variable in a line that names gates",
+			() => shell('cp a.json "$D"/gates/b.json', records),
+		],
+		["a cat with a path", () => shell(`./cat ${gates}/a.json`, records)],
+		[
+			"a less with -o",
+			() => shell(`less -o ${gates}/b.json ${gates}/a.json`, records),
+		],
 		[
 			"a cp through a relative path",
 			() => shell("cp a.json ../gate-folder-state/gates/b.json", records),

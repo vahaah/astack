@@ -84,6 +84,11 @@ The reads are `cat`, `cmp`, `diff`, `grep`, `head`, `jq`, `less`, `ls`, `stat`, 
 
 Amended 2026-11-23. `find` is no read, because its actions can write.
 A read needs each argument static, with no glob, no split and no backslash.
+A read also needs a program name with no slash. `less` is no read, because its `-o`, `-O` and `--log-file` write.
+Each other step gets a deny when a static word names the folder, a path in it or a parent folder.
+The hook first puts the value of `HOME`, `XDG_STATE_HOME` and `ASTACK_STATE_DIR` from its env in place of each such variable.
+Such a step with a dynamic word or redirect target gets a deny when the command names `gates`, `session-repos` or the state folder.
+This check runs before the keyword filter of the hook, so `rm -rf ~/.local/state` gets the deny too.
 
 ### D7. A `core.hooksPath` target must hold the active hooks
 
@@ -95,10 +100,13 @@ A working-tree change under the target is a hook skip.
 
 The record stops an agent that pushes red work past the hooks by mistake.
 An agent can still write the record with a tool that the hook does not read.
-A `cp`, `mv`, `rsync` or `tar` step into a parent folder of a record folder also passes, because the hook reads only a path in the record folder.
-Such a step must bring a folder named `gates` or `session-repos`, so it is no plausible mistake.
 It can also edit the profile and run the gates with `--base HEAD`.
 Branch protection, CI and the review of the owner stay the control for a hostile agent.
+
+Amended 2026-11-23. The gate record stays a mistake guard after the security review of B37.
+The agent runs as the same user as astack, so no key or folder mode can stay out of its reach.
+A write into a parent folder now gets a deny, and so does a dynamic target in a line that names a record folder.
+A variable that the line does not name, or a tool that the hook does not read, can still write the record.
 
 ## Consequences
 
@@ -109,6 +117,7 @@ Branch protection, CI and the review of the owner stay the control for a hostile
 - Harder: the first hook-skip push after this change gets the owner gate, because an old record has no profile blob.
 - Limit: a variable that hides a path or a name keeps its verdict.
 - Limit: `HOME` and `XDG_CONFIG_HOME` move the config files of each tool, and the guard does not read them.
+- Harder: a step such as `tr / _` gets the gate folder deny, because `/` is a parent folder of the state folder.
 
 ## Alternatives considered
 

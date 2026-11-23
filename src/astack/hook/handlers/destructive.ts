@@ -1214,7 +1214,6 @@ const GATE_READERS = new Set([
 	"grep",
 	"head",
 	"jq",
-	"less",
 	"ls",
 	"md5",
 	"md5sum",
@@ -1229,7 +1228,7 @@ function readsOnly(step: ShellStep): boolean {
 	const [program, ...args] = step.words;
 	if (program === undefined || program.dynamic) return false;
 	return (
-		GATE_READERS.has(basename(program.value)) &&
+		GATE_READERS.has(program.value) &&
 		args.every(
 			(arg) =>
 				!arg.dynamic &&
@@ -1275,35 +1274,69 @@ function folderReason(what: string, folder: RecordFolder): string {
 
 function wordPaths(step: ShellStep, word: Word, env: Env): readonly string[] {
 	if (word.dynamic) return [];
+	const home = (text: string) =>
+		env.HOME && (text === "~" || text.startsWith("~/"))
+			? join(env.HOME, text.slice(1))
+			: text;
 	return [word.value, word.value.slice(word.value.indexOf("=") + 1)]
 		.filter((text) => text !== "")
-		.map((text) =>
-			resolve(
-				step.dir,
-				text.startsWith("~/") && env.HOME
-					? join(env.HOME, text.slice(2))
-					: text,
-			),
-		);
+		.map((text) => resolve(step.dir, home(text)));
+}
+
+function reaches(folder: string, path: string): boolean {
+	return inFolder(folder, path) || inFolder(canonicalFile(path), folder);
+}
+
+const STATE_VARIABLE =
+	/\$(?:\{(HOME|XDG_STATE_HOME|ASTACK_STATE_DIR)\}|(HOME|XDG_STATE_HOME|ASTACK_STATE_DIR)(?!\w))/g;
+const PLAIN_PATH = /^[\w./@+-]+$/;
+
+function expandStateVariables(command: string, env: Env): string {
+	return command.replace(
+		STATE_VARIABLE,
+		(match, braced: string | undefined, bare: string | undefined) => {
+			const value = env[braced ?? bare ?? ""];
+			return value !== undefined && PLAIN_PATH.test(value) ? value : match;
+		},
+	);
+}
+
+function namesRecordFolder(command: string, env: Env): boolean {
+	const state = stateDir(env);
+	return (
+		/gates|session-repos/i.test(command) ||
+		(state !== undefined &&
+			(command.includes(state) || command.includes(canonical(state))))
+	);
 }
 
 function recordFolderReasons(
-	steps: readonly ShellStep[],
+	command: string,
+	cwd: string,
 	folders: readonly RecordFolder[],
 	env: Env,
 ): readonly string[] {
-	return steps.flatMap((step) => {
-		const reads = readsOnly(step);
-		return folders.flatMap((folder) => {
-			const there = (word: Word) =>
-				wordPaths(step, word, env).some((path) => inFolder(folder.path, path));
-			return step.simple.redirects.some(
-				(redirect) => redirect.op.includes(">") && there(redirect.target),
-			) ||
-				(!reads && step.words.some(there))
+	if (folders.length === 0) return [];
+	const expanded = expandStateVariables(command, env);
+	const names = namesRecordFolder(expanded, env);
+	return shellSteps(expanded, cwd).flatMap((step) => {
+		const words = [
+			...step.simple.redirects
+				.filter((redirect) => redirect.op.includes(">"))
+				.map((redirect) => redirect.target),
+			...(readsOnly(step) ? [] : step.words),
+		];
+		if (names && words.some((word) => word.dynamic))
+			return [
+				`astack cannot read where ${shown(step.words)} writes, and the command names a record folder of astack, such as the gate record folder. ${OWNER_GATE}`,
+			];
+		return folders.flatMap((folder) =>
+			words.some((word) =>
+				wordPaths(step, word, env).some((path) => reaches(folder.path, path)),
+			)
 				? [folderReason(shown(step.words), folder)]
-				: [];
-		});
+				: [],
+		);
 	});
 }
 
@@ -1354,13 +1387,16 @@ export const handler = defineHandler({
 						),
 					),
 			);
+		const records = denial(
+			recordFolderReasons(event.command, event.cwd, folders, context.env),
+		);
 		const repos = settledRepos(context.env, context.session);
 		if (
 			!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates|session-repos)\b/i.test(
 				event.command,
 			)
 		)
-			return ALLOW;
+			return records;
 		const steps = shellSteps(event.command, event.cwd);
 		const placed = placedLine(steps, context.env);
 		const sessionRepo = sessionRepoTest(repos, placed);
@@ -1374,7 +1410,7 @@ export const handler = defineHandler({
 					}),
 				),
 			),
-			denial(recordFolderReasons(steps, folders, context.env)),
+			records,
 		]);
 		if (verdict.kind !== "deny" && !placed)
 			rememberRepos(
