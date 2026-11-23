@@ -282,6 +282,23 @@ describe("the outbound guard", () => {
 		});
 	});
 
+	test("[control:outbound-unread] a body that astack cannot read denies, and no copy passes", () => {
+		const piped = shell("git log | gh issue comment 21 -F -");
+		expect({
+			listed: guard.run(piped, context(listed)),
+			none: guard.run(piped, context(empty)),
+		}).toEqual({
+			listed: deny(
+				[
+					"astack blocked gh issue comment, because astack cannot read its body from piped stdin or a variable file.",
+					"- Public or unknown targets: an unknown repo (unknown)",
+					"Write the body in the command or in a file, or let the owner post it.",
+				].join("\n"),
+			),
+			none: ALLOW,
+		});
+	});
+
 	test("[control:outbound-fault] a throw of the guard denies each GitHub text write and passes other calls", () => {
 		const failing = outbound(() => {
 			throw new Error("gh exploded");

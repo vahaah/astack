@@ -20,6 +20,7 @@ export type OutboundWrite = {
 	readonly target: OutboundTarget;
 	readonly texts: readonly string[];
 	readonly bodyFiles: readonly BodyFile[];
+	readonly unread: boolean;
 };
 
 type ShellCall = {
@@ -39,7 +40,11 @@ type McpCall = {
 
 export type OutboundCall = ShellCall | McpCall;
 
-type Body = { readonly texts: string[]; readonly bodyFiles: BodyFile[] };
+type Body = {
+	readonly texts: string[];
+	readonly bodyFiles: BodyFile[];
+	unread: boolean;
+};
 
 type NamedTarget = Extract<OutboundTarget, { kind: "named" }>;
 
@@ -65,35 +70,43 @@ function flagSet(list: string): ReadonlySet<string> {
 	return new Set(list.split(" ").filter((flag) => flag !== ""));
 }
 
-const GH_GROUPS = new Set(["issue", "pr"]);
-const GH_FILE_FLAGS = flagSet("-F --body-file");
+const GH_GROUPS = new Set(["issue", "pr", "release", "gist", "repo"]);
 const REPO_FLAGS = flagSet("-R --repo");
 const LEADING: FlagSpec = { values: REPO_FLAGS, switches: flagSet("--help") };
 
+type Operand = "select" | "file" | "ignore";
+
 type GhAction = FlagSpec & {
 	readonly text: ReadonlySet<string>;
-	readonly selects: boolean;
+	readonly files: ReadonlySet<string>;
+	readonly operands: readonly Operand[];
+	readonly targetsRepo: boolean;
 };
 
 type GhActionFlags = {
 	readonly text: string;
+	readonly files?: string;
 	readonly values?: string;
 	readonly switches?: string;
-	readonly selects?: boolean;
+	readonly operands?: readonly Operand[];
+	readonly targetsRepo?: boolean;
 };
 
 function ghAction(flags: GhActionFlags): GhAction {
 	const text = flagSet(flags.text);
+	const files = flagSet(flags.files ?? "-F --body-file");
 	return {
 		text,
+		files,
 		values: new Set([
 			...text,
-			...GH_FILE_FLAGS,
+			...files,
 			...REPO_FLAGS,
 			...flagSet(flags.values ?? ""),
 		]),
 		switches: flagSet(`--help ${flags.switches ?? ""}`),
-		selects: flags.selects ?? true,
+		operands: flags.operands ?? ["select"],
+		targetsRepo: flags.targetsRepo ?? true,
 	};
 }
 
@@ -104,7 +117,7 @@ const ISSUE_CREATE = ghAction({
 	values:
 		"-a --assignee --attach --blocked-by --blocking -l --label -m --milestone --parent -p --project --recover -T --template --type",
 	switches: "-e --editor -w --web",
-	selects: false,
+	operands: ["ignore"],
 });
 const PR_CREATE = ghAction({
 	text: TITLE_BODY,
@@ -112,13 +125,39 @@ const PR_CREATE = ghAction({
 		"-a --assignee --attach -B --base -H --head -l --label -m --milestone -p --project --recover -r --reviewer -T --template",
 	switches:
 		"-d --draft --dry-run -e --editor -f --fill --fill-first --fill-verbose --no-maintainer-edit -w --web",
-	selects: false,
+	operands: ["ignore"],
 });
 const COMMENT = ghAction({
 	text: "-b --body",
 	values: "--attach",
 	switches:
 		"--create-if-none --delete-last --edit-last -e --editor -w --web --yes",
+});
+const RELEASE_CREATE = ghAction({
+	text: "-t --title -n --notes",
+	files: "-F --notes-file",
+	values: "--discussion-category --notes-start-tag --target",
+	switches:
+		"-d --draft --fail-on-no-commits --generate-notes --latest --notes-from-tag -p --prerelease --verify-tag",
+	operands: ["ignore"],
+});
+const GIST_CREATE = ghAction({
+	text: "-d --desc",
+	files: "",
+	values: "-f --filename",
+	switches: "-p --public -w --web",
+	operands: ["file"],
+	targetsRepo: false,
+});
+const REPO_CREATE = ghAction({
+	text: "-d --description",
+	files: "",
+	values:
+		"-g --gitignore -h --homepage -l --license -r --remote -s --source -t --team -p --template",
+	switches:
+		"--add-readme -c --clone --disable-issues --disable-wiki --include-all-branches --internal --private --public --push",
+	operands: ["ignore"],
+	targetsRepo: false,
 });
 const GH_WRITES: ReadonlyMap<string, GhAction> = new Map([
 	["issue create", ISSUE_CREATE],
@@ -168,6 +207,45 @@ const GH_WRITES: ReadonlyMap<string, GhAction> = new Map([
 				"--admin --auto -d --delete-branch --disable-auto -m --merge -r --rebase -s --squash",
 		}),
 	],
+	["release create", RELEASE_CREATE],
+	["release new", RELEASE_CREATE],
+	[
+		"release edit",
+		ghAction({
+			text: "-t --title -n --notes",
+			files: "-F --notes-file",
+			values: "--discussion-category --tag --target",
+			switches: "--draft --latest --prerelease --verify-tag",
+			operands: ["ignore"],
+		}),
+	],
+	["gist create", GIST_CREATE],
+	["gist new", GIST_CREATE],
+	[
+		"gist edit",
+		ghAction({
+			text: "-d --desc",
+			files: "-a --add",
+			values: "-f --filename -r --remove",
+			operands: ["ignore", "file"],
+			targetsRepo: false,
+		}),
+	],
+	["repo create", REPO_CREATE],
+	["repo new", REPO_CREATE],
+	[
+		"repo edit",
+		ghAction({
+			text: "-d --description",
+			files: "",
+			values:
+				"--add-topic --default-branch -h --homepage --remove-topic --squash-merge-commit-message --visibility",
+			switches:
+				"--accept-visibility-change-consequences --allow-forking --allow-update-branch --delete-branch-on-merge --enable-advanced-security --enable-auto-merge --enable-discussions --enable-issues --enable-merge-commit --enable-projects --enable-rebase-merge --enable-secret-scanning --enable-secret-scanning-push-protection --enable-squash-merge --enable-wiki --template",
+			operands: ["ignore"],
+			targetsRepo: false,
+		}),
+	],
 ]);
 const ISSUE_URL =
 	/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/\d+/;
@@ -181,8 +259,8 @@ const API_FLAGS: FlagSpec = {
 		"-i --include --paginate --silent --slurp --verbose --allow-escape-sequences --help",
 	),
 };
-const API_TEXT_PATH =
-	/^(?:https:\/\/api\.github\.com)?\/?(?:repos\/([^/]+)\/([^/]+)\/(?:issues|pulls)(?:[/?]|$)|graphql$)/;
+const API_REPO_PATH =
+	/^(?:https:\/\/api\.github\.com)?\/?repos\/([^/]+)\/([^/]+)(?:[/?]|$)/;
 const PLACEHOLDER = /^(?:\{[a-z]+\}|:[a-z]+)$/;
 
 const WRITE_VERBS = new Set([
@@ -262,7 +340,8 @@ function shortArgs(word: Word, next: Word | undefined, spec: FlagSpec): Read {
 }
 
 function readArg(word: Word, next: Word | undefined, spec: FlagSpec): Read {
-	if (word.dynamic) return UNPARSED;
+	if (word.dynamic && (word.splits === true || !word.value.startsWith("-")))
+		return UNPARSED;
 	if (!word.value.startsWith("-") || word.value === "-")
 		return { args: [{ kind: "positional", word }], width: 1 };
 	return word.value.startsWith("--")
@@ -288,12 +367,25 @@ type StepAt = {
 	readonly previous: ShellStep | undefined;
 };
 
-function addBodyFile(value: Word, { step, at, previous }: StepAt, body: Body) {
-	if (value.value === "-") {
-		const text = step.simple.stdin ?? pipeStageText(previous);
-		if (text !== undefined) body.texts.push(text);
-	} else if (!value.dynamic)
-		body.bodyFiles.push({ path: resolve(step.dir, value.value), step: at });
+function fileBody(file: Word, { step, at }: StepAt, body: Body): void {
+	if (file.dynamic) body.unread = true;
+	else body.bodyFiles.push({ path: resolve(step.dir, file.value), step: at });
+}
+
+function stdinBody(located: StepAt, body: Body): void {
+	const { step, previous } = located;
+	const input = step.simple.redirects.find(
+		(redirect) => redirect.fd === 0 && redirect.op === "<",
+	);
+	const text = step.simple.stdin ?? pipeStageText(previous);
+	if (input !== undefined) fileBody(input.target, located, body);
+	else if (text === undefined) body.unread = true;
+	else body.texts.push(text);
+}
+
+function addBodyFile(value: Word, located: StepAt, body: Body): void {
+	if (value.value === "-" && !value.dynamic) stdinBody(located, body);
+	else fileBody(value, located, body);
 }
 
 function envRepo(step: ShellStep, call: ShellCall): OutboundTarget | undefined {
@@ -334,11 +426,12 @@ function unparsedWrite(
 				.map((word) => word.value),
 		],
 		bodyFiles: body.bodyFiles,
+		unread: body.unread,
 	};
 }
 
 function emptyBody(): Body {
-	return { texts: [], bodyFiles: [] };
+	return { texts: [], bodyFiles: [], unread: false };
 }
 
 function repoValue(value: Word | undefined): NamedTarget | undefined {
@@ -370,14 +463,18 @@ function ghWrite(located: StepAt, call: ShellCall): OutboundWrite | undefined {
 	const subject = `${group} ${action.value}`;
 	const body = emptyBody();
 	const selectors: string[] = [];
+	let operands = 0;
 	let parsed = true;
 	for (const arg of parseArgs(words.slice(at + 1), spec)) {
 		if (arg.kind === "unparsed") parsed = false;
 		else if (arg.kind === "positional") {
-			if (spec.selects) selectors.push(arg.word.value);
+			const role =
+				spec.operands[Math.min(operands++, spec.operands.length - 1)];
+			if (role === "select") selectors.push(arg.word.value);
+			else if (role === "file") addBodyFile(arg.word, located, body);
 		} else if (arg.value === undefined || spec.switches.has(arg.name)) continue;
 		else if (spec.text.has(arg.name)) body.texts.push(arg.value.value);
-		else if (GH_FILE_FLAGS.has(arg.name)) addBodyFile(arg.value, located, body);
+		else if (spec.files.has(arg.name)) addBodyFile(arg.value, located, body);
 		else if (REPO_FLAGS.has(arg.name)) {
 			repo = repoValue(arg.value);
 			parsed &&= repo !== undefined;
@@ -387,9 +484,11 @@ function ghWrite(located: StepAt, call: ShellCall): OutboundWrite | undefined {
 	return {
 		subject,
 		target:
-			selectorTarget(selectors, repo) ??
-			envRepo(step, call) ??
-			remotes(step.dir),
+			!spec.targetsRepo || body.unread
+				? UNKNOWN
+				: (selectorTarget(selectors, repo) ??
+					envRepo(step, call) ??
+					remotes(step.dir)),
 		...body,
 	};
 }
@@ -430,17 +529,15 @@ function apiWrite(located: StepAt, call: ShellCall): OutboundWrite | undefined {
 			sends = true;
 		}
 	}
-	const path = API_TEXT_PATH.exec(endpoint ?? "");
-	if (endpoint === undefined || path === null) return undefined;
 	if ((method ?? (sends ? "POST" : "GET")) === "GET") return undefined;
-	const [, owner, name] = path;
+	const [, owner, name] = API_REPO_PATH.exec(endpoint ?? "") ?? [];
 	const target =
-		owner === undefined || name === undefined
+		body.unread || owner === undefined || name === undefined
 			? UNKNOWN
 			: PLACEHOLDER.test(owner) || PLACEHOLDER.test(name)
 				? (envRepo(step, call) ?? remotes(step.dir))
 				: (named(`${owner}/${name}`) ?? UNKNOWN);
-	return { subject: `gh api ${endpoint}`, target, ...body };
+	return { subject: `gh api ${endpoint ?? ""}`.trim(), target, ...body };
 }
 
 function isGhProgram(program: string | undefined): boolean {
@@ -460,6 +557,7 @@ function stepWrite(
 			target: UNKNOWN,
 			texts: [call.command],
 			bodyFiles: [],
+			unread: false,
 		};
 	const group = step.words[1];
 	if (!isGhProgram(step.values[0]) || group === undefined) return undefined;
@@ -532,6 +630,7 @@ export function outboundWrites(call: OutboundCall): readonly OutboundWrite[] {
 							target: mcpTarget(call),
 							texts: stringsIn(call.input),
 							bodyFiles: [],
+							unread: false,
 						},
 					]
 				: [];

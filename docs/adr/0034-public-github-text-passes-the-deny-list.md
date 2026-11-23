@@ -31,9 +31,9 @@ So the bundle and the scripts share one hash rule.
 The copy is `<state>/deny/names.sha256`. `bun run deny add` and `bun run deny sync` write it from the companion, and sync refuses the example.
 No copy gives no check. A bad line or a throw of the handler denies each GitHub text write that the parse finds.
 
-### D3. A GitHub text write is a gh issue or PR write, a gh api write or an MCP write tool
+### D3. A GitHub text write is a gh issue, PR, release, gist or repo write, a gh api write or an MCP write tool
 
-A gh write is a create, edit, comment or review of an issue or a PR. A close or reopen with `-c` or `--comment` is one too, and so is a merge with a subject or a body. A `gh api` write to an issue, pull or graphql path counts too.
+A gh write is a create, edit, comment or review of an issue or a PR. A close or reopen with `-c` or `--comment` is one too, and so is a merge with a subject or a body. A create or edit of a release, a gist or a repo counts too. Each `gh api` call whose method is not GET is a write, whatever its endpoint.
 An MCP write tool has a write verb in its name, and its server name holds github or its tool name holds `pull_request`.
 An issue write tool counts too, when its `url` is a GitHub issue URL or its server is no other known tracker.
 Each string at each depth of an MCP input is a text.
@@ -44,9 +44,9 @@ The target is an issue URL, else `--repo`, else `GH_REPO`, else the endpoint or 
 The reader reads short flags as pflag does. A word that it cannot parse, such as an unknown flag or a variable selector, gives the unknown target.
 On a hit, gh reads the visibility of each target other than `PUBLIC_REPO`. An answer other than private or internal denies.
 
-### D5. A body that only a variable hides and an unread body file keep their verdict
+### D5. A text that only a variable hides keeps its verdict, and a body from piped stdin or a variable file denies
 
-The guards stop agent mistakes, so `--body "$BODY"` passes. A host tool with no repo field takes the remotes of the project folder.
+The guards stop agent mistakes, so `--body "$BODY"` passes. The guard cannot read a body from piped stdin or a variable file. So its target is unknown, and a copy of the list denies it. A host tool with no repo field takes the remotes of the project folder.
 
 ### D6. A Part of link to an open PR of the author is a one-PR reason
 

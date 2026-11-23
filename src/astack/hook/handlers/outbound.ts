@@ -110,6 +110,17 @@ function writeVerdict(
 	visibility: ReadVisibility,
 	read: ReadBody,
 ): Verdict {
+	if (write.unread) {
+		const targets = exposed(write.target, dir, visibility);
+		if (targets.length > 0)
+			return deny(
+				[
+					`astack blocked ${write.subject}, because astack cannot read its body from piped stdin or a variable file.`,
+					`- Public or unknown targets: ${targets.join(", ")}`,
+					"Write the body in the command or in a file, or let the owner post it.",
+				].join("\n"),
+			);
+	}
 	const texts = [
 		...write.texts,
 		...write.bodyFiles.flatMap((file) => {

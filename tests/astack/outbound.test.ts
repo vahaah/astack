@@ -28,8 +28,9 @@ function write(
 	target: OutboundWrite["target"],
 	texts: readonly string[],
 	bodyFiles: readonly BodyFile[] = [],
+	unread = false,
 ): OutboundWrite {
-	return { subject, target, texts, bodyFiles };
+	return { subject, target, texts, bodyFiles, unread };
 }
 
 describe("the GitHub text writes of a shell step or an MCP call", () => {
@@ -230,6 +231,82 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			"a gh api switch cluster that ends in a field",
 			shell("gh api repos/o/r/issues -ifbody=notes"),
 			[write("gh api repos/o/r/issues", NAMED, ["notes"])],
+		],
+		[
+			"a body piped from a command",
+			shell("git log | gh issue comment 21 -F -"),
+			[write("gh issue comment", UNKNOWN, [], [], true)],
+		],
+		[
+			"a body file that only a variable gives",
+			shell('gh pr comment 12 -F "$F"'),
+			[write("gh pr comment", UNKNOWN, [], [], true)],
+		],
+		[
+			"an attached body file that only a variable gives",
+			shell('gh pr comment 12 --body-file="$F"'),
+			[write("gh pr comment", UNKNOWN, [], [], true)],
+		],
+		[
+			"a body from an input redirect",
+			shell("gh pr comment 12 -F - < notes.md"),
+			[
+				write(
+					"gh pr comment",
+					REMOTES,
+					[],
+					[{ path: `${DIR}/notes.md`, step: 0 }],
+				),
+			],
+		],
+		[
+			"a gh api input that only a variable gives",
+			shell('gh api -X PATCH repos/o/r/pulls/12 --input "$F"'),
+			[write("gh api repos/o/r/pulls/12", UNKNOWN, [], [], true)],
+		],
+		[
+			"a gh api POST to another endpoint of a repo",
+			shell("gh api -X POST repos/o/r/releases -f body=notes"),
+			[write("gh api repos/o/r/releases", NAMED, ["notes"])],
+		],
+		[
+			"a gh api field to an endpoint outside a repo",
+			shell("gh api gists -f description=notes"),
+			[write("gh api gists", UNKNOWN, ["notes"])],
+		],
+		[
+			"a release create with a title and notes",
+			shell("gh release create v1 -t Plan -n notes"),
+			[write("gh release create", REMOTES, ["Plan", "notes"])],
+		],
+		[
+			"a release edit with a notes file",
+			shell("gh release edit v1 -F notes.md"),
+			[
+				write(
+					"gh release edit",
+					REMOTES,
+					[],
+					[{ path: `${DIR}/notes.md`, step: 0 }],
+				),
+			],
+		],
+		[
+			"a gist create from a file",
+			shell("gh gist create notes.md -d Plan"),
+			[
+				write(
+					"gh gist create",
+					UNKNOWN,
+					["Plan"],
+					[{ path: `${DIR}/notes.md`, step: 0 }],
+				),
+			],
+		],
+		[
+			"a repo create with a description",
+			shell("gh repo create o/r --private -d notes"),
+			[write("gh repo create", UNKNOWN, ["notes"])],
 		],
 		[
 			"a comment body piped from a literal echo",
