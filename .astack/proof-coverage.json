@@ -1048,7 +1048,11 @@
 		},
 		{
 			"criterion": "RV-record",
-			"controls": ["review-record-append", "review-cli-delta"]
+			"controls": [
+				"review-record-append",
+				"review-cli-delta",
+				"review-cli-keep"
+			]
 		},
 		{
 			"criterion": "RV-store-atomic",

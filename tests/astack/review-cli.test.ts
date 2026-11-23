@@ -97,6 +97,52 @@ describe("astack review", () => {
 		});
 	});
 
+	test("[control:review-cli-keep] a stop at a later head keeps the first-review fields and adds the head to the stored record", () => {
+		const repo = cleanBranch();
+		review(
+			repo.root,
+			"record",
+			"--base",
+			"main",
+			"--head",
+			"HEAD",
+			"--decision",
+			"stop_clean",
+			"--launches",
+			"4",
+		);
+		const later = commit(repo.root, "later.txt");
+		expect(
+			review(
+				repo.root,
+				"record",
+				"--base",
+				"main",
+				"--head",
+				later,
+				"--decision",
+				"stop_recurring",
+				"--launches",
+				"2",
+			),
+		).toEqual({
+			code: 0,
+			out: `ok: ${repo.path} holds 2 heads and 6 launches\n`,
+			err: "",
+		});
+		expect(review(repo.root, "base", "--head", "HEAD")).toEqual({
+			code: 0,
+			out: [
+				`baseSha: ${repo.base}`,
+				`firstReviewedHead: ${repo.clean}`,
+				"launches: 6",
+				`delta: ${repo.clean}`,
+				"",
+			].join("\n"),
+			err: "",
+		});
+	});
+
 	test.each(["a rebase", "a replace ref"])(
 		"[control:review-cli-full] after %s, HEAD holds no clean head, so the base is full: with exit 3",
 		(kind) => {
