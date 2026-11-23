@@ -2,11 +2,14 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
 	chmodSync,
+	copyFileSync,
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	realpathSync,
+	renameSync,
 	rmSync,
 	symlinkSync,
 	utimesSync,
@@ -22,6 +25,7 @@ import type {
 } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
 import { duplicatePr } from "../../src/astack/hook/handlers/duplicate-pr.ts";
+import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 
 let root = "";
@@ -259,7 +263,7 @@ describe("the plain form of a git step", () => {
 		(command) => {
 			const said = reason(destructive.run(shell(command), context(repo)));
 			expect(said).toContain(
-				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 			);
 			expect(said).toContain("owner gate");
 		},
@@ -268,11 +272,11 @@ describe("the plain form of a git step", () => {
 	test.each([
 		[
 			"M=--hard; bash <<EOF\ngit reset '$M'\nEOF",
-			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 		],
 		[
 			'M=--hard; bash <<< "git reset $M"',
-			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 		],
 		[
 			"M=--hard; bash -c \"$(cat <<EOF\ngit reset '$M'\nEOF\n)\"",
@@ -304,11 +308,84 @@ describe("the plain form of a git step", () => {
 		(command) => {
 			const said = reason(destructive.run(shell(command), context(repo)));
 			expect(said).toContain(
-				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 			);
 			expect(said).toContain("owner gate");
 		},
 	);
+
+	test.each(
+		forms
+			.filter((form) => form.group === "stdin-source")
+			.map((form) => form.command),
+	)(
+		"[control:sg-stdin-source] %s is denied, because the shell reads its script from a file, an fd or a second source",
+		(command) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+			);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		[
+			"bash 0<<'EOF'\ngit reset --hard\nEOF",
+			"- git reset --hard discards the uncommitted changes in",
+		],
+		[
+			"bash 3<<'EOF'\ngit status\nEOF",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+		],
+		[
+			"bash 3<<<'git status'",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+		],
+	])(
+		"[control:sg-heredoc-fd] %s on a dirty tree reads the fd of its heredoc: fd 0 feeds the shell, and fd 3 leaves its script unread",
+		(command, text) => {
+			expect(
+				reason(destructive.run(shell(command, dirty), context(dirty))),
+			).toContain(text);
+		},
+	);
+
+	test.each(
+		forms
+			.filter((form) => form.group === "unknown-dollar")
+			.map((form) => form.command),
+	)(
+		'[control:sg-unknown-dollar] %s is denied with no grant, because bash reads $"..." as a quoted string and astack reads each other unknown $ form as a variable',
+		(command) => {
+			const guard = command.startsWith("gh")
+				? mergeGuard(() => undefined)
+				: destructive;
+			expect(reason(guard.run(shell(command, dirty), context(dirty)))).not.toBe(
+				"",
+			);
+		},
+	);
+
+	test('git commit -m "costs $.50" passes on a dirty tree, because the dynamic word is the message', () => {
+		expect(
+			destructive.run(
+				shell('git commit -m "costs $.50"', dirty),
+				context(dirty),
+			).kind,
+		).toBe("allow");
+	});
+
+	test("a heredoc with 2>&1 stays a readable stdin script, so it gets the verdict of its plain form", () => {
+		expect(
+			reason(
+				destructive.run(
+					shell("bash <<'EOF' 2>&1\ngit reset --hard\nEOF", dirty),
+					context(dirty),
+				),
+			),
+		).toContain("- git reset --hard discards the uncommitted changes in");
+	});
 
 	test.each([
 		"printf '%s\\n' 'git reset --hard' | sh",
@@ -587,33 +664,56 @@ describe("a hook skip", () => {
 		hooked = join(root, "hooked");
 		state = join(root, "hooked-state");
 		mkdirSync(join(hooked, ".githooks"), { recursive: true });
+		mkdirSync(join(hooked, ".claude"));
 		mkdirSync(join(hooked, "src"));
 		initRepo(hooked);
 		write(hooked, {
 			".githooks/pre-push": "#!/bin/sh\nexit 0\n",
+			".claude/pr-review-hardening.profile.md": "# Profile\n",
 			"src/app.ts": "a\n",
 		});
 		chmodSync(join(hooked, ".githooks/pre-push"), 0o755);
 		git(hooked, "add", ".");
 		git(hooked, "commit", "-q", "-m", "base");
+		git(hooked, "checkout", "-q", "-b", "edited");
+		write(hooked, { ".claude/pr-review-hardening.profile.md": "# Edited\n" });
+		git(hooked, "commit", "-q", "-am", "drop a gate");
+		git(hooked, "checkout", "-q", "main");
 		git(hooked, "checkout", "-q", "-b", "feature");
 	});
 
-	function run(command: string, recorded: boolean): Verdict {
-		const head = spawnSync("git", ["rev-parse", "HEAD"], {
+	type Recorded = "none" | "bound" | "old" | "edited";
+
+	function gitOut(...args: string[]): string {
+		return spawnSync("git", args, {
 			cwd: hooked,
 			encoding: "utf8",
 		}).stdout.trim();
+	}
+
+	function run(command: string, recorded: Recorded): Verdict {
 		const env = { ASTACK_STATE_DIR: state };
 		rmSync(state, { recursive: true, force: true });
-		if (recorded)
-			saveGateRecord(env, {
-				head,
-				base: "main",
-				baseSha: head,
-				ran: ["lint"],
-				skipped: [],
-			});
+		const source = recorded === "edited" ? "edited" : "HEAD";
+		const head = gitOut("rev-parse", source);
+		const record = {
+			head,
+			base: "main",
+			baseSha: gitOut("rev-parse", "main"),
+			profile: gitOut(
+				"rev-parse",
+				`${source}:.claude/pr-review-hardening.profile.md`,
+			),
+			ran: ["lint"],
+			skipped: [],
+		};
+		if (recorded === "bound" || recorded === "edited")
+			saveGateRecord(env, record);
+		if (recorded === "old") {
+			mkdirSync(join(state, "gates"), { recursive: true });
+			const { profile: _, ...old } = record;
+			writeFileSync(join(state, "gates", `${head}.json`), JSON.stringify(old));
+		}
 		return destructive.run(shell(command, hooked), {
 			...context(hooked),
 			env,
@@ -625,13 +725,50 @@ describe("a hook skip", () => {
 			.filter((form) => form.group === "hook-skip")
 			.map((form) => form.command),
 	)("[control:sg-hook-skip] %s gets the --no-verify reason", (command) => {
-		const said = reason(run(command, false));
+		const said = reason(run(command, "none"));
 		expect(said).toContain(`${command} skips the git hooks of the repo.`);
 		expect(said).toContain("owner gate");
 	});
 
+	test.each([
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null git push",
+		"export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.hooksPath GIT_CONFIG_VALUE_0=/dev/null; git push",
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=include.path GIT_CONFIG_VALUE_0=/tmp/h git push",
+		`GIT_CONFIG_PARAMETERS="'core.hookspath'='/dev/null'" git push`,
+		"GIT_CONFIG_GLOBAL=/tmp/x git push",
+		"GIT_CONFIG_SYSTEM=/tmp/x git push",
+		"HUSKY=0; export HUSKY; git push",
+		"export HUSKY; git push",
+		"declare -x HUSKY=0; git push",
+		"typeset -x LEFTHOOK=0; git push",
+		"set -a; HUSKY=0; git push",
+		"setopt allexport; HUSKY=0; git push",
+		"setopt ALL_EXPORT; HUSKY=0; git push",
+		"setopt noglob; HUSKY=0; git push",
+		"unsetopt noallexport; LEFTHOOK=0; git push",
+		"options[allexport]=on; HUSKY=0; git push",
+		"HUSKY=$X git push",
+		"git -c include.path=/tmp/h push",
+		"git -c includeIf.onbranch:main.path=/tmp/h commit -m x",
+	])(
+		"[control:sg-hook-skip-env] %s gets the hook-skip reason, because git or the hook manager reads that setting from the environment or an included file",
+		(command) => {
+			const said = reason(run(command, "none"));
+			expect(said).toContain("skips the git hooks of the repo.");
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=user.name GIT_CONFIG_VALUE_0=T git push",
+		"HUSKY=0; git push",
+		"git config --get include.path",
+	])("%s passes, because it turns no hook off", (command) => {
+		expect(run(command, "none").kind).toBe("allow");
+	});
+
 	test("an exported skip variable reaches the push after it", () => {
-		expect(reason(run("export HUSKY=0 && git push", false))).toContain(
+		expect(reason(run("export HUSKY=0 && git push", "none"))).toContain(
 			"HUSKY=0 git push skips the git hooks of the repo.",
 		);
 	});
@@ -657,7 +794,7 @@ describe("a hook skip", () => {
 	])(
 		"%s skips the hooks, because its folder holds no tracked hook",
 		(command, form) => {
-			const said = reason(run(command, false));
+			const said = reason(run(command, "none"));
 			expect(said).toContain(`${form} skips the git hooks of the repo.`);
 			expect(said).toContain("owner gate");
 		},
@@ -669,18 +806,20 @@ describe("a hook skip", () => {
 		"git config core.hooksPath ./.githooks/",
 		"git -c core.hooksPath=.githooks push origin feature",
 	])("%s passes, because it reads the hooks or turns them on", (command) => {
-		expect(run(command, false).kind).toBe("allow");
+		expect(run(command, "none").kind).toBe("allow");
 	});
 
 	test.each([
-		"git push --no-verify",
-		"LEFTHOOK=0 git push origin feature",
-		"HUSKY=0 git push origin HEAD:feature",
-		"export HUSKY=0 && git push",
-	])(
-		"[control:sg-gates-run] %s passes when astack gates run recorded HEAD",
-		(command) => {
-			expect(run(command, true).kind).toBe("allow");
+		["git push --no-verify", "bound", "allow"],
+		["LEFTHOOK=0 git push origin feature", "bound", "allow"],
+		["HUSKY=0 git push origin HEAD:feature", "bound", "allow"],
+		["export HUSKY=0 && git push", "bound", "allow"],
+		["git push --no-verify", "old", "deny"],
+		["HUSKY=0 git push origin edited", "edited", "deny"],
+	] as const)(
+		"[control:sg-gates-run] %s with a %s gate record gets %s, because the record must hold the profile blob of the source and of its merge base",
+		(command, recorded, kind) => {
+			expect(run(command, recorded).kind).toBe(kind);
 		},
 	);
 
@@ -695,10 +834,112 @@ describe("a hook skip", () => {
 			"LEFTHOOK=0 git commit -m x skips the git hooks",
 		],
 	])("%s stays an owner gate with a record of HEAD", (command, text) => {
-		const said = reason(run(command, true));
+		const said = reason(run(command, "bound"));
 		expect(said).toContain(text);
 		expect(said).toContain("owner gate");
 	});
+});
+
+describe("the gate record folder", () => {
+	let state = "";
+	let gates = "";
+	let records = "";
+
+	beforeAll(() => {
+		state = join(root, "gate-folder-state");
+		gates = join(state, "gates");
+		records = join(root, "records");
+		mkdirSync(gates, { recursive: true });
+		mkdirSync(records, { recursive: true });
+		writeFileSync(join(gates, "a.json"), "{}\n");
+		writeFileSync(join(records, "a.json"), "{}\n");
+	});
+
+	function run(event: HookEvent): Verdict {
+		return destructive.run(event, {
+			...context(records),
+			env: { ASTACK_STATE_DIR: state },
+		});
+	}
+
+	test.each([
+		[
+			"a Write call",
+			() =>
+				({
+					kind: "write",
+					path: join(gates, "x.json"),
+					before: undefined,
+					after: "{}",
+				}) as const,
+		],
+		[
+			"an Edit call",
+			() =>
+				({
+					kind: "edit",
+					path: join(gates, "a.json"),
+					before: "{}\n",
+					after: "{ }\n",
+					regions: [],
+					oldText: "{}",
+					newText: "{ }",
+				}) as const,
+		],
+		["an echo redirect", () => shell(`echo '{}' > ${gates}/x.json`, records)],
+		["an &> redirect", () => shell(`echo '{}' &> ${gates}/x.json`, records)],
+		["an &>> redirect", () => shell(`echo '{}' &>> ${gates}/x.json`, records)],
+		["a cp with no git word", () => shell(`cp a.json ${gates}/`, records)],
+		["a find with -delete", () => shell(`find ${gates} -delete`, records)],
+		[
+			"a find that names no action",
+			() => shell(`find ${gates} -name '*.json'`, records),
+		],
+		["a cat with a glob", () => shell(`cat ${gates}/*.json`, records)],
+		["a cat with a variable", () => shell(`cat ${gates}/a.json $X`, records)],
+		["an rm of a parent folder", () => shell(`rm -rf ${state}`, records)],
+		[
+			"a cp through ASTACK_STATE_DIR",
+			() => shell("cp a.json $ASTACK_STATE_DIR/gates/b.json", records),
+		],
+		[
+			"a cp to a variable in a line that names gates",
+			() => shell('cp a.json "$D"/gates/b.json', records),
+		],
+		["a cat with a path", () => shell(`./cat ${gates}/a.json`, records)],
+		[
+			"a less with -o",
+			() => shell(`less -o ${gates}/b.json ${gates}/a.json`, records),
+		],
+		[
+			"a cp through a relative path",
+			() => shell("cp a.json ../gate-folder-state/gates/b.json", records),
+		],
+	])(
+		"[control:sg-gate-folder] %s into the gate record folder is denied",
+		(_, event) => {
+			const said = reason(run(event()));
+			expect(said).toContain("gate record folder");
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		["cat GATES/a.json"],
+		["diff GATES/a.json GATES/a.json"],
+		["shasum -a 256 GATES/a.json"],
+		["astack gates run --base main"],
+		["echo '{}' > RECORDS/b.json"],
+	])(
+		"%s passes, because it only reads the gate record folder or does not name it",
+		(command) => {
+			const event = shell(
+				command.replaceAll("GATES", gates).replaceAll("RECORDS", records),
+				records,
+			);
+			expect(run(event).kind).toBe("allow");
+		},
+	);
 });
 
 describe("a core.hooksPath that names a folder", () => {
@@ -713,11 +954,18 @@ describe("a core.hooksPath that names a folder", () => {
 			"partial",
 			"staged",
 			"swapped",
+			"same",
+			"changed",
 		])
 			mkdirSync(join(active, folder), { recursive: true });
 		initRepo(active);
 		const hook = "#!/bin/sh\nexit 0\n";
+		const red = "#!/bin/sh\nexit 1\n";
 		write(active, {
+			"same/pre-push": red,
+			"same/pre-commit": red,
+			"changed/pre-push": red,
+			"changed/pre-commit": red,
 			".githooks/pre-push": hook,
 			".githooks/pre-commit": hook,
 			"docs/update": "How to update\n",
@@ -730,6 +978,10 @@ describe("a core.hooksPath that names a folder", () => {
 		for (const path of [
 			".githooks/pre-push",
 			".githooks/pre-commit",
+			"same/pre-push",
+			"same/pre-commit",
+			"changed/pre-push",
+			"changed/pre-commit",
 			"partial/pre-push",
 			"swapped/pre-push",
 			"swapped/pre-commit",
@@ -744,9 +996,10 @@ describe("a core.hooksPath that names a folder", () => {
 		chmodSync(join(active, "staged/pre-commit"), 0o755);
 		git(active, "add", "staged");
 		for (const name of ["pre-push", "pre-commit"]) {
-			write(active, { [`.git/hooks/${name}`]: "#!/bin/sh\nexit 1\n" });
+			write(active, { [`.git/hooks/${name}`]: red });
 			chmodSync(join(active, ".git/hooks", name), 0o755);
 		}
+		write(active, { "changed/pre-push": hook });
 	});
 
 	function run(command: string): Verdict {
@@ -787,14 +1040,45 @@ describe("a core.hooksPath that names a folder", () => {
 	});
 
 	test.each([
-		"git -c core.hooksPath=.githooks push",
-		"git config core.hooksPath .githooks",
+		["git -c core.hooksPath=.githooks push", "hooks with other bytes"],
+		["git config core.hooksPath plain", "a hook with mode 100644"],
+		["git config core.hooksPath changed", "a working-tree change"],
 	])(
-		"%s passes, because HEAD holds each active hook in the folder as an executable file",
+		"[control:sg-hooks-path] %s skips the hooks that are active now, because its folder holds %s",
+		(command) => {
+			const said = reason(run(command));
+			expect(said).toContain(`${command} skips the git hooks of the repo.`);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test.each([
+		"git -c core.hooksPath=same push",
+		"git config core.hooksPath same",
+	])(
+		"%s passes, because HEAD holds each active hook in the folder as an executable file with the same bytes",
 		(command) => {
 			expect(run(command).kind).toBe("allow");
 		},
 	);
+
+	test("a core.hooksPath that git uses now passes, also with a working-tree change in it", () => {
+		const inUse = join(root, "hooks-in-use");
+		mkdirSync(join(inUse, ".githooks"), { recursive: true });
+		initRepo(inUse);
+		write(inUse, { ".githooks/pre-push": "#!/bin/sh\nexit 0\n" });
+		chmodSync(join(inUse, ".githooks/pre-push"), 0o755);
+		git(inUse, "add", ".");
+		git(inUse, "commit", "-q", "-m", "base");
+		git(inUse, "config", "core.hooksPath", ".githooks");
+		write(inUse, { ".githooks/pre-push": "#!/bin/sh\nexit 1\n" });
+		expect(
+			destructive.run(
+				shell("git -c core.hooksPath=./.githooks push", inUse),
+				context(inUse),
+			).kind,
+		).toBe("allow");
+	});
 });
 
 describe("the clean selection of the work-loss guard", () => {
@@ -980,14 +1264,41 @@ describe("a repo that this session made", () => {
 		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
 	});
 
-	test("[control:sg-session-repo-worktree] git reset --hard passes in a worktree that git worktree add made in this session", () => {
+	function reportsBirthTimes(paths: readonly string[]): boolean {
+		return paths.every((path) => {
+			const { birthtimeNs, ctimeNs } = lstatSync(path, { bigint: true });
+			return birthtimeNs !== 0n && birthtimeNs !== ctimeNs;
+		});
+	}
+
+	const WORKTREE_RESET_BY_BIRTH: Readonly<Record<"known" | "none", Verdict>> = {
+		known: { kind: "allow" },
+		none: {
+			kind: "deny",
+			reason:
+				"astack blocked a destructive command:\n- git reset --hard discards the uncommitted changes in a.txt. This is an owner gate, so stop and ask the owner.",
+		},
+	};
+
+	test("[control:sg-session-repo-worktree] git reset --hard in a worktree that git worktree add made in this session passes when the host reports a birth time for each file that the guard stamps, and is denied when it does not", () => {
 		const { dir, state } = fresh("main");
 		dirtyRepoAt(dir);
 		const worktree = join(dir, "..", "wt");
+		const gitDir = join(dir, ".git", "worktrees", "wt");
 		expect(sessionRun("git worktree add ../wt", dir, state).kind).toBe("allow");
 		git(dir, "worktree", "add", "-q", "../wt");
 		write(worktree, { "a.txt": "b\n", "new.txt": "n\n" });
-		expect(sessionRun("git reset --hard", worktree, state).kind).toBe("allow");
+		const birth = reportsBirthTimes([
+			worktree,
+			gitDir,
+			join(worktree, ".git"),
+			join(gitDir, "HEAD"),
+		])
+			? "known"
+			: "none";
+		expect(sessionRun("git reset --hard", worktree, state)).toEqual(
+			WORKTREE_RESET_BY_BIRTH[birth],
+		);
 		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
 			"owner gate",
 		);
@@ -1014,6 +1325,335 @@ describe("a repo that this session made", () => {
 		const said = reason(sessionRun("git clean -ffd", dir, state));
 		expect(said).toContain("deletes the untracked files vendor/lib/.");
 	});
+
+	test.each([
+		"git archive --prefix=../victim/ HEAD | tar -xf -",
+		"git archive --pref=sub/ HEAD | tar -xf -",
+		"git archive --remote=../other HEAD | tar -xf -",
+		"git archive --add-file=extra.txt HEAD | tar -xf -",
+		"git archive --add-virtual-file=a.txt:x HEAD | tar -xf -",
+		"git archive HEAD:docs | tar -xf -",
+		"git -C ../other archive HEAD | tar -xf -",
+		"git archive --format=tar HEAD | tar -xf -",
+	])(
+		"[control:sg-session-repo-archive] %s gets no session exemption, because only git archive HEAD in the folder of tar stays in the tree of the repo",
+		(command) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			expect(reason(sessionRun(command, dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test("git archive HEAD | tar -xf - is denied in a session repo for a dirty nested repo and a dirty submodule", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const nested = join(dir, "vendor/lib");
+		dirtyRepoAt(nested);
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		write(dir, { "sub/a.txt": "c\n" });
+		const said = reason(sessionRun("git archive HEAD | tar -xf -", dir, state));
+		expect(said).toContain("vendor/lib/");
+		expect(said).toContain("sub");
+	});
+
+	test.each<[string, (dir: string, nested: string) => void]>([
+		[
+			"a HEAD path that names the nested repo in another case",
+			(dir) => {
+				mkdirSync(join(dir, "vendor/lib"), { recursive: true });
+				write(dir, { "vendor/lib/b.txt": "x\n" });
+				git(dir, "add", "vendor/lib/b.txt");
+				git(dir, "commit", "-q", "-m", "held");
+				rmSync(join(dir, "vendor"), { recursive: true, force: true });
+			},
+		],
+		[
+			"an ignored file in the nested repo",
+			(_, nested) => {
+				mkdirSync(nested, { recursive: true });
+				write(nested, { ".gitignore": "x.log\n", "x.log": "x\n" });
+			},
+		],
+	])(
+		"git archive HEAD | tar -xf - keeps a clean nested repo with %s in a session repo",
+		(_, prepare) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			const nested = join(dir, "Vendor/lib");
+			prepare(dir, nested);
+			dirtyRepoAt(nested);
+			git(nested, "add", "-A");
+			git(nested, "commit", "-q", "-m", "b");
+			expect(sessionRun("git status", dir, state).kind).toBe("allow");
+			const said = reason(
+				sessionRun("git archive HEAD | tar -xf -", dir, state),
+			);
+			expect(said).toMatch(/[Vv]endor\/lib\//);
+			expect(said).not.toContain("changes in a.txt");
+		},
+	);
+
+	test("git archive HEAD | tar -xf - passes in a session repo with a clean nested repo that HEAD does not hold, because tar cannot reach it", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const nested = join(dir, "vendor/lib");
+		dirtyRepoAt(nested);
+		git(nested, "add", ".");
+		git(nested, "commit", "-q", "-m", "b");
+		expect(sessionRun("git archive HEAD | tar -xf -", dir, state).kind).toBe(
+			"allow",
+		);
+	});
+
+	function withSubmodule(dir: string): void {
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		write(dir, { "a.txt": "c\n" });
+	}
+
+	test.each([
+		["git reset --hard --recurse-submodules", () => {}],
+		["git -c submodule.recurse=true reset --hard", () => {}],
+		[
+			"git reset --hard",
+			(dir: string) => git(dir, "config", "submodule.recurse", "true"),
+		],
+		[
+			"git config submodule.recurse true; git reset --hard",
+			(dir: string) => git(dir, "config", "submodule.recurse", "false"),
+		],
+		[
+			"git restore :/",
+			(dir: string) => git(dir, "config", "submodule.recurse", "false"),
+		],
+	])(
+		"[control:sg-session-repo-submodule] %s gets no session exemption in a repo with a submodule, because a config that the hook cannot read can make git reset the work of each submodule",
+		(command, configure) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			withSubmodule(dir);
+			configure(dir);
+			expect(reason(sessionRun(command, dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test("git reset --hard is denied in a session repo with a dirty submodule, because the reset can reach the work of the submodule", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const module = join(dir, "..", "module");
+		dirtyRepoAt(module);
+		git(module, "commit", "-q", "-am", "b");
+		git(
+			dir,
+			"-c",
+			"protocol.file.allow=always",
+			"submodule",
+			"add",
+			"-q",
+			module,
+			"sub",
+		);
+		git(dir, "commit", "-q", "-m", "sub");
+		git(dir, "config", "submodule.recurse", "false");
+		write(dir, { "sub/a.txt": "c\n" });
+		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+			"discards the uncommitted changes in a.txt, sub.",
+		);
+	});
+
+	test.each([
+		"git init NEW && cp -R OWNER/. NEW",
+		"git init NEW && rm -rf NEW/.git && mv OWNER/.git NEW/.git",
+	])(
+		"[control:sg-session-repo-copied] after %s a reset in the new repo is denied, because the line writes into the target",
+		(command) => {
+			const { dir, state } = fresh("new");
+			const parent = join(dir, "..");
+			const owner = join(parent, "owner");
+			dirtyRepoAt(owner);
+			const made = command.replaceAll("OWNER", owner).replaceAll("NEW", dir);
+			expect(sessionRun(made, parent, state).kind).toBe("allow");
+			expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
+
+	test("after git init NEW && cd NEW && cp a.txt b.txt a reset in the new repo passes, because the copy brings no work from outside", () => {
+		const { dir, state } = fresh("new");
+		const parent = join(dir, "..");
+		const made = `git init -q ${dir} && cd ${dir} && echo a > a.txt && cp a.txt b.txt`;
+		expect(sessionRun(made, parent, state).kind).toBe("allow");
+		expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
+		dirtyRepoAt(dir);
+		expect(sessionRun("ls", parent, state).kind).toBe("allow");
+		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
+	});
+
+	test.each([
+		[
+			"a Write call",
+			(state: string) =>
+				({
+					kind: "write",
+					path: join(state, "session-repos", "s.json"),
+					before: undefined,
+					after: "[]",
+				}) as const,
+		],
+		[
+			"an echo redirect",
+			(state: string, cwd: string) =>
+				shell(`echo '[]' > ${state}/session-repos/s.json`, cwd),
+		],
+		[
+			"an &> redirect",
+			(state: string, cwd: string) =>
+				shell(`echo '[]' &> ${state}/session-repos/s.json`, cwd),
+		],
+		[
+			"a cp to a glob",
+			(state: string, cwd: string) =>
+				shell(`cp x.json ${state}/sess*/s.json`, cwd),
+		],
+		[
+			"a python -c body",
+			(state: string, cwd: string) =>
+				shell(
+					`python3 -c "open('${state}/session-repos/s.json', 'w').write('[]')"`,
+					cwd,
+				),
+		],
+	])(
+		"[control:sg-session-repo-record] %s into the session repo record folder is denied",
+		(_, event) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			const said = reason(
+				destructive.run(event(state, dir), {
+					...context(dir),
+					env: { ASTACK_STATE_DIR: state },
+					session: "session-1",
+				}),
+			);
+			expect(said).toContain("session repo record folder");
+		},
+	);
+
+	test.each<[string, (state: string, dir: string, owner: string) => void]>([
+		[
+			"another process swaps the git dir of a bound repo",
+			(state, dir, owner) => {
+				initedRepo(state, dir);
+				expect(sessionRun("git status", dir, state).kind).toBe("allow");
+				rmSync(join(dir, ".git"), { recursive: true, force: true });
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+			},
+		],
+		[
+			"a missing target gets a git dir that is older than the call",
+			(state, dir, owner) => {
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				mkdirSync(dir);
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+				write(dir, { "a.txt": "b\n" });
+			},
+		],
+		[
+			"an empty target gets a git dir that is older than the call",
+			(state, dir, owner) => {
+				mkdirSync(dir);
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+				write(dir, { "a.txt": "b\n" });
+			},
+		],
+		[
+			"another process copies the git dir and the work of another repo into a bound repo",
+			(state, dir, owner) => {
+				initedRepo(state, dir);
+				expect(sessionRun("git status", dir, state).kind).toBe("allow");
+				spawnSync("cp", ["-R", `${owner}/.`, dir]);
+			},
+		],
+		[
+			"a new git dir holds an index entry that is older than the call",
+			(state, dir, owner) => {
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				mkdirSync(dir);
+				initRepo(dir);
+				copyFileSync(join(owner, ".git/index"), join(dir, ".git/index"));
+			},
+		],
+	])(
+		"[control:sg-session-repo-made] a reset is denied when %s",
+		(_, prepare) => {
+			const { dir, state } = fresh("new");
+			const parent = join(dir, "..");
+			const owner = join(parent, "owner");
+			dirtyRepoAt(owner);
+			prepare(state, dir, owner);
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"owner gate",
+			);
+		},
+	);
+
+	test.each([
+		["mv ../owner/a.txt a.txt", true],
+		['"$TOOL" a.txt', false],
+	])(
+		"a reset is denied in a bound repo after a later call runs %s in it",
+		(command, run) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			dirtyRepoAt(join(dir, "..", "owner"));
+			expect(sessionRun("git status", dir, state).kind).toBe("allow");
+			expect(sessionRun(command, dir, state).kind).toBe("allow");
+			if (run) spawnSync("sh", ["-c", command], { cwd: dir });
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
+			);
+		},
+	);
 
 	test("[control:sg-session-repo-identity] a reset is denied in a dirty repo that another process made at a dropped pending path", () => {
 		const { dir, state } = fresh("made");

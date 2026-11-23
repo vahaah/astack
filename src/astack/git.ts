@@ -5,6 +5,12 @@ import { parseUnifiedDiff } from "./comments/added.ts";
 
 const MAX_BUFFER = 256 * 1024 * 1024;
 
+export const READ_ONLY_GIT = [
+	"--no-optional-locks",
+	"-c",
+	"core.fsmonitor=false",
+];
+
 export interface GitResult {
 	ok: boolean;
 	stdout: Buffer;

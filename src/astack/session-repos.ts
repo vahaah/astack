@@ -1,4 +1,5 @@
 import {
+	type BigIntStats,
 	lstatSync,
 	mkdirSync,
 	readdirSync,
@@ -8,7 +9,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { runGit } from "./git.ts";
+import { READ_ONLY_GIT, runGit } from "./git.ts";
 import { canonicalFile, readOptional } from "./paths.ts";
 import { err, ok, type Result } from "./result.ts";
 import { sessionFileName, stateDir } from "./state.ts";
@@ -21,17 +22,39 @@ export type FolderIdentity = {
 	readonly birth: string;
 };
 
-export type RepoIdentity = FolderIdentity & { readonly gitDir: string };
+export type RepoIdentity = FolderIdentity & {
+	readonly gitDir: string;
+	readonly gitDirNode: FolderIdentity;
+	readonly head: string;
+	readonly index: string;
+	readonly objects: string;
+};
 
 export type FreeTarget =
 	| { readonly kind: "missing"; readonly since: string }
-	| { readonly kind: "empty"; readonly folder: FolderIdentity };
+	| {
+			readonly kind: "empty";
+			readonly folder: FolderIdentity;
+			readonly since: string;
+	  };
 
 export type RepoProbe = {
 	readonly root: string;
 	readonly commonDir: string;
 	readonly identity: RepoIdentity;
 };
+
+export type Stamp = { readonly birth: string; readonly ctime: string };
+
+export type MadeFacts = {
+	readonly root: Stamp;
+	readonly gitDir: Stamp;
+	readonly marker: Stamp;
+	readonly head: Stamp;
+	readonly oldest: string | undefined;
+};
+
+export type MadeProbe = RepoProbe & { readonly made: MadeFacts };
 
 export type SessionRepo =
 	| {
@@ -59,12 +82,25 @@ function sameFolder(a: FolderIdentity, b: FolderIdentity): boolean {
 	return a.device === b.device && a.inode === b.inode && a.birth === b.birth;
 }
 
-function madeAfter(free: FreeTarget, identity: RepoIdentity): boolean {
+function knownBirth(stamp: Stamp): boolean {
+	return stamp.birth !== "0" && stamp.birth !== stamp.ctime;
+}
+
+function madeAfter(free: FreeTarget, probe: MadeProbe): boolean {
+	const { made } = probe;
+	const since = BigInt(free.since);
+	const after = (stamp: Stamp) => BigInt(stamp.birth) >= since;
+	const fresh =
+		[made.root, made.gitDir, made.marker, made.head].every(knownBirth) &&
+		after(made.gitDir) &&
+		after(made.marker) &&
+		after(made.head) &&
+		(made.oldest === undefined || BigInt(made.oldest) >= since);
 	switch (free.kind) {
 		case "missing":
-			return BigInt(identity.birth) >= BigInt(free.since);
+			return fresh && after(made.root);
 		case "empty":
-			return sameFolder(free.folder, identity);
+			return fresh && sameFolder(free.folder, probe.identity);
 		default: {
 			const unknown: never = free;
 			return unknown;
@@ -74,7 +110,7 @@ function madeAfter(free: FreeTarget, identity: RepoIdentity): boolean {
 
 export function settleRepos(
 	repos: SessionRepos,
-	probes: ReadonlyMap<string, RepoProbe>,
+	probes: ReadonlyMap<string, MadeProbe>,
 ): SessionRepos {
 	return repos.flatMap((repo): SessionRepo[] => {
 		if (repo.kind === "bound") return [repo];
@@ -82,14 +118,21 @@ export function settleRepos(
 		return probe !== undefined &&
 			probe.root === repo.path &&
 			ownsGitDir(probe) &&
-			madeAfter(repo.free, probe.identity)
+			madeAfter(repo.free, probe)
 			? [{ kind: "bound", path: repo.path, identity: probe.identity }]
 			: [];
 	});
 }
 
 function sameIdentity(a: RepoIdentity, b: RepoIdentity): boolean {
-	return a.gitDir === b.gitDir && sameFolder(a, b);
+	return (
+		a.gitDir === b.gitDir &&
+		sameFolder(a, b) &&
+		sameFolder(a.gitDirNode, b.gitDirNode) &&
+		a.head === b.head &&
+		a.index === b.index &&
+		a.objects === b.objects
+	);
 }
 
 export function sessionRepoAt(
@@ -115,17 +158,104 @@ export function probeRepo(path: string): RepoProbe | undefined {
 	const [root, gitDir, common] = listed.ok
 		? listed.stdout.toString("utf8").split("\n")
 		: [];
-	if (!root || !gitDir || !common) return undefined;
+	const objects = root ? objectCount(root) : undefined;
+	if (!root || !gitDir || !common || objects === undefined) return undefined;
 	try {
 		const stat = statSync(root, { bigint: true });
+		const index = statSync(join(gitDir, "index"), {
+			bigint: true,
+			throwIfNoEntry: false,
+		});
 		return {
 			root,
 			commonDir: resolve(path, common),
 			identity: {
 				gitDir,
-				device: String(stat.dev),
-				inode: String(stat.ino),
-				birth: String(stat.birthtimeNs),
+				...folderOf(stat),
+				gitDirNode: folderOf(statSync(gitDir, { bigint: true })),
+				head: headCommit(root),
+				index: index === undefined ? "none" : String(index.mtimeNs),
+				objects,
+			},
+		};
+	} catch {
+		return undefined;
+	}
+}
+
+function headCommit(root: string): string {
+	const head = runGit(root, [
+		...READ_ONLY_GIT,
+		"rev-parse",
+		"--verify",
+		"--quiet",
+		"HEAD",
+	]);
+	return head.ok ? head.stdout.toString("utf8").trim() : "none";
+}
+
+const OBJECT_COUNTS = /^(?:count|in-pack): (\d+)$/gm;
+
+function objectCount(root: string): string | undefined {
+	const counted = runGit(root, [...READ_ONLY_GIT, "count-objects", "-v"]);
+	const counts = counted.ok
+		? [...counted.stdout.toString("utf8").matchAll(OBJECT_COUNTS)].map(
+				([, count]) => count,
+			)
+		: [];
+	return counts.length === 2 ? counts.join("+") : undefined;
+}
+
+function folderOf(stat: BigIntStats): FolderIdentity {
+	return {
+		device: String(stat.dev),
+		inode: String(stat.ino),
+		birth: String(stat.birthtimeNs),
+	};
+}
+
+function stampOf(path: string): Stamp {
+	const stat = lstatSync(path, { bigint: true });
+	return { birth: String(stat.birthtimeNs), ctime: String(stat.ctimeNs) };
+}
+
+const NS_PER_SECOND = 1_000_000_000n;
+const INDEX_CTIME = /^\s+ctime: (\d+):(\d+)$/gm;
+const REFLOG_TIME = /> (\d+) [+-]\d{4}\t?/;
+
+function oldestEntry(root: string, gitDir: string): string | undefined {
+	const listed = runGit(root, [...READ_ONLY_GIT, "ls-files", "--debug"]);
+	if (!listed.ok) return "0";
+	const times = [...listed.stdout.toString("utf8").matchAll(INDEX_CTIME)].map(
+		([, seconds = "0", nanos = "0"]) =>
+			BigInt(seconds) * NS_PER_SECOND + BigInt(nanos),
+	);
+	const reflog = readOptional(join(gitDir, "logs", "HEAD"));
+	const first = reflog === undefined ? undefined : REFLOG_TIME.exec(reflog);
+	if (first?.[1] !== undefined)
+		times.push((BigInt(first[1]) + 1n) * NS_PER_SECOND - 1n);
+	else if (
+		runGit(root, [...READ_ONLY_GIT, "rev-parse", "--verify", "--quiet", "HEAD"])
+			.ok
+	)
+		times.push(0n);
+	return times.length === 0
+		? undefined
+		: String(times.reduce((low, time) => (time < low ? time : low)));
+}
+
+export function probeMadeRepo(path: string): MadeProbe | undefined {
+	const probe = probeRepo(path);
+	if (probe === undefined) return undefined;
+	try {
+		return {
+			...probe,
+			made: {
+				root: stampOf(probe.root),
+				gitDir: stampOf(probe.identity.gitDir),
+				marker: stampOf(join(probe.root, ".git")),
+				head: stampOf(join(probe.identity.gitDir, "HEAD")),
+				oldest: oldestEntry(probe.root, probe.identity.gitDir),
 			},
 		};
 	} catch {
@@ -164,8 +294,17 @@ function parseIdentity(value: unknown): RepoIdentity | undefined {
 	if (typeof value !== "object" || value === null) return undefined;
 	const folder = parseFolder(value);
 	const gitDir = field(value, "gitDir");
-	return folder !== undefined && typeof gitDir === "string"
-		? { ...folder, gitDir }
+	const gitDirNode = parseFolder(field(value, "gitDirNode"));
+	const head = field(value, "head");
+	const index = field(value, "index");
+	const objects = field(value, "objects");
+	return folder !== undefined &&
+		typeof gitDir === "string" &&
+		gitDirNode !== undefined &&
+		typeof head === "string" &&
+		typeof index === "string" &&
+		typeof objects === "string"
+		? { ...folder, gitDir, gitDirNode, head, index, objects }
 		: undefined;
 }
 
@@ -173,13 +312,11 @@ function parseFree(value: unknown): FreeTarget | undefined {
 	if (typeof value !== "object" || value === null) return undefined;
 	const kind = field(value, "kind");
 	const since = field(value, "since");
-	if (kind === "missing")
-		return typeof since === "string" && COUNT.test(since)
-			? { kind, since }
-			: undefined;
+	if (typeof since !== "string" || !COUNT.test(since)) return undefined;
+	if (kind === "missing") return { kind, since };
 	const folder = parseFolder(field(value, "folder"));
 	return kind === "empty" && folder !== undefined
-		? { kind, folder }
+		? { kind, folder, since }
 		: undefined;
 }
 
@@ -266,22 +403,14 @@ function freeTarget(
 	target: string,
 	since: string | undefined,
 ): SessionRepo | undefined {
+	if (since === undefined) return undefined;
 	try {
 		const stat = lstatSync(target, { bigint: true, throwIfNoEntry: false });
 		const free: FreeTarget | undefined =
 			stat === undefined
-				? since === undefined
-					? undefined
-					: { kind: "missing", since }
+				? { kind: "missing", since }
 				: stat.isDirectory() && readdirSync(target).length === 0
-					? {
-							kind: "empty",
-							folder: {
-								device: String(stat.dev),
-								inode: String(stat.ino),
-								birth: String(stat.birthtimeNs),
-							},
-						}
+					? { kind: "empty", folder: folderOf(stat), since }
 					: undefined;
 		return free === undefined
 			? undefined
@@ -299,8 +428,8 @@ export function settledRepos(
 	const pending = loaded.filter((repo) => repo.kind === "pending");
 	if (pending.length === 0) return loaded;
 	const probes = new Map(
-		pending.flatMap((repo): [string, RepoProbe][] => {
-			const probe = probeRepo(repo.path);
+		pending.flatMap((repo): [string, MadeProbe][] => {
+			const probe = probeMadeRepo(repo.path);
 			return probe === undefined ? [] : [[repo.path, probe]];
 		}),
 	);

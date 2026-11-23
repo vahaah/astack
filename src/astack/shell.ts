@@ -5,11 +5,12 @@ export interface Word {
 	dynamic: boolean;
 	expands?: boolean;
 	splits?: boolean;
+	quoted?: boolean;
 }
 
 export interface Redirect {
 	op: string;
-	fd: string | undefined;
+	fd: number;
 	target: Word;
 }
 
@@ -28,13 +29,20 @@ export interface SimpleCommand {
 
 const ONE_WORD =
 	/^(?:[A-Za-z_]\w*(?![\w[])|\{[A-Za-z_]\w*(?:\[[^\]@*()]*\])?\})/;
-const EXPANSION_START = /[\w{@*#?$!=~^-]/;
+const LITERAL_AFTER_DOLLAR = /[ \t\n;&|<>)"]/;
+
+function dollarExpands(next: string | undefined): boolean {
+	return next !== undefined && !LITERAL_AFTER_DOLLAR.test(next);
+}
 
 const EXPANDS_IN_HEREDOC = /[$`\\]/;
 const DEFINES_COMMAND =
-	/\bfunction\b|\balias\b|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
+	/\bfunction\b|\balias\b|\(\s*\)\s*[{(]|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
 
 const UNQUOTED_EXPANSION = /[*?]|\[[^\]]*\]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
+
+const STDIN_FD = 0;
+const STDOUT_FD = 1;
 
 const HEREDOC_SUBSTITUTION =
 	/^\$\(\s*cat\s*<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2[ \t]*\n([\s\S]*?)\n[ \t]*\3[ \t]*\n?\s*\)/;
@@ -72,7 +80,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		tag: string;
 		strip: boolean;
 		quoted: boolean;
-		command: SimpleCommand;
+		command: SimpleCommand | undefined;
 	}[] = [];
 	let substitutions: string[] = [];
 	let redirectNext: Omit<Redirect, "target"> | undefined;
@@ -94,6 +102,10 @@ export function parseShell(src: string): SimpleCommand[] {
 	const splits = (): void => {
 		if (word) word.splits = true;
 	};
+	const quoted = (): void => {
+		word ??= { value: "", dynamic: false };
+		word.quoted = true;
+	};
 	const endWord = (): void => {
 		if (!word) return;
 		if (UNQUOTED_EXPANSION.test(unquoted)) word.expands = true;
@@ -111,12 +123,48 @@ export function parseShell(src: string): SimpleCommand[] {
 		}
 		word = undefined;
 	};
-	const readsStdin = (command: SimpleCommand): void => {
+	let groupStdin = false;
+	const readsStdin = (command: SimpleCommand, readable: boolean): void => {
 		command.stdinSources = (command.stdinSources ?? 0) + 1;
-		if (command.stdinSources > 1) command.stdinDynamic = true;
+		if (command.stdinSources > 1 || !readable) command.stdinDynamic = true;
+	};
+	const redirectFd = (fallback: number): number => {
+		if (
+			!word ||
+			word.dynamic ||
+			word.quoted === true ||
+			!/^\d+$/.test(word.value)
+		)
+			return fallback;
+		const fd = Number(word.value);
+		word = undefined;
+		unquoted = "";
+		return fd;
 	};
 	const endCommand = (): void => {
 		endWord();
+		const named = words.filter(
+			(one) => one.dynamic || !RESERVED.has(one.value),
+		);
+		const program = named.findIndex(
+			(one) => one.dynamic || !EXEC_PREFIXES.has(one.value),
+		);
+		const rest = program < 0 ? [] : named.slice(program);
+		const redirected =
+			(current.stdinSources ?? 0) > (current.piped === true ? 1 : 0);
+		if (
+			(current.stdinSources !== undefined &&
+				(rest.length === 0 ||
+					(rest.length === 1 &&
+						!rest[0]?.dynamic &&
+						rest[0]?.value === "exec"))) ||
+			(redirected &&
+				words.some(
+					(one) =>
+						!one.dynamic && (one.value === "exec" || one.value === "eval"),
+				))
+		)
+			groupStdin = true;
 		if (words.length > 0 || substitutions.length > 0) commands.push(current);
 		words = [];
 		substitutions = [];
@@ -145,10 +193,13 @@ export function parseShell(src: string): SimpleCommand[] {
 		parenBody();
 	};
 
+	let stageEmpty = false;
 	while (i < src.length) {
 		const c = src[i] ?? "";
+		if (c !== "\n" && c !== " " && c !== "\t" && (c !== "#" || word))
+			stageEmpty = false;
 		if (c === "\n") {
-			endCommand();
+			if (current.piped !== true || !stageEmpty) endCommand();
 			i++;
 			for (const doc of pendingHeredocs) {
 				const lines: string[] = [];
@@ -159,10 +210,12 @@ export function parseShell(src: string): SimpleCommand[] {
 					if ((doc.strip ? line.replace(/^\t+/, "") : line) === doc.tag) break;
 					lines.push(line);
 				}
-				doc.command.stdin = stripTabs(lines.join("\n"), doc.strip);
-				doc.command.stdinFrom = doc.quoted ? "quoted heredoc" : "heredoc";
-				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(doc.command.stdin))
-					doc.command.stdinDynamic = true;
+				const { command } = doc;
+				if (command === undefined) continue;
+				command.stdin = stripTabs(lines.join("\n"), doc.strip);
+				command.stdinFrom = doc.quoted ? "quoted heredoc" : "heredoc";
+				if (!doc.quoted && EXPANDS_IN_HEREDOC.test(command.stdin))
+					command.stdinDynamic = true;
 			}
 			pendingHeredocs = [];
 			continue;
@@ -178,18 +231,22 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "\\") {
-			if (src[i + 1] !== "\n") append(src[i + 1] ?? "");
+			if (src[i + 1] !== "\n") {
+				append(src[i + 1] ?? "");
+				quoted();
+			}
 			i += 2;
 			continue;
 		}
 		if (c === "'") {
+			quoted();
 			const close = src.indexOf("'", i + 1);
 			append(src.slice(i + 1, close < 0 ? src.length : close));
 			i = close < 0 ? src.length : close + 1;
 			continue;
 		}
 		if (c === '"') {
-			append("");
+			quoted();
 			i++;
 			while (i < src.length && src[i] !== '"') {
 				const d = src[i] ?? "";
@@ -198,7 +255,7 @@ export function parseShell(src: string): SimpleCommand[] {
 					i += 2;
 				} else if (d === "$" && src[i + 1] === "(") {
 					substitution();
-				} else if (d === "$" && EXPANSION_START.test(src[i + 1] ?? "")) {
+				} else if (d === "$" && dollarExpands(src[i + 1])) {
 					append("", true);
 					if (!ONE_WORD.test(src.slice(i + 1))) splits();
 					i++;
@@ -218,6 +275,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "$" && src[i + 1] === "'") {
+			quoted();
 			const close = src.indexOf("'", i + 2);
 			append(
 				src
@@ -228,7 +286,12 @@ export function parseShell(src: string): SimpleCommand[] {
 			i = close < 0 ? src.length : close + 1;
 			continue;
 		}
-		if (c === "$" && EXPANSION_START.test(src[i + 1] ?? "")) {
+		if (c === "$" && src[i + 1] === '"') {
+			quoted();
+			i++;
+			continue;
+		}
+		if (c === "$" && dollarExpands(src[i + 1])) {
 			append("", true);
 			splits();
 			i++;
@@ -253,7 +316,16 @@ export function parseShell(src: string): SimpleCommand[] {
 			)
 				stage.wholeStage = true;
 			current.piped = true;
-			i++;
+			readsStdin(current, true);
+			stageEmpty = true;
+			i += src[i + 1] === "&" ? 2 : 1;
+			continue;
+		}
+		if (c === "&" && src[i + 1] === ">") {
+			endWord();
+			const op = src[i + 2] === ">" ? "&>>" : "&>";
+			redirectNext = { op, fd: STDOUT_FD };
+			i += op.length;
 			continue;
 		}
 		if (c === "&") {
@@ -274,40 +346,38 @@ export function parseShell(src: string): SimpleCommand[] {
 			continue;
 		}
 		if (c === "<" && src.startsWith("<<<", i)) {
+			const fd = redirectFd(STDIN_FD);
 			endWord();
-			hereStringNext = current;
-			readsStdin(current);
+			readsStdin(current, fd === STDIN_FD);
+			if (fd === STDIN_FD) hereStringNext = current;
+			else redirectNext = { op: "<<<", fd };
 			i += 3;
 			continue;
 		}
-		if (c === "<" && src.startsWith("<<", i)) {
+		const heredoc =
+			c === "<"
+				? /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i))
+				: null;
+		if (heredoc) {
+			const fd = redirectFd(STDIN_FD);
 			endWord();
-			const match = /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i));
-			if (match) {
-				readsStdin(current);
-				pendingHeredocs.push({
-					tag: match[3] ?? "",
-					strip: match[1] === "-",
-					quoted: match[2] !== "",
-					command: current,
-				});
-				i += match[0].length;
-				continue;
-			}
+			readsStdin(current, fd === STDIN_FD);
+			pendingHeredocs.push({
+				tag: heredoc[3] ?? "",
+				strip: heredoc[1] === "-",
+				quoted: heredoc[2] !== "",
+				command: fd === STDIN_FD ? current : undefined,
+			});
+			i += heredoc[0].length;
+			continue;
 		}
 		if (c === "<" || c === ">") {
-			let fd: string | undefined;
-			if (word && /^\d+$/.test(word.value)) {
-				fd = word.value;
-				word = undefined;
-				unquoted = "";
-			}
+			const fd = redirectFd(c === "<" ? STDIN_FD : STDOUT_FD);
 			endWord();
 			const opStart = i;
 			while (src[i] === "<" || src[i] === ">" || src[i] === "&") i++;
 			if (src[i] === "|" && src[i - 1] === ">") i++;
-			if (src[opStart] === "<" && (fd === undefined || fd === "0"))
-				readsStdin(current);
+			if (fd === STDIN_FD) readsStdin(current, false);
 			if (/\d/.test(src[i] ?? "") && src[i - 1] === "&") {
 				while (/\d/.test(src[i] ?? "")) i++;
 				continue;
@@ -320,6 +390,11 @@ export function parseShell(src: string): SimpleCommand[] {
 		i++;
 	}
 	endCommand();
+	if (groupStdin)
+		for (const command of commands) {
+			command.stdinDynamic = true;
+			command.stdinSources = (command.stdinSources ?? 0) + 1;
+		}
 	return commands;
 }
 
@@ -459,6 +534,7 @@ const RESERVED = new Set([
 ]);
 const HEADERS = new Set(["case", "for", "select"]);
 const SHELLS = new Set(["bash", "dash", "ksh", "sh", "zsh"]);
+const EXEC_PREFIXES = new Set(["builtin", "command"]);
 const FOLDER_MOVES = new Set(["cd", "popd", "pushd"]);
 const MAX_DEPTH = 4;
 const FED: Word = { value: "", dynamic: true, splits: true };
@@ -515,6 +591,7 @@ type Plain = {
 	readonly unsetsEnv: boolean;
 	readonly words: Word[];
 	readonly unreadable: Unreadable | undefined;
+	readonly execs: boolean;
 };
 
 function namesFlag(flags: readonly string[], name: string): boolean {
@@ -541,13 +618,20 @@ function plainForm(raw: readonly Word[]): Plain {
 	let at = 0;
 	let assigns = true;
 	let feeds = false;
+	let execs = false;
 	let replace: string | undefined;
 	for (;;) {
 		const word = raw[at];
 		if (word === undefined) break;
 		const name = word.dynamic ? "" : word.value;
 		if (HEADERS.has(name))
-			return { env, unsetsEnv: unsets, words: [], unreadable: undefined };
+			return {
+				env,
+				unsetsEnv: unsets,
+				words: [],
+				unreadable: undefined,
+				execs,
+			};
 		if (RESERVED.has(name) || name === "function") {
 			at += name === "function" ? 2 : 1;
 			continue;
@@ -561,6 +645,7 @@ function plainForm(raw: readonly Word[]): Plain {
 		if (wrapper === undefined) break;
 		const start = at;
 		let kept = false;
+		execs ||= basename(name) === "exec";
 		at++;
 		for (
 			let option = raw[at];
@@ -581,6 +666,7 @@ function plainForm(raw: readonly Word[]): Plain {
 					unsetsEnv: unsets,
 					words: raw.slice(start),
 					unreadable: "wrapper",
+					execs,
 				};
 			if (read.name === wrapper.replace) replace = read.value?.value;
 			unsets ||= namesFlag(wrapper.unsets ?? [], read.name);
@@ -600,7 +686,21 @@ function plainForm(raw: readonly Word[]): Plain {
 		unsetsEnv: unsets,
 		words,
 		unreadable: words[0]?.dynamic ? "program" : undefined,
+		execs,
 	};
+}
+
+const REBINDS_STDIN = new Set([".", "eval", "source"]);
+
+function rebindsStdin(simple: SimpleCommand, plain: Plain): boolean {
+	const program = plain.words[0];
+	return (
+		plain.execs ||
+		(simple.stdinSources ?? 0) > (simple.piped === true ? 1 : 0) ||
+		(program !== undefined &&
+			!program.dynamic &&
+			REBINDS_STDIN.has(basename(program.value)))
+	);
 }
 
 type Body = {
@@ -633,10 +733,10 @@ function literalScript(
 	simple: SimpleCommand,
 	previous: ShellStep | undefined,
 ): string | undefined {
+	if (simple.stdinDynamic === true) return undefined;
 	if (simple.stdin !== undefined)
-		return simple.stdinDynamic !== true &&
-			(simple.stdinFrom === "quoted heredoc" ||
-				simple.stdinFrom === "here-string")
+		return simple.stdinFrom === "quoted heredoc" ||
+			simple.stdinFrom === "here-string"
 			? simple.stdin
 			: undefined;
 	return previous?.simple.wholeStage === true
@@ -644,13 +744,18 @@ function literalScript(
 		: undefined;
 }
 
+type ShellState = { readonly defines: boolean; readonly rebound: boolean };
+
 function stdinScript(
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
-	defines: boolean,
+	state: ShellState,
 ): Body | undefined {
-	if (simple.stdin === undefined && simple.piped !== true) return undefined;
-	const script = defines ? undefined : literalScript(simple, earlier.at(-1));
+	if (simple.stdinSources === undefined)
+		return state.defines || state.rebound ? UNREAD_STDIN : undefined;
+	const script = state.defines
+		? undefined
+		: literalScript(simple, earlier.at(-1));
 	return script === undefined
 		? UNREAD_STDIN
 		: { text: script, dynamic: false, stdin: true };
@@ -660,7 +765,7 @@ function scriptBody(
 	words: readonly Word[],
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
-	defines: boolean,
+	state: ShellState,
 ): Body | undefined {
 	const [program, ...args] = words;
 	if (program === undefined || program.dynamic) return undefined;
@@ -687,11 +792,11 @@ function scriptBody(
 			if (command)
 				return arg && { text: arg.value, dynamic: arg.dynamic, stdin: false };
 			return fromStdin || text === "-"
-				? stdinScript(simple, earlier, defines)
+				? stdinScript(simple, earlier, state)
 				: undefined;
 		}
 	}
-	return command ? undefined : stdinScript(simple, earlier, defines);
+	return command ? undefined : stdinScript(simple, earlier, state);
 }
 
 type Folder = { readonly dir: string; readonly known: boolean };
@@ -733,6 +838,7 @@ type Inherited = {
 	readonly env: readonly Word[];
 	readonly unsetsEnv: boolean;
 	readonly defines: boolean;
+	readonly rebound: boolean;
 };
 
 function scriptSteps(
@@ -743,6 +849,7 @@ function scriptSteps(
 ): ShellStep[] {
 	let folder = start;
 	let pipeline = 0;
+	let rebound = inherited.rebound;
 	const steps: ShellStep[] = [];
 	const nested = depth < MAX_DEPTH;
 	for (const simple of parseShell(src)) {
@@ -753,7 +860,7 @@ function scriptSteps(
 				pipeline,
 				0,
 				...bodies.flatMap((body) =>
-					scriptSteps(body, folder, depth + 1, inherited),
+					scriptSteps(body, folder, depth + 1, { ...inherited, rebound }),
 				),
 			);
 		const plain = plainForm(simple.words);
@@ -766,15 +873,17 @@ function scriptSteps(
 			folder = { dir: move.dir, known: folder.known };
 			continue;
 		}
+		const state = { defines: inherited.defines, rebound };
 		const body = plain.unreadable
 			? undefined
-			: scriptBody(plain.words, simple, steps, inherited.defines);
+			: scriptBody(plain.words, simple, steps, state);
+		rebound ||= rebindsStdin(simple, plain);
 		if (body !== undefined && !body.dynamic && nested) {
 			steps.push(
 				...scriptSteps(body.text, folder, depth + 1, {
 					env,
 					unsetsEnv,
-					defines: inherited.defines,
+					...state,
 				}),
 			);
 			continue;
@@ -801,6 +910,7 @@ export function shellSteps(command: string, cwd: string): ShellStep[] {
 		env: [],
 		unsetsEnv: false,
 		defines: DEFINES_COMMAND.test(command),
+		rebound: false,
 	});
 }
 
@@ -820,12 +930,11 @@ function stdoutWrites(simple: SimpleCommand): ShellWrite[] {
 	return simple.redirects
 		.filter(
 			(redirect) =>
-				(redirect.fd === undefined || redirect.fd === "1") &&
-				/^(?:>|>>|>\|)$/.test(redirect.op),
+				redirect.fd === STDOUT_FD && /^(?:&?>>?|>\|)$/.test(redirect.op),
 		)
 		.map((redirect) => ({
 			target: redirect.target,
-			append: redirect.op === ">>",
+			append: redirect.op.endsWith(">>"),
 		}));
 }
 

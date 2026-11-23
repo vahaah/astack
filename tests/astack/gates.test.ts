@@ -105,6 +105,7 @@ function run(dir: string, env: Record<string, string> = {}) {
 }
 
 const PASS: Gate = { name: "test", command: "true" };
+const PROFILE_PATH = ".claude/pr-review-hardening.profile.md";
 
 describe("astack gates run", () => {
 	test("a run where each gate that applies exits 0 records HEAD, the base and the gates", () => {
@@ -135,6 +136,7 @@ describe("astack gates run", () => {
 			head: git(dir, "rev-parse", "HEAD"),
 			base: "main",
 			baseSha: git(dir, "rev-parse", "main"),
+			profile: git(dir, "rev-parse", `main:${PROFILE_PATH}`),
 			ran: ["lint", "build", "test"],
 			skipped: ["docs"],
 		});
@@ -197,6 +199,39 @@ describe("astack gates run", () => {
 		expect(result.code).toBe(1);
 		expect(`${result.out}${result.err}`).toContain(text);
 		expect(result.record).toBeUndefined();
+	});
+
+	test("a HEAD that edits the profile records nothing and runs no gate", () => {
+		const dir = repo([{ name: "lint", command: "touch ran.txt" }], PASS);
+		writeFileSync(
+			join(dir, PROFILE_PATH),
+			profile([{ name: "lint", command: "touch ran.txt" }], {
+				name: "test",
+				command: "touch ran.txt",
+			}),
+		);
+		git(dir, "commit", "-q", "-am", "edit the profile");
+		const result = run(dir);
+		expect(result.code).toBe(1);
+		expect(result.err).toContain(
+			`HEAD holds another ${PROFILE_PATH} than the merge base`,
+		);
+		expect(existsSync(join(dir, "ran.txt"))).toBe(false);
+		expect(result.record).toBeUndefined();
+	});
+
+	test("a branch behind a profile change on its base records the profile blob of the merge base", () => {
+		const dir = repo([{ name: "lint", command: "true" }], PASS);
+		const fork = git(dir, "merge-base", "main", "HEAD");
+		git(dir, "checkout", "-q", "main");
+		writeFileSync(join(dir, PROFILE_PATH), profile([], PASS));
+		git(dir, "commit", "-q", "-am", "change the profile on main");
+		git(dir, "checkout", "-q", "feature");
+		const result = run(dir);
+		expect(result.code).toBe(0);
+		expect(result.record?.profile).toBe(
+			git(dir, "rev-parse", `${fork}:${PROFILE_PATH}`),
+		);
 	});
 
 	test("a dirty tree records nothing and runs no gate", () => {

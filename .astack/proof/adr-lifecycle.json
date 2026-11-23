@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "adr-lifecycle",
-	"base": "65bc7ffc5295e365411ac2e79b427e334075e2dd",
+	"base": "63a06c02311cbaa027fae1ba5dd4d620f647e234",
 	"scope": [
 		{
 			"path": "src/astack/adr.ts",

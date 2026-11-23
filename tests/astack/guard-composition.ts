@@ -36,8 +36,8 @@ import {
 	startsFullStop,
 } from "../../src/astack/pr/grant.ts";
 import {
+	type MadeProbe,
 	type RepoIdentity,
-	type RepoProbe,
 	type SessionRepos,
 	sessionRepoAt,
 	settleRepos,
@@ -67,7 +67,7 @@ export const madeRepoArrow: (step: ShellStep) => string | undefined =
 
 export const settleArrow: (
 	repos: SessionRepos,
-	probes: ReadonlyMap<string, RepoProbe>,
+	probes: ReadonlyMap<string, MadeProbe>,
 ) => SessionRepos = settleRepos;
 
 export const sessionRepoArrow: (
@@ -85,6 +85,7 @@ export const gateRecordArrow: (
 	head: string,
 	base: string,
 	baseSha: string,
+	profile: string,
 ) => GateRecord | undefined = recordOf;
 
 export function guardArrows(read: ReadPullRequest) {

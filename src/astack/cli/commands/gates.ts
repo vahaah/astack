@@ -3,6 +3,7 @@ import { join } from "node:path";
 import {
 	gateLabel,
 	outcomeText,
+	profileBlobs,
 	recordOf,
 	runGates,
 	saveGateRecord,
@@ -69,6 +70,13 @@ function runAll(args: readonly string[], io: Io): number {
 		);
 		return 1;
 	}
+	const blobs = profileBlobs(root, head, baseSha);
+	if (blobs === undefined || blobs.source !== blobs.base) {
+		io.err(
+			`${NAME}: HEAD holds another ${MANAGED_PATHS.reviewProfile} than the merge base ${blobs?.mergeBase ?? `of ${base}`}, or one of them holds none, so astack ran no gate and recorded nothing. A gate run judges a branch only by the profile of its base.\n`,
+		);
+		return 1;
+	}
 	const say = (line: string) => io.out(`${line}\n`);
 	const runs = runGates(
 		{ root, env: io.env, say },
@@ -92,7 +100,7 @@ function runAll(args: readonly string[], io: Io): number {
 		say(`HEAD moved from ${head} during the run, so astack recorded nothing.`);
 		return 1;
 	}
-	const record = recordOf(runs, head, base, baseSha);
+	const record = recordOf(runs, head, base, baseSha, blobs.base);
 	if (record === undefined) {
 		say("A gate did not pass, so astack recorded nothing.");
 		return 1;
@@ -116,7 +124,7 @@ function run(args: readonly string[], io: Io): number {
 export const command: Command = {
 	name: "gates",
 	summary:
-		"gates run runs the gates of .claude/pr-review-hardening.profile.md on a clean tree, as the hardening run does. It exports CI=true and each ci_env value, and puts the bun and Supabase CLI versions of its tools first on PATH. A gate applies when a path of git diff --name-only --no-renames <base>...HEAD matches its when_changed globs. It records HEAD and the base in the state folder and exits 0 when each gate that applies exits 0. A gate must also change no tracked file outside its rewrites, and HEAD must not move. The destructive guard reads that record before a push that skips the git hooks. Otherwise it records nothing and exits 1.",
+		"gates run runs the gates of .claude/pr-review-hardening.profile.md on a clean tree, as the hardening run does. It exports CI=true and each ci_env value, and puts the bun and Supabase CLI versions of its tools first on PATH. A gate applies when a path of git diff --name-only --no-renames <base>...HEAD matches its when_changed globs. It records HEAD, the base and the profile blob at the merge base in the state folder and exits 0 when each gate that applies exits 0. A HEAD whose profile differs from the merge base gets no record. A gate must also change no tracked file outside its rewrites, and HEAD must not move. The destructive guard reads that record before a push that skips the git hooks. Otherwise it records nothing and exits 1.",
 	usage: "gates run --base <ref>",
 	run,
 };

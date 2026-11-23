@@ -70,6 +70,8 @@ A commit and a config write with a hook skip stay owner gates, because a new com
 
 > Amended 2026-11-22: [ADR 0028](0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md) amends D3. A broad discard passes in a repo or worktree that this session made, and each other repo keeps this gate.
 
+> Amended 2026-11-23: [ADR 0029](0029-the-guards-read-each-stdin-fd-dollar-and-environment-config-form.md) amends D3. It adds the stdin, fd, `$` and environment config forms of a hook skip, and it binds the gate record to its base profile.
+
 ### D4. Attended detection stays fail-safe, and the merge denial names its cause
 
 `CLAUDE_CODE_SESSION_ATTENDED=0` or an `sdk` entrypoint makes a session unattended.
