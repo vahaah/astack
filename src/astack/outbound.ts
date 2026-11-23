@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import { ghRepoPrefix, inputString } from "./gh.ts";
 import type { Env } from "./hook/events.ts";
 import {
@@ -443,13 +443,26 @@ function apiWrite(located: StepAt, call: ShellCall): OutboundWrite | undefined {
 	return { subject: `gh api ${endpoint}`, target, ...body };
 }
 
+function isGhProgram(program: string | undefined): boolean {
+	return (
+		program !== undefined && basename(program).replace(/\.exe$/, "") === "gh"
+	);
+}
+
 function stepWrite(
 	located: StepAt,
 	call: ShellCall,
 ): OutboundWrite | undefined {
 	const { step } = located;
+	if (step.unreadable !== undefined)
+		return {
+			subject: "gh",
+			target: UNKNOWN,
+			texts: [call.command],
+			bodyFiles: [],
+		};
 	const group = step.words[1];
-	if (step.values[0] !== "gh" || group === undefined) return undefined;
+	if (!isGhProgram(step.values[0]) || group === undefined) return undefined;
 	if (group.dynamic || group.value.startsWith("-"))
 		return unparsedWrite("gh", step, emptyBody());
 	if (group.value === "api") return apiWrite(located, call);

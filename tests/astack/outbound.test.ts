@@ -186,6 +186,27 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			],
 		],
 		[
+			"gh named by its path",
+			shell("/usr/bin/gh issue comment 21 -b notes"),
+			[write("gh issue comment", REMOTES, ["notes"])],
+		],
+		[
+			"gh named with .exe",
+			shell("gh.exe pr comment 12 -b notes"),
+			[write("gh pr comment", REMOTES, ["notes"])],
+		],
+		[
+			"an unread wrapper of gh",
+			shell("sudo -Z gh issue comment 21 -b notes"),
+			[write("gh", UNKNOWN, ["sudo -Z gh issue comment 21 -b notes"])],
+		],
+		[
+			"a script that only a variable gives in a command that names gh",
+			shell(`S='gh pr comment 12 -b notes'; bash -c "$S"`),
+			[write("gh", UNKNOWN, [`S='gh pr comment 12 -b notes'; bash -c "$S"`])],
+		],
+		["an unread step in a command with no gh", shell('bash -c "$S"'), []],
+		[
 			"an action that only a variable gives",
 			shell('gh issue "$A" 21 -b notes'),
 			[write("gh issue", UNKNOWN, ["issue", "21", "-b", "notes"])],
