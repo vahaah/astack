@@ -89,6 +89,11 @@
 			"modelRefs": ["RunGit"]
 		},
 		{
+			"path": "tests/astack/headings.test.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit"]
+		},
+		{
 			"path": "tests/astack/merge-guard.test.ts",
 			"obligation": "SG-stdin-source",
 			"modelRefs": ["Merge"]
