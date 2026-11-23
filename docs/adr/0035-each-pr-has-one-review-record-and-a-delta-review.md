@@ -64,13 +64,14 @@ A clean stop of a full run needs at least one reviewer launch.
 ### D8. The opt-in key converge reviews only the commits after a fix
 
 `converge` is false by default.
-With `true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>` with the ids of the open and fixed entries.
+With `true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>` with the ids of the open, fixed and deferred entries.
 A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`.
 
 ### D9. stop_converged never merges, and a deferred entry stays open until a reviewed commit fixes it
 
 `stop_converged` needs a clean iteration apart from open deferred entries, and no merge follows it.
 A deferred entry carries into each later run, and `stop_clean` needs 0 open deferred entries.
+Each reviewer gets the deferred entries, and each iteration reproduces them again. An entry becomes `fixed` when its failure does not occur at the reviewed head.
 A recurring Critical or Blocker finding still ends in `stop_recurring`.
 A gate or comment finding has no severity, so it never becomes `deferred`.
 

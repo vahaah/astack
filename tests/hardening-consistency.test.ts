@@ -1914,7 +1914,7 @@ describe("the converge iterations and the deferred hold", () => {
 	const gate = read(`${engine}/references/gate.md`);
 	const decide = sentencesFrom(engineSkill, "## Decide", "## After the stop");
 
-	test("[control:defer-hold] stop_clean needs 0 open deferred entries, a deferred entry stays open in each later run, and no merge follows stop_converged", () => {
+	test("[control:defer-hold] stop_clean needs 0 open deferred entries, a deferred entry stays open in each later run until each iteration reproduces it again and finds it fixed, and no merge follows stop_converged", () => {
 		expect(paragraphStarting(decide, "The iteration is clean when")).toContain(
 			"A clean stop also needs `deferredFindings` to be 0.",
 		);
@@ -1927,12 +1927,18 @@ describe("the converge iterations and the deferred hold", () => {
 			"## Review-bot threads",
 		);
 		for (const sentence of [
-			"With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open and `fixed` entries.",
+			"With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open, `fixed` and `deferred` entries.",
 			"A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.",
 			"A gate or comment finding has no severity, so it never becomes `deferred`.",
-			"A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. It stays open until a reviewed commit fixes it.",
+			"A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. Each iteration reproduces it again. It becomes `fixed` when the failure does not occur at `REVIEWED_HEAD`.",
 		])
 			expect(converge).toContain(sentence);
+		expect(
+			sentencesFrom(review, "## Tell each reviewer", "## Checklist pass"),
+		).toContain("- the ledger's `deferred` entries, to check again;");
+		expect(stepWith(engineSkill, "Triage.")).toContain(
+			"Reproduce it, then classify it as blocking, advisory, out-of-scope, recurring or deferred.",
+		);
 		expect(gate).toContain(
 			"decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion",
 		);

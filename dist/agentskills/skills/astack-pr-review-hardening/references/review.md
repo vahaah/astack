@@ -4,7 +4,7 @@
 
 The reviewers are the `pr-review-toolkit` agents. Launch them yourself, in parallel, with the Agent tool and `subagent_type: "pr-review-toolkit:<agent>"`. Tell each one to review `git -C <WORKTREE> diff <BASE_SHA>...<HEAD>`, with the path and both SHAs written out. A subagent can start in another directory, so a bare `git diff` can read another checkout.
 
-Never run `/pr-review-toolkit:review-pr <base>`. That command takes review aspects such as `all`, `code` or `tests`, not a branch. It reads a branch name as an aspect. It also scopes itself from `git status` and `git diff`, which are empty on the clean tree that every iteration starts from.
+Never run `/pr-review-toolkit:review-pr <base>`. That command takes review aspects such as `all`, `code` or `tests`, not a branch. It also scopes itself from `git status` and `git diff`, which are empty on the clean tree that every iteration starts from.
 
 Never launch `pr-review-toolkit:code-simplifier`. It edits code, and the fix fence forbids that.
 
@@ -21,7 +21,6 @@ If a configured reviewer cannot be launched, stop with principled incompletion a
 
 ## Additional astack reviewers
 
-`reviewers.extra` defaults to an empty list.
 Add an extra reviewer only through the profile, never on the fly.
 
 - `astack-code-review` reviews `<BASE_SHA>...HEAD` on two axes: Standards, against the repo's rules and `astack-coding-rules`, and Spec, against the ticket the branch delivers. It is model-invocable, so `invoke` names the skill and the base branch as its fixed point. Its two reports stay separate. Each finding is a candidate like any reviewer's, and it counts only after you reproduce it. It reviews committed work only, which matches the clean tree every iteration starts from.
@@ -41,6 +40,7 @@ Every reviewer prompt carries:
 - the absolute path of the review checklist `references/checklist.md`, with the rule that a question applies only when the diff changes its area;
 - the blocking rules below;
 - the ledger's `fixed` and `advisory` entries, so they are not raised again unless the code they name changed;
+- the ledger's `deferred` entries, to check again;
 - in mode `ci_proof` or `ci_mixed`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs. `astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;
 - every line of `reviewers.notes`.
 
@@ -150,11 +150,10 @@ The run keeps the ledger, the comment gate and each gate.
 
 ## Converge
 
-`converge` is `false` by default.
-With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open and `fixed` entries.
+With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open, `fixed` and `deferred` entries.
 A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.
 A gate or comment finding has no severity, so it never becomes `deferred`.
-A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. It stays open until a reviewed commit fixes it.
+A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. Each iteration reproduces it again. It becomes `fixed` when the failure does not occur at `REVIEWED_HEAD`.
 When a plan covers the branch, send each `deferred` finding to `astack plan draft <slug>`. Otherwise, the final report and the PR comment name it.
 
 ## Review-bot threads
