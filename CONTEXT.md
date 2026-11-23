@@ -222,6 +222,20 @@ A store with no state folder or no session id saves nothing and loads no grant.
 _Avoid_: Grant cache, grant file
 _Code_: `src/astack/pr/grant-store.ts`
 
+### Outbound deny list
+
+The state copy of the hashed names of the companion deny list, which the outbound guard reads before GitHub text leaves the machine.
+`bun run deny add` and `bun run deny sync` write it. No copy gives no check, and a bad line denies each GitHub text write.
+_Avoid_: Client list, blocklist
+_Code_: `src/astack/deny-store.ts`
+
+### Split instruction
+
+A clause in the last person's prompt of a session that asks for a second or separate PR.
+It lets that session open a second PR from one worktree to one base. A negation or a question gives none.
+_Avoid_: Split grant, split permission
+_Code_: `splitInstructionIn`
+
 ### Base branch authority
 
 The merge keys of `.astack/profile.json` at the tip of the base branch of a PR, read with the PR.

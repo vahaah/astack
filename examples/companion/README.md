@@ -29,6 +29,8 @@ The tests make the target repo of `acme` in a temporary folder. `acme` uses the 
 
 Each line of `deny/names.sha256` is the sha256 of one lowercase token. For a name with more than one word, the line is the sha256 of its lowercase tokens joined with no space.
 
+`bun run deny add <name>` adds a hash to the list of a companion and writes the outbound deny list to `<state>/deny/names.sha256`. `bun run deny sync` writes that copy from the list. The outbound hook reads only the copy, so run `bun run deny sync` once on each machine. Both commands refuse this folder.
+
 This list holds 2 hashes. One is of a synthetic token, and one is of a synthetic two-word name. Neither name occurs in this repo, so the list never fails the scan of the public tree. Do not put a real name in this list, because a short name is easy to find from its hash.
 
 ## The profile scans
