@@ -398,6 +398,10 @@
 			"controls": ["sg-stdin-source", "sg-heredoc-fd"]
 		},
 		{
+			"criterion": "SG-unknown-dollar",
+			"controls": ["sg-unknown-dollar"]
+		},
+		{
 			"criterion": "SG-dynamic-word",
 			"controls": ["sg-dynamic-word"]
 		},

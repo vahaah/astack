@@ -117,6 +117,7 @@
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
 				"SG-stdin-source",
+				"SG-unknown-dollar",
 				"SG-hook-skip",
 				"SG-gates-run",
 				"SG-conformance",

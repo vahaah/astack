@@ -22,6 +22,7 @@ import type {
 } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
 import { duplicatePr } from "../../src/astack/hook/handlers/duplicate-pr.ts";
+import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 
 let root = "";
@@ -346,6 +347,31 @@ describe("the plain form of a git step", () => {
 			).toContain(text);
 		},
 	);
+
+	test.each(
+		forms
+			.filter((form) => form.group === "unknown-dollar")
+			.map((form) => form.command),
+	)(
+		'[control:sg-unknown-dollar] %s is denied with no grant, because bash reads $"..." as a quoted string and astack reads each other unknown $ form as a variable',
+		(command) => {
+			const guard = command.startsWith("gh")
+				? mergeGuard(() => undefined)
+				: destructive;
+			expect(reason(guard.run(shell(command, dirty), context(dirty)))).not.toBe(
+				"",
+			);
+		},
+	);
+
+	test('git commit -m "costs $.50" passes on a dirty tree, because the dynamic word is the message', () => {
+		expect(
+			destructive.run(
+				shell('git commit -m "costs $.50"', dirty),
+				context(dirty),
+			).kind,
+		).toBe("allow");
+	});
 
 	test("a heredoc with 2>&1 stays a readable stdin script, so it gets the verdict of its plain form", () => {
 		expect(
