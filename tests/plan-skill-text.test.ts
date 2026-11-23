@@ -96,4 +96,15 @@ describe("plan skill record stages and removed export/drift text", () => {
 			"sample.md",
 		]);
 	});
+
+	test("sessions.md step 4 removes the guarded defect and re-verifies passing tests before commit", () => {
+		const sessionsText = read(`${PLAN}/references/sessions.md`);
+		const protocol = sessionsText.slice(
+			sessionsText.indexOf("## Protocol of one step"),
+		);
+		const step4 = protocol.match(/^4\. .*$/m)?.[0] ?? "";
+		expect(step4).toMatch(/guarded defect/i);
+		expect(step4).toMatch(/remove the defect/i);
+		expect(step4).toMatch(/test passes/i);
+	});
 });

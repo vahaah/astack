@@ -25,7 +25,7 @@ astack session start <plan> [<session>] [--prefix <name>] [--ultracode]
 1. Write a step plan of 10 lines or fewer (post under `report`, wait under `approve`).
 2. Write the failing test first, build the step, and run scoped format, lint, typecheck and tests.
 3. Run one focused review of correctness, security, UX and test gaps. Reproduce blocking candidates before fixing, recheck confirmed fixes, stay inside the profile iteration cap, and never repeat a clean review.
-4. Prove key assertions by restoring the guarded defect and verifying the test fails.
+4. Prove each key assertion. Restore the guarded defect and confirm that the test fails. Remove the defect and confirm that the test passes.
 5. Commit with a subject carrying the handle, such as `S1 step 3 stream rows`.
 
 ## Checkpoints
