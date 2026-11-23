@@ -96,7 +96,8 @@ const LIFECYCLE =
 const DATED_START = /^> (?:Note|Amended) (\d{4}-\d{2}-\d{2}):/;
 const HEADING = /^(#{1,6})[ \t]+(.*?)[ \t]*\r?$/;
 const DECISION = /^###[ \t]+(D\d+)(?:\.[ \t]+|[ \t]+—[ \t]+)\S/;
-const KEPT_PARTS = new Set(["Domain and effects", "Invariant audit"]);
+const AUDIT_PART = "Invariant audit";
+const KEPT_PARTS = new Set(["Domain and effects", AUDIT_PART]);
 
 function lifecycleOf(text: string): AdrLifecycle | undefined {
 	const match = LIFECYCLE.exec(text);
@@ -316,7 +317,10 @@ export function amendProblems(
 			});
 			continue;
 		}
-		const baseKeys = new Set(proofSpans(before.text).map((span) => span.key));
+		const baseKeys = new Set([
+			AUDIT_PART,
+			...proofSpans(before.text).map((span) => span.key),
+		]);
 		const dated = datedLines(after.text, adrDate(before.text));
 		const header = firstPartLine(after.text);
 		const lines = new Set<number>();

@@ -326,6 +326,11 @@ test.each<[string, (text: string) => string | undefined, number[]]>([
 	).toEqual(lines);
 });
 
+test("[control:adr-amend-audit] a new Invariant audit part passes, because model-audit.test.ts asks for it in the first record of each model", () => {
+	const noAudit = BASE.slice(0, BASE.indexOf("\n## Invariant audit"));
+	expect(amendProblems(folder(noAudit), folder(BASE))).toEqual([]);
+});
+
 test("[control:adr-amend-proposed] an ADR that is Proposed at the base changes freely", () => {
 	const proposed = BASE.replace("Status: Accepted", "Status: Proposed");
 	expect(

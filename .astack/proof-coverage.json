@@ -989,6 +989,7 @@
 				"adr-amend-only",
 				"adr-amend-pr17",
 				"adr-amend-cases",
+				"adr-amend-audit",
 				"adr-amend-proposed"
 			]
 		},

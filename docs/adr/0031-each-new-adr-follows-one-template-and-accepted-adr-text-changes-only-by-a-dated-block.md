@@ -27,7 +27,8 @@ Its `domain` fence uses the grammar of the plan block of [ADR 0018](0018-one-dom
 
 A dated block starts with `> Note YYYY-MM-DD:` or `> Amended YYYY-MM-DD:`, and its date is on or after the `Date:` of the ADR.
 The status can move to `Superseded by NNNN` or `Deprecated`.
-A raw line diff exempts the base proof spans and the base Domain and effects and Invariant audit parts, because they name code.
+A raw line diff exempts the base proof spans, the base Domain and effects part and each Invariant audit part, because they name code.
+A new Invariant audit part passes, because the model audit test asks for it in the first record of each model.
 
 ### D3. Each relation names an ADR that names it back
 
