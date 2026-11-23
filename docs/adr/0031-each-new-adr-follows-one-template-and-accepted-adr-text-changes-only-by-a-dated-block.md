@@ -29,6 +29,7 @@ A dated block starts with `> Note YYYY-MM-DD:` or `> Amended YYYY-MM-DD:`, and i
 The status can move to `Superseded by NNNN` or `Deprecated`.
 A raw line diff exempts the base proof spans, the base Domain and effects part and each Invariant audit part, because they name code.
 A new Invariant audit part passes, because the model audit test asks for it in the first record of each model.
+Each exempt part ends at the next decision heading, so it cannot hide a new decision.
 
 ### D3. Each relation names an ADR that names it back
 
