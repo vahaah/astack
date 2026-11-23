@@ -594,25 +594,35 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 			"// Money convention (ADR-0006): integer minor units.\nexport const money = 1;\n",
 	};
 
-	test("a decision citation in the repo fails the dry run until a keep pattern of the repo keeps its spelling", async () => {
-		const spaced = "\\bADR \\d{4}\\b";
-		const unkept = await dryRun(money, fixtureProfile("after"), [spaced]);
-		expect(unkept.code).toBe(1);
-		expect(unkept.lines).toContain("## Decision citations in the repo");
-		expect(
-			unkept.lines.filter((line) =>
-				line.startsWith(
-					"- PROBLEM packages/db/src/schema.ts:1 `// Money convention (ADR-0006): integer minor units.` cites a decision",
-				),
-			),
-		).toHaveLength(1);
-		expect(unkept.lines).toContain(
-			"FAIL: 1 decision citation(s) that the comment hook does not keep.",
-		);
-		const both = "\\bADR[- ]\\d{4}\\b";
-		const kept = await dryRun(money, fixtureProfile("after"), [both]);
-		expect(kept.code).toBe(0);
-	});
+	test.each(["write", "report-only"] as const)(
+		"[control:apply-citation-note] the %s dry run prints a note for a decision citation that no keep pattern keeps, and exits 0",
+		async (mode) => {
+			const note =
+				"- NOTE packages/db/src/schema.ts:1 `// Money convention (ADR-0006): integer minor units.` cites a decision";
+			const unkept = await dryRun(
+				money,
+				fixtureProfile("after"),
+				["\\bADR \\d{4}\\b"],
+				mode,
+			);
+			expect(unkept.code).toBe(0);
+			expect(unkept.lines).toContain("## Decision citations in the repo");
+			expect(unkept.lines.filter((line) => line.startsWith(note))).toHaveLength(
+				1,
+			);
+			expect(
+				unkept.lines.filter((line) => line.includes("decision citation(s)")),
+			).toEqual([]);
+			const kept = await dryRun(
+				money,
+				fixtureProfile("after"),
+				["\\bADR[- ]\\d{4}\\b"],
+				mode,
+			);
+			expect(kept.code).toBe(0);
+			expect(kept.lines.filter((line) => line.startsWith(note))).toEqual([]);
+		},
+	);
 
 	test("a doc that cites a line of a file that apply writes fails the dry run until it cites the file with no line", async () => {
 		const profile = ".claude/pr-review-hardening.profile.md";
@@ -702,28 +712,6 @@ describe("apply --dry-run checks what each gate reads from the tree", () => {
 			"report-only",
 		);
 		expect(named.code).toBe(0);
-	});
-
-	test("a decision citation fails the report-only dry run too", async () => {
-		const spaced = "\\bADR \\d{4}\\b";
-		const unkept = await dryRun(
-			money,
-			fixtureProfile("after"),
-			[spaced],
-			"report-only",
-		);
-		expect(unkept.code).toBe(1);
-		expect(unkept.lines).toContain(
-			"FAIL: 1 decision citation(s) that the comment hook does not keep.",
-		);
-		const both = "\\bADR[- ]\\d{4}\\b";
-		const kept = await dryRun(
-			money,
-			fixtureProfile("after"),
-			[both],
-			"report-only",
-		);
-		expect(kept.code).toBe(0);
 	});
 });
 

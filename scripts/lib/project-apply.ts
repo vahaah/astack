@@ -611,7 +611,7 @@ async function printCitations(
 	project: ProjectConfig,
 	tree: string,
 	log: Log,
-): Promise<string[]> {
+): Promise<void> {
 	const grep = await realRepoGit(tree, [
 		"grep",
 		"-l",
@@ -627,15 +627,14 @@ async function printCitations(
 			const text = readText(join(tree, path));
 			return text === undefined ? [] : [{ path, text }];
 		});
-	const problems = unkeptCitations(files, project.keepPatterns);
 	log("## Decision citations in the repo");
 	log();
 	log(
 		`Checked the comments that cite a decision in ${files.length} tracked file(s) with the keep patterns of the repo.`,
 	);
-	for (const problem of problems) log(`- PROBLEM ${problem}`);
+	for (const note of unkeptCitations(files, project.keepPatterns))
+		log(`- NOTE ${note}`);
 	log();
-	return problems;
 }
 
 async function printLineCitations(
@@ -836,18 +835,12 @@ async function reportOnly(
 	const envFiles = await printEnvFiles(repo, wouldBe, log);
 	const taskCache = await printTaskCache(repo, wouldBe, log);
 	const platformTools = await printPlatformTools(repo, wouldBe, log);
-	const citations = await printCitations(project, repo, log);
+	await printCitations(project, repo, log);
 	const lineCitations = await printLineCitations(repo, wouldBe, log);
 	const failures = [
 		...(parity.length > 0 ? [`${parity.length} CI parity failure(s)`] : []),
 		...(rewrites.length > 0 ? [`${rewrites.length} rewrites problem(s)`] : []),
-		...treeCheckProblems(
-			envFiles,
-			taskCache,
-			platformTools,
-			citations,
-			lineCitations,
-		),
+		...treeCheckProblems(envFiles, taskCache, platformTools, lineCitations),
 	];
 	printResult(
 		failures,
@@ -861,7 +854,6 @@ function treeCheckProblems(
 	envFiles: readonly string[],
 	taskCache: readonly string[],
 	platformTools: readonly string[],
-	citations: readonly string[],
 	lineCitations: readonly string[],
 ): string[] {
 	return [
@@ -871,11 +863,6 @@ function treeCheckProblems(
 			: []),
 		...(platformTools.length > 0
 			? [`${platformTools.length} platform tool problem(s)`]
-			: []),
-		...(citations.length > 0
-			? [
-					`${citations.length} decision citation(s) that the comment hook does not keep`,
-				]
 			: []),
 		...(lineCitations.length > 0
 			? [`${lineCitations.length} line citation(s) of a file that apply writes`]
@@ -1389,7 +1376,7 @@ async function stageInTree(
 	const envFiles = await printEnvFiles(tree, rendered.artifacts, log);
 	const taskCache = await printTaskCache(tree, rendered.artifacts, log);
 	const platformTools = await printPlatformTools(tree, rendered.artifacts, log);
-	const citations = await printCitations(project, tree, log);
+	await printCitations(project, tree, log);
 	const lineCitations = await printLineCitations(tree, rendered.artifacts, log);
 
 	const newFailures = verdicts.filter(
@@ -1417,13 +1404,7 @@ async function stageInTree(
 			...(rewrites.length > 0
 				? [`${rewrites.length} rewrites problem(s)`]
 				: []),
-			...treeCheckProblems(
-				envFiles,
-				taskCache,
-				platformTools,
-				citations,
-				lineCitations,
-			),
+			...treeCheckProblems(envFiles, taskCache, platformTools, lineCitations),
 		],
 		paths,
 		removed,
