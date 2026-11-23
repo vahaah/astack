@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -127,6 +128,23 @@ const RULE_HOMES: readonly RuleHome[] = [
 	{
 		phrase: "`astack:comment-judge` holds the comment rules",
 		home: `${MODE}/SKILL.md`,
+	},
+	{
+		phrase:
+			'Use `triage` for "comments", "check github comments", and "fix CI"',
+		home: `${MODE}/playbooks/babysit.md`,
+	},
+	{
+		phrase: "Classify each open thread: Fix (true and in scope)",
+		home: `${MODE}/playbooks/babysit.md`,
+	},
+	{
+		phrase: "Resolve each handled thread:",
+		home: `${MODE}/playbooks/babysit.md`,
+	},
+	{
+		phrase: "follow the managed-file rule in `references/fix.md`",
+		home: `${MODE}/playbooks/babysit.md`,
 	},
 	{
 		phrase: "The plan, the tracker and git hold the state",
@@ -328,5 +346,41 @@ describe("mode router routes and rule homes", () => {
 		expect(missing).toEqual([]);
 		const leaked = names.filter((name) => principlesSkill.includes(name));
 		expect(leaked).toEqual([]);
+	});
+
+	test("[control:mr-no-stale-name] no tracked Markdown or JSON outside adr, plans, upstream and dist names a deleted mode file or part", () => {
+		const STALE =
+			/\b(?:non-negotiables|autonomy|writing-the-reply|delegation|playbooks|comments-triage)\.md\b|\bNon-negotiables\b|\bWriting the reply\b/;
+		const findStale = (
+			entries: readonly (readonly [path: string, text: string])[],
+		): readonly string[] =>
+			entries.filter(([, text]) => STALE.test(text)).map(([path]) => path);
+		const listed = spawnSync("git", ["ls-files", "*.md", "*.json"], {
+			cwd: ROOT,
+			encoding: "utf8",
+		});
+		expect(listed.status).toBe(0);
+		const files = listed.stdout
+			.split("\n")
+			.filter(Boolean)
+			.filter(
+				(path) =>
+					!path.startsWith("docs/adr/") &&
+					!path.startsWith("docs/plans/") &&
+					!path.startsWith("upstream/") &&
+					!path.startsWith("dist/") &&
+					path !== "CHANGELOG.md" &&
+					existsSync(join(ROOT, path)),
+			)
+			.map((path) => [path, read(path)] as const);
+		expect(findStale(files)).toEqual([]);
+		expect(
+			findStale([
+				[
+					"marketplace/plugins/astack/skills/council/SKILL.md",
+					"Use `references/comments-triage.md`.",
+				],
+			]),
+		).toEqual(["marketplace/plugins/astack/skills/council/SKILL.md"]);
 	});
 });

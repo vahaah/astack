@@ -98,7 +98,7 @@ Past 3 waiting items, give their count and say that "status" lists them.
 The router with no argument follows "With no argument, do the next step".
 Otherwise read `references/routes.md` with `$ARGUMENTS` and the last owner message. Open the first matching playbook or skill and copy its steps into the task list. Keep skipped steps with `skip: <reason>`.
 
-Reference playbooks: `references/refresh.md` ("update from main"), `references/comments-triage.md` ("comments"), `references/resume.md` ("resume"), `references/create-pr.md` ("create pr").
+Reference playbooks: `references/refresh.md` ("update from main"), `references/resume.md` ("resume"), `references/create-pr.md` ("create pr").
 
 ## Playbooks
 
@@ -127,7 +127,7 @@ Then take the first row that matches, and do that step. Do not only name it.
 
 | State | Next step |
 |---|---|
-| The open PR has review threads that are not resolved, or red CI | `references/comments-triage.md` |
+| The open PR has review threads that are not resolved, or red CI | `playbooks/babysit.md` (`triage` mode) |
 | The branch is behind its base and the owner asked for a sync before | `references/refresh.md` |
 | The branch has a finished build and no PR | `references/create-pr.md` |
 | The open PR is green, has no open threads, and the profile wants a hardening run that did not run on this head | `astack:pr-review-hardening` |

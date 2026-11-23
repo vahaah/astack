@@ -11,7 +11,7 @@ Take the first row that matches the owner's words. A user rule in the rules fold
 | "agree", "next", "approve", "accept all" | Continue | Take every recommendation of the last round, write the rows, and continue |
 | "status", "where are we", "what waits on me" | The Catch up part of `references/resume.md` | List each item that waits on the owner, with one line for each. A status ask only reads and starts no work |
 | `/goal`, "continue the board", a queue of many tickets | Programme tier | `/astack:plan` with `--tier programme`, then the `astack:mode` Orchestrate playbook. Use `astack board` for the frontier. Run 5 sessions at most. Merge the open PRs before you start new sessions |
-| "comments", "check github comments", "fix CI" | `references/comments-triage.md` | Decide who is right for each comment, fix or answer it, resolve the thread, and fix CI |
+| "comments", "check github comments", "fix CI" | The `astack:mode` Babysit playbook (`triage` mode) | Decide who is right for each comment, fix or answer it, resolve the thread, and fix CI |
 | "babysit", "watch the PR", "get it green" | `astack:babysit-pr` | It runs the Babysit playbook. Declare the mode before the first poll. Stop at merge-ready |
 | "create pr", "open a pr", "file a pr" | `astack:file-pr` and `references/create-pr.md` | Gates, deslop, no-comments, the PR body, push, then one hardening run when the profile sets `after_create_pr: harden` |
 | "update from main", "sync with main" | `references/refresh.md` | Merge `origin/main`, run the gates again, and keep the intent of the ticket |
