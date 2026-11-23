@@ -149,9 +149,16 @@ describe("a session boundary rides in the next session PR", () => {
 	const part = (heading: string): string =>
 		upkeep.split(`\n## ${heading}\n`)[1]?.split("\n## ")[0] ?? "";
 
-	test("[control:boundary-not-last] the boundary promotes the next session, and the last session PR carries the close in place of a boundary", () => {
+	test("[control:boundary-not-last] no boundary runs after the last session, because its PR carries the close", () => {
 		expect(part("Session boundary")).toContain(
-			"Promote the `next` session of the lane to `now`",
+			"Skip it after the last session.",
+		);
+		const finish =
+			read("marketplace/plugins/astack/skills/plan/references/sessions.md")
+				.split("\n## Finish\n")[1]
+				?.split("\n## ")[0] ?? "";
+		expect(finish).toContain(
+			"After each merge except the last, run `/astack:plan <slug>` once for the session boundary",
 		);
 		expect(part("Pause and close")).toContain(
 			"The last session PR carries the close.",
