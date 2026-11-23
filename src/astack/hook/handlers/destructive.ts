@@ -139,9 +139,9 @@ function pushTargets(
 	});
 }
 
-type LostChange = "unstaged" | "tracked" | "untracked";
+export type LostChange = "unstaged" | "tracked" | "untracked";
 
-interface WorkLoss {
+export interface WorkLoss {
 	readonly lost: LostChange;
 	readonly pathspecs: readonly string[];
 	readonly excludes?: readonly string[];
@@ -214,8 +214,11 @@ function dryRun(flags: readonly string[]): boolean {
 	);
 }
 
-function isTreeish(dir: string, name: string): boolean {
-	return runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
+export type Treeish = (name: string) => boolean;
+
+function treeishIn(dir: string): Treeish {
+	return (name) =>
+		runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
 }
 
 function readsPathspecFile(args: readonly string[]): boolean {
@@ -226,12 +229,12 @@ function readsPathspecFile(args: readonly string[]): boolean {
 
 function checkoutLoss(
 	args: readonly string[],
-	dir: string,
+	isTreeish: Treeish,
 ): WorkLoss | undefined {
 	const { flags, plain, dashed } = operands(args, ["-b", "-B", "--orphan"]);
 	const [first, ...rest] = plain;
 	const hasSource =
-		first !== undefined && (dashed !== undefined || isTreeish(dir, first));
+		first !== undefined && (dashed !== undefined || isTreeish(first));
 	const pathspecs = readsPathspecFile(args)
 		? WHOLE_TREE
 		: (dashed ?? (hasSource ? rest : plain));
@@ -248,7 +251,7 @@ function checkoutLoss(
 
 function switchLoss(
 	args: readonly string[],
-	dir: string,
+	isTreeish: Treeish,
 ): WorkLoss | undefined {
 	const { flags, plain } = operands(args, ["-c", "-C", "--orphan"]);
 	const [first] = plain;
@@ -257,9 +260,7 @@ function switchLoss(
 		? {
 				lost: "tracked",
 				pathspecs: WHOLE_TREE,
-				...(first !== undefined && isTreeish(dir, first)
-					? { target: first }
-					: {}),
+				...(first !== undefined && isTreeish(first) ? { target: first } : {}),
 			}
 		: undefined;
 }
@@ -329,13 +330,16 @@ function cleanLoss(args: readonly string[]): WorkLoss | undefined {
 		: undefined;
 }
 
-function resetLoss(args: readonly string[], dir: string): WorkLoss | undefined {
+function resetLoss(
+	args: readonly string[],
+	isTreeish: Treeish,
+): WorkLoss | undefined {
 	if (!args.some((arg) => isLongForm(arg, "--hard"))) return undefined;
 	const [first] = operands(args, []).plain;
 	return {
 		lost: "tracked",
 		pathspecs: WHOLE_TREE,
-		...(first !== undefined && isTreeish(dir, first) ? { target: first } : {}),
+		...(first !== undefined && isTreeish(first) ? { target: first } : {}),
 	};
 }
 
@@ -368,7 +372,10 @@ function checkoutIndexLoss(args: readonly string[]): WorkLoss | undefined {
 		: undefined;
 }
 
-function workLoss(git: GitInvocation): WorkLoss | undefined {
+export function workLoss(
+	git: GitInvocation,
+	isTreeish: Treeish,
+): WorkLoss | undefined {
 	switch (git.sub) {
 		case "apply":
 			return applyLoss(git.args);
@@ -377,11 +384,11 @@ function workLoss(git: GitInvocation): WorkLoss | undefined {
 		case "checkout-index":
 			return checkoutIndexLoss(git.args);
 		case "reset":
-			return resetLoss(git.args, git.dir);
+			return resetLoss(git.args, isTreeish);
 		case "checkout":
-			return checkoutLoss(git.args, git.dir);
+			return checkoutLoss(git.args, isTreeish);
 		case "switch":
-			return switchLoss(git.args, git.dir);
+			return switchLoss(git.args, isTreeish);
 		case "restore":
 			return restoreLoss(git.args);
 		case "clean":
@@ -518,7 +525,7 @@ function workLossReasons(
 	git: GitInvocation,
 	sessionRepo: SessionRepoTest,
 ): readonly string[] {
-	const loss = workLoss(git);
+	const loss = workLoss(git, treeishIn(git.dir));
 	return loss === undefined
 		? []
 		: lossReasons(step.values.join(" "), loss, git.dir, sessionRepo);

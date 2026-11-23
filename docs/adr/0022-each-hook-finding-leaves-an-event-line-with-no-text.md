@@ -154,3 +154,15 @@ A comma after a word means that no object follows it.
 - A log error that denies. Rejected because telemetry must never block the work.
 - A new CLI command for the counts. Rejected because doctor already reports the local state.
 - Soften the hooks now. Rejected because no data shows which rule gives false denies.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/FindingTelemetry.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `LogNeverChangesVerdict` | independent | It joins the verdict of `Judge` with `Write` and `Return`, which must keep that verdict |  |
+| `NoTextInEvent` | restates | `Write` | `tel-notext` |
+| `RefreshWritesNothing` | restates | `Judge` | `tel-refresh` |
+| `OneLinePerFinding` | independent | It joins the pending set of `Judge` with each `Write` and with the guard of `Return` |  |
+| `MaskedOnlyUnderDeny` | restates | `Write` | `tel-masked` |

@@ -51,6 +51,8 @@ The typed words grant only as a bare instruction, such as "full send" or "ok, fu
 
 > Amended 2026-11-22: The four proof sections of D4 moved to [the session guard proof record](../../formal/SessionGuards.md). They said that only a merge word or an un-negated "full send" clause of a person's prompt gives a merge grant. An ordinary reference to D4 needs no proof section.
 
+> Note 2026-11-22: The merge guard now enforces the rule that the full-stop procedure never merges. A prompt from each source starts the full-stop run with `/astack:full-stop` at its start, or with "full stop" as its only instruction. Then the guard keeps a full-stop record and denies each `gh pr merge`, also with a standing grant. `--disable-auto` passes, and only the next prompt of a person removes the record. With no path for the record, a standing grant merges nothing. A "Full stop." after other instructions can be only emphasis, so it starts no run. In the model, `ModeOf` and `StartsFullStop` give `fullStop` only for that prompt, and `PromptGrant` drops the full-send grant of a prompt that withholds it.
+
 ### D5. Skill text names no vendor model
 
 `council` takes its seats from the `council members` role of `astack:setup-models`.

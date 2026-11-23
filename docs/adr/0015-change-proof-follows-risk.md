@@ -93,6 +93,8 @@ It also holds the `failClosed`, `contractOnly` and `unmodelled` entries.
 The `name` of a model is its module name.
 An `unmodelled` entry names its reason and a control marker of a test.
 
+> Note 2026-11-22: TLC reads only the model files, so a code change cannot fail a model. The first record of each registry entry now holds a dated `## Invariant audit` table, with one row for each invariant and property except `TypeOK`. A `restates` row names the action whose guard or update it repeats, and a control that a test holds. An `independent` row gives its reason. `tests/astack/model-audit.test.ts` fails a missing, stale or uncontrolled row. An entry can also hold a `conformance` field with its conformance test and a code mutation of the function that the test guards. The SessionGuards entry names `grantReasons`.
+
 ### D3. One run starts at most one triple for each model, and no verdict persists
 
 A model runs once, also when the manifest and a path both select it.
@@ -160,3 +162,19 @@ A rung variable in that model multiplies its states, so the ladder rule is a sep
 - Globs in the profile. Rejected because a repo can lower them.
 - A rung that the author picks. Rejected because the author is the party that the gate checks.
 - A schema stop for `modelRefs`. Rejected because it breaks each product gate at its next CLI update.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/ProofLadder.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `TlcOnlyAtR4` | independent | It joins the `needed` set of `Derive` with the guard of `Start` |  |
+| `AdmitNeedsEachTriple` | independent | It joins `Derive`, each `Start` and the guard of `Admit` |  |
+| `FailClosedStops` | restates | `Derive` | `rl-fail-closed` |
+| `FloorOnlyRaises` | restates | `Derive` | `rl-floor`, `rl-rung` |
+| `OneTriplePerModel` | restates | `Start` | `rl-one-run` |
+| `ManifestFirst` | restates | `Start` | `rl-select`, `rl-registry-diff` |
+| `RegistryRunsAll` | independent | It joins `Selected` of `Derive` with the guard of `Admit` |  |
+| `DeletedRegistryStops` | restates | `Derive` | `rl-registry-gone` |
+| `TlaLawSelects` | restates | `Derive` | `rung-law`, `ladder-law-cuts` |

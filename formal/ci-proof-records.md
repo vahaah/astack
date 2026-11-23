@@ -63,3 +63,12 @@ The named mutation drops the role separation check during `Classify`.
 It must violate `CiRecordsSafe` with a counterexample.
 The unchanged positive run must pass again with matching counts.
 No static classification result can replace current proof or exact-head hosted CI.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/CiProofRecords.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `CiRecordsSafe` | restates | `Classify` | `ci-proof-records` |
+| `CurrentProofRequired` | restates | `CheckProof` | `ci-proof-current` |

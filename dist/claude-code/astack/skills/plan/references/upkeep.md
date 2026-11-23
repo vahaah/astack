@@ -1,6 +1,6 @@
 # Long-term upkeep
 
-At S0, `/astack:plan` picks a mode from its input. This page covers resume, the session boundary, the milestone exit, diverge, and pause and close.
+This page covers resume, the session boundary, the milestone exit, diverge, and pause and close.
 
 ## Resume
 
@@ -26,7 +26,7 @@ Set `reviewed` to today when a resume changes the plan.
 
 ## Session boundary
 
-Run it once when the PR of the `now` session merged.
+Run it once when the PR of the `now` session merged. Skip it after the last session.
 
 1. Run the whole-work proof of the session on the real artifact. Log a `boundary` trail row.
 2. Compare what merged with the steps and with the Exit.

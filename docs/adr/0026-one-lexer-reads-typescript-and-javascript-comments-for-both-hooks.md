@@ -125,3 +125,14 @@ The test does not compare words, because each copy paraphrases the frozen quote.
 - The `typescript` package as the lexer. Rejected because it is a dev dependency only, so the bundle cannot use it.
 - Keep the 14-word set of `lexJs` in the scan. Rejected because it keeps the false comment in `export default /[//]/.source;`.
 - Compare the exact text of each keep-list copy. Rejected because each STE paraphrase then fails.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/SourceScan.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `MemberNameIsValue` | restates | `Step` | `cs-member-comment`, `cs-member-type` |
+| `NameWordIsValue` | restates | `Step` | `cs-name-comment`, `cs-name-type` |
+| `NoCommentInRegex` | independent | It needs each later `Step` after the jump of a regex, so it spans many steps |  |
+| `FailedScanIsIncomplete` | restates | `Finish` | `cs-incomplete` |

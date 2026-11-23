@@ -3,7 +3,7 @@ import { readOptional } from "../paths.ts";
 import { PROFILE_PATH } from "../profile.ts";
 import type { SimpleCommand, Word } from "../shell.ts";
 import type { BaseAuthority, PullRequestState } from "./github.ts";
-import { grantCovers, type MergeGrant } from "./grant.ts";
+import { type FullStopRecord, grantCovers, type MergeGrant } from "./grant.ts";
 import { closingRefs, linkFindings } from "./links.ts";
 import { DEFAULT_MERGE_PROFILE, type MergeProfile } from "./profile.ts";
 
@@ -133,6 +133,7 @@ export type MergeInputs = {
 	readonly chained: boolean;
 	readonly setsEnv: boolean;
 	readonly grant: MergeGrant;
+	readonly fullStop: FullStopRecord;
 	readonly unattendedReason: string | undefined;
 };
 
@@ -155,6 +156,10 @@ function closingInCommitText(call: MergeCall): string[] {
 
 export function preflightReasons(inputs: MergeInputs): readonly string[] {
 	const reasons: string[] = [];
+	if (inputs.fullStop === "present")
+		reasons.push(
+			"A prompt of this session started the full-stop run, and the full-stop run never merges. Leave the merge to the owner, or wait for the next prompt of the owner.",
+		);
 	if (inputs.call.admin)
 		reasons.push(
 			"Do not merge with --admin. It skips the branch protection rules. This is an owner gate, so ask the owner.",
@@ -236,9 +241,16 @@ function turnGrantText(inputs: MergeInputs, number: number): string {
 
 function grantReasons(inputs: MergeInputs, pr: PullRequestState): string[] {
 	const profile = mergeProfileOf(pr.authority);
-	if (profile.authority === "standing") return [];
-	if (profile.standingBases.includes(pr.base)) return [];
 	if (grantCovers(inputs.grant, pr.number)) return [];
+	if (
+		profile.authority === "standing" ||
+		profile.standingBases.includes(pr.base)
+	)
+		return inputs.fullStop === "unknown"
+			? [
+					`astack has no path for the full-stop record of this session, so it cannot see if the full-stop run is active. Without that record, the standing grant of ${pr.base} does not cover #${pr.number}. Ask the owner before you merge #${pr.number}.`,
+				]
+			: [];
 	return [
 		[
 			baseProfileText(pr),

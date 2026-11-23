@@ -21,6 +21,8 @@ A copied retry example does not establish a model relation.
 ## Register a model
 
 Each entry of `formal/models.json` has `name`, `model`, `negative`, `records`, `covers` and `text`.
+An entry can also have `conformance`, which names its conformance test and a code mutation with its `file`, `symbol`, `original`, `replacement` and `defect`.
+The test of the registry finds the original text once in that function, and the conformance test must fail with the mutation.
 The `name` is the module name, and `model` and `negative` use the manifest shape.
 `records` lists each file whose Formal claim names the model.
 `covers` lists the code globs of the model, and `text` lists its skill text globs.
@@ -39,6 +41,20 @@ A contract-only path gives R0, and each other path gives R1.
 The higher floor of the diff base and the tree applies, so a change cannot lower its own floor.
 Remove a model in two PRs. The first removes its registry entry, and the second removes its files.
 A fail-closed glob also leaves in two PRs, because the globs of the diff base also apply.
+
+## Audit the invariants
+
+TLC reads only the model files, so a code change cannot fail a model.
+The first record of each registry entry holds one dated `## Invariant audit` table.
+It has one row for each invariant and property of the config, except `TypeOK`.
+Its columns are Invariant, Class, Action and Controls.
+
+- Class `restates` marks an invariant that only repeats one guard or one update of an action. The Action column names that action. The Controls column names at least one control ID that a test under `tests/` holds.
+- Class `independent` marks an invariant that a guard does not repeat. The Action column gives the reason.
+
+`tests/astack/model-audit.test.ts` fails a missing row, a stale row and an unknown class.
+It also fails a restating row with no control, a control that no test holds and an independent row with no reason.
+Add the row in the PR that adds the invariant.
 
 ## Run the gate
 

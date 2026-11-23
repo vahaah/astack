@@ -143,6 +143,34 @@ describe("plan recovery uses the recorded workflow state", () => {
 });
 
 describe("a session boundary rides in the next session PR", () => {
+	const upkeep = read(
+		"marketplace/plugins/astack/skills/plan/references/upkeep.md",
+	);
+	const part = (heading: string): string =>
+		upkeep.split(`\n## ${heading}\n`)[1]?.split("\n## ")[0] ?? "";
+
+	test("[control:boundary-not-last] no boundary runs after the last session, because its PR carries the close", () => {
+		expect(part("Session boundary")).toContain(
+			"Skip it after the last session.",
+		);
+		const finish =
+			read("marketplace/plugins/astack/skills/plan/references/sessions.md")
+				.split("\n## Finish\n")[1]
+				?.split("\n## ")[0] ?? "";
+		expect(finish).toContain(
+			"After each merge except the last, run `/astack:plan <slug>` once for the session boundary",
+		);
+		expect(part("Pause and close")).toContain(
+			"The last session PR carries the close.",
+		);
+	});
+
+	test("[control:close-deletes-plan] the close of the last session PR deletes the plan", () => {
+		expect(part("Pause and close")).toContain(
+			"Send each lesson to its home, and delete the plan.",
+		);
+	});
+
 	const planText = (dir: string): string[] =>
 		readdirSync(join(root, dir), { recursive: true, encoding: "utf8" })
 			.filter((path) => path.endsWith(".md"))

@@ -115,3 +115,15 @@ A graduated handle that is live again fails, as a superseded handle does.
 - A docs-only CI path. Rejected because each product repo owns its CI.
 - Two ADR readers. Rejected because they gave opposite verdicts.
 - A delete of a graduated row. Rejected because it frees the number of a top row.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/PlanBoundary.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `OneBoundaryPerMerge` | independent | It joins the branch guard of `Merge` with the branch update of `Boundary` |  |
+| `NoBoundaryAfterLast` | restates | `Boundary` | `boundary-not-last` |
+| `EachMergeCarriesItsBoundary` | independent | It needs one `Boundary` between two runs of `Merge` |  |
+| `RowLeavesWithAuthority` | restates | `Graduate` | `grad-once` |
+| `LastPrDeletesPlan` | restates | `Merge` | `close-deletes-plan` |

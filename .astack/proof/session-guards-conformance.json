@@ -1,0 +1,603 @@
+{
+	"version": 1,
+	"change": "session-guards-conformance",
+	"base": "54c05ae4300e43ea0c8029ad5e7fbce3f0c314ed",
+	"scope": [
+		{
+			"path": "src/astack/pr/grant.ts",
+			"obligation": "SG-full-stop",
+			"modelRefs": [
+				"Prompt",
+				"ModeOf",
+				"Withholds",
+				"PromptGrant",
+				"FullStopNeverMerges"
+			]
+		},
+		{
+			"path": "src/astack/pr/merge.ts",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Merge", "FullStopNeverMerges", "MergeNeedsAuthority"]
+		},
+		{
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "src/astack/hook/handlers/destructive.ts",
+			"obligation": "SG-work-loss",
+			"modelRefs": ["RunGit", "CodeLost", "DenialNeedsLoss", "BroadLossDenied"]
+		},
+		{
+			"path": "src/astack/change-proof/registry.ts",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "src/astack/change-proof/rung.ts",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "formal/SessionGuards.tla",
+			"obligation": "SG-conformance",
+			"modelRefs": [
+				"Prompt",
+				"Merge",
+				"Write",
+				"Withholds",
+				"PromptGrant",
+				"ModeOf",
+				"Scratch",
+				"FullStopNeverMerges",
+				"WriteChecksKept",
+				"ScratchSkipped"
+			]
+		},
+		{
+			"path": "formal/SessionGuards.md",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "Merge", "Write", "RunGit", "FullStopNeverMerges"]
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "SG-conformance",
+			"modelRefs": ["FullStopNeverMerges"]
+		},
+		{
+			"path": "formal/ProofAdmission.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "formal/ci-proof-records.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+			"obligation": "SG-scratch",
+			"modelRefs": ["Write", "Scratch", "WriteChecksKept", "ScratchSkipped"]
+		},
+		{
+			"path": "docs/adr/0013-astack-keeps-a-part-only-on-measured-use.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0015-change-proof-follows-risk.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0020-plan-tools-share-one-adr-reader.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0021-doctor-reports-the-trust-that-codex-enforces.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0022-each-hook-finding-leaves-an-event-line-with-no-text.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0023-heavy-test-files-copy-one-template-repo.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0024-orchestrate-supervises-and-a-status-ask-lists-each-waiting-item.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0026-one-lexer-reads-typescript-and-javascript-comments-for-both-hooks.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/adr/0027-the-review-stub-needs-the-plugin-and-commentkeep-is-the-one-keep-list.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "docs/reference/change-proof-contract.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/runbooks/formal-models.md",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "README.md",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "marketplace/plugins/astack/README.md",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Scratch"]
+		},
+		{
+			"path": "tests/astack/session-guards-model.ts",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "Merge", "Write", "RunGit", "Push"]
+		},
+		{
+			"path": "tests/astack/session-guards-model.test.ts",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "Merge", "Write", "RunGit", "Push"]
+		},
+		{
+			"path": "tests/property/session-guards-merge.test.ts",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "EditProfile", "Merge"]
+		},
+		{
+			"path": "tests/property/session-guards-work-loss.test.ts",
+			"obligation": "SG-conformance",
+			"modelRefs": ["RunGit", "After"]
+		},
+		{
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-full-stop",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "tests/astack/guard-composition.ts",
+			"obligation": "SG-conformance",
+			"modelRefs": ["Prompt", "RunGit"]
+		},
+		{
+			"path": "tests/astack/model-audit.test.ts",
+			"obligation": "CP-invariant-audit"
+		},
+		{
+			"path": "tests/astack/model-registry.test.ts",
+			"obligation": "RL-REGISTRY"
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "CP-11"
+		},
+		{
+			"path": "tests/tracker-schema.test.ts",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve",
+			"modelRefs": ["TypeOK"]
+		}
+	],
+	"domain": {
+		"context": "Astack delivery assurance",
+		"glossary": "CONTEXT.md",
+		"aggregate": {
+			"path": "src/astack/pr/grant.ts",
+			"symbol": "MergeGrant"
+		},
+		"terms": [
+			"Session guard",
+			"Merge grant",
+			"Work-loss command",
+			"Scratch file",
+			"Model registry",
+			"Conformance test",
+			"Restating invariant"
+		],
+		"invariants": [
+			{
+				"name": "No merge happens after a prompt that starts the full-stop run, until a person's prompt that does not start it",
+				"modelRef": "FullStopNeverMerges"
+			},
+			{
+				"name": "Each PR of a grant has a merge word or an un-negated full send of a person's prompt",
+				"modelRef": "GrantFromWords"
+			},
+			{
+				"name": "Each merge has a profile grant or a covering prompt of a person",
+				"modelRef": "MergeNeedsAuthority"
+			},
+			{
+				"name": "A write outside the scratch class gets the write checks",
+				"modelRef": "WriteChecksKept"
+			},
+			{
+				"name": "A write of a scratch file gets no write check",
+				"modelRef": "ScratchSkipped"
+			},
+			{
+				"name": "Each work-loss denial names a change that git discards",
+				"modelRef": "DenialNeedsLoss"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0009-astack-adopts-tstack-as-a-frozen-upstream.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0010-session-guards-skip-scratch-writes-and-deny-broad-work-loss.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0011-merge-authority-comes-from-the-owner-and-the-base-branch.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0015-change-proof-follows-risk.md",
+				"decision": "D2"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"SG-conformance",
+				"SG-full-stop",
+				"SG-scratch",
+				"SG-work-loss",
+				"RL-REGISTRY",
+				"CP-invariant-audit",
+				"CP-11",
+				"BOUNDARY-ONCE",
+				"SG-generated",
+				"SG-preserve"
+			]
+		}
+	},
+	"category": {
+		"carrier": {
+			"kind": "artifact",
+			"contract": "Each guard maps one decoded hook call to one Verdict. A prompt from each source that starts the full-stop run makes the merge guard deny each gh pr merge until the next prompt of a person. With no path for the full-stop record, a merge that rests only on a standing grant gets a deny. The work-loss classifier is pure and takes the treeish reader as a parameter. combineAll keeps the verdict of the highest rank, so a deny of one guard stays a deny."
+		},
+		"objects": [
+			{
+				"name": "HookCall",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
+				}
+			},
+			{
+				"name": "Verdict",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "Verdict"
+				}
+			},
+			{
+				"name": "PromptText",
+				"link": {
+					"path": "src/astack/hook/events.ts",
+					"symbol": "HookEvent"
+				}
+			},
+			{
+				"name": "MergeGrant",
+				"link": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "MergeGrant"
+				}
+			},
+			{
+				"name": "FullStopStart",
+				"link": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "startsFullStop"
+				}
+			},
+			{
+				"name": "GitInvocation",
+				"link": {
+					"path": "src/astack/git-command.ts",
+					"symbol": "GitInvocation"
+				}
+			},
+			{
+				"name": "WorkLoss",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "WorkLoss"
+				}
+			}
+		],
+		"arrows": [
+			{
+				"name": "mergeGuard",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"effects": ["fs-read", "fs-write", "spawn", "network"]
+			},
+			{
+				"name": "destructive",
+				"from": "HookCall",
+				"to": "Verdict",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"effects": ["fs-read", "fs-write", "spawn", "env"]
+			},
+			{
+				"name": "mergeGrantIn",
+				"from": "PromptText",
+				"to": "MergeGrant",
+				"link": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
+				},
+				"effects": []
+			},
+			{
+				"name": "startsFullStop",
+				"from": "PromptText",
+				"to": "FullStopStart",
+				"link": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "startsFullStop"
+				},
+				"effects": []
+			},
+			{
+				"name": "workLoss",
+				"from": "GitInvocation",
+				"to": "WorkLoss",
+				"link": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "workLoss"
+				},
+				"effects": []
+			}
+		],
+		"composites": [],
+		"equality": "Two verdicts are equal when their kind and their text are equal. Two grants are equal when their kind and their PR numbers are equal. Two full-stop starts are equal booleans. Two work losses are equal when the lost kind, the pathspecs, the excludes, the folder flags and the target are equal, or when both are undefined.",
+		"laws": [
+			{
+				"law": "id-left",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "id-right",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "assoc",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-id",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "functor-comp",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-left",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-right",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			},
+			{
+				"law": "monad-assoc",
+				"status": "not_applicable",
+				"reason": "The guards still run side by side under combineAll, and the merge guard and the destructive handler chain their readers by early returns. The change adds no composite arrow, composition operator, map, functor or monad."
+			}
+		],
+		"typedWitness": "tests/astack/guard-composition.ts"
+	},
+	"abstraction": {
+		"hides": "The clause split of a prompt, the full-stop record file beside the grant record, the git rev-parse of the treeish reader and the status reader of the destructive handler.",
+		"callersKnow": [
+			"startsFullStop is true only for the full-stop command at the start of a prompt, or for a prompt whose only instruction is full stop. Filler words, such as ok, please and now, can stand beside it.",
+			"Each prompt that starts the full-stop run writes the full-stop record. Only a person's prompt that does not start it removes the record. loadFullStop gives unknown when the state folder or the session id gives no path.",
+			"preflightReasons denies each gh pr merge while the record exists, before the PR read, and --disable-auto passes.",
+			"workLoss spawns nothing. The handler passes a reader that runs git rev-parse in the folder of the git call."
+		],
+		"deletionTest": "Without startsFullStop and the full-stop record, the full-stop procedure has only skill text, and a standing grant merges after a full-stop prompt. Without a pure workLoss, the conformance test must spawn git for each command row.",
+		"alternatives": [
+			{
+				"name": "The skill text as the only control of full stop",
+				"rejectedBecause": "159 of 3,136 merges of the model then pass after a full-stop clause."
+			},
+			{
+				"name": "A deny after each full-stop clause",
+				"rejectedBecause": "A Full stop. at the end of a message can be only emphasis, as the full-stop skill says."
+			},
+			{
+				"name": "A TypeScript copy of the model tables",
+				"rejectedBecause": "A copy drifts from the model, so the test reads the tables from the model text."
+			},
+			{
+				"name": "TLC trace validation of hook logs",
+				"rejectedBecause": "A code mutation cannot fail TLC, and the hooks keep no full log."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "mergeGrantIn"
+				},
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/grant.ts",
+					"symbol": "startsFullStop"
+				},
+				"modelAction": "Prompt"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/merge-guard.ts",
+					"symbol": "mergeGuard"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/pr/merge.ts",
+					"symbol": "preflightReasons"
+				},
+				"modelAction": "Merge"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "workLoss"
+				},
+				"modelAction": "RunGit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/hook/handlers/destructive.ts",
+					"symbol": "handler"
+				},
+				"modelAction": "RunGit"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/paths.ts",
+					"symbol": "isScratchPath"
+				},
+				"modelAction": "Write"
+			}
+		],
+		"omitted": [
+			"The model stands for both forms of the full-stop start with the prompt that holds only the full-stop clause.",
+			"The target check of checkout -f and reset --hard is outside the model, so the conformance repos keep untracked files out of the target tree.",
+			"The invariant audit and the registry parser have no SessionGuards action. The audit test and the registry tests examine them.",
+			"The conformance test and the fast-check commands do not show that each other code path refines the model."
+		]
+	},
+	"model": {
+		"module": "formal/SessionGuards.tla",
+		"config": "formal/SessionGuards.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Attended and unattended sessions, four base authorities, three working-tree authorities, two PRs, two channels, a guard error or none, and prompts of one or two of seven clause classes from four sources.",
+			"Each combination of four path facts for one write and an optional commit.",
+			"Each set of changes from four change kinds in three places, and 16 git commands with their documented effects.",
+			"One repo at the path that the session makes, one record of that path, its settle window, and a repo of another process that appears after the window.",
+			"A HEAD whose gates pass or fail, one gate run, and one push or commit with or without a hook skip to three targets."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"GrantFromWords",
+			"GrantFromPerson",
+			"MergeNeedsAuthority",
+			"McpMergeDenied",
+			"GuardErrorDenies",
+			"FullStopNeverMerges",
+			"WriteChecksKept",
+			"ScratchSkipped",
+			"CommitSurfaceChecked",
+			"BroadLossDenied",
+			"DenialNeedsLoss",
+			"HookSkipNeedsGates",
+			"SessionRepoPasses"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/SessionGuards.tla",
+		"action": "Merge",
+		"original": "/\\ mode # \"fullStop\"",
+		"replacement": "",
+		"defect": "Merge drops its full-stop guard, so a standing grant merges after a prompt that starts the full-stop run.",
+		"expect": {
+			"kind": "invariant",
+			"name": "FullStopNeverMerges"
+		}
+	},
+	"limits": [
+		"The finite model takes the clause grammar, the prompt source, the path facts and the git status entries as true observations.",
+		"The conformance test and the fast-check commands drive the real guards from the model tables, but they do not show full refinement.",
+		"An agent can delete the full-stop record in the state folder, so the record stops a mistake, not a hostile agent.",
+		"The audit class of each row needs review. The audit test examines only the form of each row and its controls.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

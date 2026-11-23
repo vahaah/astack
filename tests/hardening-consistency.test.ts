@@ -1705,6 +1705,16 @@ describe("a PR that changes CI", () => {
 		},
 	);
 
+	test("[control:ci-proof-current] in mode ci_proof the green gate keeps the current proof gate blocking, so no proof result becomes advisory", () => {
+		const advisoryRule = paragraphStarting(
+			gate,
+			"In mode `ci_proof`, a red gate is advisory",
+		);
+		expect(advisoryRule).toContain(
+			"The required current proof gate stays blocking. No attribution makes a failed proof advisory.",
+		);
+	});
+
 	const readBack = [
 		"`gh pr view <n> --json headRefOid`, then `gh pr checks <n> --required --json name,state,bucket,event,workflow,link`, then",
 		"A `pull_request` run takes its workflows from the merge of the PR head into the base, so it ran the CI of the PR.",

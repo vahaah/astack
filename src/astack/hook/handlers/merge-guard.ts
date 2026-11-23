@@ -5,7 +5,14 @@ import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
 } from "../../pr/github.ts";
-import { loadGrant, mergeGrantIn, saveGrant } from "../../pr/grant.ts";
+import {
+	loadFullStop,
+	loadGrant,
+	mergeGrantIn,
+	saveFullStop,
+	saveGrant,
+	startsFullStop,
+} from "../../pr/grant.ts";
 import {
 	mergeDenial,
 	parseMergeCall,
@@ -299,6 +306,7 @@ function mergeVerdict(
 		chained,
 		setsEnv: merge.setsEnv,
 		grant: loadGrant(context.env, context.session),
+		fullStop: loadFullStop(context.env, context.session),
 		unattendedReason: unattendedReason(context.env),
 	};
 	const preflight = preflightReasons(inputs);
@@ -597,10 +605,15 @@ export function mergeGuard(read: ReadPullRequest): Handler {
 		failed: failedVerdict,
 		run: (event, context) => {
 			switch (event.kind) {
-				case "prompt":
-					if (event.human && event.session)
+				case "prompt": {
+					if (!event.session) return ALLOW;
+					const fullStop = startsFullStop(event.text);
+					if (event.human || fullStop)
+						saveFullStop(context.env, event.session, fullStop);
+					if (event.human)
 						saveGrant(context.env, event.session, mergeGrantIn(event.text));
 					return ALLOW;
+				}
 				case "shell":
 					return shellVerdict(event, context, read);
 				case "mcp":

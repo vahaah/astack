@@ -9,9 +9,12 @@ import {
 	readDocument,
 	readModel,
 	readNegative,
+	SYMBOL,
 	TLA_NAME,
 } from "./contract.ts";
 import {
+	type CodeMutation,
+	type Conformance,
 	type ModelRegistry,
 	moduleName,
 	REGISTRY_PATH,
@@ -29,6 +32,37 @@ function globs(fields: Fields, key: string, min: number): readonly string[] {
 	});
 }
 
+const ENTRY_KEYS = [
+	"name",
+	"model",
+	"negative",
+	"records",
+	"covers",
+	"text",
+	"conformance",
+];
+
+function readMutation(mutation: Fields): CodeMutation {
+	return {
+		file: mutation.path("file", ".ts"),
+		symbol: mutation.text("symbol", SYMBOL, "an identifier"),
+		original: mutation.text("original"),
+		replacement: mutation.string("replacement"),
+		defect: mutation.text("defect"),
+	};
+}
+
+function readConformance(conformance: Fields): Conformance {
+	return {
+		test: conformance.path("test", ".ts"),
+		mutation: conformance.object(
+			"mutation",
+			["file", "symbol", "original", "replacement", "defect"],
+			readMutation,
+		),
+	};
+}
+
 function readEntry(entry: Fields): RegistryModel {
 	return {
 		name: entry.text("name", TLA_NAME, "a TLA+ name"),
@@ -37,6 +71,15 @@ function readEntry(entry: Fields): RegistryModel {
 		records: entry.paths("records", 1, ".md"),
 		covers: globs(entry, "covers", 0),
 		text: globs(entry, "text", 0),
+		...(entry.value("conformance") === undefined
+			? {}
+			: {
+					conformance: entry.object(
+						"conformance",
+						["test", "mutation"],
+						readConformance,
+					),
+				}),
 	};
 }
 
@@ -71,12 +114,7 @@ export function parseRegistry(text: string): Result<ModelRegistry, string> {
 		REGISTRY_PATH,
 		["models", "failClosed", "contractOnly", "unmodelled"],
 		(fields) => ({
-			models: fields.objects(
-				"models",
-				1,
-				["name", "model", "negative", "records", "covers", "text"],
-				readEntry,
-			),
+			models: fields.objects("models", 1, ENTRY_KEYS, readEntry),
 			failClosed: globs(fields, "failClosed", 0),
 			contractOnly: globs(fields, "contractOnly", 0),
 			unmodelled: fields.objects(

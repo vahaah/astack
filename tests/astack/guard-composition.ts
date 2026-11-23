@@ -5,6 +5,7 @@ import {
 	runGates,
 } from "../../src/astack/gates.ts";
 import {
+	type GitInvocation,
 	type GitRead,
 	madeRepoTarget,
 	readGit,
@@ -16,7 +17,12 @@ import type {
 	Verdict,
 } from "../../src/astack/hook/events.ts";
 import { handler as commentsHandler } from "../../src/astack/hook/handlers/comments.ts";
-import { handler as destructiveHandler } from "../../src/astack/hook/handlers/destructive.ts";
+import {
+	handler as destructiveHandler,
+	type Treeish,
+	type WorkLoss,
+	workLoss,
+} from "../../src/astack/hook/handlers/destructive.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
 import { handler as steArtifactHandler } from "../../src/astack/hook/handlers/ste-artifact.ts";
 import { handler as typesHandler } from "../../src/astack/hook/handlers/types.ts";
@@ -24,7 +30,11 @@ import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
 } from "../../src/astack/pr/github.ts";
-import { type MergeGrant, mergeGrantIn } from "../../src/astack/pr/grant.ts";
+import {
+	type MergeGrant,
+	mergeGrantIn,
+	startsFullStop,
+} from "../../src/astack/pr/grant.ts";
 import {
 	type RepoIdentity,
 	type RepoProbe,
@@ -37,6 +47,13 @@ import { type ShellStep, shellSteps } from "../../src/astack/shell.ts";
 export type GuardArrow = (event: HookEvent, context: Context) => Verdict;
 
 export const grantArrow: (prompt: string) => MergeGrant = mergeGrantIn;
+
+export const fullStopArrow: (prompt: string) => boolean = startsFullStop;
+
+export const workLossArrow: (
+	git: GitInvocation,
+	isTreeish: Treeish,
+) => WorkLoss | undefined = workLoss;
 
 export const pullRequestArrow: ReadPullRequest = readPullRequestWithGh;
 

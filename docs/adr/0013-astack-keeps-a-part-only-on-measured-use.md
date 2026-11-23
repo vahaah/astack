@@ -145,3 +145,13 @@ The other parts of ADR 0004 D4 stay as they are.
 - A lint warning for skill size. Rejected because a warning does not stop growth.
 - A total cap only. Rejected because one skill can then grow while another shrinks.
 - Fail a cap above its count. Rejected because each commit of a cut PR then needs a cap edit.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/WordBudget.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `PassWithinCaps` | restates | `Check` | `wb-skill-over`, `wb-total-over`, `wb-line-over` |
+| `FailNamesOverrun` | restates | `Check` | `wb-skill-over`, `wb-total-over`, `wb-line-over` |
+| `CapsNeverRise` | restates | `Lower` | `wb-lower`, `wb-line-lower` |

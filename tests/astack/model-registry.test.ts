@@ -1,5 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { parseRegistry } from "../../src/astack/change-proof/registry.ts";
+import { REGISTRY_PATH } from "../../src/astack/change-proof/rung.ts";
+
+const ROOT = join(import.meta.dir, "../..");
 
 function model(name: string) {
 	return {
@@ -70,9 +75,18 @@ describe("parseRegistry", () => {
 		[
 			"an unknown key of a model",
 			(r) => {
-				Object.assign(r.models[0] ?? {}, { conformance: "later" });
+				Object.assign(r.models[0] ?? {}, { verdicts: "later" });
 			},
-			'models[0] has the unknown key "conformance"',
+			'models[0] has the unknown key "verdicts"',
+		],
+		[
+			"a conformance with no code mutation",
+			(r) => {
+				Object.assign(r.models[0] ?? {}, {
+					conformance: { test: "tests/gate.test.ts" },
+				});
+			},
+			"models[0].conformance.mutation must be an object",
 		],
 		[
 			"an unknown root key",
@@ -145,6 +159,45 @@ describe("parseRegistry", () => {
 			expect(result.ok).toBe(false);
 		},
 	);
+
+	test("a conformance test with a code mutation parses", () => {
+		const conformance = {
+			test: "tests/gate.test.ts",
+			mutation: {
+				file: "src/gate.ts",
+				symbol: "allowed",
+				original: "return covers(grant);",
+				replacement: "return true;",
+				defect: "The gate allows each call.",
+			},
+		};
+		const result = parsed((value) => {
+			Object.assign(value.models[0] ?? {}, { conformance });
+		});
+		if (!result.ok) throw new Error(result.error);
+		expect(result.value.models[0]?.conformance).toEqual(conformance);
+		expect(result.value.models[1]?.conformance).toBeUndefined();
+	});
+
+	test("[control:rl-conformance] the SessionGuards entry names its conformance test and a code mutation that its function holds once", () => {
+		const registry = parseRegistry(
+			readFileSync(join(ROOT, REGISTRY_PATH), "utf8"),
+		);
+		if (!registry.ok) throw new Error(registry.error);
+		const conformance = registry.value.models.find(
+			(entry) => entry.name === "SessionGuards",
+		)?.conformance;
+		if (conformance === undefined) throw new Error("no conformance field");
+		const { file, symbol, original } = conformance.mutation;
+		const source = readFileSync(join(ROOT, file), "utf8");
+		const body =
+			source.split(`function ${symbol}(`)[1]?.split("\n}\n")[0] ?? "";
+		expect(source.split(original).length - 1).toBe(1);
+		expect(body.split(original).length - 1).toBe(1);
+		expect(readFileSync(join(ROOT, conformance.test), "utf8")).toMatch(
+			/\[(?:control):sg-conformance-merge\]/,
+		);
+	});
 
 	test("[control:rl-registry-json] text that is not JSON stops", () => {
 		expect(parseRegistry("{")).toEqual({

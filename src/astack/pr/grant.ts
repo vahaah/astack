@@ -1,4 +1,5 @@
 import {
+	existsSync,
 	mkdirSync,
 	readFileSync,
 	renameSync,
@@ -117,7 +118,7 @@ function prNumbers(tokens: readonly string[]): number[] {
 }
 
 const FULL_SEND_COMMAND = /^[/$](?:astack[:-])?full-send$/;
-const FULL_SEND_FILLER = new Set([
+const RUN_FILLER = new Set([
 	"ahead",
 	"go",
 	"it",
@@ -131,7 +132,13 @@ const FULL_SEND_FILLER = new Set([
 	"this",
 	"yes",
 ]);
+
+function isRunFiller(word: string): boolean {
+	return RUN_FILLER.has(word) || prNumber(word, undefined).length > 0;
+}
+
 const FULL_STOP_COMMAND = /^[/$]?(?:astack[:-])?full-stop$/;
+const FULL_STOP_INVOKED = /^[/$](?:astack[:-])?full-stop$/;
 const MERGE_WORD = /^(?:squash-)?merg(?:e|es|ing)$/;
 
 function withholdsFullSend(clause: Clause): boolean {
@@ -173,12 +180,7 @@ function clauseGrant(
 				...tokens.slice(0, index),
 				...tokens.slice(index + (command ? 1 : 2)),
 			];
-			const bare =
-				!question &&
-				others.every(
-					(word) =>
-						FULL_SEND_FILLER.has(word) || prNumber(word, undefined).length > 0,
-				);
+			const bare = !question && others.every(isRunFiller);
 			if (invoked || bare) return { kind: "any" };
 			continue;
 		}
@@ -201,8 +203,8 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 	return { kind: "prs", numbers: [...new Set([...a.numbers, ...b.numbers])] };
 }
 
-export function mergeGrantIn(prompt: string): MergeGrant {
-	const clauses = prose(prompt)
+function clausesOf(prompt: string): readonly Clause[] {
+	return prose(prompt)
 		.split(/(?<=[!?\n])|(?<=[.:])(?=\s|$)/)
 		.flatMap((sentence) =>
 			sentence
@@ -214,10 +216,38 @@ export function mergeGrantIn(prompt: string): MergeGrant {
 		)
 		.filter(({ tokens }) => tokens.length > 0)
 		.map((clause, index) => ({ ...clause, opensPrompt: index === 0 }));
+}
+
+export function mergeGrantIn(prompt: string): MergeGrant {
+	const clauses = clausesOf(prompt);
 	const fullSendAllowed = !clauses.some(withholdsFullSend);
 	return clauses
 		.map((clause) => clauseGrant(clause, fullSendAllowed))
 		.reduce(joinGrants, NO_GRANT);
+}
+
+function bareFullStop({ tokens }: Clause): boolean {
+	const index = tokens.findIndex(
+		(token, at) => token === "full" && tokens[at + 1] === "stop",
+	);
+	return (
+		index >= 0 &&
+		[...tokens.slice(0, index), ...tokens.slice(index + 2)].every(isRunFiller)
+	);
+}
+
+export function startsFullStop(prompt: string): boolean {
+	const clauses = clausesOf(prompt);
+	if (FULL_STOP_INVOKED.test(clauses[0]?.tokens[0] ?? "")) return true;
+	const [instruction, ...more] = clauses.filter(
+		({ tokens }) => !tokens.every(isRunFiller),
+	);
+	return (
+		instruction !== undefined &&
+		more.length === 0 &&
+		!clauses.some(({ question }) => question) &&
+		bareFullStop(instruction)
+	);
 }
 
 export function grantCovers(grant: MergeGrant, number: number): boolean {
@@ -267,6 +297,37 @@ function parseGrant(value: unknown): MergeGrant {
 		return numbers.length > 0 ? { kind: "prs", numbers } : NO_GRANT;
 	}
 	return NO_GRANT;
+}
+
+function fullStopPath(env: Env, session: string): string | undefined {
+	const path = grantPath(env, session);
+	return path === undefined ? undefined : path.replace(/\.json$/, ".full-stop");
+}
+
+export function saveFullStop(
+	env: Env,
+	session: string,
+	fullStop: boolean,
+): void {
+	const path = fullStopPath(env, session);
+	if (!path) return;
+	if (!fullStop) {
+		rmSync(path, { force: true });
+		return;
+	}
+	mkdirSync(join(path, ".."), { recursive: true });
+	writeFileSync(path, "");
+}
+
+export type FullStopRecord = "present" | "absent" | "unknown";
+
+export function loadFullStop(
+	env: Env,
+	session: string | undefined,
+): FullStopRecord {
+	const path = session === undefined ? undefined : fullStopPath(env, session);
+	if (path === undefined) return "unknown";
+	return existsSync(path) ? "present" : "absent";
 }
 
 export function loadGrant(env: Env, session: string | undefined): MergeGrant {

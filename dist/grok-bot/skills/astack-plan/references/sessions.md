@@ -113,4 +113,4 @@ astack session resume <plan> [<session>] [--tracker <file|->]
 1. Run the whole-work proof from `## Proof` on the session branch.
 2. Move durable facts to ADRs or tests.
 3. Mark the PR ready. The merge needs the grant of the profile or of this turn.
-4. After the merge, run `/astack-plan <slug>` once for the session boundary in `upkeep.md`.
+4. After each merge except the last, run `/astack-plan <slug>` once for the session boundary in `upkeep.md`.
