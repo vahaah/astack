@@ -182,7 +182,9 @@ export function parseShell(src: string): SimpleCommand[] {
 	while (i < src.length) {
 		const c = src[i] ?? "";
 		if (c === "\n") {
-			endCommand();
+			const pipeOpen =
+				current.piped === true && words.length === 0 && word === undefined;
+			if (!pipeOpen) endCommand();
 			i++;
 			for (const doc of pendingHeredocs) {
 				const lines: string[] = [];
@@ -294,7 +296,7 @@ export function parseShell(src: string): SimpleCommand[] {
 				stage.wholeStage = true;
 			current.piped = true;
 			readsStdin(current, true);
-			i++;
+			i += src[i + 1] === "&" ? 2 : 1;
 			continue;
 		}
 		if (c === "&" && src[i + 1] === ">") {

@@ -81,6 +81,8 @@
 		{ "group": "pass", "verdict": "pass", "command": "git show HEAD:a.txt > a.txt" },
 		{ "group": "pass", "verdict": "pass", "command": "git config --get core.hooksPath" },
 		{ "group": "pass", "verdict": "pass", "command": "git config core.hooksPath .githooks" },
-		{ "group": "pass", "verdict": "pass", "command": "cd \"$dir\" && git status", "steps": ["cd $dir", "git status [folder]"] }
+		{ "group": "pass", "verdict": "pass", "command": "cd \"$dir\" && git status", "steps": ["cd $dir", "git status [folder]"] },
+		{ "group": "pass", "verdict": "pass", "command": "git log --oneline |\n  head -3\nbash <<'EOF'\ngit status\nEOF", "steps": ["git log --oneline", "head -3", "git status"] },
+		{ "group": "pass", "verdict": "pass", "command": "git log |& head\nbash <<'EOF'\ngit status\nEOF", "steps": ["git log", "head", "git status"] }
 	]
 }
