@@ -378,6 +378,18 @@ export function parseShell(src: string): SimpleCommand[] {
 
 export const ENV_ASSIGNMENT = /^[A-Za-z_]\w*=/;
 
+export function chainSteps(command: string): string[] {
+	return parseShell(command).flatMap((simple) => {
+		const word = simple.words.find(
+			(candidate) =>
+				!ENV_ASSIGNMENT.test(candidate.value) &&
+				(candidate.dynamic || !RESERVED.has(candidate.value)),
+		);
+		if (word === undefined) return [];
+		return [word.dynamic && word.value === "" ? "$" : word.value];
+	});
+}
+
 export type Unreadable =
 	| "folder"
 	| "depth"
