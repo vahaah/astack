@@ -10,20 +10,20 @@ These rules apply in every session. A stricter repo rule wins, then astack. `/as
 | `/plan` | Plan mode, concise, unresolved questions last. With "I am building", run `astack-plan` in plan mode. After approval, first write `docs/plans/<slug>.md` |
 | `/grilling` | `astack-grilling` on the frontier. One recommendation and lettered options for each question |
 | "go", "do your recommendation", "use best practices and our previous decisions" | A delegation grant. Write `delegate: on` in the plan. "agree", "next" and "approve" continue |
-| "resume", "status", "what waits on me" | `resume.md`. A status ask gets Catch up, which only reads and starts no work |
+| "resume", "status", "what waits on me" | `references/resume.md`. A status ask gets Catch up, which only reads and starts no work |
 | `/goal`, "continue the board" | Programme tier and the `astack-mode` Orchestrate playbook. 5 sessions at most. Merge the open PRs first |
 | a hotfix, "I need it fast" | Quick tier. One grill round at most |
 | a bug, an error report, a tester report | The `astack-mode` Bug fix playbook and `astack-diagnosing-bugs`. Write `Root cause: X because Y` before the fix |
-| "comments", "check github comments" | Mode playbook `comments-triage.md` |
+| "comments", "check github comments" | `references/comments-triage.md` |
 | `/pr-review-hardening` | `astack-pr-review-hardening`. The profile sets the cap and the minimum. The default cap is 2 |
-| "create pr" | Mode playbook `create-pr.md`. Then one hardening run when the profile sets it |
-| "update from main" | Mode playbook `refresh.md` |
+| "create pr" | `references/create-pr.md`. Then one hardening run when the profile sets it |
+| "update from main" | `references/refresh.md` |
 | "merge", "merge when green", "merge and release" | The `astack-mode` Shipping playbook. A merge needs a grant from the profile or from this turn |
 | "full send", "full stop", "council", "sol loop" | That astack skill. Only "full send" grants a merge |
 | UI polish, mobile | `astack-control-ui`, a walk as a real persona, the repo UI kit |
 | "pause", "prompt for next session", "clean worktrees" | The `astack-mode` Pause safely playbook (a hard stop), the hand-off prompt, the `astack-mode` Worktree cleanup playbook |
 
-A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. A file, such as `resume.md`, is in `references/`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
+A user rule in the rules folder can add routes, and it never removes one. Read a mode file at the path from `astack skill-path astack:mode <folder>/<name>.md`. A playbook, such as Bug fix, is in `playbooks/`. When an astack skill is not in your skill list, read the SKILL.md that `astack skill-path astack:<name>` prints.
 
 ## Standing rules
 
