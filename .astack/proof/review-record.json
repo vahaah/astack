@@ -28,6 +28,10 @@
 			"obligation": "RV-ci-mixed"
 		},
 		{
+			"path": "src/astack/deny-list.ts",
+			"obligation": "OB-public-text"
+		},
+		{
 			"path": "src/astack/pr-review-profile.ts",
 			"obligation": "RV-converge"
 		},
@@ -247,7 +251,8 @@
 				"RV-ci-mixed",
 				"WB-ratchet",
 				"SG-preserve",
-				"SG-generated"
+				"SG-generated",
+				"OB-public-text"
 			]
 		}
 	},

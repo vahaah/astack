@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { hash } from "node:crypto";
 
 export const MAX_NAME_WORDS = 4;
 
@@ -14,7 +14,7 @@ export function wordTokens(text: string): string[] {
 }
 
 export function sha256(token: string): string {
-	return createHash("sha256").update(token).digest("hex");
+	return hash("sha256", token, "hex");
 }
 
 export function nameHash(name: string): string {
