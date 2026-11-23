@@ -20,7 +20,8 @@
 		"docs/reference/adr-lifecycle.md",
 		"docs/reference/review-budget.md",
 		"docs/reference/outbound-guards.md",
-		"docs/reference/hook-retries.md"
+		"docs/reference/hook-retries.md",
+		"docs/reference/hook-ports.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -122,7 +123,10 @@
 		"tests/astack/pr-body.test.ts",
 		"tests/astack/skill-path.test.ts",
 		"tests/astack/headings.test.ts",
-		"tests/astack/check-cli.test.ts"
+		"tests/astack/check-cli.test.ts",
+		"tests/astack/ports.test.ts",
+		"tests/astack/process.test.ts",
+		"tests/astack/hook-port-replay.test.ts"
 	],
 	"links": [
 		{
@@ -1177,6 +1181,30 @@
 		{
 			"criterion": "HR-pr-length",
 			"controls": ["pr-length-tables"]
+		},
+		{
+			"criterion": "HP-NO-DIRECT",
+			"controls": ["hook-no-direct-read"]
+		},
+		{
+			"criterion": "HP-REPLAY",
+			"controls": ["hook-port-replay"]
+		},
+		{
+			"criterion": "HP-PROFILE-ONCE",
+			"controls": ["ports-profile-once"]
+		},
+		{
+			"criterion": "HP-ONE-EDGE",
+			"controls": ["ports-one-edge"]
+		},
+		{
+			"criterion": "HP-TOTAL",
+			"controls": ["ports-total"]
+		},
+		{
+			"criterion": "HP-PROCESS",
+			"controls": ["process-run"]
 		}
 	]
 }

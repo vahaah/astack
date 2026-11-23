@@ -21,6 +21,10 @@ cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read
 cap  ReviewStore [fs-read, fs-write] @ src/astack/review-store.ts: loadRecord(read), saveRecord(write)
 cap  DenyStore [fs-read, fs-write] @ src/astack/deny-store.ts: readDenyList(read), writeDenyList(write)
 cap  SessionStore [fs-read, fs-write] @ src/astack/pr/session-prs.ts: loadSessionPrs(read), saveSessionPrs(write)
+cap  Files [fs-read] @ src/astack/ports.ts: readText(read), pathKind(read), realPath(read), relativePath(read), isScratch(read), workTree(read), listDir(read), isExecutable(read), folderId(read)
+cap  Git [fs-read, spawn] @ src/astack/ports.ts: gitRun(read), gitText(read), gitRoot(read), gitBranch(read), gitOrigin(read), gitChanges(read)
+cap  Profile [fs-read] @ src/astack/ports.ts: readProfile(read)
+cap  Process [spawn] @ src/astack/process.ts: runProcess(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
