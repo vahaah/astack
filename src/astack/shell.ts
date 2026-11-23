@@ -569,6 +569,7 @@ type Plain = {
 	readonly unsetsEnv: boolean;
 	readonly words: Word[];
 	readonly unreadable: Unreadable | undefined;
+	readonly execs: boolean;
 };
 
 function namesFlag(flags: readonly string[], name: string): boolean {
@@ -595,13 +596,20 @@ function plainForm(raw: readonly Word[]): Plain {
 	let at = 0;
 	let assigns = true;
 	let feeds = false;
+	let execs = false;
 	let replace: string | undefined;
 	for (;;) {
 		const word = raw[at];
 		if (word === undefined) break;
 		const name = word.dynamic ? "" : word.value;
 		if (HEADERS.has(name))
-			return { env, unsetsEnv: unsets, words: [], unreadable: undefined };
+			return {
+				env,
+				unsetsEnv: unsets,
+				words: [],
+				unreadable: undefined,
+				execs,
+			};
 		if (RESERVED.has(name) || name === "function") {
 			at += name === "function" ? 2 : 1;
 			continue;
@@ -615,6 +623,7 @@ function plainForm(raw: readonly Word[]): Plain {
 		if (wrapper === undefined) break;
 		const start = at;
 		let kept = false;
+		execs ||= basename(name) === "exec";
 		at++;
 		for (
 			let option = raw[at];
@@ -635,6 +644,7 @@ function plainForm(raw: readonly Word[]): Plain {
 					unsetsEnv: unsets,
 					words: raw.slice(start),
 					unreadable: "wrapper",
+					execs,
 				};
 			if (read.name === wrapper.replace) replace = read.value?.value;
 			unsets ||= namesFlag(wrapper.unsets ?? [], read.name);
@@ -654,7 +664,21 @@ function plainForm(raw: readonly Word[]): Plain {
 		unsetsEnv: unsets,
 		words,
 		unreadable: words[0]?.dynamic ? "program" : undefined,
+		execs,
 	};
+}
+
+const REBINDS_STDIN = new Set([".", "eval", "source"]);
+
+function rebindsStdin(simple: SimpleCommand, plain: Plain): boolean {
+	const program = plain.words[0];
+	return (
+		plain.execs ||
+		(simple.stdinSources ?? 0) > (simple.piped === true ? 1 : 0) ||
+		(program !== undefined &&
+			!program.dynamic &&
+			REBINDS_STDIN.has(basename(program.value)))
+	);
 }
 
 type Body = {
@@ -698,14 +722,18 @@ function literalScript(
 		: undefined;
 }
 
+type ShellState = { readonly defines: boolean; readonly rebound: boolean };
+
 function stdinScript(
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
-	defines: boolean,
+	state: ShellState,
 ): Body | undefined {
 	if (simple.stdinSources === undefined)
-		return defines ? UNREAD_STDIN : undefined;
-	const script = defines ? undefined : literalScript(simple, earlier.at(-1));
+		return state.defines || state.rebound ? UNREAD_STDIN : undefined;
+	const script = state.defines
+		? undefined
+		: literalScript(simple, earlier.at(-1));
 	return script === undefined
 		? UNREAD_STDIN
 		: { text: script, dynamic: false, stdin: true };
@@ -715,7 +743,7 @@ function scriptBody(
 	words: readonly Word[],
 	simple: SimpleCommand,
 	earlier: readonly ShellStep[],
-	defines: boolean,
+	state: ShellState,
 ): Body | undefined {
 	const [program, ...args] = words;
 	if (program === undefined || program.dynamic) return undefined;
@@ -742,11 +770,11 @@ function scriptBody(
 			if (command)
 				return arg && { text: arg.value, dynamic: arg.dynamic, stdin: false };
 			return fromStdin || text === "-"
-				? stdinScript(simple, earlier, defines)
+				? stdinScript(simple, earlier, state)
 				: undefined;
 		}
 	}
-	return command ? undefined : stdinScript(simple, earlier, defines);
+	return command ? undefined : stdinScript(simple, earlier, state);
 }
 
 type Folder = { readonly dir: string; readonly known: boolean };
@@ -788,6 +816,7 @@ type Inherited = {
 	readonly env: readonly Word[];
 	readonly unsetsEnv: boolean;
 	readonly defines: boolean;
+	readonly rebound: boolean;
 };
 
 function scriptSteps(
@@ -798,6 +827,7 @@ function scriptSteps(
 ): ShellStep[] {
 	let folder = start;
 	let pipeline = 0;
+	let rebound = inherited.rebound;
 	const steps: ShellStep[] = [];
 	const nested = depth < MAX_DEPTH;
 	for (const simple of parseShell(src)) {
@@ -808,7 +838,7 @@ function scriptSteps(
 				pipeline,
 				0,
 				...bodies.flatMap((body) =>
-					scriptSteps(body, folder, depth + 1, inherited),
+					scriptSteps(body, folder, depth + 1, { ...inherited, rebound }),
 				),
 			);
 		const plain = plainForm(simple.words);
@@ -821,15 +851,17 @@ function scriptSteps(
 			folder = { dir: move.dir, known: folder.known };
 			continue;
 		}
+		const state = { defines: inherited.defines, rebound };
 		const body = plain.unreadable
 			? undefined
-			: scriptBody(plain.words, simple, steps, inherited.defines);
+			: scriptBody(plain.words, simple, steps, state);
+		rebound ||= rebindsStdin(simple, plain);
 		if (body !== undefined && !body.dynamic && nested) {
 			steps.push(
 				...scriptSteps(body.text, folder, depth + 1, {
 					env,
 					unsetsEnv,
-					defines: inherited.defines,
+					...state,
 				}),
 			);
 			continue;
@@ -856,6 +888,7 @@ export function shellSteps(command: string, cwd: string): ShellStep[] {
 		env: [],
 		unsetsEnv: false,
 		defines: DEFINES_COMMAND.test(command),
+		rebound: false,
 	});
 }
 

@@ -37,6 +37,10 @@ Each other source makes it dynamic, and a shell with a dynamic stdin is unreadab
 A heredoc or a here-string on another fd feeds no script, so its stdin is dynamic too.
 A stdin redirect on a group, a subshell, a loop close or a bare `exec` makes the stdin of each step of the text dynamic.
 
+Amended 2026-11-23. A shell with no stdin source of its own reads the stdin of the line.
+An earlier step that redirects stdin or runs `exec`, `eval`, `source` or `.` can rebind that stdin, also behind `command` or `builtin`.
+So such a shell after such a step is unreadable, also in a nested body.
+
 ### D2. Each unknown `$` form is dynamic
 
 Bash reads a `$` before a blank, a newline, an operator other than `(`, a closing quote or the end as text.
