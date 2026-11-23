@@ -84,14 +84,17 @@ export function folderId(path: string): FolderId | undefined {
 	}
 }
 
-export function canonicalFile(path: string): string {
+export function realFile(
+	resolveReal: (path: string) => string | undefined,
+	path: string,
+): string {
 	const dir = dirname(path);
 	if (dir === path) return path;
-	try {
-		return join(realpathSync(dir), basename(path));
-	} catch {
-		return join(canonicalFile(dir), basename(path));
-	}
+	return join(resolveReal(dir) ?? realFile(resolveReal, dir), basename(path));
+}
+
+export function canonicalFile(path: string): string {
+	return realFile(realPath, path);
 }
 
 export function projectRelative(projectDir: string, file: string): string {

@@ -69,7 +69,7 @@ export function judgeEach(
 				try {
 					verdict = handler.run(event, checked);
 				} catch (error) {
-					verdict = handler.failed?.(event, error);
+					verdict = handler.failed?.(event, error, checked);
 				}
 				return { handler: handler.id, event, verdict };
 			}),

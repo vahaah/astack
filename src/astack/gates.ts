@@ -10,8 +10,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { runGit } from "./git.ts";
+import { nonEmpty, runGit } from "./git.ts";
 import { MANAGED_PATHS } from "./managed.ts";
+import type { GitPorts } from "./ports.ts";
 import type { ProfileGate, ToolVersion } from "./pr-review-profile.ts";
 import { runProcess } from "./process.ts";
 import { sessionFileName, stateDir } from "./state.ts";
@@ -106,12 +107,6 @@ export function sameProfile(
 	return record.profile === sourceBlob && record.profile === baseBlob;
 }
 
-function gitLine(root: string, args: string[]): string | undefined {
-	const result = runGit(root, args);
-	const line = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return line === "" ? undefined : line;
-}
-
 export type ProfileBlobs = {
 	readonly mergeBase: string;
 	readonly source: string;
@@ -119,13 +114,15 @@ export type ProfileBlobs = {
 };
 
 export function profileBlobs(
+	git: GitPorts,
 	root: string,
 	source: string,
 	baseSha: string,
 ): ProfileBlobs | undefined {
-	const mergeBase = gitLine(root, ["merge-base", baseSha, source]);
+	const line = (args: readonly string[]) => nonEmpty(git.gitText(root, args));
+	const mergeBase = line(["merge-base", baseSha, source]);
 	const blob = (commit: string) =>
-		gitLine(root, [
+		line([
 			"rev-parse",
 			"--verify",
 			"--quiet",

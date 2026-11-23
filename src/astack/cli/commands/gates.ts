@@ -10,6 +10,7 @@ import {
 } from "../../gates.ts";
 import { repoRoot, runGit } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
+import { processPorts } from "../../ports.ts";
 import { parseProfile, profileGates } from "../../pr-review-profile.ts";
 import { valueAfter } from "../args.ts";
 import type { Command } from "../command.ts";
@@ -70,7 +71,7 @@ function runAll(args: readonly string[], io: Io): number {
 		);
 		return 1;
 	}
-	const blobs = profileBlobs(root, head, baseSha);
+	const blobs = profileBlobs(processPorts().git, root, head, baseSha);
 	if (blobs === undefined || blobs.source !== blobs.base) {
 		io.err(
 			`${NAME}: HEAD holds another ${MANAGED_PATHS.reviewProfile} than the merge base ${blobs?.mergeBase ?? `of ${base}`}, or one of them holds none, so astack ran no gate and recorded nothing. A gate run judges a branch only by the profile of its base.\n`,

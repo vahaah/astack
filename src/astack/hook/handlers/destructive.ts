@@ -1,7 +1,6 @@
-import { lstatSync, realpathSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { loadGateRecord, profileBlobs, sameProfile } from "../../gates.ts";
-import { READ_ONLY_GIT, repoRoot, runGit } from "../../git.ts";
+import { READ_ONLY_GIT } from "../../git.ts";
 import {
 	type GitInvocation,
 	type GitRead,
@@ -12,13 +11,8 @@ import {
 	movesPlace,
 	readGit,
 } from "../../git-command.ts";
-import {
-	canonical,
-	canonicalFile,
-	canonicalRelative,
-	readOptional,
-	toPosix,
-} from "../../paths.ts";
+import { realFile, toPosix } from "../../paths.ts";
+import type { FilePorts, GitPorts, Ports } from "../../ports.ts";
 import {
 	isSessionRepo,
 	rememberRepos,
@@ -76,10 +70,14 @@ function isReset(args: readonly string[] | undefined): boolean {
 	return plain[0] === "db" && plain[1] === "reset";
 }
 
-function scriptText(dir: string, name: string): string | undefined {
-	const root = repoRoot(dir) ?? dir;
+function scriptText(
+	ports: Ports,
+	dir: string,
+	name: string,
+): string | undefined {
+	const root = ports.git.gitRoot(dir) ?? dir;
 	for (const base of [dir, root]) {
-		const text = readOptional(join(base, "package.json"));
+		const text = ports.files.readText(join(base, "package.json"));
 		if (text === undefined) continue;
 		try {
 			const parsed: unknown = JSON.parse(text);
@@ -105,11 +103,12 @@ function scriptName(values: readonly string[]): string | undefined {
 	return undefined;
 }
 
-function supabaseReasons(step: ShellStep): readonly string[] {
+function supabaseReasons(step: ShellStep, ports: Ports): readonly string[] {
 	if (isReset(supabaseArgs(step.values)))
 		return [`supabase db reset deletes the database data. ${OWNER_GATE}`];
 	const name = scriptName(step.values);
-	const script = name === undefined ? undefined : scriptText(step.dir, name);
+	const script =
+		name === undefined ? undefined : scriptText(ports, step.dir, name);
 	return script !== undefined &&
 		/\bsupabase(?:\.[cm]?[jt]s)?\s+db\s+reset\b/.test(script)
 		? [
@@ -118,18 +117,13 @@ function supabaseReasons(step: ShellStep): readonly string[] {
 		: [];
 }
 
-function currentBranch(dir: string): string | undefined {
-	const result = runGit(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
-	const branch = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return branch === "" || branch === "HEAD" ? undefined : branch;
-}
-
 function pushTargets(
 	refspecs: readonly string[],
 	dir: string,
+	git: GitPorts,
 ): readonly string[] {
 	if (refspecs.length === 0) {
-		const branch = currentBranch(dir);
+		const branch = git.gitBranch(dir);
 		return branch === undefined ? [] : [branch];
 	}
 	return refspecs.map((spec) => {
@@ -219,9 +213,9 @@ function dryRun(flags: readonly string[]): boolean {
 
 export type Treeish = (name: string) => boolean;
 
-function treeishIn(dir: string): Treeish {
+function treeishIn(git: GitPorts, dir: string): Treeish {
 	return (name) =>
-		runGit(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
+		git.gitRun(dir, ["rev-parse", "--verify", "--quiet", `${name}^{tree}`]).ok;
 }
 
 function readsPathspecFile(args: readonly string[]): boolean {
@@ -413,8 +407,12 @@ function isLost(lost: LostChange, index: string, worktree: string): boolean {
 	}
 }
 
-function changedPaths(dir: string, loss: WorkLoss): readonly string[] {
-	const status = runGit(dir, [
+function changedPaths(
+	git: GitPorts,
+	dir: string,
+	loss: WorkLoss,
+): readonly string[] {
+	const status = git.gitRun(dir, [
 		...READ_ONLY_GIT,
 		"status",
 		"--porcelain=v1",
@@ -450,16 +448,25 @@ function isLiteral(pathspec: string): boolean {
 	return !GLOB_CHARACTER.test(pathspec) && !PATHSPEC_MAGIC.test(pathspec);
 }
 
-function rootRelative(pathspec: string, dir: string, root: string): string {
+function rootRelative(
+	files: FilePorts,
+	pathspec: string,
+	dir: string,
+	root: string,
+): string {
 	return pathspec.startsWith(":/")
 		? pathspec.slice(2).replace(/\/+$/, "")
-		: canonicalRelative(root, resolve(dir, pathspec));
+		: files.relativePath(root, resolve(dir, pathspec));
 }
 
-function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
+function excludedPaths(
+	git: GitPorts,
+	dir: string,
+	loss: WorkLoss,
+): ReadonlySet<string> {
 	const patterns = loss.excludes ?? [];
 	if (patterns.length === 0) return new Set();
-	const listed = runGit(dir, [
+	const listed = git.gitRun(dir, [
 		...READ_ONLY_GIT,
 		"ls-files",
 		"--others",
@@ -474,12 +481,16 @@ function excludedPaths(dir: string, loss: WorkLoss): ReadonlySet<string> {
 	return new Set(listed.stdout.toString("utf8").split("\0").filter(Boolean));
 }
 
-function overwrittenPaths(dir: string, target: string): readonly string[] {
+function overwrittenPaths(
+	git: GitPorts,
+	dir: string,
+	target: string,
+): readonly string[] {
 	const untracked = new Set(
-		changedPaths(dir, { lost: "untracked", pathspecs: WHOLE_TREE }),
+		changedPaths(git, dir, { lost: "untracked", pathspecs: WHOLE_TREE }),
 	);
 	if (untracked.size === 0) return [];
-	const listed = runGit(dir, [
+	const listed = git.gitRun(dir, [
 		...READ_ONLY_GIT,
 		"ls-tree",
 		"-r",
@@ -500,39 +511,44 @@ type SessionRepoTest = (root: string) => boolean;
 const NO_SESSION_REPO: SessionRepoTest = () => false;
 
 function lostPaths(
+	ports: Ports,
 	loss: WorkLoss,
 	dir: string,
 	sessionRepo: SessionRepoTest,
 ): readonly string[] {
-	const root = repoRoot(dir);
+	const { files, git } = ports;
+	const root = git.gitRoot(dir);
 	if (root === undefined) return [];
 	const namedFiles = loss.pathspecs
 		.filter(isLiteral)
-		.map((pathspec) => rootRelative(pathspec, dir, root));
-	const excluded = excludedPaths(dir, loss);
+		.map((pathspec) => rootRelative(files, pathspec, dir, root));
+	const excluded = excludedPaths(git, dir, loss);
 	const overwritten =
-		loss.target === undefined ? [] : overwrittenPaths(dir, loss.target);
-	const changed = [...changedPaths(dir, loss), ...overwritten];
+		loss.target === undefined ? [] : overwrittenPaths(git, dir, loss.target);
+	const changed = [...changedPaths(git, dir, loss), ...overwritten];
 	const session =
 		(changed.length > 0 || loss.reachesNestedRepos === true) &&
 		sessionRepo(root);
 	const nested =
 		session && loss.reachesNestedRepos === true
-			? changedPaths(dir, {
+			? changedPaths(git, dir, {
 					lost: "untracked",
 					pathspecs: loss.pathspecs,
 					removesNestedRepos: true,
-				}).filter((path) => path.endsWith("/") && extractionReaches(root, path))
+				}).filter(
+					(path) => path.endsWith("/") && extractionReaches(git, root, path),
+				)
 			: [];
 	const lost = [...changed, ...nested].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
 	);
 	return session
-		? lost.filter((path) => inUnboundRepo(root, path, sessionRepo))
+		? lost.filter((path) => inUnboundRepo(files, root, path, sessionRepo))
 		: lost;
 }
 
 function inUnboundRepo(
+	files: FilePorts,
 	root: string,
 	path: string,
 	sessionRepo: SessionRepoTest,
@@ -540,14 +556,18 @@ function inUnboundRepo(
 	const parts = path.replace(/\/$/, "").split("/");
 	return parts.some((_, at) => {
 		const folder = join(root, ...parts.slice(0, at + 1));
-		return isRepoRoot(folder) && !sessionRepo(folder);
+		return isRepoRoot(files, folder) && !sessionRepo(folder);
 	});
 }
 
-function extractionReaches(root: string, nested: string): boolean {
+function extractionReaches(
+	git: GitPorts,
+	root: string,
+	nested: string,
+): boolean {
 	const path = nested.replace(/\/$/, "");
 	const folder = `${path.toLowerCase()}/`;
-	const held = runGit(root, [
+	const held = git.gitRun(root, [
 		...READ_ONLY_GIT,
 		"ls-tree",
 		"-r",
@@ -555,7 +575,7 @@ function extractionReaches(root: string, nested: string): boolean {
 		"-z",
 		"HEAD",
 	]);
-	const status = runGit(join(root, path), [
+	const status = git.gitRun(join(root, path), [
 		...READ_ONLY_GIT,
 		"status",
 		"--porcelain=v1",
@@ -573,15 +593,12 @@ function extractionReaches(root: string, nested: string): boolean {
 	);
 }
 
-function isRepoRoot(path: string): boolean {
-	try {
-		return (
-			lstatSync(path, { throwIfNoEntry: false })?.isDirectory() === true &&
-			lstatSync(join(path, ".git"), { throwIfNoEntry: false }) !== undefined
-		);
-	} catch {
-		return true;
-	}
+function isRepoRoot(files: FilePorts, path: string): boolean {
+	const kind = files.pathKind(path);
+	if (kind === "unreadable") return true;
+	return (
+		kind === "directory" && files.pathKind(join(path, ".git")) !== "missing"
+	);
 }
 
 const RECURSING_VERBS = new Set([
@@ -592,8 +609,13 @@ const RECURSING_VERBS = new Set([
 	"switch",
 ]);
 
-function hasSubmodules(dir: string): boolean {
-	const staged = runGit(dir, [...READ_ONLY_GIT, "ls-files", "--stage", "-z"]);
+function hasSubmodules(git: GitPorts, dir: string): boolean {
+	const staged = git.gitRun(dir, [
+		...READ_ONLY_GIT,
+		"ls-files",
+		"--stage",
+		"-z",
+	]);
 	return (
 		!staged.ok ||
 		staged.stdout
@@ -603,23 +625,25 @@ function hasSubmodules(dir: string): boolean {
 	);
 }
 
-function recursesSubmodules(git: GitInvocation): boolean {
-	return RECURSING_VERBS.has(git.sub) && hasSubmodules(git.dir);
+function recursesSubmodules(ports: Ports, git: GitInvocation): boolean {
+	return RECURSING_VERBS.has(git.sub) && hasSubmodules(ports.git, git.dir);
 }
 
 function workLossReasons(
 	step: ShellStep,
 	git: GitInvocation,
-	sessionRepo: SessionRepoTest,
+	shell: ShellState,
 ): readonly string[] {
-	const loss = workLoss(git, treeishIn(git.dir));
+	const loss = workLoss(git, treeishIn(shell.ports.git, git.dir));
 	return loss === undefined
 		? []
 		: lossReasons(
+				shell.ports,
 				step.values.join(" "),
 				loss,
 				git.dir,
-				(root) => sessionRepo(root) && !recursesSubmodules(git),
+				(root) =>
+					shell.sessionRepo(root) && !recursesSubmodules(shell.ports, git),
 			);
 }
 
@@ -661,17 +685,17 @@ function extractsHere(step: ShellStep): boolean {
 	);
 }
 
-function statusFails(dir: string): boolean {
+function statusFails(git: GitPorts, dir: string): boolean {
 	return (
-		repoRoot(dir) !== undefined &&
-		!runGit(dir, [...READ_ONLY_GIT, "status", "--porcelain=v1", "-z"]).ok
+		git.gitRoot(dir) !== undefined &&
+		!git.gitRun(dir, [...READ_ONLY_GIT, "status", "--porcelain=v1", "-z"]).ok
 	);
 }
 
 function extractReasons(
 	step: ShellStep,
 	previous: ShellStep | undefined,
-	sessionRepo: SessionRepoTest,
+	shell: ShellState,
 ): readonly string[] {
 	if (step.simple.piped !== true || previous === undefined) return [];
 	const source = readGit(previous);
@@ -682,26 +706,28 @@ function extractReasons(
 	)
 		return [];
 	const command = `${previous.values.join(" ")} | ${step.values.join(" ")}`;
-	if (statusFails(step.dir))
+	if (statusFails(shell.ports.git, step.dir))
 		return [
 			`${command} extracts files, and git status fails in ${step.dir}, so astack cannot see the uncommitted changes that it discards. ${OWNER_GATE}`,
 		];
 	const exempt = extractsHere(step) && archivesHead(previous, step);
 	return lossReasons(
+		shell.ports,
 		command,
 		{ lost: "tracked", pathspecs: WHOLE_TREE, reachesNestedRepos: exempt },
 		step.dir,
-		exempt ? sessionRepo : NO_SESSION_REPO,
+		exempt ? shell.sessionRepo : NO_SESSION_REPO,
 	);
 }
 
 function lossReasons(
+	ports: Ports,
 	command: string,
 	loss: WorkLoss,
 	dir: string,
 	sessionRepo: SessionRepoTest,
 ): readonly string[] {
-	const lost = lostPaths(loss, dir, sessionRepo);
+	const lost = lostPaths(ports, loss, dir, sessionRepo);
 	if (lost.length === 0) return [];
 	const effect =
 		loss.lost === "untracked"
@@ -730,6 +756,7 @@ type ShellState = {
 	readonly exported: readonly Word[];
 	readonly env: Env;
 	readonly sessionRepo: SessionRepoTest;
+	readonly ports: Ports;
 };
 
 function isSkipVariable(word: Word): boolean {
@@ -779,11 +806,6 @@ function envConfig(env: readonly Word[]): EnvConfig {
 	};
 }
 
-function gitText(dir: string, args: string[]): string | undefined {
-	const result = runGit(dir, args);
-	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
-}
-
 const HOOK_NAMES = [
 	"applypatch-msg",
 	"commit-msg",
@@ -815,15 +837,10 @@ const HOOK_NAMES = [
 	"update",
 ];
 
-function isExecutable(path: string): boolean {
-	const stat = statSync(path, { throwIfNoEntry: false });
-	return stat?.isFile() === true && (stat.mode & 0o111) !== 0;
-}
-
 type ActiveHooks = { readonly dir: string; readonly names: readonly string[] };
 
-function activeHooks(root: string): ActiveHooks | undefined {
-	const folder = gitText(root, [
+function activeHooks(ports: Ports, root: string): ActiveHooks | undefined {
+	const folder = ports.git.gitText(root, [
 		...READ_ONLY_GIT,
 		"rev-parse",
 		"--git-path",
@@ -833,15 +850,21 @@ function activeHooks(root: string): ActiveHooks | undefined {
 	const dir = resolve(root, folder);
 	return {
 		dir,
-		names: HOOK_NAMES.filter((name) => isExecutable(join(dir, name))),
+		names: HOOK_NAMES.filter((name) =>
+			ports.files.isExecutable(join(dir, name)),
+		),
 	};
 }
 
 const EXECUTABLE_BLOB = /^100755 blob ([0-9a-f]+)\t([\s\S]*)$/;
 
-function headHooks(root: string, path: string): ReadonlyMap<string, string> {
+function headHooks(
+	git: GitPorts,
+	root: string,
+	path: string,
+): ReadonlyMap<string, string> {
 	const prefix = path === "" ? "" : `${path}/`;
-	const listed = runGit(root, [
+	const listed = git.gitRun(root, [
 		...READ_ONLY_GIT,
 		"ls-tree",
 		"-z",
@@ -868,9 +891,13 @@ function headHooks(root: string, path: string): ReadonlyMap<string, string> {
 	);
 }
 
-function blobIds(root: string, files: readonly string[]): readonly string[] {
+function blobIds(
+	git: GitPorts,
+	root: string,
+	files: readonly string[],
+): readonly string[] {
 	if (files.length === 0) return [];
-	const hashed = gitText(root, [
+	const hashed = git.gitText(root, [
 		...READ_ONLY_GIT,
 		"hash-object",
 		"--no-filters",
@@ -880,8 +907,8 @@ function blobIds(root: string, files: readonly string[]): readonly string[] {
 	return hashed === undefined ? [] : hashed.split("\n");
 }
 
-function changedUnder(root: string, path: string): boolean {
-	const status = runGit(root, [
+function changedUnder(git: GitPorts, root: string, path: string): boolean {
+	const status = git.gitRun(root, [
 		...READ_ONLY_GIT,
 		"status",
 		"--porcelain=v1",
@@ -894,33 +921,33 @@ function changedUnder(root: string, path: string): boolean {
 	return !status.ok || status.stdout.length > 0;
 }
 
-function realFolder(path: string): string | undefined {
-	try {
-		return realpathSync(path);
-	} catch {
-		return undefined;
-	}
-}
-
-function hooksFolder(root: string, folder: string): string | undefined {
+function hooksFolder(
+	files: FilePorts,
+	root: string,
+	folder: string,
+): string | undefined {
 	if (folder === "" || folder.split(/[\\/]/).includes("..")) return undefined;
-	const top = canonical(root);
-	const real = realFolder(resolve(root, folder));
+	const top = files.realPath(root) ?? root;
+	const real = files.realPath(resolve(root, folder));
 	if (real === undefined || real !== resolve(top, folder)) return undefined;
 	const path = relative(top, real);
 	return path.startsWith("..") || isAbsolute(path) ? undefined : toPosix(path);
 }
 
-function tracksHooks(dir: string, folder: string): boolean {
-	const root = repoRoot(dir);
-	const path = root === undefined ? undefined : hooksFolder(root, folder);
-	const active = root === undefined ? undefined : activeHooks(root);
+function tracksHooks(ports: Ports, dir: string, folder: string): boolean {
+	const { files, git } = ports;
+	const root = git.gitRoot(dir);
+	const path =
+		root === undefined ? undefined : hooksFolder(files, root, folder);
+	const active = root === undefined ? undefined : activeHooks(ports, root);
 	if (root === undefined || path === undefined || active === undefined)
 		return false;
-	if (realFolder(active.dir) === realFolder(join(root, path))) return true;
-	const tracked = headHooks(root, path);
-	if (tracked.size === 0 || changedUnder(root, path)) return false;
+	if (files.realPath(active.dir) === files.realPath(join(root, path)))
+		return true;
+	const tracked = headHooks(git, root, path);
+	if (tracked.size === 0 || changedUnder(git, root, path)) return false;
 	const ids = blobIds(
+		git,
 		root,
 		active.names.map((name) => join(active.dir, name)),
 	);
@@ -930,13 +957,13 @@ function tracksHooks(dir: string, folder: string): boolean {
 	);
 }
 
-function turnsHooksOff(setting: string, dir: string): boolean {
+function turnsHooksOff(ports: Ports, setting: string, dir: string): boolean {
 	const at = setting.indexOf("=");
 	const key = at < 0 ? setting : setting.slice(0, at);
 	return (
 		INCLUDE_KEY.test(key) ||
 		(HOOKS_PATH_KEY.test(key) &&
-			!tracksHooks(dir, at < 0 ? "" : setting.slice(at + 1)))
+			!tracksHooks(ports, dir, at < 0 ? "" : setting.slice(at + 1)))
 	);
 }
 
@@ -957,7 +984,8 @@ function skipForm(
 	if (noVerify(git, flags)) return `git ${git.sub} --no-verify`;
 	const env = [...shell.exported, ...step.env];
 	const config = envConfig(env);
-	const turnsOff = (setting: string) => turnsHooksOff(setting, git.dir);
+	const turnsOff = (setting: string) =>
+		turnsHooksOff(shell.ports, setting, git.dir);
 	const fromEnv = config.unread || config.settings.some(turnsOff);
 	const shown = [
 		...env.filter(isSkipVariable),
@@ -968,20 +996,20 @@ function skipForm(
 		: undefined;
 }
 
-function recorded(spec: string, dir: string, env: Env): boolean {
+function recorded(spec: string, dir: string, shell: ShellState): boolean {
 	const source = spec.replace(/^\+/, "").split(":")[0] ?? "";
 	if (source === "") return false;
-	const sha = gitText(dir, [
+	const sha = shell.ports.git.gitText(dir, [
 		"rev-parse",
 		"--verify",
 		"--quiet",
 		`${source}^{commit}`,
 	]);
-	const record = sha === undefined ? undefined : loadGateRecord(env, sha);
+	const record = sha === undefined ? undefined : loadGateRecord(shell.env, sha);
 	const blobs =
 		sha === undefined || record === undefined
 			? undefined
-			: profileBlobs(dir, sha, record.baseSha);
+			: profileBlobs(shell.ports.git, dir, sha, record.baseSha);
 	return (
 		record !== undefined &&
 		blobs !== undefined &&
@@ -1001,7 +1029,7 @@ function skipPushReasons(
 			`${skips}, and it pushes refs that astack gates run cannot record. ${OWNER_GATE}`,
 		];
 	const sources = refspecs.length === 0 ? ["HEAD"] : refspecs;
-	const missing = sources.filter((spec) => !recorded(spec, git.dir, shell.env));
+	const missing = sources.filter((spec) => !recorded(spec, git.dir, shell));
 	return missing.length === 0
 		? []
 		: [
@@ -1012,6 +1040,7 @@ function skipPushReasons(
 function hooksPathReasons(
 	step: ShellStep,
 	git: GitInvocation,
+	ports: Ports,
 ): readonly string[] {
 	const { flags, plain } = operands(git.args, [
 		"-f",
@@ -1039,7 +1068,7 @@ function hooksPathReasons(
 		(!unsets &&
 			value !== undefined &&
 			HOOKS_PATH_KEY.test(key) &&
-			tracksHooks(git.dir, value))
+			tracksHooks(ports, git.dir, value))
 	)
 		return [];
 	return [
@@ -1052,7 +1081,7 @@ function gitReasons(
 	git: GitInvocation,
 	shell: ShellState,
 ): readonly string[] {
-	if (git.sub === "config") return hooksPathReasons(step, git);
+	if (git.sub === "config") return hooksPathReasons(step, git, shell.ports);
 	const flags = git.args.filter((arg) => arg.startsWith("-"));
 	const form = skipForm(step, git, flags, shell);
 	if (git.sub === "commit")
@@ -1072,8 +1101,8 @@ function gitReasons(
 				/^-[A-Za-z]*f[A-Za-z]*$/.test(flag),
 		) || refspecs.some((spec) => spec.startsWith("+"));
 	if (!forced) return reasons;
-	const shared = pushTargets(refspecs, git.dir).filter((target) =>
-		SHARED_BRANCH.test(target),
+	const shared = pushTargets(refspecs, git.dir, shell.ports.git).filter(
+		(target) => SHARED_BRANCH.test(target),
 	);
 	if (shared.length > 0)
 		reasons.push(
@@ -1105,15 +1134,19 @@ function shown(words: readonly Word[]): string {
 function unreadableReasons(
 	step: ShellStep,
 	read: Extract<GitRead, { kind: "unreadable" }>,
-	sessionRepo: SessionRepoTest,
+	shell: ShellState,
 ): readonly string[] {
 	const lost =
 		read.verb === undefined ? undefined : LOST_BY_VERB.get(read.verb);
 	if (
 		lost !== undefined &&
 		read.dir !== undefined &&
-		lostPaths({ lost, pathspecs: WHOLE_TREE }, read.dir, sessionRepo).length ===
-			0
+		lostPaths(
+			shell.ports,
+			{ lost, pathspecs: WHOLE_TREE },
+			read.dir,
+			shell.sessionRepo,
+		).length === 0
 	)
 		return [];
 	return [
@@ -1130,19 +1163,19 @@ function stepReasons(
 	switch (read.kind) {
 		case "none":
 			return [
-				...supabaseReasons(step),
-				...extractReasons(step, previous, shell.sessionRepo),
+				...supabaseReasons(step, shell.ports),
+				...extractReasons(step, previous, shell),
 			];
 		case "unreadable":
 			return [
-				...supabaseReasons(step),
-				...unreadableReasons(step, read, shell.sessionRepo),
+				...supabaseReasons(step, shell.ports),
+				...unreadableReasons(step, read, shell),
 			];
 		case "plain":
 			return [
-				...supabaseReasons(step),
+				...supabaseReasons(step, shell.ports),
 				...gitReasons(step, read.git, shell),
-				...workLossReasons(step, read.git, shell.sessionRepo),
+				...workLossReasons(step, read.git, shell),
 			];
 	}
 }
@@ -1202,8 +1235,9 @@ function placedLine(steps: readonly ShellStep[], env: Env): boolean {
 function sessionRepoTest(
 	repos: SessionRepos,
 	placed: boolean,
+	ports: Ports,
 ): SessionRepoTest {
-	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root);
+	return placed ? NO_SESSION_REPO : (root) => isSessionRepo(repos, root, ports);
 }
 
 const GATE_READERS = new Set([
@@ -1244,26 +1278,26 @@ type RecordFolder = {
 	readonly writer: string;
 };
 
-function recordFolders(env: Env): readonly RecordFolder[] {
+function recordFolders(env: Env, files: FilePorts): readonly RecordFolder[] {
 	const state = stateDir(env);
 	return state === undefined
 		? []
 		: [
 				{
-					path: canonicalFile(join(state, "gates")),
+					path: realFile(files.realPath, join(state, "gates")),
 					name: "gate record folder",
 					writer: "astack gates run writes a gate record",
 				},
 				{
-					path: canonicalFile(join(state, "session-repos")),
+					path: realFile(files.realPath, join(state, "session-repos")),
 					name: "session repo record folder",
 					writer: "the destructive hook writes a session repo record",
 				},
 			];
 }
 
-function inFolder(folder: string, path: string): boolean {
-	const inside = relative(folder, canonicalFile(path));
+function inFolder(files: FilePorts, folder: string, path: string): boolean {
+	const inside = relative(folder, realFile(files.realPath, path));
 	return inside === "" || (!inside.startsWith("..") && !isAbsolute(inside));
 }
 
@@ -1304,8 +1338,11 @@ function isGit(word: Word | undefined): boolean {
 	return word !== undefined && !word.dynamic && word.value === "git";
 }
 
-function reaches(folder: string, path: string): boolean {
-	return inFolder(folder, path) || inFolder(canonicalFile(path), folder);
+function reaches(files: FilePorts, folder: string, path: string): boolean {
+	return (
+		inFolder(files, folder, path) ||
+		inFolder(files, realFile(files.realPath, path), folder)
+	);
 }
 
 const STATE_VARIABLE =
@@ -1322,12 +1359,17 @@ function expandStateVariables(command: string, env: Env): string {
 	);
 }
 
-function namesRecordFolder(command: string, env: Env): boolean {
+function namesRecordFolder(
+	command: string,
+	env: Env,
+	files: FilePorts,
+): boolean {
 	const state = stateDir(env);
 	return (
 		/gates|session-repos/i.test(command) ||
 		(state !== undefined &&
-			(command.includes(state) || command.includes(canonical(state))))
+			(command.includes(state) ||
+				command.includes(files.realPath(state) ?? state)))
 	);
 }
 
@@ -1338,10 +1380,11 @@ function recordFolderReasons(
 	cwd: string,
 	folders: readonly RecordFolder[],
 	env: Env,
+	files: FilePorts,
 ): readonly string[] {
 	if (folders.length === 0) return [];
 	const expanded = expandStateVariables(command, env);
-	const names = namesRecordFolder(expanded, env);
+	const names = namesRecordFolder(expanded, env, files);
 	return shellSteps(expanded, cwd).flatMap((step) => {
 		const reads = readsOnly(step);
 		const words = [...outputTargets(step), ...(reads ? [] : step.words)];
@@ -1355,7 +1398,9 @@ function recordFolderReasons(
 			];
 		return folders.flatMap((folder) =>
 			words.some((word) =>
-				wordPaths(step, word, env).some((path) => reaches(folder.path, path)),
+				wordPaths(step, word, env).some((path) =>
+					reaches(files, folder.path, path),
+				),
 			)
 				? [folderReason(shown(step.words), folder)]
 				: [],
@@ -1367,9 +1412,10 @@ function touchesRepo(
 	steps: readonly ShellStep[],
 	root: string,
 	env: Env,
+	files: FilePorts,
 ): boolean {
-	const folder = canonicalFile(root);
-	const inside = (path: string) => inFolder(folder, path);
+	const folder = realFile(files.realPath, root);
+	const inside = (path: string) => inFolder(files, folder, path);
 	return steps.some((step) => {
 		const [program, ...args] = step.words;
 		const targets = outputTargets(step);
@@ -1403,12 +1449,17 @@ export const handler = defineHandler({
 	id: "destructive",
 	on: ["shell", "write", "edit"],
 	run: (event, context) => {
-		const folders = recordFolders(context.env);
+		const { ports } = context;
+		const folders = recordFolders(context.env, ports.files);
 		if (event.kind !== "shell")
 			return denial(
 				folders
 					.filter((folder) =>
-						inFolder(folder.path, resolve(context.cwd, event.path)),
+						inFolder(
+							ports.files,
+							folder.path,
+							resolve(context.cwd, event.path),
+						),
 					)
 					.map((folder) =>
 						folderReason(
@@ -1418,12 +1469,18 @@ export const handler = defineHandler({
 					),
 			);
 		const records = denial(
-			recordFolderReasons(event.command, event.cwd, folders, context.env),
+			recordFolderReasons(
+				event.command,
+				event.cwd,
+				folders,
+				context.env,
+				ports.files,
+			),
 		);
 		const steps = shellSteps(event.command, event.cwd);
-		const settled = settledRepos(context.env, context.session);
+		const settled = settledRepos(context.env, context.session, ports);
 		const repos = settled.filter(
-			(repo) => !touchesRepo(steps, repo.path, context.env),
+			(repo) => !touchesRepo(steps, repo.path, context.env, ports.files),
 		);
 		if (repos.length !== settled.length)
 			saveSessionRepos(context.env, context.session, repos);
@@ -1434,7 +1491,7 @@ export const handler = defineHandler({
 		)
 			return records;
 		const placed = placedLine(steps, context.env);
-		const sessionRepo = sessionRepoTest(repos, placed);
+		const sessionRepo = sessionRepoTest(repos, placed, ports);
 		const verdict = combineAll([
 			...steps.map((step, index) =>
 				denial(
@@ -1442,6 +1499,7 @@ export const handler = defineHandler({
 						exported: exportedWords(steps, index),
 						env: context.env,
 						sessionRepo,
+						ports,
 					}),
 				),
 			),
@@ -1454,10 +1512,12 @@ export const handler = defineHandler({
 				repos,
 				steps.flatMap((step) => {
 					const target = madeRepoTarget(step);
-					return target === undefined || touchesRepo(steps, target, context.env)
+					return target === undefined ||
+						touchesRepo(steps, target, context.env, ports.files)
 						? []
 						: [target];
 				}),
+				ports.files,
 			);
 		return verdict;
 	},

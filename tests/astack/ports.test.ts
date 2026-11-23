@@ -164,11 +164,11 @@ describe("[control:ports-total] the node ports", () => {
 	const ports = processPorts();
 
 	test.each([
-		["a missing file", missing],
-		["a path under a file", join(file, "below")],
-	])("give no throw on %s", (_name, path) => {
+		["a missing file", missing, "missing"],
+		["a path under a file", join(file, "below"), "unreadable"],
+	] as const)("give no throw on %s", (_name, path, kind) => {
 		expect(ports.files.readText(path)).toBeUndefined();
-		expect(ports.files.pathKind(path)).toBe("missing");
+		expect(ports.files.pathKind(path)).toBe(kind);
 		expect(ports.files.realPath(path)).toBeUndefined();
 		expect(ports.files.listDir(path)).toBeUndefined();
 		expect(ports.files.isExecutable(path)).toBe(false);

@@ -39,12 +39,15 @@ export function gitText(
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
 }
 
+export function nonEmpty(text: string | undefined): string | undefined {
+	return text === "" ? undefined : text;
+}
+
 export function gitValue(
 	cwd: string,
 	args: readonly string[],
 ): string | undefined {
-	const text = gitText(cwd, args);
-	return text === "" ? undefined : text;
+	return nonEmpty(gitText(cwd, args));
 }
 
 export function currentBranch(cwd: string): string | undefined {

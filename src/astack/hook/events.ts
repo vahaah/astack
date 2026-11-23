@@ -90,7 +90,11 @@ export type Handler = {
 	readonly quality?: HookGroup;
 	readonly on: readonly EventKind[];
 	readonly run: (event: HookEvent, context: Context) => Verdict;
-	readonly failed?: (event: HookEvent, error: unknown) => Verdict | undefined;
+	readonly failed?: (
+		event: HookEvent,
+		error: unknown,
+		context: Context,
+	) => Verdict | undefined;
 };
 
 export const ALLOW: Verdict = { kind: "allow" };
@@ -160,7 +164,11 @@ export function defineHandler<K extends EventKind>(spec: {
 	readonly quality?: HookGroup;
 	readonly on: readonly K[];
 	readonly run: (event: EventOf<K>, context: Context) => Verdict;
-	readonly failed?: (event: EventOf<K>, error: unknown) => Verdict | undefined;
+	readonly failed?: (
+		event: EventOf<K>,
+		error: unknown,
+		context: Context,
+	) => Verdict | undefined;
 }): Handler {
 	const { failed } = spec;
 	return {
@@ -172,8 +180,8 @@ export function defineHandler<K extends EventKind>(spec: {
 		...(failed === undefined
 			? {}
 			: {
-					failed: (event: HookEvent, error: unknown) =>
-						isKind(event, spec.on) ? failed(event, error) : undefined,
+					failed: (event: HookEvent, error: unknown, context: Context) =>
+						isKind(event, spec.on) ? failed(event, error, context) : undefined,
 				}),
 	};
 }
