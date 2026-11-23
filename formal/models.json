@@ -648,6 +648,11 @@
 			"control": "hook-fail-open"
 		},
 		{
+			"path": "src/astack/hook/handlers/outbound.ts",
+			"reason": "Its rule has no state and no order, so a model only restates the law of its control, and a handler that throws denies each GitHub text write",
+			"control": "outbound-text"
+		},
+		{
 			"path": "src/astack/hook/handlers/plan-pointer.ts",
 			"reason": "A wrong verdict of this handler only denies or advises, and a handler that throws fails open, so it cannot merge, delete, leak or reorder",
 			"control": "hook-fail-open"

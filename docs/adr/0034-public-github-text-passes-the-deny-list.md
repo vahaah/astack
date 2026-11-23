@@ -74,10 +74,13 @@ Terms. Outbound deny list, Split instruction
 
 ```domain
 context Guards
+agg  OutboundWrite @ src/astack/outbound.ts: OutboundWrite
+inv  OB1 OutboundWrite: a write whose text holds a listed name passes only when each target is private or internal
 agg  SessionPrs @ src/astack/pr/split.ts: SessionPrs
 inv  SP1 SessionPrs: a create with a Part of link to an open PR, or another open head of its session, root, repo and base, needs a stacked base or a split instruction
 step outboundWrites : OutboundCall -> OutboundWrite[]
 step sessionReasons : (NewPr, SessionPrs, OpenPr[]) -> string[]
+law  L1 OB1 a write with a listed name in each case and spelling gets a deny unless each target is private or internal, and the reason holds no text line   check: prop outbound-text
 law  L2 SP1 a create gets a one-PR reason for a Part of link or another open head of its root, repo and base only with no stacked base and no split instruction   check: prop session-pr-rule
 rung R4
 ```
