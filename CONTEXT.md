@@ -13,11 +13,12 @@ context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr
 context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
 context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
 context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
-context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
+context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/review-record.ts, src/astack/review-store.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
 context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/cli/commands/check/index.ts, src/astack/codex-hooks.ts, src/astack/codex-trust.ts, src/astack/commit-style.ts, src/astack/doctor.ts, src/astack/hook-profile.ts, src/astack/init.ts, src/astack/managed.ts, src/astack/marketplace.ts, src/astack/profile.ts, src/astack/public-repo.ts, src/astack/repo-facts.ts, src/astack/rules.ts, src/astack/skill-path.ts
 cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
 cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write), loadFullStop(read), saveFullStop(write)
 cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
+cap  ReviewStore [fs-read, fs-write] @ src/astack/review-store.ts: loadRecord(read), saveRecord(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
@@ -26,6 +27,7 @@ pure src/astack/domain/imports.ts
 pure src/astack/domain/effects.ts
 pure src/astack/domain/effect-change.ts
 pure src/astack/pr/grant.ts
+pure src/astack/review-record.ts
 ```
 
 ## Language
