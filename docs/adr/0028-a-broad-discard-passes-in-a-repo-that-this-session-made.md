@@ -114,7 +114,8 @@ An agent can write the record file by hand, as ADR 0011 D6 says for the grant fi
 Branch protection and the review of the owner stay the control for a hostile agent.
 
 Amended 2026-11-23. A Write call, an Edit call and a shell write into `<state>/session-repos/` get a deny, as the gate folder does in ADR 0029 D6.
-A line that writes into a new target with `cp`, `mv`, `rsync` or `tar` records no target for it.
+A line that writes into a new target with `cp`, `mv`, `rsync` or `tar` from a path outside it, or with a dynamic word, records no target for it.
+A copy with each path inside the target, such as `cp .env.example .env`, keeps the record.
 
 ## Consequences
 

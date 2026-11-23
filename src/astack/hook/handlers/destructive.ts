@@ -1290,16 +1290,22 @@ function copiesInto(
 ): boolean {
 	const folder = canonicalFile(target);
 	return steps.some((step) => {
-		const program = step.words[0];
+		const [program, ...args] = step.words;
+		if (
+			program === undefined ||
+			program.dynamic ||
+			!COPIERS.has(basename(program.value))
+		)
+			return false;
+		const operandPaths = args.flatMap((word) =>
+			wordPaths(step, word, env).filter(
+				(path) => !basename(path).startsWith("-"),
+			),
+		);
 		return (
-			program !== undefined &&
-			!program.dynamic &&
-			COPIERS.has(basename(program.value)) &&
-			step.words.some(
-				(word) =>
-					word.dynamic ||
-					wordPaths(step, word, env).some((path) => inFolder(folder, path)),
-			)
+			args.some((word) => word.dynamic) ||
+			(operandPaths.some((path) => inFolder(folder, path)) &&
+				operandPaths.some((path) => !inFolder(folder, path)))
 		);
 	});
 }

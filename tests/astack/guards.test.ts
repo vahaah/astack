@@ -1401,6 +1401,17 @@ describe("a repo that this session made", () => {
 		},
 	);
 
+	test("[control:sg-session-repo-copied] after git init NEW && cd NEW && cp a.txt b.txt a reset in the new repo passes, because the copy brings no work from outside", () => {
+		const { dir, state } = fresh("new");
+		const parent = join(dir, "..");
+		const made = `git init -q ${dir} && cd ${dir} && echo a > a.txt && cp a.txt b.txt`;
+		expect(sessionRun(made, parent, state).kind).toBe("allow");
+		expect(spawnSync("sh", ["-c", made], { cwd: parent }).status).toBe(0);
+		dirtyRepoAt(dir);
+		expect(sessionRun("ls", parent, state).kind).toBe("allow");
+		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
+	});
+
 	test.each([
 		[
 			"a Write call",
