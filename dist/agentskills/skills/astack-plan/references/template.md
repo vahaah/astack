@@ -133,12 +133,7 @@ Each other finding that the edit adds is a note.
 
 ## Prose
 
-The checker refuses a long dash, an en dash outside a number range, a curly quote and an emoji.
-It warns on a colon in the middle of a sentence.
-It also warns on the exact ASD-STE100 rules.
-These cover contractions, semicolons, Latin abbreviations, "and/or", and sentences over 25 words.
-Tables and code are out of scope.
-A word on the glossary's avoid list gets a warning.
+The checker refuses long dashes, curly quotes and emoji, and it warns on the STE rules and avoided glossary words outside tables and code.
 
 ## The checker
 

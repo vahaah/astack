@@ -15,6 +15,7 @@
 		"docs/reference/law-controls.md",
 		"docs/reference/source-scan.md",
 		"docs/reference/pr-recipes.md",
+		"docs/reference/domain-record.md",
 		"docs/reference/review-stub.md"
 	],
 	"tests": [
@@ -82,6 +83,11 @@
 		"tests/keep-list.test.ts",
 		"tests/doc-facts.test.ts",
 		"tests/apply/flow-config.test.ts",
+		"tests/astack/domain-notation.test.ts",
+		"tests/domain-card.test.ts",
+		"tests/astack/domain-witness.test.ts",
+		"tests/astack/plan-domain.test.ts",
+		"tests/astack/change-proof-domain.test.ts",
 		"tests/apply/review-stub.test.ts"
 	],
 	"links": [
@@ -830,6 +836,52 @@
 		{
 			"criterion": "FORK-LINK",
 			"controls": ["fork-link"]
+		},
+		{
+			"criterion": "DR-plan-rules",
+			"controls": [
+				"plan-domain-rules",
+				"domain-keywords",
+				"domain-flow-names",
+				"domain-record-text",
+				"domain-profile",
+				"domain-profile-apply",
+				"domain-profile-render",
+				"domain-keyword-errors",
+				"plan-domain-no-card"
+			]
+		},
+		{
+			"criterion": "DR-card",
+			"controls": ["domain-card", "domain-card-parse"]
+		},
+		{
+			"criterion": "DR-witness",
+			"controls": [
+				"witness-wrong-type",
+				"witness-leaves-no-file",
+				"witness-wrong-forms",
+				"witness-checker-options",
+				"witness-tracked-tsc",
+				"witness-own-config"
+			]
+		},
+		{
+			"criterion": "DR-law-rung",
+			"controls": ["rung-law", "rung-law-derived"]
+		},
+		{
+			"criterion": "DR-plan-record",
+			"controls": [
+				"proof-plan-record",
+				"proof-plan-record-outside",
+				"proof-plan-record-stops",
+				"proof-plan-record-schema"
+			]
+		},
+		{
+			"criterion": "DR-ladder-law",
+			"controls": ["ladder-law-cuts"]
 		},
 		{
 			"criterion": "RS-INSTALL",

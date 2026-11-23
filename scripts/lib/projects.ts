@@ -3,6 +3,10 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import type { Rung } from "../../src/astack/change-proof/rung.ts";
 import {
+	type Carrier,
+	domainValueProblems,
+} from "../../src/astack/domain/profile.ts";
+import {
 	type HookConfig,
 	parseHookConfig,
 } from "../../src/astack/hook-profile.ts";
@@ -99,6 +103,8 @@ export type DomainConfig = {
 	contextMap?: string;
 	adrDir: string;
 	readFirst?: string[];
+	carrier?: Carrier;
+	codeRoots?: string[];
 };
 
 export type MergeConfig = {
@@ -493,6 +499,7 @@ function validateDomain(errors: string[], domain: unknown): void {
 	if (domain.contextMap !== undefined)
 		requirePath(errors, domain.contextMap, "domain.contextMap");
 	requirePath(errors, domain.adrDir, "domain.adrDir");
+	errors.push(...domainValueProblems(domain, "domain"));
 	if (domain.readFirst === undefined) return;
 	if (!isStringArray(domain.readFirst)) {
 		errors.push("domain.readFirst is not a string array");

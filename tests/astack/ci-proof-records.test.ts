@@ -14,7 +14,10 @@ import { parseChangeProof } from "../../src/astack/change-proof/contract.ts";
 import {
 	git,
 	marker,
+	PLAN_FILES,
+	PLAN_RECORD,
 	PROOF_FILES,
+	planRecordProof,
 	scratchDir,
 	validProof,
 	writeFiles,
@@ -99,7 +102,10 @@ function save(repo: Candidate): void {
 	git(repo.root, "commit", "-q", "-m", "change the candidate");
 }
 
-function run(repo: Candidate, base = repo.base) {
+function run(
+	repo: { readonly root: string; readonly base: string },
+	base = repo.base,
+) {
 	const result = spawnSync(
 		process.execPath,
 		[CLI, "check", "ci-pins", "--base", base],
@@ -257,6 +263,53 @@ describe("CI changes with required proof records", () => {
 			repo,
 			`${RECORD} has no nonempty Category composition proof section`,
 		);
+	});
+
+	test("[control:ci-proof-plan-unread] a plan manifest that cites no proof record needs no plan at HEAD", () => {
+		const root = mkdtempSync(join(scratch, "repo-"));
+		git(root, "init", "-q", "-b", "main");
+		writeFiles(root, { ...PLAN_FILES, [WORKFLOW]: workflow("bun run check") });
+		git(root, "add", "-A");
+		git(root, "commit", "-q", "-m", "base");
+		const base = git(root, "rev-parse", "HEAD");
+		git(root, "rm", "-q", PLAN_RECORD);
+		git(root, "commit", "-q", "-m", "main drops the plan");
+		const trunk = git(root, "rev-parse", "HEAD");
+		writeFiles(root, {
+			[MANIFEST]: JSON.stringify(planRecordProof(validProof(base))),
+			[WORKFLOW]: workflow("bun run check --strict"),
+		});
+		git(root, "add", "-A");
+		git(root, "commit", "-q", "-m", "CI with a plan manifest");
+		const result = run({ root, base: trunk });
+		expect({
+			code: result.code,
+			last: result.out.trimEnd().split("\n").at(-1),
+		}).toEqual({
+			code: 3,
+			last: "ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it",
+		});
+	});
+
+	test("[control:ci-proof-record-role] a proof record cannot also supply the plan record of the manifest", () => {
+		const ratification = {
+			kind: "integrated-proposal",
+			process: { file: PROCESS, decision: "D1" },
+			integratedAt: "a".repeat(40),
+			proofRecord: PLAN_RECORD,
+		};
+		const text = JSON.stringify(
+			planRecordProof(validProof("a".repeat(40))),
+		).replace(
+			'"decision":"D1"}',
+			`"decision":"D1","ratification":${JSON.stringify(ratification)}}`,
+		);
+		const parsed = parseChangeProof(text);
+		if (!parsed.ok) throw new Error(parsed.error.message);
+		expect(ciProofRecords(parsed.value, MANIFEST, new Map())).toEqual({
+			ok: false,
+			error: `${PLAN_RECORD} also supplies another proof input`,
+		});
 	});
 
 	test.each(["glossary", "typed witness"])(

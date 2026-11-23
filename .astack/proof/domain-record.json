@@ -1,0 +1,380 @@
+{
+	"version": 1,
+	"change": "domain-record",
+	"base": "0da3a395ff1371fab74ecdbc6a9d3caead1ff4fb",
+	"scope": [
+		{
+			"path": "src/astack/domain/notation.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/domain/rules.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/domain/profile.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/domain/witness.ts",
+			"obligation": "DR-witness"
+		},
+		{
+			"path": "src/astack/domain/witness-run.ts",
+			"obligation": "DR-witness"
+		},
+		{
+			"path": "src/astack/plan/**",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/profile.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/cli/commands/check/plan.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "src/astack/cli/commands/check/proof.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "src/astack/cli/commands/check/ci-pins.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "src/astack/change-proof/rung.ts",
+			"obligation": "DR-law-rung"
+		},
+		{
+			"path": "src/astack/change-proof/admission.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "src/astack/change-proof/ci-records.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "scripts/lib/projects.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "scripts/lib/render.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "formal/ProofLadder.*",
+			"obligation": "DR-ladder-law"
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "DR-ladder-law"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "DR-card"
+		},
+		{
+			"path": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "docs/adr/0006-internal-composition-records-follow-domain-effects.md",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "docs/adr/0015-change-proof-follows-risk.md",
+			"obligation": "DR-law-rung"
+		},
+		{
+			"path": "docs/adr/README.md",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "README.md",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "docs/reference/change-proof-contract.md",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "docs/reference/domain-record.md",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "docs/reference/proof-ladder.md",
+			"obligation": "DR-law-rung"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/**",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/domain-modeling/**",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "tests/apply/projects.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/apply/render.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/astack/change-proof-domain.test.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "tests/astack/change-proof-fixture.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "tests/astack/change-proof.test.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "tests/astack/ci-proof-records.test.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
+			"path": "tests/astack/domain-notation.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/astack/domain-witness.test.ts",
+			"obligation": "DR-witness"
+		},
+		{
+			"path": "tests/astack/plan-domain.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/astack/profile.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/astack/proof-contract-doc.test.ts",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/astack/proof-ladder.test.ts",
+			"obligation": "DR-law-rung"
+		},
+		{
+			"path": "tests/domain-card.test.ts",
+			"obligation": "DR-card"
+		},
+		{
+			"path": "tests/fixtures/domain/**",
+			"obligation": "DR-witness"
+		},
+		{
+			"path": "tests/fixtures/plans/domain/**",
+			"obligation": "DR-plan-rules"
+		},
+		{
+			"path": "tests/formal-registry.test.ts",
+			"obligation": "DR-ladder-law"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Proof",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B28.md#domain-and-effects",
+		"aggregate": {
+			"path": "src/astack/domain/notation.ts",
+			"symbol": "DomainBlock"
+		},
+		"terms": [
+			"Domain block",
+			"Contexts card",
+			"ChangeProof",
+			"Proof rung",
+			"Model registry"
+		],
+		"invariants": [
+			{
+				"name": "The rung is at least the law rung",
+				"modelRef": "FloorOnlyRaises"
+			},
+			{
+				"name": "A tla law selects its model",
+				"modelRef": "TlaLawSelects"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D10"
+			},
+			{
+				"file": "docs/adr/0018-one-domain-and-effects-record-is-checked-against-code.md",
+				"decision": "D11"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"DR-plan-rules",
+				"DR-card",
+				"DR-witness",
+				"DR-law-rung",
+				"DR-plan-record",
+				"DR-ladder-law",
+				"SG-preserve",
+				"SG-generated",
+				"WB-ratchet"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The keyword patterns of the block, the Equals and Fits checks of the witness, the tsc run, its cache folder and the map from a tsc line to a block line.",
+		"callersKnow": [
+			"parseDomainBlock gives a block, or the problems of the block with their lines.",
+			"domainFindings gives each break of a block rule at its line.",
+			"typeCheck gives a pass, the failing block lines, or a stop, and it leaves no file in its cache folder.",
+			"deriveLadder takes the laws of the block and gives the highest of the path rung, the law rung and both floors."
+		],
+		"deletionTest": "Deleting the witness puts the mention check back, and a linked step with a wrong return type passes again.",
+		"alternatives": [
+			{
+				"name": "Prose effect lists",
+				"rejectedBecause": "No check reads them."
+			},
+			{
+				"name": "A YAML block",
+				"rejectedBecause": "It needs a schema for each key."
+			},
+			{
+				"name": "The TypeScript compiler API",
+				"rejectedBecause": "It is unstable in TypeScript 7.0.2."
+			},
+			{
+				"name": "A rung that the author picks",
+				"rejectedBecause": "ADR 0015 rejects it."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "deriveLadder"
+				},
+				"modelAction": "Derive"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/rung.ts",
+					"symbol": "lawRung"
+				},
+				"modelAction": "Derive"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/domain/rules.ts",
+					"symbol": "lawClaims"
+				},
+				"modelAction": "Derive"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/change-proof/admission.ts",
+					"symbol": "admitChangeProof"
+				},
+				"modelAction": "Admit"
+			}
+		],
+		"omitted": [
+			"The model does not read the block. It takes the law kind as a fixed observation.",
+			"The witness and the block rules are outside the model. Their controls examine them."
+		]
+	},
+	"model": {
+		"module": "formal/ProofLadder.tla",
+		"config": "formal/ProofLadder.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Two models, seven path kinds, a base registry that can be absent, and the floors R0, R1 and R4 on each side.",
+			"Four law kinds: none, a prop law on a read-only cap, another prop law and a tla law that selects the second model.",
+			"A diff of one or two path kinds, and each order of the derive, start, judge and admit steps."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"TlcOnlyAtR4",
+			"AdmitNeedsEachTriple",
+			"FailClosedStops",
+			"FloorOnlyRaises",
+			"OneTriplePerModel",
+			"ManifestFirst",
+			"RegistryRunsAll",
+			"DeletedRegistryStops",
+			"TlaLawSelects"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/ProofLadder.tla",
+		"action": "Derive",
+		"original": "/\\ rung' = Rung",
+		"replacement": "/\\ rung' = IF Legacy THEN TlcRung ELSE Max({PathRung, baseFloor, treeFloor})",
+		"defect": "A rung rule that drops the law rung gives a plan with a prop law the rung of its paths, so its law control is not required.",
+		"expect": {
+			"kind": "invariant",
+			"name": "FloorOnlyRaises"
+		}
+	},
+	"limits": [
+		"The ladder model takes the law kind as a true observation of the block, and it covers two models and four law kinds.",
+		"The witness compares the declared types with the exported types by name, and the export scan misses a name that only export * gives.",
+		"The model does not show that the TypeScript code refines it. The linked controls and review examine that relation.",
+		"Exact-head CI, review and every ordinary gate stay required."
+	]
+}

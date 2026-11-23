@@ -34,6 +34,26 @@ export type ModelRegistry = {
 
 export type Side = "base" | "tree";
 
+export type LawClaim =
+	| { readonly id: string; readonly check: "tsc" }
+	| { readonly id: string; readonly check: "prop"; readonly readOnly: boolean }
+	| { readonly id: string; readonly check: "tla"; readonly model: string };
+
+export function lawRung(law: LawClaim): Rung {
+	switch (law.check) {
+		case "tsc":
+			return "R0";
+		case "prop":
+			return law.readOnly ? "R2" : "R3";
+		case "tla":
+			return TLC_RUNG;
+		default: {
+			const unreachable: never = law;
+			return unreachable;
+		}
+	}
+}
+
 export type LadderInput = {
 	readonly changed: readonly ChangedPath[];
 	readonly registry: Readonly<Record<Side, ModelRegistry | undefined>>;
@@ -42,6 +62,7 @@ export type LadderInput = {
 		readonly model: ModelContract;
 		readonly negative: NegativeControl;
 	};
+	readonly laws: readonly LawClaim[];
 	readonly inTree: (path: string) => boolean;
 };
 
@@ -53,6 +74,7 @@ export type LadderRun = {
 
 export type RungCause =
 	| { readonly kind: "path"; readonly path: string }
+	| { readonly kind: "law"; readonly id: string }
 	| { readonly kind: "floor"; readonly side: Side };
 
 export type Ladder =
@@ -64,7 +86,7 @@ export type Ladder =
 			readonly runs: readonly LadderRun[];
 	  };
 
-type PathRung =
+export type PathRung =
 	| {
 			readonly kind: "rung";
 			readonly rung: Rung;
@@ -84,7 +106,7 @@ export function moduleName(module: string): string {
 	return module.slice(module.lastIndexOf("/") + 1, -".tla".length);
 }
 
-function pathRung(registry: ModelRegistry, path: string): PathRung {
+export function pathRung(registry: ModelRegistry, path: string): PathRung {
 	if (path === REGISTRY_PATH)
 		return {
 			kind: "rung",
@@ -156,6 +178,20 @@ export function deriveLadder(input: LadderInput): Result<Ladder, string> {
 		}
 	}
 	if (edited) for (const entry of base?.models ?? []) selected.add(entry.name);
+	for (const law of input.laws) {
+		if (law.check === "tla") {
+			if (!tree.models.some((entry) => entry.name === law.model))
+				return err(
+					`the tla law ${law.id} names the model ${law.model}, which ${REGISTRY_PATH} does not hold`,
+				);
+			selected.add(law.model);
+		}
+		const found = lawRung(law);
+		if (cause === undefined || !rungAtLeast(rung, found)) {
+			rung = found;
+			cause = { kind: "law", id: law.id };
+		}
+	}
 	const floorSide: Side = rungAtLeast(input.floor.base, input.floor.tree)
 		? "base"
 		: "tree";

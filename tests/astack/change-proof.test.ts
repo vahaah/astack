@@ -10,6 +10,7 @@ import {
 } from "../../src/astack/change-proof/admission.ts";
 import {
 	type ChangeProof,
+	type CompositionRecord,
 	parseChangeProof,
 	type Rejection,
 } from "../../src/astack/change-proof/contract.ts";
@@ -34,6 +35,12 @@ function parsed(edit: (proof: Proof) => void = () => {}) {
 	const proof = validProof(BASE);
 	edit(proof);
 	return parseChangeProof(JSON.stringify(proof));
+}
+
+function category(proof: ChangeProof): CompositionRecord {
+	if (proof.composition.kind !== "category")
+		throw new Error("the fixture proof holds a category record");
+	return proof.composition.category;
 }
 
 function validChangeProof(): ChangeProof {
@@ -97,11 +104,24 @@ describe("parseChangeProof", () => {
 			});
 		},
 	);
+
+	test("an arrow that draws a random value declares the effect random", () => {
+		const text = JSON.stringify(validProof(BASE)).replace(
+			'"effects":[]',
+			'"effects":["random"]',
+		);
+		expect(
+			map(
+				parseChangeProof(text),
+				(proof) => category(proof).arrows[0]?.effects,
+			),
+		).toEqual(ok(["random"]));
+	});
 });
 
 const lawNames = (edit: (proof: Proof) => void) =>
 	map(parsed(edit), (proof) =>
-		proof.category.laws.map((row): string => row.law),
+		category(proof).laws.map((row): string => row.law),
 	);
 
 const dropLaws =
@@ -214,7 +234,7 @@ describe("law claims", () => {
 		);
 		expect(
 			map(parsed(claim("monoid-id", "monoid-assoc")), (proof) =>
-				proof.category.laws.slice(-2),
+				category(proof).laws.slice(-2),
 			),
 		).toEqual(
 			ok([

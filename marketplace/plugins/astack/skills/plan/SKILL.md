@@ -145,8 +145,10 @@ Then stop.
 ## Run the stages
 
 Every change follows `astack:mode references/change-proof.md`, including quick work and docs.
-DDD terms and internal composition records start before implementation.
-Each governing ADR links its function contract, category laws, formal claims, and executable controls.
+A plan whose Files name a code path holds one `## Domain and effects` H2 with one `domain` fence.
+`astack check-plan --template=domain` prints its grammar.
+The fence names a context of the contexts card, and the caps, steps, flows and laws of the change.
+Each step links one Files cell `<module>#<name>`, and a manifest cites the block with `domain.plan`.
 
 S0 runs first.
 S1 runs in the background while S2 asks round 1.

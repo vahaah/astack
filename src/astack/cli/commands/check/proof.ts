@@ -11,6 +11,8 @@ import {
 	matrixSourcePaths,
 	modelPaths,
 	modelRuns,
+	type PlanEvidence,
+	type PlanRecord,
 	type ProofBase,
 	planModelFiles,
 	type RepoView,
@@ -29,10 +31,12 @@ import {
 } from "../../../change-proof/candidate.ts";
 import {
 	type ChangeProof,
+	type Composition,
 	LEGACY_PROOF_MANIFEST,
 	PROOF_MANIFEST_FOLDER,
 	parseChangeProof,
 	type Rejection,
+	rejection,
 	STAGE_SECTIONS,
 	type Stage,
 } from "../../../change-proof/contract.ts";
@@ -48,10 +52,12 @@ import {
 	deriveLadder,
 	type Ladder,
 	type LadderRun,
+	type LawClaim,
 	type ModelRegistry,
 	modelFiles,
 	REGISTRY_PATH,
 	type Rung,
+	type RungCause,
 } from "../../../change-proof/rung.ts";
 import {
 	type Checker,
@@ -72,8 +78,18 @@ import {
 	type RunLabel,
 	type Violation,
 } from "../../../change-proof/tlc.ts";
+import { parseCard } from "../../../domain/notation.ts";
+import { allCaps, lawClaims } from "../../../domain/rules.ts";
+import {
+	type Reading,
+	type StepLinks,
+	witnessSource,
+} from "../../../domain/witness.ts";
+import { stepLinks, typeCheck } from "../../../domain/witness-run.ts";
 import { repoRoot } from "../../../git.ts";
-import { PROFILE_PATH, proofFloor } from "../../../profile.ts";
+import { readPlanBlock } from "../../../plan/domain.ts";
+import { GLOSSARY_MAPS } from "../../../plan/files.ts";
+import { loadProfile, PROFILE_PATH, proofFloor } from "../../../profile.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
@@ -131,8 +147,10 @@ function stopAt(io: Io, stage: Stage, message: string): number {
 	return stop(io, { stage, message });
 }
 
-function summaryLines(proof: ChangeProof): readonly string[] {
-	const { domain, category, abstraction, model, negative } = proof;
+function categoryLine(composition: Composition): string {
+	if (composition.kind === "plan")
+		return `Category: the domain block of ${composition.plan}`;
+	const { category } = composition;
 	const laws = (status: "witnessed" | "not_applicable"): string =>
 		category.laws
 			.flatMap((law) => {
@@ -144,16 +162,110 @@ function summaryLines(proof: ChangeProof): readonly string[] {
 				];
 			})
 			.join(", ") || "none";
+	return `Category: carrier ${category.carrier.kind}; arrows ${category.arrows.map((arrow) => `${arrow.name}: ${arrow.from} -> ${arrow.to}`).join(", ")}; composites ${category.composites.map((composite) => composite.arrows.join(` ${composite.op} `)).join(", ") || "none"}; equality ${category.equality}; witnessed ${laws("witnessed")}; not applicable ${laws("not_applicable")}`;
+}
+
+function summaryLines(proof: ChangeProof): readonly string[] {
+	const { domain, abstraction, model, negative } = proof;
 	return [
 		`Change: ${proof.change} from base ${proof.base}`,
 		`Domain: ${domain.context}; aggregate ${domain.aggregate.symbol} in ${domain.aggregate.path}; terms ${domain.terms.join(", ")}; invariants ${domain.invariants.map((row) => `${row.name} -> ${row.modelRef}`).join(", ")}`,
-		`Category: carrier ${category.carrier.kind}; arrows ${category.arrows.map((arrow) => `${arrow.name}: ${arrow.from} -> ${arrow.to}`).join(", ")}; composites ${category.composites.map((composite) => composite.arrows.join(` ${composite.op} `)).join(", ") || "none"}; equality ${category.equality}; witnessed ${laws("witnessed")}; not applicable ${laws("not_applicable")}`,
+		categoryLine(proof.composition),
 		`Abstraction: hides ${abstraction.hides}; callers know ${abstraction.callersKnow.join(", ")}; deletion test ${abstraction.deletionTest}`,
 		`ADR: ${domain.adrs.map((adr) => `${adr.file} ${adr.decision}`).join(", ")}`,
 		`Formal: ${model.module} with ${model.config}; invariants ${model.invariants.join(", ")}; properties ${model.properties.join(", ") || "none"}; negative ${negative.action} expects ${negative.expect.kind} ${negative.expect.name}: ${negative.defect}`,
 		`Limits: ${proof.limits.join(", ")}`,
 		"status: UNVERIFIED. This summary ran no check and no model, so it is not a proof.",
 	];
+}
+
+type PlanRead = {
+	readonly read: Result<PlanRecord, Rejection>;
+	readonly inputs: readonly string[];
+	readonly links: StepLinks | undefined;
+	readonly reading: Reading;
+};
+
+function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
+	const { composition, domain } = proof;
+	if (composition.kind !== "plan") return undefined;
+	const cardPaths = [...new Set([...GLOSSARY_MAPS, domain.glossary])];
+	const cardFiles = cardPaths.flatMap((path) => {
+		const read = readRepoFile(root, path);
+		return read.kind === "text" ? [{ path, text: read.text }] : [];
+	});
+	const reading = loadProfile(root).domain.carrier;
+	const atHead = readRepoFile(root, composition.plan);
+	const text =
+		atHead.kind === "text"
+			? atHead
+			: readCommittedFile(root, proof.base, composition.plan);
+	const inputs = [composition.plan, ...cardPaths];
+	const none = (read: Result<PlanRecord, Rejection>): PlanRead => ({
+		read,
+		inputs,
+		links: undefined,
+		reading,
+	});
+	if (text.kind !== "text")
+		return none(
+			rejection(
+				"category",
+				`the plan record ${composition.plan} is missing at HEAD and at the manifest base ${proof.base}`,
+			),
+		);
+	const card = parseCard(cardFiles);
+	if (!card.ok)
+		return none(
+			rejection(
+				"domain",
+				card.error.map((problem) => problem.message).join("; "),
+			),
+		);
+	if (card.value.kind === "none")
+		return none(
+			rejection(
+				"domain",
+				`a plan record needs a contexts card, the domain fence under ## Contexts of ${cardPaths.join(", ")}`,
+			),
+		);
+	const block = readPlanBlock(composition.plan, text.text);
+	if (!block.ok) return none(rejection("category", block.error));
+	const ports = new Map(
+		allCaps(block.value.block, card.value).map((cap) => [cap.name, cap.port]),
+	);
+	const links = stepLinks(
+		root,
+		block.value.block,
+		block.value.cells.map((cell) => cell.cell),
+		ports,
+	);
+	if (!links.ok) return none(rejection("category", links.error));
+	return {
+		read: ok({ ...block.value, card: card.value }),
+		inputs: [
+			...inputs,
+			...[...links.value.steps.values()].map((link) => link.module),
+			...block.value.block.aggs.map((agg) => agg.module),
+			...(reading === "effect" ? [...ports.values()] : []),
+		],
+		links: links.value,
+		reading,
+	};
+}
+
+async function planEvidence(
+	record: PlanRead,
+	registry: Result<ModelRegistry | undefined, string>,
+): Promise<PlanEvidence> {
+	const { read, links } = record;
+	const tree = registry.ok ? registry.value : undefined;
+	if (!read.ok || links === undefined)
+		return { record: read, registry: tree, witness: undefined };
+	const witness = await typeCheck(
+		witnessSource(read.value.block, links, record.reading),
+	);
+	return { record: read, registry: tree, witness };
 }
 
 function readManifest(
@@ -331,6 +443,7 @@ function readLadder(
 	changed: readonly ChangedPath[],
 	proof: ChangeProof,
 	reads: LadderReads,
+	laws: readonly LawClaim[],
 ): Result<Ladder, string> {
 	const tree = registryAt(reads[REGISTRY_PATH], IN_TREE);
 	if (!tree.ok) return tree;
@@ -353,17 +466,29 @@ function readLadder(
 		registry: { base: base.value, tree: tree.value },
 		floor: { base: baseFloor.value, tree: treeFloor.value },
 		manifest: proof,
+		laws,
 		inTree: (path) => readRepoFile(root, path).kind === "text",
 	});
 }
 
 function rungLine(ladder: Extract<Ladder, { kind: "ladder" }>): string {
 	const { rung, cause } = ladder;
-	const by =
-		cause.kind === "path"
-			? `the changed path ${oneLine(cause.path)}`
-			: `proof.minRung ${rung} of ${PROFILE_PATH} ${cause.side === "base" ? AT_BASE : IN_TREE}`;
-	return `rung: ${rung} by ${by}\n`;
+	return `rung: ${rung} by ${rungCause(rung, cause)}\n`;
+}
+
+function rungCause(rung: Rung, cause: RungCause): string {
+	switch (cause.kind) {
+		case "path":
+			return `the changed path ${oneLine(cause.path)}`;
+		case "law":
+			return `the law ${oneLine(cause.id)} of the plan block`;
+		case "floor":
+			return `proof.minRung ${rung} of ${PROFILE_PATH} ${cause.side === "base" ? AT_BASE : IN_TREE}`;
+		default: {
+			const unreachable: never = cause;
+			return unreachable;
+		}
+	}
 }
 
 function planRun(root: string, run: LadderRun): Result<ModelPlan, string> {
@@ -444,12 +569,23 @@ async function prove(
 	const changed = changedPaths(root, base.value.diff);
 	if (!changed.ok) return stopAt(io, "controls", changed.error);
 	const reads = ladderReads(root);
-	const ladder = readLadder(root, base.value.diff, changed.value, proof, reads);
+	const record = planRecord(root, proof);
+	const ladder = readLadder(
+		root,
+		base.value.diff,
+		changed.value,
+		proof,
+		reads,
+		record?.read.ok
+			? lawClaims(record.read.value.block, record.read.value.card)
+			: [],
+	);
 	const runs = ladder.ok ? modelRuns(proof, ladder.value) : [];
 	const matrix = readRepoFile(root, proof.domain.controls.matrix);
 	const inputs = [
 		manifest.path,
 		...referencedPaths(proof),
+		...(record?.inputs ?? []),
 		...modelPaths(proof),
 		...(matrix.kind === "text" ? matrixSourcePaths(matrix.text) : []),
 		...(ladder.ok && ladder.value.kind === "legacy"
@@ -469,9 +605,20 @@ async function prove(
 		historyState(histories),
 	);
 	if (!before.ok) return stopAt(io, "stale", before.error);
-	const view = repoView(root, proof, base.value, changed.value, histories);
+	const plan =
+		record === undefined
+			? undefined
+			: await planEvidence(record, registryAt(reads[REGISTRY_PATH], IN_TREE));
+	const view = {
+		...repoView(root, proof, base.value, changed.value, histories),
+		...(plan === undefined ? {} : { plan }),
+	};
 	const references = checkReferences(proof, view);
 	if (!references.ok) return stop(io, references.error);
+	if (record !== undefined && plan?.witness?.ok && plan.record.ok)
+		io.out(
+			`witness: the ${record.reading} reading passes ${plan.witness.value.kind === "pass" ? plan.witness.value.checks : 0} checks on ${plan.record.value.block.steps.length} linked steps\n`,
+		);
 	if (!ladder.ok) return stopAt(io, "rung", ladder.error);
 	if (ladder.value.kind === "ladder") io.out(rungLine(ladder.value));
 	const [manifestRun, ...selectedRuns] = runs;
@@ -591,7 +738,7 @@ async function run(args: readonly string[], io: Io): Promise<number> {
 
 export const command: Command<Promise<number>> = {
 	name: "proof",
-	summary: `Admits one ChangeProof manifest. With no path, it reads the one manifest directly under ${PROOF_MANIFEST_FOLDER}, and with --base only one that the diff from the merge base adds. It prints that path first, and it stops on two or none. A tree with no manifest there reads ${LEGACY_PROOF_MANIFEST}. A change with a manifest under ${PROOF_MANIFEST_FOLDER} deletes each manifest that its manifest base holds, and ${LEGACY_PROOF_MANIFEST}. It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. A scope row that names a manifest path is never idle. Then it reads formal/models.json and the proof.minRung floor of ${PROFILE_PATH} at the diff base and in the tree, and prints the proof rung and its cause. Below R4 it starts no Java process. At R4 it runs the manifest model first and then each other selected model, one after another. For each model it starts the pinned tla2tools.jar ${TLC_PIN.version} in three owned temporary copies at once: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live and starts no later model. A repo with no registry runs only the manifest model and prints no rung line. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
+	summary: `Admits one ChangeProof manifest. With no path, it reads the one manifest directly under ${PROOF_MANIFEST_FOLDER}, and with --base only one that the diff from the merge base adds. It prints that path first, and it stops on two or none. A tree with no manifest there reads ${LEGACY_PROOF_MANIFEST}. A change with a manifest under ${PROOF_MANIFEST_FOLDER} deletes each manifest that its manifest base holds, and ${LEGACY_PROOF_MANIFEST}. It parses the strict version 1 JSON, resolves its glossary, aggregate, accepted ADR decisions, spec-drift matrix, composition links and model closure, and checks that the scope rows cover every changed, staged, removed and untracked path since the diff base. A scope row that names a manifest path is never idle. Then it reads formal/models.json and the proof.minRung floor of ${PROFILE_PATH} at the diff base and in the tree, and prints the proof rung and its cause. Below R4 it starts no Java process. At R4 it runs the manifest model first and then each other selected model, one after another. For each model it starts the pinned tla2tools.jar ${TLC_PIN.version} in three owned temporary copies at once: the positive model, the one named mutation, which must produce the expected violation, and the unchanged model again. It judges the runs in that order, and a stop kills the runs that are still live and starts no later model. A repo with no registry runs only the manifest model and prints no rung line. A manifest with domain.plan and no category reads the domain block of that plan at HEAD, else at the manifest base. It needs domain.context in the contexts card, applies the block rules of check-plan, runs the tsc witness on the linked steps and checks the links of each law. The laws of the block raise the rung, and a tla law selects its model. It hashes the candidate inputs before and after and never reads a stored receipt. With no --base, the diff base is the manifest base, which must be an ancestor of HEAD. With --base <ref>, the diff base is the merge base of the ref and HEAD, and the manifest base must be an ancestor of it. Git reads of the bases and the diff ignore replace objects and grafts. --summary prints the intent as UNVERIFIED and runs nothing. ASTACK_TLC_JAR names a pinned jar outside the repository, and ASTACK_PROOF_TIMEOUT_MS can lower the ${DEADLINE_CAP_MS / 1000} second deadline of each run. Exits 0 when admitted, 1 for missing or invalid evidence or a tool failure, and 2 for wrong arguments or a schema failure.`,
 	usage: "check proof [manifest.json] [--base <ref>] [--summary]",
 	run,
 };

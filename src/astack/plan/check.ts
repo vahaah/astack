@@ -1,6 +1,7 @@
 import { basename, dirname, resolve } from "node:path";
 import { decisionHeading } from "../adr.ts";
 import { replaceCodeSpans } from "../ste/mask.ts";
+import { planDomain } from "./domain.ts";
 import {
 	bullets,
 	DECISION_HEADER,
@@ -109,6 +110,7 @@ const SECTION_ORDER: Record<Tier, readonly string[]> = {
 		"Goal",
 		"Scope",
 		"Decisions",
+		"Domain and effects",
 		"Sessions",
 		"How each step runs",
 		"Proof",
@@ -122,6 +124,7 @@ const SECTION_ORDER: Record<Tier, readonly string[]> = {
 		"Goal",
 		"Scope",
 		"Decisions",
+		"Domain and effects",
 		"Sessions",
 		"How each step runs",
 		"Proof",
@@ -1662,6 +1665,8 @@ export function checkPlan(plan: Plan, env: CheckEnv): PlanFinding[] {
 	checkLedger(ctx, emit);
 	checkProse(ctx, emit);
 	checkLinks(ctx, emit);
+	for (const finding of planDomain(plan, env).findings)
+		emit("error", "domain", finding.line, finding.message);
 	return findings.sort((a, b) => a.line - b.line);
 }
 

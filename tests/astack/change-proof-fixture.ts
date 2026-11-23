@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
+import {
+	mkdirSync,
+	mkdtempSync,
+	realpathSync,
+	symlinkSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -358,4 +364,104 @@ export function ladderRepo(parent: string, plan: LadderChange): ProofRepo {
 	git(root, "add", "-A");
 	git(root, "commit", "-q", "-m", "change");
 	return { root, base };
+}
+
+export const PLAN_RECORD = "docs/plans/gate.md";
+
+export const PLAN_BLOCK = [
+	"context Gate",
+	"agg  Gate @ src/gate.ts: Gate",
+	"inv  G1 Gate: only fresh input is admitted",
+	"step parseGate : Text -> Gate",
+	"step admitGate : Gate -> Admitted",
+	"flow admit = parseGate >=> admitGate",
+	"law  L1 G1 a stale gate is never admitted   check: prop C1",
+	"rung R3",
+].join("\n");
+
+export function planText(block: string = PLAN_BLOCK): string {
+	return [
+		"# Gate admission",
+		"",
+		"## Domain and effects",
+		"",
+		"```domain",
+		block,
+		"```",
+		"",
+		"## Sessions",
+		"",
+		"### S1 Admit fresh input",
+		"",
+		"| # | Step | Files | Exit |",
+		"|---|---|---|---|",
+		"| 1 | Parse the gate | src/gate.ts#parseGate | The parse test passes |",
+		"| 2 | Admit the gate | src/gate.ts#admitGate | The admit test passes |",
+		"",
+	].join("\n");
+}
+
+export const PLAN_FILES: Files = {
+	...PROOF_FILES,
+	"CONTEXT.md":
+		"# Gate admission\n\n## Contexts\n\n```domain\ncontext Gate : src/**\n```\n\n## Language\n\n### Gate\n\nA gate admits a **Fresh input** only.\n",
+	[PLAN_RECORD]: planText(),
+	".gitignore": "node_modules/\n",
+	"tsconfig.json": `${JSON.stringify({
+		compilerOptions: {
+			target: "esnext",
+			module: "preserve",
+			moduleResolution: "bundler",
+			lib: ["esnext"],
+			types: [],
+			strict: true,
+			noEmit: true,
+			allowImportingTsExtensions: true,
+			skipLibCheck: true,
+		},
+		include: ["src/**/*.ts"],
+	})}\n`,
+};
+
+export function planRecordProof(proof: Proof): Record<string, unknown> {
+	const { category: _category, ...rest } = proof;
+	return {
+		...rest,
+		scope: [
+			...proof.scope,
+			{ path: ".gitignore", obligation: "P1" },
+			{ path: "tsconfig.json", obligation: "P1" },
+		],
+		domain: {
+			...proof.domain,
+			context: "Gate",
+			plan: `${PLAN_RECORD}#domain-and-effects`,
+		},
+	};
+}
+
+export function planProofRepo(
+	parent: string,
+	edit: (proof: Record<string, unknown>) => void = () => {},
+	files: Files = PLAN_FILES,
+): ProofRepo {
+	const repo = proofRepo(parent, () => {}, files);
+	const proof = planRecordProof(validProof(repo.base));
+	edit(proof);
+	writeFiles(repo.root, {
+		".astack/proof.json": `${JSON.stringify(proof, null, 2)}\n`,
+	});
+	git(repo.root, "add", "-A");
+	git(repo.root, "commit", "-q", "-m", "plan record");
+	const astack = join(import.meta.dir, "../..");
+	mkdirSync(join(repo.root, "node_modules/.bin"), { recursive: true });
+	symlinkSync(
+		join(astack, "node_modules/typescript"),
+		join(repo.root, "node_modules/typescript"),
+	);
+	symlinkSync(
+		"../typescript/bin/tsc",
+		join(repo.root, "node_modules/.bin/tsc"),
+	);
+	return repo;
 }

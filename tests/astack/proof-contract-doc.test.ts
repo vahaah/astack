@@ -135,10 +135,15 @@ describe("the proof contract reference", () => {
 				"More than one manifest stops",
 				"the diff from the merge base adds",
 			],
-			domain: ["glossary", "integratedAt"],
-			category: ["must compose", "monoid"],
+			domain: ["glossary", "integratedAt", "context of the contexts card"],
+			category: ["must compose", "monoid", "tsc witness", "links row"],
 			controls: ["no row is idle", "spec-links.md"],
-			rung: ["uncovered fail-closed path", "deleted registry"],
+			rung: [
+				"uncovered fail-closed path",
+				"deleted registry",
+				"R2 for a prop law on a read-only cap",
+				"A tla law selects its model",
+			],
 			model: ["A positive result needs"],
 			countermodel: ["The negative control"],
 			stale: [
@@ -157,6 +162,35 @@ describe("the proof contract reference", () => {
 					.map((rule) => `${stage}: ${rule}`),
 			),
 		).toEqual([]);
+	});
+
+	test("[control:domain-record-text] the plan skill names the H2 and the domain template, and domain-modeling names the card and domain.plan", () => {
+		const skills = join(
+			import.meta.dir,
+			"../../marketplace/plugins/astack/skills",
+		);
+		const plan = readFileSync(join(skills, "plan/SKILL.md"), "utf8");
+		const modeling = readFileSync(
+			join(skills, "domain-modeling/SKILL.md"),
+			"utf8",
+		);
+		const format = readFileSync(
+			join(skills, "domain-modeling/GLOSSARY-FORMAT.md"),
+			"utf8",
+		);
+		expect({
+			h2: plan.includes("`## Domain and effects`"),
+			template: plan.includes("astack check-plan --template=domain"),
+			plan: modeling.includes("`domain.plan`"),
+			card: format.includes("contexts card"),
+			fence: [plan, modeling, format].some((text) => /^```domain/m.test(text)),
+		}).toEqual({
+			h2: true,
+			template: true,
+			plan: true,
+			card: true,
+			fence: false,
+		});
 	});
 
 	test("[control:proof-model-sections] the Sections of ProofAdmission give each stop stage the section of STAGE_SECTIONS", () => {

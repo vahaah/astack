@@ -6,6 +6,7 @@
 [ADR 0014](../adr/0014-each-proof-stop-names-its-cause.md) governs what each stop names.
 [ADR 0015](../adr/0015-change-proof-follows-risk.md) governs the proof rung, and [the ladder requirements](proof-ladder.md) give its criteria.
 [ADR 0016](../adr/0016-each-change-carries-its-own-proof-manifest.md) governs the manifest of each change and the ordinary ADR rule.
+[ADR 0018](../adr/0018-one-domain-and-effects-record-is-checked-against-code.md) governs a manifest that cites a plan record, and [the domain record requirements](domain-record.md) give its criteria.
 The [installed contract](../../marketplace/plugins/astack/skills/pr-review-hardening/references/proof-contract.md) gives the format and runner limits.
 
 ## Acceptance criteria
