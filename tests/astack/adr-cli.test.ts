@@ -145,6 +145,28 @@ describe("astack check adr", () => {
 		});
 	});
 
+	test("[control:adr-status-cli] an Accepted ADR with a second Status line exits 1 with and without --base", () => {
+		const { root, base } = repo("two-status");
+		writeFileSync(
+			join(root, ALPHA),
+			ALPHA_TEXT.replace(
+				"Review stays required.",
+				"Review stays required.\nStatus: Deprecated",
+			),
+		);
+		const problem = `${ALPHA}:12: ADR 0001 needs one Status line, and it has one at each of lines 3 and 12\n`;
+		expect(adr(["--base", "main"], root)).toEqual({
+			code: 1,
+			out: `${ALPHA}:12: ADR 0001 is Accepted at the base, so it changes only by a dated > Note or > Amended block, a status line or its Amended by: line\n${problem}adr: 2 problems in 1 ADR file, from the merge base ${base.slice(0, 12)} of main\n`,
+			err: "",
+		});
+		expect(adr([], root)).toEqual({
+			code: 1,
+			out: `${problem}adr: 1 problem in 1 ADR file; with no --base, the amend-only and template rules did not run\n`,
+			err: "",
+		});
+	});
+
 	test("with no --base, the index and relation rules run and the output names the two rules that it skipped", () => {
 		const { root } = repo("tree");
 		expect(adr([], root)).toEqual({

@@ -256,6 +256,46 @@ describe("the index and relation rules of an ADR folder", () => {
 			treeProblems(folder).map((one) => [one.file, one.line, one.message]),
 		).toEqual(problems);
 	});
+
+	test.each<[string, AdrFolder, [string, number, string][]]>([
+		[
+			"no Status line",
+			withFile(FOLDER, replaced(ALPHA, "Status: Accepted\n", "")),
+			[[ALPHA.path, 1, "ADR 0001 needs one Status line, and it has none"]],
+		],
+		[
+			"a second Status line in a decision",
+			withFile(
+				FOLDER,
+				replaced(ALPHA, "Text.\n", "Text.\nStatus: Deprecated · gone\n"),
+			),
+			[
+				[
+					ALPHA.path,
+					13,
+					"ADR 0001 needs one Status line, and it has one at each of lines 3 and 13",
+				],
+			],
+		],
+		[
+			"a status that no lifecycle has",
+			withFile(FOLDER, replaced(ALPHA, "Status: Accepted", "Status: Adopted")),
+			[
+				[
+					ALPHA.path,
+					3,
+					'ADR 0001 has the status "Adopted", and a status is Proposed, Accepted, Deprecated or Superseded by NNNN',
+				],
+			],
+		],
+	])(
+		"[control:adr-status-tree] treeProblems names %s",
+		(_name, folder, problems) => {
+			expect(
+				treeProblems(folder).map((one) => [one.file, one.line, one.message]),
+			).toEqual(problems);
+		},
+	);
 });
 
 const CARD = ((): ContextsCard => {

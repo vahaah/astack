@@ -994,7 +994,7 @@
 		},
 		{
 			"criterion": "AL-status",
-			"controls": ["adr-status"]
+			"controls": ["adr-status", "adr-status-tree", "adr-status-cli"]
 		},
 		{
 			"criterion": "AL-covers",

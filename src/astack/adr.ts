@@ -266,11 +266,16 @@ function adrDate(text: string): string | undefined {
 	return undefined;
 }
 
-function addedPasses(text: string, line: number, dated: Set<number>): boolean {
+function addedPasses(
+	text: string,
+	line: number,
+	dated: Set<number>,
+	header: number,
+): boolean {
 	if (text.trim() === "" || AMENDED_BY_LINE.test(text) || dated.has(line))
 		return true;
 	const status = STATUS_LINE.exec(text)?.[1];
-	if (status === undefined) return false;
+	if (status === undefined || line >= header) return false;
 	const lifecycle = lifecycleOf(status);
 	return lifecycle?.kind === "Superseded" || lifecycle?.kind === "Deprecated";
 }
@@ -309,6 +314,7 @@ export function amendProblems(
 		}
 		const baseKeys = new Set(proofSpans(before.text).map((span) => span.key));
 		const dated = datedLines(after.text, adrDate(before.text));
+		const header = firstPartLine(after.text);
 		const lines = new Set<number>();
 		let last = 0;
 		for (const op of lineDiff(
@@ -325,7 +331,7 @@ export function amendProblems(
 					break;
 				case "added":
 					last = op.head;
-					if (!addedPasses(op.text, op.head, dated)) lines.add(op.head);
+					if (!addedPasses(op.text, op.head, dated, header)) lines.add(op.head);
 					break;
 				default: {
 					const unreachable: never = op;
@@ -623,6 +629,43 @@ function relationProblems(
 	return problems;
 }
 
+function lineList(lines: readonly number[]): string {
+	const last = lines.at(-1);
+	return lines.length < 2
+		? `${last ?? ""}`
+		: `${lines.slice(0, -1).join(", ")} and ${last}`;
+}
+
+function statusProblems(records: ReadonlyMap<string, AdrRecord>): AdrProblem[] {
+	return [...records.values()].flatMap(({ file, number, status }) => {
+		if (status.ok) return [];
+		const problem = (line: number, message: string) => [
+			{ file: file.path, line, message },
+		];
+		switch (status.error.kind) {
+			case "missing":
+				return problem(
+					1,
+					`ADR ${number} needs one Status line, and it has none`,
+				);
+			case "multiple":
+				return problem(
+					status.error.lines.at(-1) ?? 1,
+					`ADR ${number} needs one Status line, and it has one at each of lines ${lineList(status.error.lines)}`,
+				);
+			case "unknown":
+				return problem(
+					status.error.line,
+					`ADR ${number} has the status "${status.error.text}", and a status is Proposed, Accepted, Deprecated or Superseded by NNNN`,
+				);
+			default: {
+				const unreachable: never = status.error;
+				return unreachable;
+			}
+		}
+	});
+}
+
 function records(folder: AdrFolder): Map<string, AdrRecord> {
 	const found = new Map<string, AdrRecord>();
 	for (const [number, [file]] of byNumber(folder))
@@ -633,6 +676,7 @@ function records(folder: AdrFolder): Map<string, AdrRecord> {
 export function treeProblems(folder: AdrFolder): readonly AdrProblem[] {
 	const found = records(folder);
 	return sortProblems([
+		...statusProblems(found),
 		...indexProblems(folder, found),
 		...relationProblems(found),
 	]);
@@ -668,6 +712,13 @@ function parts(text: string): readonly Part[] {
 		...start,
 		end: starts[at + 1]?.line ?? lines.length + 1,
 	}));
+}
+
+function firstPartLine(text: string): number {
+	return (
+		parts(text).find((part) => part.title !== "")?.line ??
+		text.split("\n").length + 1
+	);
 }
 
 function domainPart(text: string): Part | undefined {
@@ -773,8 +824,7 @@ function newAdrProblems(file: AdrFile, facts: TemplateFacts): AdrProblem[] {
 			`a new ADR has the status Proposed or Accepted, not "${status.value.text}"`,
 		);
 	const lines = adrProse(file.text).split("\n");
-	const firstPart = parts(file.text).find((part) => part.title !== "");
-	const header = lines.slice(0, (firstPart?.line ?? lines.length + 1) - 1);
+	const header = lines.slice(0, firstPartLine(file.text) - 1);
 	if (!header.some((line) => DATE_LINE.test(line)))
 		problem(1, "a new ADR needs the header line Date:");
 	for (const key of HEADER_KEYS.slice(1))

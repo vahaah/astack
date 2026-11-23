@@ -285,6 +285,16 @@ test.each<[string, (text: string) => string | undefined, number[]]>([
 		[],
 	],
 	[
+		"a Status line moved into a decision",
+		(text) =>
+			insertAfter(
+				text.replace("Status: Accepted\n", ""),
+				"Review stays required.",
+				["Status: Deprecated · review is gone"],
+			),
+		[25],
+	],
+	[
 		"a changed Invariant audit row",
 		(text) => text.replace("| restates |", "| independent |"),
 		[],
