@@ -21,15 +21,11 @@ import {
 	coversPath,
 	type FileScan,
 	formatFinding,
-	HashMatcher,
 	lintFiles,
-	parseHashList,
 	scanAdrCitations,
 	scanConflictMarkers,
 	scanHashes,
 	scanSubstrings,
-	sha256,
-	wordTokens,
 } from "../scripts/lib/neutrality.ts";
 import {
 	type ProjectConfig,
@@ -44,6 +40,12 @@ import {
 	withoutOwnName,
 } from "../scripts/lib/target-lint.ts";
 import { scanTree, type TreeReport } from "../scripts/neutral.ts";
+import {
+	HashMatcher,
+	parseHashList,
+	sha256,
+	wordTokens,
+} from "../src/astack/deny-list.ts";
 import { envWithoutCompanion } from "./child-env.ts";
 import { heavyTestTimeout } from "./heavy-test.ts";
 import { trackedTree } from "./tracked-tree.ts";

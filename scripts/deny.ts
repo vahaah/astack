@@ -1,12 +1,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { companionPaths, openCompanion, writable } from "./lib/companion.ts";
 import {
 	MAX_NAME_WORDS,
 	nameHash,
 	parseHashList,
 	wordTokens,
-} from "./lib/neutrality.ts";
+} from "../src/astack/deny-list.ts";
+import { companionPaths, openCompanion, writable } from "./lib/companion.ts";
 
 const usage = "Usage: bun scripts/deny.ts add <name> [--companion <dir>]";
 
