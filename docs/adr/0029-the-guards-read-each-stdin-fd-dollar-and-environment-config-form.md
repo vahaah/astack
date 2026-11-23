@@ -64,6 +64,9 @@ The option name of `set -o` and `setopt` matches in any case and with or without
 So an earlier `HUSKY` or `LEFTHOOK` assignment with such a step is a hook skip, in either order.
 A bare `export HUSKY` and a skip value that a variable gives are hook skips too.
 
+Amended 2026-11-23. Each zsh `setopt` or `unsetopt` step and each assignment to `options[...]` is an export form, whatever its option.
+The guard does not model each zsh option form.
+
 ### D5. A gate record binds to the profile blob at its merge base
 
 `astack gates run` records the blob of the hardening profile at the merge base of the base and HEAD.

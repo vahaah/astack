@@ -1152,8 +1152,11 @@ function isAllExport(option: string): boolean {
 	return option.replaceAll("_", "").toLowerCase() === "allexport";
 }
 
+const ZSH_OPTIONS = /^options\[/;
+
 function exportsVariables(step: ShellStep): boolean {
-	const [name, ...args] = step.values;
+	const [name = "", ...args] = step.values;
+	if (ZSH_OPTIONS.test(name)) return true;
 	switch (name) {
 		case "export":
 			return true;
@@ -1167,7 +1170,8 @@ function exportsVariables(step: ShellStep): boolean {
 					(arg === "-o" && isAllExport(args[at + 1] ?? "")),
 			);
 		case "setopt":
-			return args.some(isAllExport);
+		case "unsetopt":
+			return true;
 		default:
 			return false;
 	}
