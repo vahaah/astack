@@ -96,6 +96,10 @@ A bind also needs each index entry and the first `HEAD` reflog entry at or after
 A repo with a commit and no reflog does not bind.
 A birth time of 0, or a birth time equal to the ctime, is unknown, and such a repo does not bind.
 
+Amended 2026-11-23, after the security review of B37. The record also holds the HEAD commit, the modification time of the index and the object count at the bind.
+A discard passes only when they are the same.
+So a commit, an add or an index write after the bind drops the exemption.
+
 ### D6. Each record failure fails closed
 
 No session id, a refused id, no state folder, a bad file or a failed probe gives no exemption.
@@ -127,6 +131,14 @@ Amended 2026-11-23. A Write call, an Edit call and a shell write into `<state>/s
 A line that writes into a new target with `cp`, `mv`, `rsync` or `tar` from a path outside it, or with a dynamic word, records no target for it.
 A copy with each path inside the target, such as `cp .env.example .env`, keeps the record.
 
+Amended 2026-11-23, after the security review of B37. Each shell call also drops a bound record when a step of the line touches its folder.
+A step touches the folder when it writes in it and also names a path outside it or a dynamic word.
+A step in the folder with a dynamic program or a wrapper that the hook cannot read touches it too.
+So does a step with an operand after a `cd` to a folder that the hook cannot read.
+A git step and a read with no output redirect do not touch it.
+The same rule decides which new target a line records, so the hook has no list of copy programs.
+The record stays a mistake guard, as the gate record of ADR 0029 D8.
+
 ## Consequences
 
 - Easier: an agent can reset, clean and restore a repo that it made for a probe or a fixture.
@@ -138,6 +150,8 @@ A copy with each path inside the target, such as `cp .env.example .env`, keeps t
 - Limit: a repo that the call copies to a missing target across file systems has a new birth time and binds. The source keeps its work.
 - Limit: two hook processes of one session can save the record at the same time, and one entry can go. A lost entry only gives a deny.
 - Limit: a Cursor session has no session id, so it gets no exemption.
+- Harder: a commit or an add after the bind drops the exemption, so a later discard gets the owner gate.
+- Harder: a step in the repo that names a path outside it, such as `node ../x.js`, drops the exemption.
 
 ## Alternatives considered
 

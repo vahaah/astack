@@ -1347,28 +1347,18 @@ describe("a repo that this session made", () => {
 		[
 			"a HEAD path that names the nested repo in another case",
 			(dir) => {
-				const blob = spawnSync("git", ["hash-object", "-w", "--stdin"], {
-					cwd: dir,
-					input: "x\n",
-					encoding: "utf8",
-				}).stdout.trim();
-				git(
-					dir,
-					"update-index",
-					"--add",
-					"--cacheinfo",
-					`100644,${blob},vendor/lib/b.txt`,
-				);
+				mkdirSync(join(dir, "vendor/lib"), { recursive: true });
+				write(dir, { "vendor/lib/b.txt": "x\n" });
+				git(dir, "add", "vendor/lib/b.txt");
 				git(dir, "commit", "-q", "-m", "held");
+				rmSync(join(dir, "vendor"), { recursive: true, force: true });
 			},
 		],
 		[
 			"an ignored file in the nested repo",
 			(_, nested) => {
-				write(nested, { ".gitignore": "x.log\n" });
-				git(nested, "add", ".gitignore");
-				git(nested, "commit", "-q", "-m", "ignore");
-				write(nested, { "x.log": "x\n" });
+				mkdirSync(nested, { recursive: true });
+				write(nested, { ".gitignore": "x.log\n", "x.log": "x\n" });
 			},
 		],
 	])(
@@ -1377,14 +1367,16 @@ describe("a repo that this session made", () => {
 			const { dir, state } = fresh("made");
 			initedRepo(state, dir);
 			const nested = join(dir, "Vendor/lib");
+			prepare(dir, nested);
 			dirtyRepoAt(nested);
-			git(nested, "add", ".");
+			git(nested, "add", "-A");
 			git(nested, "commit", "-q", "-m", "b");
 			expect(sessionRun("git status", dir, state).kind).toBe("allow");
-			prepare(dir, nested);
-			expect(
-				reason(sessionRun("git archive HEAD | tar -xf -", dir, state)),
-			).toMatch(/[Vv]endor\/lib\//);
+			const said = reason(
+				sessionRun("git archive HEAD | tar -xf -", dir, state),
+			);
+			expect(said).toMatch(/[Vv]endor\/lib\//);
+			expect(said).not.toContain("changes in a.txt");
 		},
 	);
 
@@ -1522,6 +1514,19 @@ describe("a repo that this session made", () => {
 			(state: string, cwd: string) =>
 				shell(`echo '[]' &> ${state}/session-repos/s.json`, cwd),
 		],
+		[
+			"a cp to a glob",
+			(state: string, cwd: string) =>
+				shell(`cp x.json ${state}/sess*/s.json`, cwd),
+		],
+		[
+			"a python -c body",
+			(state: string, cwd: string) =>
+				shell(
+					`python3 -c "open('${state}/session-repos/s.json', 'w').write('[]')"`,
+					cwd,
+				),
+		],
 	])(
 		"[control:sg-session-repo-record] %s into the session repo record folder is denied",
 		(_, event) => {
@@ -1571,6 +1576,14 @@ describe("a repo that this session made", () => {
 			},
 		],
 		[
+			"another process copies the git dir and the work of another repo into a bound repo",
+			(state, dir, owner) => {
+				initedRepo(state, dir);
+				expect(sessionRun("git status", dir, state).kind).toBe("allow");
+				spawnSync("cp", ["-R", `${owner}/.`, dir]);
+			},
+		],
+		[
 			"a new git dir holds an index entry that is older than the call",
 			(state, dir, owner) => {
 				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
@@ -1592,6 +1605,24 @@ describe("a repo that this session made", () => {
 			expect(sessionRun("ls", parent, state).kind).toBe("allow");
 			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
 				"owner gate",
+			);
+		},
+	);
+
+	test.each([
+		["mv ../owner/a.txt a.txt", true],
+		['"$TOOL" a.txt', false],
+	])(
+		"a reset is denied in a bound repo after a later call runs %s in it",
+		(command, run) => {
+			const { dir, state } = fresh("made");
+			initedRepo(state, dir);
+			dirtyRepoAt(join(dir, "..", "owner"));
+			expect(sessionRun("git status", dir, state).kind).toBe("allow");
+			expect(sessionRun(command, dir, state).kind).toBe("allow");
+			if (run) spawnSync("sh", ["-c", command], { cwd: dir });
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"discards the uncommitted changes in a.txt",
 			);
 		},
 	);

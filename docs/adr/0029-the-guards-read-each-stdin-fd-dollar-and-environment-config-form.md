@@ -89,6 +89,8 @@ Each other step gets a deny when a static word names the folder, a path in it or
 The hook first puts the value of `HOME`, `XDG_STATE_HOME` and `ASTACK_STATE_DIR` from its env in place of each such variable.
 Such a step with a dynamic word or redirect target gets a deny when the command names `gates`, `session-repos` or the state folder.
 This check runs before the keyword filter of the hook, so `rm -rf ~/.local/state` gets the deny too.
+A glob word also names the folder of its fixed part, so `cp x ~/.local/state/astack/sess*/` gets the deny.
+A step with `-c`, `-e`, `--eval` or `--command` gets the deny when the command names a record folder, because the hook does not read its script.
 
 ### D7. A `core.hooksPath` target must hold the active hooks
 

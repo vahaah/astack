@@ -25,6 +25,9 @@ export type FolderIdentity = {
 export type RepoIdentity = FolderIdentity & {
 	readonly gitDir: string;
 	readonly gitDirNode: FolderIdentity;
+	readonly head: string;
+	readonly index: string;
+	readonly objects: string;
 };
 
 export type FreeTarget =
@@ -125,7 +128,10 @@ function sameIdentity(a: RepoIdentity, b: RepoIdentity): boolean {
 	return (
 		a.gitDir === b.gitDir &&
 		sameFolder(a, b) &&
-		sameFolder(a.gitDirNode, b.gitDirNode)
+		sameFolder(a.gitDirNode, b.gitDirNode) &&
+		a.head === b.head &&
+		a.index === b.index &&
+		a.objects === b.objects
 	);
 }
 
@@ -152,9 +158,14 @@ export function probeRepo(path: string): RepoProbe | undefined {
 	const [root, gitDir, common] = listed.ok
 		? listed.stdout.toString("utf8").split("\n")
 		: [];
-	if (!root || !gitDir || !common) return undefined;
+	const objects = root ? objectCount(root) : undefined;
+	if (!root || !gitDir || !common || objects === undefined) return undefined;
 	try {
 		const stat = statSync(root, { bigint: true });
+		const index = statSync(join(gitDir, "index"), {
+			bigint: true,
+			throwIfNoEntry: false,
+		});
 		return {
 			root,
 			commonDir: resolve(path, common),
@@ -162,11 +173,37 @@ export function probeRepo(path: string): RepoProbe | undefined {
 				gitDir,
 				...folderOf(stat),
 				gitDirNode: folderOf(statSync(gitDir, { bigint: true })),
+				head: headCommit(root),
+				index: index === undefined ? "none" : String(index.mtimeNs),
+				objects,
 			},
 		};
 	} catch {
 		return undefined;
 	}
+}
+
+function headCommit(root: string): string {
+	const head = runGit(root, [
+		...READ_ONLY_GIT,
+		"rev-parse",
+		"--verify",
+		"--quiet",
+		"HEAD",
+	]);
+	return head.ok ? head.stdout.toString("utf8").trim() : "none";
+}
+
+const OBJECT_COUNTS = /^(?:count|in-pack): (\d+)$/gm;
+
+function objectCount(root: string): string | undefined {
+	const counted = runGit(root, [...READ_ONLY_GIT, "count-objects", "-v"]);
+	const counts = counted.ok
+		? [...counted.stdout.toString("utf8").matchAll(OBJECT_COUNTS)].map(
+				([, count]) => count,
+			)
+		: [];
+	return counts.length === 2 ? counts.join("+") : undefined;
 }
 
 function folderOf(stat: BigIntStats): FolderIdentity {
@@ -258,10 +295,16 @@ function parseIdentity(value: unknown): RepoIdentity | undefined {
 	const folder = parseFolder(value);
 	const gitDir = field(value, "gitDir");
 	const gitDirNode = parseFolder(field(value, "gitDirNode"));
+	const head = field(value, "head");
+	const index = field(value, "index");
+	const objects = field(value, "objects");
 	return folder !== undefined &&
 		typeof gitDir === "string" &&
-		gitDirNode !== undefined
-		? { ...folder, gitDir, gitDirNode }
+		gitDirNode !== undefined &&
+		typeof head === "string" &&
+		typeof index === "string" &&
+		typeof objects === "string"
+		? { ...folder, gitDir, gitDirNode, head, index, objects }
 		: undefined;
 }
 

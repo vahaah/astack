@@ -30,6 +30,9 @@ const IDENTITY: RepoIdentity = {
 	inode: "2",
 	birth: "3000000000",
 	gitDirNode: { device: "1", inode: "5", birth: "3000000000" },
+	head: "c0ffee",
+	index: "3000000001",
+	objects: "3+0",
 };
 
 const SINCE = "3000000000";
@@ -215,6 +218,24 @@ describe("[control:sg-session-repo-match] the match of a session repo", () => {
 			"another git dir node at the same path does not match",
 			"/w/made",
 			{ ...IDENTITY, gitDirNode: { ...IDENTITY.gitDirNode, inode: "9" } },
+			false,
+		],
+		[
+			"another HEAD does not match",
+			"/w/made",
+			{ ...IDENTITY, head: "f00" },
+			false,
+		],
+		[
+			"another index time does not match",
+			"/w/made",
+			{ ...IDENTITY, index: "3000000002" },
+			false,
+		],
+		[
+			"another object count does not match",
+			"/w/made",
+			{ ...IDENTITY, objects: "4+0" },
 			false,
 		],
 	])("%s", (_, root, identity, matches) => {

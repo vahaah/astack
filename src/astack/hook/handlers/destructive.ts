@@ -23,6 +23,7 @@ import {
 	isSessionRepo,
 	rememberRepos,
 	type SessionRepos,
+	saveSessionRepos,
 	settledRepos,
 } from "../../session-repos.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
@@ -1270,15 +1271,37 @@ function folderReason(what: string, folder: RecordFolder): string {
 	return `${what} writes into the ${folder.name} ${folder.path}, and only ${folder.writer}. ${OWNER_GATE}`;
 }
 
+const GLOB_START = /[*?[{]/;
+
+function globFolder(text: string): string {
+	const head = text.slice(0, Math.max(0, text.search(GLOB_START)));
+	return head.slice(0, head.lastIndexOf("/") + 1) || ".";
+}
+
 function wordPaths(step: ShellStep, word: Word, env: Env): readonly string[] {
 	if (word.dynamic) return [];
 	const home = (text: string) =>
 		env.HOME && (text === "~" || text.startsWith("~/"))
 			? join(env.HOME, text.slice(1))
 			: text;
-	return [word.value, word.value.slice(word.value.indexOf("=") + 1)]
-		.filter((text) => text !== "")
-		.map((text) => resolve(step.dir, home(text)));
+	const texts = [
+		word.value,
+		word.value.slice(word.value.indexOf("=") + 1),
+	].filter((text) => text !== "");
+	return [
+		...texts,
+		...(word.expands === true ? texts.map(globFolder) : []),
+	].map((text) => resolve(step.dir, home(text)));
+}
+
+function outputTargets(step: ShellStep): readonly Word[] {
+	return step.simple.redirects
+		.filter((redirect) => redirect.op.includes(">"))
+		.map((redirect) => redirect.target);
+}
+
+function isGit(word: Word | undefined): boolean {
+	return word !== undefined && !word.dynamic && word.value === "git";
 }
 
 function reaches(folder: string, path: string): boolean {
@@ -1308,6 +1331,8 @@ function namesRecordFolder(command: string, env: Env): boolean {
 	);
 }
 
+const SCRIPT_FLAG = /^(?:-[A-Za-z]*[ce]|--eval|--command)$/;
+
 function recordFolderReasons(
 	command: string,
 	cwd: string,
@@ -1318,15 +1343,15 @@ function recordFolderReasons(
 	const expanded = expandStateVariables(command, env);
 	const names = namesRecordFolder(expanded, env);
 	return shellSteps(expanded, cwd).flatMap((step) => {
-		const words = [
-			...step.simple.redirects
-				.filter((redirect) => redirect.op.includes(">"))
-				.map((redirect) => redirect.target),
-			...(readsOnly(step) ? [] : step.words),
-		];
-		if (names && words.some((word) => word.dynamic))
+		const reads = readsOnly(step);
+		const words = [...outputTargets(step), ...(reads ? [] : step.words)];
+		const runsScript =
+			!reads &&
+			!isGit(step.words[0]) &&
+			step.words.slice(1).some((word) => SCRIPT_FLAG.test(word.value));
+		if (names && (runsScript || words.some((word) => word.dynamic)))
 			return [
-				`astack cannot read where ${shown(step.words)} writes, and the command names a record folder of astack, such as the gate record folder. ${OWNER_GATE}`,
+				`astack cannot read where ${shown(step.words)} writes. The command names a record folder of astack, the gate record folder or the session repo record folder. ${OWNER_GATE}`,
 			];
 		return folders.flatMap((folder) =>
 			words.some((word) =>
@@ -1338,31 +1363,38 @@ function recordFolderReasons(
 	});
 }
 
-const COPIERS = new Set(["cp", "mv", "rsync", "tar"]);
-
-function copiesInto(
+function touchesRepo(
 	steps: readonly ShellStep[],
-	target: string,
+	root: string,
 	env: Env,
 ): boolean {
-	const folder = canonicalFile(target);
+	const folder = canonicalFile(root);
+	const inside = (path: string) => inFolder(folder, path);
 	return steps.some((step) => {
 		const [program, ...args] = step.words;
-		if (
-			program === undefined ||
-			program.dynamic ||
-			!COPIERS.has(basename(program.value))
-		)
+		const targets = outputTargets(step);
+		if (program === undefined || (readsOnly(step) && targets.length === 0))
 			return false;
-		const operandPaths = args.flatMap((word) =>
+		const unknown = step.unreadable === "folder";
+		const here = unknown || inside(step.dir);
+		if (
+			here &&
+			(program.dynamic || (step.unreadable !== undefined && !unknown))
+		)
+			return true;
+		if (isGit(program)) return false;
+		const words = [...args, ...targets];
+		const paths = words.flatMap((word) =>
 			wordPaths(step, word, env).filter(
 				(path) => !basename(path).startsWith("-"),
 			),
 		);
 		return (
-			args.some((word) => word.dynamic) ||
-			(operandPaths.some((path) => inFolder(folder, path)) &&
-				operandPaths.some((path) => !inFolder(folder, path)))
+			(here || paths.some(inside)) &&
+			(unknown
+				? words.length > 0
+				: words.some((word) => word.dynamic) ||
+					paths.some((path) => !inside(path)))
 		);
 	});
 }
@@ -1388,14 +1420,19 @@ export const handler = defineHandler({
 		const records = denial(
 			recordFolderReasons(event.command, event.cwd, folders, context.env),
 		);
-		const repos = settledRepos(context.env, context.session);
+		const steps = shellSteps(event.command, event.cwd);
+		const settled = settledRepos(context.env, context.session);
+		const repos = settled.filter(
+			(repo) => !touchesRepo(steps, repo.path, context.env),
+		);
+		if (repos.length !== settled.length)
+			saveSessionRepos(context.env, context.session, repos);
 		if (
 			!/\b(?:supabase|git|npm|pnpm|yarn|bun|gates|session-repos)\b/i.test(
 				event.command,
 			)
 		)
 			return records;
-		const steps = shellSteps(event.command, event.cwd);
 		const placed = placedLine(steps, context.env);
 		const sessionRepo = sessionRepoTest(repos, placed);
 		const verdict = combineAll([
@@ -1417,7 +1454,7 @@ export const handler = defineHandler({
 				repos,
 				steps.flatMap((step) => {
 					const target = madeRepoTarget(step);
-					return target === undefined || copiesInto(steps, target, context.env)
+					return target === undefined || touchesRepo(steps, target, context.env)
 						? []
 						: [target];
 				}),
