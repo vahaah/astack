@@ -21,6 +21,7 @@ import {
 	type Blob,
 	changesTool,
 	checkCiPins,
+	ciMode,
 	ciSetups,
 	compareSetups,
 	type PinCheck,
@@ -28,7 +29,9 @@ import {
 	type Reader,
 	type Row,
 	type Side,
+	stopsOnlyOnCiFiles,
 	stopsRun,
+	type ToolState,
 	type VersionRef,
 } from "../../../ci-pins.ts";
 import { repoRoot } from "../../../git.ts";
@@ -384,8 +387,10 @@ function run(args: readonly string[], io: Io): number {
 		});
 	let checks: PinCheck[];
 	let moved: PinCheck[];
-	let tools: readonly string[] = [];
-	let proof = false;
+	let lines: string[] = [];
+	let outside: string[] = [];
+	let recordProblem: string | undefined;
+	let tools: ToolState = "not compared";
 	try {
 		const changed = changedBetween(baseCommit, "HEAD");
 		checks = checksBetween(baseCommit, "HEAD", changed);
@@ -393,18 +398,16 @@ function run(args: readonly string[], io: Io): number {
 			tipCommit === baseCommit
 				? []
 				: checksBetween(baseCommit, tipCommit).filter(stopsRun);
-		const stops = checks.filter(stopsRun);
 		const ciPaths = new Set(
 			checks.flatMap((check) => (check.kind === "ci-file" ? [check.path] : [])),
 		);
-		let outside = changed.filter((path) => !ciPaths.has(path));
-		const ciChangeOnly =
-			stops.length > 0 &&
-			moved.length === 0 &&
-			stops.every((check) => check.kind === "ci-file");
-		let recordProblem: string | undefined;
+		outside = changed.filter((path) => !ciPaths.has(path));
+		const ciOnly = stopsOnlyOnCiFiles({
+			stops: checks.filter(stopsRun).map((check) => check.kind),
+			baseMoves: moved.length > 0,
+		});
 		if (
-			ciChangeOnly &&
+			ciOnly &&
 			outside.length > 0 &&
 			outside.every(
 				(path) =>
@@ -417,32 +420,39 @@ function run(args: readonly string[], io: Io): number {
 				outside = outside.filter((path) => !records.value.includes(path));
 			else recordProblem = `proof records: ${records.error}`;
 		}
-		if (ciChangeOnly && outside.length > 0)
-			tools = outside.map(
+		if (ciOnly) {
+			lines = outside.map(
 				(path) =>
 					`${path}: the PR also changes this file, which is not a CI file, so the run cannot go on in mode ci_proof.`,
 			);
-		else if (ciChangeOnly) {
 			const before = setupsAt(top, baseCommit, "base");
 			const after = setupsAt(top, "HEAD", "head");
 			if (before.kind === "read" && after.kind === "read") {
 				const changes = compareSetups(before.rows, after.rows);
-				tools = changes
-					.filter(
-						(change) =>
-							!(
-								(change.kind === "same" || change.kind === "removed") &&
-								change.pins.length === 0
-							),
-					)
-					.map(placeLine);
-				proof = !changes.some(changesTool);
-			} else
-				tools = [before, after].flatMap((side) =>
-					side.kind === "unread" ? side.lines : [],
-				);
+				lines = [
+					...lines,
+					...changes
+						.filter(
+							(change) =>
+								!(
+									(change.kind === "same" || change.kind === "removed") &&
+									change.pins.length === 0
+								),
+						)
+						.map(placeLine),
+				];
+				tools = changes.some(changesTool) ? "changed" : "same";
+			} else {
+				lines = [
+					...lines,
+					...[before, after].flatMap((side) =>
+						side.kind === "unread" ? side.lines : [],
+					),
+				];
+				tools = "unread";
+			}
 		}
-		if (recordProblem !== undefined) tools = [...tools, recordProblem];
+		if (recordProblem !== undefined) lines = [...lines, recordProblem];
 	} catch (error) {
 		if (error instanceof GitReadError)
 			return usageError(io, `${NAME}: ${error.message}`);
@@ -453,29 +463,46 @@ function run(args: readonly string[], io: Io): number {
 		io.out(
 			`${base} moves after the merge base, and a pull_request run tests the merge: ${lineOf(check)}\n`,
 		);
-	for (const line of tools) io.out(`${line}\n`);
-	if (proof) {
-		io.out(
-			"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n",
-		);
-		return 3;
+	for (const line of lines) io.out(`${line}\n`);
+	const mode = ciMode({
+		stops: checks.filter(stopsRun).map((check) => check.kind),
+		baseMoves: moved.length > 0,
+		outside,
+		recordProblem: recordProblem !== undefined,
+		tools,
+	});
+	switch (mode) {
+		case "ci_proof":
+			io.out(
+				"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n",
+			);
+			return 3;
+		case "ci_mixed":
+			io.out(
+				"ci_mixed: the PR changes CI and another file and no tool version that CI sets up, so each gate blocks and CI on the head of the PR must pass\n",
+			);
+			return 3;
+		case "stop":
+			io.out(
+				"stop: only CI can prove this PR, for the reason in each line above\n",
+			);
+			return 1;
+		case "ok":
+			io.out(
+				"ok: the PR changes no CI file and no tool version that CI reads from a file\n",
+			);
+			return 0;
+		default: {
+			const unhandled: never = mode;
+			return unhandled;
+		}
 	}
-	if (checks.some(stopsRun) || moved.length > 0) {
-		io.out(
-			"stop: only CI can prove this PR, for the reason in each line above\n",
-		);
-		return 1;
-	}
-	io.out(
-		"ok: the PR changes no CI file and no tool version that CI reads from a file\n",
-	);
-	return 0;
 }
 
 export const command: Command = {
 	name: "ci-pins",
 	summary:
-		"Compares what CI reads between the merge base of <ref> and HEAD. It reads each workflow, each action under .github/actions and each local action that they use, at HEAD. Exits 1 when the diff changes a file that a -version-file input names and the version that the setup action reads from it changes. Exits 1 too when it cannot read an exact version from such a file on each side, or cannot read the input. When the PR changes only CI files, it reads the tool versions that each job or action of CI sets up at the merge base and at HEAD. A tool version is the version that setup-bun, setup-cli or setup-node gets, or the value of an input named version or toolchain, also with a prefix and a -file suffix, each with - or _. The pin of such a step also holds its uses value with the ref, each other input and its if. Each job also holds its runner, its container and service images and the ref of a remote reusable workflow that it calls. A remote action whose name looks like a setup action holds its ref, also with no version input. It does not read a tool that a run step or a script installs. The tool versions of a local action or a local reusable workflow count in the job that calls it, in step order and with the inputs of that call only. Exits 3 with a last line that starts with ci_proof: when each job that both sides hold sets up the same versions in the same order, and a new job sets up only versions that the merge base sets up. A job that loses its last setup step changes. When the PR also removes a job that sets up a tool, a new job with a tool is a change. Exits 1 when a tool version changes, or when it cannot read one on each side. The diff can also add the parsed committed manifest that check proof --base chooses at HEAD, delete a manifest of the merge base and change its declared separate Markdown proof records under formal/. Their manifest base must be an ancestor of the merge base. They require strict regular non-executable UTF-8 blobs, complete proof sections, and no other proof role. All other files outside CI remain blocked. This classification never supplies a proof result. It also exits 1 on each YAML form that it does not read with certainty. A local action that the repo does not hold stops it too. It resolves an input of a local action to the value that each caller gives, or to its default. In a workflow an input can also be empty, because a pull_request run gives no inputs. An input that it cannot resolve to a file stops only when the PR changes a file that the action can read. It prints each version file with its tool and both versions. When <ref> moves after the merge base, it compares the merge base with <ref> in the same way, because a pull_request run tests the merge. A stop there stops the check too.",
+		"Compares what CI reads between the merge base of <ref> and HEAD. It reads each workflow, each action under .github/actions and each local action that they use, at HEAD. Exits 1 when the diff changes a file that a -version-file input names and the version that the setup action reads from it changes. Exits 1 too when it cannot read an exact version from such a file on each side, or cannot read the input. When the PR changes only CI files, it reads the tool versions that each job or action of CI sets up at the merge base and at HEAD. A tool version is the version that setup-bun, setup-cli or setup-node gets, or the value of an input named version or toolchain, also with a prefix and a -file suffix, each with - or _. The pin of such a step also holds its uses value with the ref, each other input and its if. Each job also holds its runner, its container and service images and the ref of a remote reusable workflow that it calls. A remote action whose name looks like a setup action holds its ref, also with no version input. It does not read a tool that a run step or a script installs. The tool versions of a local action or a local reusable workflow count in the job that calls it, in step order and with the inputs of that call only. Exits 3 with a last line that starts with ci_proof: when each job that both sides hold sets up the same versions in the same order, and a new job sets up only versions that the merge base sets up. A job that loses its last setup step changes. When the PR also removes a job that sets up a tool, a new job with a tool is a change. Exits 1 when a tool version changes, or when it cannot read one on each side. The diff can also add the parsed committed manifest that check proof --base chooses at HEAD, delete a manifest of the merge base and change its declared separate Markdown proof records under formal/. Their manifest base must be an ancestor of the merge base. They require strict regular non-executable UTF-8 blobs, complete proof sections, and no other proof role. This classification never supplies a proof result. Exits 3 with a last line that starts with ci_mixed: when the PR also changes another file, or a proof record fails, and the tool versions stay the same. Then each gate blocks. It also exits 1 on each YAML form that it does not read with certainty. A local action that the repo does not hold stops it too. It resolves an input of a local action to the value that each caller gives, or to its default. In a workflow an input can also be empty, because a pull_request run gives no inputs. An input that it cannot resolve to a file stops only when the PR changes a file that the action can read. It prints each version file with its tool and both versions. When <ref> moves after the merge base, it compares the merge base with <ref> in the same way, because a pull_request run tests the merge. A stop there stops the check too.",
 	usage: "check ci-pins --base <ref>",
 	run,
 };

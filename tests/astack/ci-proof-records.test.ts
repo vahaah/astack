@@ -124,6 +124,16 @@ function refuses(repo: Candidate, reason: string, base = repo.base): void {
 	);
 }
 
+function mixes(repo: Candidate, reason: string, base = repo.base): void {
+	const result = run(repo, base);
+	expect(result.code).toBe(3);
+	expect(result.err).toBe("");
+	expect(result.out).toContain(reason);
+	expect(result.out).toEndWith(
+		"ci_mixed: the PR changes CI and another file and no tool version that CI sets up, so each gate blocks and CI on the head of the PR must pass\n",
+	);
+}
+
 describe("CI changes with required proof records", () => {
 	test("[control:ci-proof-records] a committed manifest and separate current proof record permit CI classification without proof admission", () => {
 		const result = run(candidate());
@@ -168,20 +178,20 @@ describe("CI changes with required proof records", () => {
 		expect(result.code).toBe(3);
 	});
 
-	test("[control:ci-proof-two-manifests] a second changed manifest under .astack/proof/ stops CI classification", () => {
+	test("[control:ci-proof-two-manifests] a second changed manifest under .astack/proof/ gives the mode ci_mixed", () => {
 		const { repo } = perChange(".astack/proof/own.json", true);
 		const trunk = git(repo.root, "rev-parse", "trunk");
-		refuses(
+		mixes(
 			repo,
 			`proof records: the diff from the merge base ${trunk} of trunk and HEAD changes more than one manifest under .astack/proof/: .astack/proof/own.json, .astack/proof/two.json. Pass a manifest path`,
 			"trunk",
 		);
 	});
 
-	test("[control:ci-proof-merged-manifest] a manifest of the merge base that the change edits stops CI classification", () => {
+	test("[control:ci-proof-merged-manifest] a manifest of the merge base that the change edits gives the mode ci_mixed", () => {
 		const { repo } = perChange(".astack/proof/two.json", false);
 		const trunk = git(repo.root, "rev-parse", "trunk");
-		refuses(
+		mixes(
 			repo,
 			`proof records: the merge base ${trunk} of trunk holds .astack/proof/two.json. Add a new manifest under .astack/proof/`,
 			"trunk",
@@ -194,7 +204,7 @@ describe("CI changes with required proof records", () => {
 			const repo = candidate();
 			writeFiles(repo.root, { [path]: "A changed input.\n" });
 			save(repo);
-			refuses(repo, `${path}: the PR also changes this file`);
+			mixes(repo, `${path}: the PR also changes this file`);
 		},
 	);
 
@@ -211,7 +221,7 @@ describe("CI changes with required proof records", () => {
 				repo.proof.base = own;
 				save(repo);
 			}
-			refuses(
+			mixes(
 				repo,
 				defect === "invalid JSON"
 					? "proof records: the proof is not valid JSON"
@@ -252,17 +262,14 @@ describe("CI changes with required proof records", () => {
 			repo.base,
 			git(repo.root, "commit-tree", tree, "-m", "fake base"),
 		);
-		refuses(repo, "src/extra.ts: the PR also changes this file");
+		mixes(repo, "src/extra.ts: the PR also changes this file");
 	});
 
 	test("[control:ci-proof-record-sections] a declared record needs all four proof sections", () => {
 		const repo = candidate();
 		writeFileSync(join(repo.root, RECORD), "### Formal claim\n\nA claim.\n");
 		save(repo);
-		refuses(
-			repo,
-			`${RECORD} has no nonempty Category composition proof section`,
-		);
+		mixes(repo, `${RECORD} has no nonempty Category composition proof section`);
 	});
 
 	test("[control:ci-proof-plan-unread] a plan manifest that cites no proof record needs no plan at HEAD", () => {
@@ -320,7 +327,7 @@ describe("CI changes with required proof records", () => {
 			else repo.proof.category.typedWitness = RECORD;
 			save(repo);
 			if (role === "glossary")
-				refuses(repo, `${RECORD} also supplies another proof input`);
+				mixes(repo, `${RECORD} also supplies another proof input`);
 			else {
 				const parsed = parseChangeProof(JSON.stringify(repo.proof));
 				if (!parsed.ok) throw new Error(parsed.error.message);
@@ -341,7 +348,7 @@ describe("CI changes with required proof records", () => {
 				`${record}\n${marker("criterion", "P1")} Any inputs.\ntest ${marker("control", "C1")} admits every input\n`,
 			);
 			save(repo);
-			refuses(repo, `${RECORD} also supplies a matrix source`);
+			mixes(repo, `${RECORD} also supplies a matrix source`);
 		},
 	);
 
@@ -352,7 +359,7 @@ describe("CI changes with required proof records", () => {
 			repo.proof.domain.controls.matrix =
 				defect === "missing" ? "missing-matrix.json" : "CONTEXT.md";
 			save(repo);
-			refuses(
+			mixes(
 				repo,
 				defect === "missing"
 					? "missing-matrix.json is missing from the committed proof inputs"
@@ -374,7 +381,7 @@ describe("CI changes with required proof records", () => {
 				if (defect === "symlink") symlinkSync("../../src/gate.ts", full);
 			}
 			save(repo);
-			refuses(
+			mixes(
 				repo,
 				defect === "missing"
 					? `${RECORD} is missing from the committed proof inputs`
@@ -389,10 +396,7 @@ describe("CI changes with required proof records", () => {
 		const repo = candidate();
 		chmodSync(join(repo.root, MANIFEST), 0o755);
 		save(repo);
-		refuses(
-			repo,
-			`${MANIFEST} must be a committed non-executable regular file`,
-		);
+		mixes(repo, `${MANIFEST} must be a committed non-executable regular file`);
 	});
 
 	test("[control:ci-proof-record-tool-pin] proof records cannot permit a changed tool pin", () => {
@@ -417,7 +421,7 @@ describe("CI changes with required proof records", () => {
 			git(repo.root, "add", "-A");
 			git(repo.root, "commit", "-q", "-m", "commit the broken input");
 			writeFileSync(join(repo.root, path), original);
-			refuses(repo, "proof records:");
+			mixes(repo, "proof records:");
 		},
 	);
 });

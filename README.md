@@ -441,7 +441,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack board <plan>` | Show what to merge, what is active and what can start. Do not commit the board |
 | `astack check plan\|pr\|ticket\|ste\|types\|comments` | Run one check |
 | `astack check pr-head` | Check that HEAD equals or descends from the PR head fetched with `gh` |
-| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus the manifest of the change, a deleted manifest or declared proof records under `formal/`, and the tool versions stay the same. Any other file, or a changed tool version, exits 1 |
+| `astack check ci-pins --base <ref>` | Compare CI tool versions with the merge base. Exit 3 and a `ci_proof:` line only when the diff changes CI files, plus the manifest of the change, a deleted manifest or declared proof records under `formal/`, and the tool versions stay the same. Exit 3 and a `ci_mixed:` line when the diff also changes another file or a proof record fails, with the same tool versions. A changed tool version exits 1 |
 | `astack check review-growth` | Report advisory diff growth since the fixed first-review commits. A warning still exits 0 |
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
 | `astack check hardening-profile` | Check `.claude/pr-review-hardening.profile.md` with the rules that apply uses. Each problem prints with its repair and exits 1. A missing profile or fenced block exits 2. `astack doctor` runs the same rules |

@@ -1478,3 +1478,33 @@ export function stopsRun(check: PinCheck): boolean {
 		}
 	}
 }
+
+export type CiMode = "ok" | "ci_proof" | "ci_mixed" | "stop";
+
+export type ToolState = "same" | "changed" | "unread" | "not compared";
+
+export type CiFacts = {
+	readonly stops: readonly PinCheck["kind"][];
+	readonly baseMoves: boolean;
+	readonly outside: readonly string[];
+	readonly recordProblem: boolean;
+	readonly tools: ToolState;
+};
+
+export function stopsOnlyOnCiFiles(
+	facts: Pick<CiFacts, "stops" | "baseMoves">,
+): boolean {
+	return (
+		facts.stops.length > 0 &&
+		!facts.baseMoves &&
+		facts.stops.every((kind) => kind === "ci-file")
+	);
+}
+
+export function ciMode(facts: CiFacts): CiMode {
+	if (facts.stops.length === 0 && !facts.baseMoves) return "ok";
+	if (!stopsOnlyOnCiFiles(facts) || facts.tools !== "same") return "stop";
+	return facts.outside.length > 0 || facts.recordProblem
+		? "ci_mixed"
+		: "ci_proof";
+}

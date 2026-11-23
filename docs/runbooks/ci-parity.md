@@ -57,11 +57,14 @@ A tool version change, a form that it cannot read on either side and an expressi
 A PR can also add the parsed manifest of the change under `.astack/proof/` and delete a manifest of its base.
 It can change declared proof records under `formal/`.
 Those committed records must be regular non-executable UTF-8 Markdown with complete sections and separate roles.
-All other files outside CI remain blocked.
 This classification never grants proof success.
 In mode `ci_proof`, a red gate is advisory only with a proof that the CI change of the PR makes it red.
 A clean stop and the merge need each required check of the PR head to pass on a `pull_request` run.
 That run takes the workflows of the PR.
+A PR that also changes another file, or has a proof record that fails, gets the mode `ci_mixed`.
+The tool versions must stay the same, and a move of the base must not change CI.
+Then the check exits 3, and its last line starts with `ci_mixed:`.
+In mode `ci_mixed`, each gate blocks, and the same read-back of CI applies.
 
 The reader reads a file as the setup action reads it, in the same order and with the same truthiness.
 A setup-bun step whose `bun-version` can be empty falls back to `package.json`.
