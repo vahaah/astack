@@ -259,7 +259,7 @@ describe("the plain form of a git step", () => {
 		(command) => {
 			const said = reason(destructive.run(shell(command), context(repo)));
 			expect(said).toContain(
-				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 			);
 			expect(said).toContain("owner gate");
 		},
@@ -268,11 +268,11 @@ describe("the plain form of a git step", () => {
 	test.each([
 		[
 			"M=--hard; bash <<EOF\ngit reset '$M'\nEOF",
-			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 		],
 		[
 			'M=--hard; bash <<< "git reset $M"',
-			"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+			"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 		],
 		[
 			"M=--hard; bash -c \"$(cat <<EOF\ngit reset '$M'\nEOF\n)\"",
@@ -304,11 +304,37 @@ describe("the plain form of a git step", () => {
 		(command) => {
 			const said = reason(destructive.run(shell(command), context(repo)));
 			expect(said).toContain(
-				"because the shell reads its script from a pipe or a heredoc that astack cannot read.",
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
 			);
 			expect(said).toContain("owner gate");
 		},
 	);
+
+	test.each(
+		forms
+			.filter((form) => form.group === "stdin-source")
+			.map((form) => form.command),
+	)(
+		"[control:sg-stdin-source] %s is denied, because the shell reads its script from a file, an fd or a second source",
+		(command) => {
+			const said = reason(destructive.run(shell(command), context(repo)));
+			expect(said).toContain(
+				"because the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read.",
+			);
+			expect(said).toContain("owner gate");
+		},
+	);
+
+	test("a heredoc with 2>&1 stays a readable stdin script, so it gets the verdict of its plain form", () => {
+		expect(
+			reason(
+				destructive.run(
+					shell("bash <<'EOF' 2>&1\ngit reset --hard\nEOF", dirty),
+					context(dirty),
+				),
+			),
+		).toContain("- git reset --hard discards the uncommitted changes in");
+	});
 
 	test.each([
 		"printf '%s\\n' 'git reset --hard' | sh",

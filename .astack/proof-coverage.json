@@ -394,6 +394,10 @@
 			"controls": ["sg-plain-form", "sg-wrapper-law"]
 		},
 		{
+			"criterion": "SG-stdin-source",
+			"controls": ["sg-stdin-source"]
+		},
+		{
 			"criterion": "SG-dynamic-word",
 			"controls": ["sg-dynamic-word"]
 		},

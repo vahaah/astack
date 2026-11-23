@@ -321,7 +321,7 @@ const CAUSES: Readonly<Record<Unreadable, string>> = {
 	depth: "it runs more than 4 levels deep in shell bodies",
 	body: "a variable or a command substitution is in its shell body",
 	stdin:
-		"the shell reads its script from a pipe or a heredoc that astack cannot read",
+		"the shell reads its script from a file, an fd, a pipe or a heredoc that astack cannot read",
 	wrapper: "a wrapper before it has a flag that astack does not know",
 	program: "a variable gives the program",
 };

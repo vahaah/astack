@@ -4,18 +4,59 @@
 	"base": "5b107e76dd24a4f5db4a7945017f8e9fb0a8ce0c",
 	"scope": [
 		{
+			"path": "src/astack/shell.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit", "DenialNeedsLoss"]
+		},
+		{
+			"path": "src/astack/git-command.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit"]
+		},
+		{
+			"path": "src/astack/hook/handlers/merge-guard.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["Merge"]
+		},
+		{
+			"path": "tests/astack/guards.test.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit"]
+		},
+		{
+			"path": "tests/astack/merge-guard.test.ts",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["Merge"]
+		},
+		{
+			"path": "tests/fixtures/guard-bypass.json",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit"]
+		},
+		{
+			"path": "docs/reference/session-guards.md",
+			"obligation": "SG-stdin-source",
+			"modelRefs": ["RunGit"]
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated",
+			"modelRefs": ["TypeOK"]
+		},
+		{
 			"path": ".astack/**",
 			"obligation": "SG-preserve",
-			"modelRefs": [
-				"TypeOK"
-			]
+			"modelRefs": ["TypeOK"]
 		},
 		{
 			"path": "docs/plans/review-roadmap/**",
 			"obligation": "SG-preserve",
-			"modelRefs": [
-				"TypeOK"
-			]
+			"modelRefs": ["TypeOK"]
 		}
 	],
 	"domain": {
@@ -26,12 +67,7 @@
 			"path": "src/astack/gates.ts",
 			"symbol": "GateRecord"
 		},
-		"terms": [
-			"Session guard",
-			"Plain form",
-			"Hook skip",
-			"Gate record"
-		],
+		"terms": ["Session guard", "Plain form", "Hook skip", "Gate record"],
 		"invariants": [
 			{
 				"name": "A hook-skip push passes only with a green gate record of its source",
@@ -55,9 +91,11 @@
 		"controls": {
 			"matrix": ".astack/proof-coverage.json",
 			"criteria": [
-				"SG-preserve",
+				"SG-stdin-source",
 				"SG-hook-skip",
-				"SG-gates-run"
+				"SG-gates-run",
+				"SG-generated",
+				"SG-preserve"
 			]
 		}
 	},

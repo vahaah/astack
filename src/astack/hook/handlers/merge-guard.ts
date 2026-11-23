@@ -370,7 +370,7 @@ function stepVerdict(
 		case "stdin":
 			return deny(
 				mergeDenial([
-					"astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
+					"astack cannot read the script that this shell reads from a file, an fd, a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
 				]),
 			);
 		case "glob":

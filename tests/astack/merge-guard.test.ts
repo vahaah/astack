@@ -743,13 +743,16 @@ describe("the merge guard", () => {
 		"{ echo 'gh pr merge 12'; echo x; } | sh",
 		"echo -e 'gh pr view 12' | sh",
 		"gh pr view 12 | bash",
+		"bash < merge.sh; gh pr view 12",
+		"(bash) < merge.sh; gh pr view 12",
+		"echo x | bash <<'EOF'\ngh pr view 12\nEOF",
 	])(
 		"%p feeds a shell a script that astack cannot read, so it is denied with no text check",
 		(command) => {
 			expect(bash(guard(GREEN), command)).toEqual({
 				exit: 2,
 				stderr:
-					"astack blocked gh pr merge:\n- astack cannot read the script that this shell reads from a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
+					"astack blocked gh pr merge:\n- astack cannot read the script that this shell reads from a file, an fd, a pipe or a heredoc. Run gh pr merge <number> as its own Bash call.",
 			});
 		},
 	);

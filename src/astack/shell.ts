@@ -9,7 +9,7 @@ export interface Word {
 
 export interface Redirect {
 	op: string;
-	fd: string | undefined;
+	fd: number;
 	target: Word;
 }
 
@@ -35,6 +35,9 @@ const DEFINES_COMMAND =
 	/\bfunction\b|\balias\b|(?:^|[\s;&|(])[A-Za-z_][\w.-]*\s*\(\s*\)/;
 
 const UNQUOTED_EXPANSION = /[*?]|\[[^\]]*\]|\{[^{}]*(?:,|\.\.)[^{}]*\}/;
+
+const STDIN_FD = 0;
+const STDOUT_FD = 1;
 
 const HEREDOC_SUBSTITUTION =
 	/^\$\(\s*cat\s*<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2[ \t]*\n([\s\S]*?)\n[ \t]*\3[ \t]*\n?\s*\)/;
@@ -111,12 +114,24 @@ export function parseShell(src: string): SimpleCommand[] {
 		}
 		word = undefined;
 	};
-	const readsStdin = (command: SimpleCommand): void => {
+	let groupStdin = false;
+	const readsStdin = (command: SimpleCommand, readable: boolean): void => {
 		command.stdinSources = (command.stdinSources ?? 0) + 1;
-		if (command.stdinSources > 1) command.stdinDynamic = true;
+		if (command.stdinSources > 1 || !readable) command.stdinDynamic = true;
 	};
 	const endCommand = (): void => {
 		endWord();
+		const named = words.filter(
+			(one) => one.dynamic || !RESERVED.has(one.value),
+		);
+		if (
+			current.stdinSources !== undefined &&
+			(named.length === 0 ||
+				(named.length === 1 &&
+					!named[0]?.dynamic &&
+					named[0]?.value === "exec"))
+		)
+			groupStdin = true;
 		if (words.length > 0 || substitutions.length > 0) commands.push(current);
 		words = [];
 		substitutions = [];
@@ -253,6 +268,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			)
 				stage.wholeStage = true;
 			current.piped = true;
+			readsStdin(current, true);
 			i++;
 			continue;
 		}
@@ -276,7 +292,7 @@ export function parseShell(src: string): SimpleCommand[] {
 		if (c === "<" && src.startsWith("<<<", i)) {
 			endWord();
 			hereStringNext = current;
-			readsStdin(current);
+			readsStdin(current, true);
 			i += 3;
 			continue;
 		}
@@ -284,7 +300,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			endWord();
 			const match = /^<<(-?)\s*(['"]?)([A-Za-z_][\w.-]*)\2/.exec(src.slice(i));
 			if (match) {
-				readsStdin(current);
+				readsStdin(current, true);
 				pendingHeredocs.push({
 					tag: match[3] ?? "",
 					strip: match[1] === "-",
@@ -296,9 +312,9 @@ export function parseShell(src: string): SimpleCommand[] {
 			}
 		}
 		if (c === "<" || c === ">") {
-			let fd: string | undefined;
-			if (word && /^\d+$/.test(word.value)) {
-				fd = word.value;
+			let fd = c === "<" ? STDIN_FD : STDOUT_FD;
+			if (word && !word.dynamic && /^\d+$/.test(word.value)) {
+				fd = Number(word.value);
 				word = undefined;
 				unquoted = "";
 			}
@@ -306,8 +322,7 @@ export function parseShell(src: string): SimpleCommand[] {
 			const opStart = i;
 			while (src[i] === "<" || src[i] === ">" || src[i] === "&") i++;
 			if (src[i] === "|" && src[i - 1] === ">") i++;
-			if (src[opStart] === "<" && (fd === undefined || fd === "0"))
-				readsStdin(current);
+			if (fd === STDIN_FD) readsStdin(current, false);
 			if (/\d/.test(src[i] ?? "") && src[i - 1] === "&") {
 				while (/\d/.test(src[i] ?? "")) i++;
 				continue;
@@ -320,6 +335,11 @@ export function parseShell(src: string): SimpleCommand[] {
 		i++;
 	}
 	endCommand();
+	if (groupStdin)
+		for (const command of commands) {
+			command.stdinDynamic = true;
+			command.stdinSources = (command.stdinSources ?? 0) + 1;
+		}
 	return commands;
 }
 
@@ -633,10 +653,10 @@ function literalScript(
 	simple: SimpleCommand,
 	previous: ShellStep | undefined,
 ): string | undefined {
+	if (simple.stdinDynamic === true) return undefined;
 	if (simple.stdin !== undefined)
-		return simple.stdinDynamic !== true &&
-			(simple.stdinFrom === "quoted heredoc" ||
-				simple.stdinFrom === "here-string")
+		return simple.stdinFrom === "quoted heredoc" ||
+			simple.stdinFrom === "here-string"
 			? simple.stdin
 			: undefined;
 	return previous?.simple.wholeStage === true
@@ -649,7 +669,7 @@ function stdinScript(
 	earlier: readonly ShellStep[],
 	defines: boolean,
 ): Body | undefined {
-	if (simple.stdin === undefined && simple.piped !== true) return undefined;
+	if (simple.stdinSources === undefined) return undefined;
 	const script = defines ? undefined : literalScript(simple, earlier.at(-1));
 	return script === undefined
 		? UNREAD_STDIN
@@ -820,8 +840,7 @@ function stdoutWrites(simple: SimpleCommand): ShellWrite[] {
 	return simple.redirects
 		.filter(
 			(redirect) =>
-				(redirect.fd === undefined || redirect.fd === "1") &&
-				/^(?:>|>>|>\|)$/.test(redirect.op),
+				redirect.fd === STDOUT_FD && /^(?:>|>>|>\|)$/.test(redirect.op),
 		)
 		.map((redirect) => ({
 			target: redirect.target,
