@@ -36,6 +36,10 @@
 			"obligation": "DR-effect-advice"
 		},
 		{
+			"path": "src/astack/change-proof/contract.ts",
+			"obligation": "DR-plan-record"
+		},
+		{
 			"path": "src/astack/pr/grant.ts",
 			"obligation": "GM-MONOID"
 		},
@@ -219,6 +223,7 @@
 				"DR-effect-advice",
 				"DR-effect-card",
 				"DR-effect-change",
+				"DR-plan-record",
 				"GM-MONOID",
 				"SG-grant-store",
 				"SG-preserve",

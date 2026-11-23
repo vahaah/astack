@@ -32,6 +32,7 @@ import {
 import {
 	type ChangeProof,
 	type Composition,
+	isRepoPath,
 	LEGACY_PROOF_MANIFEST,
 	PROOF_MANIFEST_FOLDER,
 	parseChangeProof,
@@ -192,9 +193,11 @@ function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
 	if (composition.kind !== "plan") return undefined;
 	const { paths: cardPaths, files } = cardFiles(root, proof);
 	const reading = loadProfile(root).domain.carrier;
-	const atHead = readRepoFile(root, composition.plan);
+	const atHead = isRepoPath(composition.plan)
+		? readRepoFile(root, composition.plan)
+		: undefined;
 	const text =
-		atHead.kind === "text"
+		atHead?.kind === "text"
 			? atHead
 			: readCommittedFile(root, proof.base, composition.plan);
 	const inputs = [composition.plan, ...cardPaths];

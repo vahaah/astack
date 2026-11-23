@@ -251,4 +251,24 @@ describe("a manifest that cites a plan record", () => {
 			},
 		]);
 	});
+
+	test.each<[string, string]>([
+		["a parent path", "../outside.md#domain-and-effects"],
+		["an absolute path", "/tmp/outside.md"],
+		["a path in .git", ".git/outside.md#domain-and-effects"],
+	])("a domain.plan at %s stops at schema", (_name, plan) => {
+		const valid = validProof("a".repeat(40));
+		const manifest = {
+			...planRecordProof(valid),
+			domain: { ...valid.domain, context: "Gate", plan },
+		};
+		expect(parseChangeProof(JSON.stringify(manifest))).toEqual({
+			ok: false,
+			error: {
+				stage: "schema",
+				message:
+					"domain.plan must be a repository path to a Markdown plan outside .git, with an optional #domain-and-effects",
+			},
+		});
+	});
 });
