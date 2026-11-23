@@ -3,7 +3,7 @@ name: "astack-figure-it-out"
 description: "Design a reviewable workflow when no narrower playbook fits. Use for /astack-figure-it-out, large migrations, or unattended work."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Figure it out

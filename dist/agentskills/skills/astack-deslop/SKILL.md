@@ -3,7 +3,7 @@ name: "astack-deslop"
 description: "Use after an agent writes code, before review, or when asked to clean up a branch. It removes AI-generated slop from the diff of the branch against its base. Examples are needless defensive code, type escapes, deep nesting and code that ignores local conventions. Comments go to /astack-no-comments."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

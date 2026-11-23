@@ -3,7 +3,7 @@ name: "astack-reflect"
 description: "Find the lasting lessons of a session and send each one to a skill, rule, doc, or check. Use when the user says reflect, or after a session with corrections."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Reflect

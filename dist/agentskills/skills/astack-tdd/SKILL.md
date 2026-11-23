@@ -3,7 +3,7 @@ name: "astack-tdd"
 description: "Build features or fixes with failing tests at agreed seams. Use for test-first work, \"red-green-refactor\", or integration tests. Keep refactoring in review rather than the implementation loop."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

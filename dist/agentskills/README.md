@@ -17,9 +17,9 @@ Add the text of `AGENTS.fragment.md` to the `AGENTS.md` file of the project. It 
 The skills run the `astack` CLI. Install it from the published package:
 
 ```sh
-bunx github:vahaah/astack#v0.3.0 --help
+bunx github:vahaah/astack#v0.4.0 --help
 ```
 
 No hooks run in this format. Put the CLI checks in git hooks and CI.
 
-Version: 0.3.0.
+Version: 0.4.0.

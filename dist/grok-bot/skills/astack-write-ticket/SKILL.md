@@ -2,7 +2,7 @@
 name: "astack-write-ticket"
 description: "Write, refine or split Linear and GitHub issues. Use the shared templates and a ten-point rubric before filing."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Write a ticket

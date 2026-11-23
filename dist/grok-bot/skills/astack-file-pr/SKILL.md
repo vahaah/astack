@@ -2,7 +2,7 @@
 name: "astack-file-pr"
 description: "File a short PR that starts with the problem, not a list of changes. Use when the owner asks to file, open or create a PR."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # File PR

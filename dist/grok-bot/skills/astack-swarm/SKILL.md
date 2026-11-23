@@ -3,7 +3,7 @@ name: "astack-swarm"
 description: "Run N parallel workers, collect their results and return one report. Use for /astack-swarm, \"swarm this\", or parallel coverage, races, gauntlets and exploration."
 disable-model-invocation: true
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # Swarm

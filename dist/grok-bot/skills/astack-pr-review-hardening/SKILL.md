@@ -2,7 +2,7 @@
 name: "astack-pr-review-hardening"
 description: "Use to harden a branch or PR before merge, or to run the review-fix loop. Also use it when a repo stub points here. It reproduces each reviewer finding, fixes each real one in its own commit, and stops clean only on green gates. Repo settings come from .claude/pr-review-hardening.profile.md."
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
 ---
 
 # PR review hardening

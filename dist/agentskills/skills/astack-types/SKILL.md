@@ -3,7 +3,7 @@ name: "astack-types"
 description: "Use when you write or review TypeScript or Swift types. The house type and FP conventions as 25 rules, each with an example and the tool that enforces it. Swift, Effect and the astack type hook are in direct references."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 
