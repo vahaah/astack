@@ -66,7 +66,7 @@ const section = (text: string, heading: string) => {
 	const end = text.indexOf("\n## ", start + 1);
 	return flat(text.slice(start, end === -1 ? undefined : end));
 };
-const rowFor = (text: string, words: string) =>
+export const rowFor = (text: string, words: string) =>
 	text
 		.split("\n")
 		.filter((line) => line.startsWith("|"))
