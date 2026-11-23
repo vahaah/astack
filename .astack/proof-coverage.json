@@ -126,7 +126,9 @@
 		"tests/astack/check-cli.test.ts",
 		"tests/astack/ports.test.ts",
 		"tests/astack/process.test.ts",
-		"tests/astack/hook-port-replay.test.ts"
+		"tests/astack/hook-port-replay.test.ts",
+		"tests/astack/plan-tracker.test.ts",
+		"tests/plan-skill-text.test.ts"
 	],
 	"links": [
 		{
@@ -1205,6 +1207,18 @@
 		{
 			"criterion": "HP-PROCESS",
 			"controls": ["process-run"]
+		},
+		{
+			"criterion": "PLAN-RECORD",
+			"controls": ["plan-record-stages"]
+		},
+		{
+			"criterion": "PLAN-CUT",
+			"controls": ["plan-cut-commands", "plan-cut-text"]
+		},
+		{
+			"criterion": "HANDOFF-COUNT",
+			"controls": ["handoff-names-no-count"]
 		}
 	]
 }
