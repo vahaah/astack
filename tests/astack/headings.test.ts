@@ -120,6 +120,18 @@ describe("tickets", () => {
 			),
 		).toEqual(["j***@customer.co.uk"]);
 	});
+
+	test.each([
+		["Pin react-native@0.76.5.patch in the lock file.", []],
+		["Run `npx @scope/pkg@1.2.3.tgz` again.", []],
+		["typescript@5.4.2.md is the notes file.", []],
+		["Mail `jane@customer.dev` the log.", ["j***@customer.dev"]],
+	])(
+		"[control:email-version-forms] %p gives the addresses %p",
+		(text, found) => {
+			expect(emailAddresses(text)).toEqual(found);
+		},
+	);
 });
 
 describe("repo templates", () => {

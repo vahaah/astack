@@ -308,12 +308,23 @@ const EMAIL =
 const PLACEHOLDER_DOMAIN =
 	/(?:^|\.)(?:example\.(?:com|org|net)|test|invalid|localhost|noreply\.github\.com)$/i;
 
+function namesHost(domain: string): boolean {
+	return domain
+		.split(".")
+		.slice(0, -1)
+		.some((label) => /[A-Za-z]/.test(label));
+}
+
 export function emailAddresses(text: string): string[] {
 	const found: string[] = [];
 	for (const match of text.matchAll(EMAIL)) {
 		const local = match[1] ?? "";
 		const domain = match[2] ?? "";
-		if (PLACEHOLDER_DOMAIN.test(domain) || /^no-?reply\b/i.test(local))
+		if (
+			!namesHost(domain) ||
+			PLACEHOLDER_DOMAIN.test(domain) ||
+			/^no-?reply\b/i.test(local)
+		)
 			continue;
 		found.push(`${local.slice(0, 1)}***@${domain}`);
 	}
