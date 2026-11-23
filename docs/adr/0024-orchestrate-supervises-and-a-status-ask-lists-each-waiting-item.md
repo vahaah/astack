@@ -49,6 +49,8 @@ The reply opens with one sentence that names what waits, or says that nothing wa
 Each waiting item gets one line with its link, the call, the pick and its risk.
 A failed read of gh or of the board gets its own line, and the list says unknown for a fact that it cannot read.
 
+> Note 2026-11-23: ADR 0037 D5 removes the `Open.` question count from `astack session handoff` so the comment keeps 4 lines and hides no waiting item behind a count.
+
 #### Formal claim
 
 A catch-up lists each item that waited at that reply.
