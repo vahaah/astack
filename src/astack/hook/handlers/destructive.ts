@@ -522,7 +522,7 @@ function lostPaths(
 					lost: "untracked",
 					pathspecs: loss.pathspecs,
 					removesNestedRepos: true,
-				}).filter((path) => path.endsWith("/"))
+				}).filter((path) => path.endsWith("/") && extractionReaches(root, path))
 			: [];
 	const lost = [...changed, ...nested].filter(
 		(path) => !namedFiles.includes(path) && !excluded.has(path),
@@ -533,6 +533,29 @@ function lostPaths(
 				return isRepoRoot(at) && !sessionRepo(at);
 			})
 		: lost;
+}
+
+function extractionReaches(root: string, nested: string): boolean {
+	const path = nested.replace(/\/$/, "");
+	const held = runGit(root, [
+		...READ_ONLY_GIT,
+		"ls-tree",
+		"-r",
+		"--name-only",
+		"-z",
+		"HEAD",
+		"--",
+		path,
+	]);
+	const status = runGit(join(root, path), [
+		...READ_ONLY_GIT,
+		"status",
+		"--porcelain=v1",
+		"-z",
+	]);
+	return (
+		!held.ok || held.stdout.length > 0 || !status.ok || status.stdout.length > 0
+	);
 }
 
 function isRepoRoot(path: string): boolean {

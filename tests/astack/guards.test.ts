@@ -1319,6 +1319,18 @@ describe("a repo that this session made", () => {
 		expect(said).toContain("sub");
 	});
 
+	test("git archive HEAD | tar -xf - passes in a session repo with a clean nested repo that HEAD does not hold, because tar cannot reach it", () => {
+		const { dir, state } = fresh("made");
+		initedRepo(state, dir);
+		const nested = join(dir, "vendor/lib");
+		dirtyRepoAt(nested);
+		git(nested, "add", ".");
+		git(nested, "commit", "-q", "-m", "b");
+		expect(sessionRun("git archive HEAD | tar -xf -", dir, state).kind).toBe(
+			"allow",
+		);
+	});
+
 	function withSubmodule(dir: string): void {
 		const module = join(dir, "..", "module");
 		dirtyRepoAt(module);

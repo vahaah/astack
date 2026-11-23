@@ -65,6 +65,7 @@ So `-C`, `--directory`, `-P` and each other `tar` flag give the verdict of ADR 0
 Amended 2026-11-23. The `git archive` step must stay in the tree of the repo too.
 `--prefix`, `--remote`, `--add-file`, `--add-virtual-file` and a tree-ish with a path, such as `HEAD:sub`, give the verdict of ADR 0010 D3.
 With the exemption, the extraction keeps each dirty nested repo and submodule that has no bound record.
+It also keeps each nested repo where HEAD holds a path. A clean nested repo where HEAD holds no path passes, because `tar` writes only the paths of HEAD.
 
 ### D4. A record starts pending, and the next shell call settles it
 
