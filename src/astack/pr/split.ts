@@ -1,4 +1,8 @@
 import { type Clause, clausesOf, NEGATIONS } from "./grant.ts";
+import { partOf } from "./links.ts";
+import type { NewPr, OpenPr } from "./open.ts";
+
+export type { NewPr, OpenPr } from "./open.ts";
 
 export type SessionOpen = {
 	readonly root: string;
@@ -35,4 +39,49 @@ function clauseSplits({ tokens, question }: Clause): boolean {
 
 export function splitInstructionIn(prompt: string): boolean {
 	return clausesOf(prompt).some(clauseSplits);
+}
+
+function linkedBy(refs: readonly string[], pr: OpenPr): boolean {
+	const url = pr.url.toLowerCase();
+	return refs.some((ref) => {
+		const named = ref.toLowerCase();
+		return (
+			named === `#${pr.number}` ||
+			named === url ||
+			url.endsWith(`/${named.replace("#", "/pull/")}`)
+		);
+	});
+}
+
+export function sessionReasons(
+	pr: NewPr,
+	record: SessionPrs,
+	open: readonly OpenPr[],
+): string[] {
+	if (record.split || open.some((one) => one.head === pr.base)) return [];
+	const found = pr.body === undefined ? undefined : partOf(pr.body);
+	const refs = found?.kind === "found" ? found.refs : [];
+	const opened = new Set(
+		record.opens
+			.filter(
+				(prior) =>
+					prior.head !== pr.head &&
+					prior.root === pr.root &&
+					prior.repo === pr.repo &&
+					prior.base === pr.base,
+			)
+			.map((prior) => prior.head),
+	);
+	return open.flatMap((one) => {
+		const cause = linkedBy(refs, one)
+			? "the Part of line of this PR links it"
+			: opened.has(one.head)
+				? `this session opened it from this worktree to ${pr.base}`
+				: undefined;
+		return cause === undefined
+			? []
+			: [
+					`#${one.number} (${one.url}) is open, and ${cause}. Push to ${one.head}, or stack this PR on it with --base ${one.head}.`,
+				];
+	});
 }

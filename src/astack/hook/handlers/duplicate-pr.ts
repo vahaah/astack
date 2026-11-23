@@ -37,7 +37,7 @@ function currentBranch(dir: string): string | undefined {
 
 function verdictOf(
 	subject: string,
-	pr: NewPr,
+	pr: Pick<NewPr, "head" | "body">,
 	dir: string,
 	repo: string | undefined,
 	list: ListOpenPrs,
