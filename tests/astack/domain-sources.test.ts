@@ -9,7 +9,11 @@ import {
 import { git, scratchDir, writeFiles } from "./change-proof-fixture.ts";
 
 const root = scratchDir("astack-sources-");
-afterAll(() => rmSync(root, { recursive: true, force: true }));
+const broken = scratchDir("astack-sources-break-");
+afterAll(() => {
+	rmSync(root, { recursive: true, force: true });
+	rmSync(broken, { recursive: true, force: true });
+});
 
 git(root, "init", "-q");
 writeFiles(root, {
@@ -71,6 +75,42 @@ describe("moduleSources", () => {
 		expect(found.ok ? found.value.map((one) => one.path) : found).toEqual([
 			"tools.ts",
 		]);
+	});
+
+	test("a tracked path with a line break gives a report, and each other module at a commit keeps its own text", () => {
+		const forged = "a\nHEAD:b.ts";
+		git(broken, "init", "-q");
+		writeFiles(broken, {
+			"b.ts": "export const b = 1;\n",
+			[forged]: "export const a = 1;\n",
+		});
+		git(broken, "add", "-A");
+		git(broken, "commit", "-q", "-m", "first");
+		const commit = git(broken, "rev-parse", "HEAD").trim();
+		writeFileSync(join(broken, "b.ts"), "export const b = 2;\n");
+		git(broken, "commit", "-q", "-am", "second");
+		const readAt = (at: SourceAt) => {
+			const found = moduleSources({ root: broken, codeRoots: ["*.ts"], at });
+			return found.ok ? found.value : found.error.message;
+		};
+		const report: ModuleSource = {
+			kind: "report",
+			path: JSON.stringify(forged),
+			message: "the path holds a line break, so the check reads no class of it",
+		};
+		expect({
+			tree: readAt({ kind: "tree" }),
+			commit: readAt({ kind: "commit", commit }),
+		}).toEqual({
+			tree: [
+				report,
+				{ kind: "text", path: "b.ts", text: "export const b = 2;\n" },
+			],
+			commit: [
+				report,
+				{ kind: "text", path: "b.ts", text: "export const b = 1;\n" },
+			],
+		});
 	});
 
 	test("a ref that is no commit gives a source stop", () => {
