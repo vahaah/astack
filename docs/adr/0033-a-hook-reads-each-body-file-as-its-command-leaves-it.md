@@ -4,6 +4,7 @@ Status: Accepted
 Date: 2026-11-23
 Ticket: none
 Supersedes: none
+Amends: none
 
 ## Context
 
@@ -66,6 +67,21 @@ The line comes after `combineAll`, so `combine` keeps its monoid laws.
 `sameRepo` compares a named repo with the origin slug in lower case, after it drops a scheme, a host and `.git`.
 The PR body hook on its shell and MCP paths and the ticket hook use it through `foreignRepo`.
 A repo with no origin keeps the advice for each `--repo` value.
+
+## Domain and effects
+
+Terms. Staged body, Finding event
+
+```domain
+context Guards
+cap  BodyFile [fs-read] @ src/astack/paths.ts: readOptional(read)
+step stagedText : (ShellStep[], number, string, DiskText) -> StagedText
+step chainSteps : string -> string[]
+step sameRepo : (string, string) -> boolean
+law  L1 BodyFile a body file that an earlier certain static write sets reads as that text with each later append, and an untouched file reads the disk   check: prop body-file-staged
+law  L2 BodyFile a dynamic target, an unparsed write of the base name or a write that may not run gives unread with the disk text, and a reader step does not   check: prop body-file-unread
+rung R4
+```
 
 ## Consequences
 
