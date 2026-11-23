@@ -472,6 +472,7 @@ describe("the merge guard", () => {
 			["Full stop.", "denies", FULL_STOP_DENY],
 			["Merge #12. Full stop.", "passes", PASS],
 			["No full stop.", "passes", PASS],
+			["Full stop?", "passes", PASS],
 		])(
 			"with a standing profile, gh pr merge 12 after %p %s",
 			(text, _, run) => {
