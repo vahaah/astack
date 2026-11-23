@@ -258,6 +258,13 @@ A step that a variable hides is unreadable.
 _Avoid_: Normalized command, raw command
 _Code_: `shellSteps`
 
+### Staged body
+
+The text of a `--body-file` or `git commit -F` file as the earlier steps of its command leave it.
+A body hook judges it in place of the disk text. A write that can skip gives an unread body, and the hook judges the disk.
+_Avoid_: Pending body, future body
+_Code_: `stagedText`
+
 ### Hook skip
 
 A git commit or push that runs without the git hooks of the repo.
