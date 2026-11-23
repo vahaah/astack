@@ -161,3 +161,27 @@ describe("the GitHub MCP PR tools", () => {
 		expect(foreign.kind).toBe("note");
 	});
 });
+
+describe("a --repo that names origin", () => {
+	test.each([
+		["acme/widget", "origin", "deny"],
+		["Acme/Widget", "origin", "deny"],
+		["github.com/acme/widget", "origin", "deny"],
+		["https://github.com/Acme/widget.git", "origin", "deny"],
+		["other/lib", "origin", "note"],
+		["acme/widget", "none", "note"],
+	] as const)(
+		"[control:repo-origin] gh pr create --repo %s in a repo with %s origin gives a %s for a heading gap",
+		(named, origin, kind) => {
+			const dir = mkdtempSync(join(root, "origin-"));
+			repo(dir, {});
+			if (origin === "origin")
+				spawnSync(
+					"git",
+					["remote", "add", "origin", "git@github.com:acme/widget.git"],
+					{ cwd: dir },
+				);
+			expect(create("No headings.", dir, `--repo ${named} `).kind).toBe(kind);
+		},
+	);
+});

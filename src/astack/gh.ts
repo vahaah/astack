@@ -94,6 +94,33 @@ export function ghBody(
 		: readOptional(resolve(dir, flags.bodyFile.value));
 }
 
+function repoSlug(value: string): string {
+	return value
+		.trim()
+		.toLowerCase()
+		.replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
+		.replace(/^[^@/]+@/, "")
+		.replace(/\/+$/, "")
+		.replace(/\.git$/, "")
+		.split(/[/:]/)
+		.slice(-2)
+		.join("/");
+}
+
+export function sameRepo(named: string, origin: string): boolean {
+	return repoSlug(named) === repoSlug(origin);
+}
+
+export function foreignRepo(
+	named: string | undefined,
+	origin: string | undefined,
+): string | undefined {
+	return named !== undefined &&
+		(origin === undefined || !sameRepo(named, origin))
+		? named
+		: undefined;
+}
+
 export function isGh(
 	values: readonly string[],
 	group: string,

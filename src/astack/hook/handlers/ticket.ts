@@ -1,5 +1,5 @@
-import { ghBody, ghFlags, isGh } from "../../gh.ts";
-import { repoRoot } from "../../git.ts";
+import { foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
+import { originSlug, repoRoot } from "../../git.ts";
 import {
 	detectTicketKind,
 	emailAddresses,
@@ -39,7 +39,8 @@ function issueCreateVerdict(step: ShellStep): Verdict {
 		labels: flags.labels,
 		body,
 	});
-	const source = issueHeadings(repoRoot(step.dir), kind);
+	const root = repoRoot(step.dir);
+	const source = issueHeadings(root, kind);
 	const missing = missingHeadings(body, source.headings);
 	const gap: HeadingGap | undefined =
 		missing.length > 0
@@ -52,8 +53,12 @@ function issueCreateVerdict(step: ShellStep): Verdict {
 			: undefined;
 	const emails = emailAddresses(`${flags.title ?? ""}\n${body}`);
 	const notes = emails.length > 0 ? [personalDataNote(emails)] : [];
-	if (gap && flags.repo)
-		return notesVerdict([headingAdvice(SUBJECT, gap, flags.repo), ...notes]);
+	const foreign = foreignRepo(
+		flags.repo,
+		root === undefined ? undefined : originSlug(root),
+	);
+	if (gap && foreign)
+		return notesVerdict([headingAdvice(SUBJECT, gap, foreign), ...notes]);
 	if (gap) return deny([headingDeny(SUBJECT, gap), ...notes].join("\n\n"));
 	return notesVerdict(notes);
 }

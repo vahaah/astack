@@ -960,6 +960,38 @@ describe("gh pr create and gh issue create", () => {
 		expect(context(run)).not.toContain("astack blocked");
 	});
 
+	test("[control:repo-origin] gh issue create with a --repo that names origin denies a heading gap, and another repo gets advice", () => {
+		const repo = mkdtempSync(join(tmpdir(), "astack-hook-origin-"));
+		try {
+			git(repo, "init", "-q");
+			git(
+				repo,
+				"remote",
+				"add",
+				"origin",
+				"https://github.com/acme/widget.git",
+			);
+			const issue = (named: string) =>
+				runHook(
+					tool(
+						"Bash",
+						{
+							command: `gh issue create --repo ${named} --title t --body 'No headings.'`,
+						},
+						repo,
+					),
+				);
+			expect(decision(issue("Acme/Widget"))).toBe("deny");
+			const other = issue("other/lib");
+			expect(decision(other)).toBeUndefined();
+			expect(context(other)).toContain(
+				"astack only advises because it targets --repo other/lib",
+			);
+		} finally {
+			rmSync(repo, { recursive: true, force: true });
+		}
+	});
+
 	test("an issue labelled bug needs the bug headings, and an email adds a note", () => {
 		const command =
 			"gh issue create --title 'Import drops rows' --label bug --body-file - <<'EOF'\n## Summary\nReported by jane@customer.dev\nEOF";
