@@ -113,6 +113,8 @@ describe("the SessionGuards model reader", () => {
 		test.each([
 			["ModeOf", 'IF p = {"fullStop"}', 'IF "fullStop" \\in p'],
 			["Merge", '/\\ mode # "fullStop"\n', ""],
+			["Push", "recorded /\\ ~edited)", "recorded)"],
+			["GatesRun", "green \\/ edited)", "green)"],
 			[
 				"Scratch",
 				"~f.inProject /\\ ~(f.git",
@@ -247,7 +249,7 @@ describe("[control:sg-conformance-push] the push guard answers each target of th
 								{ kind: "shell", command, cwd: dir },
 								context(dir, env),
 							).kind !== "deny",
-						model: push(skips, target, recorded),
+						model: push(skips, target, recorded, false),
 					};
 				}),
 			),

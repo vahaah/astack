@@ -92,12 +92,12 @@ After(cmd, t) == (t \ Touched(cmd, t))
 VARIABLES concern, attended, baseAuthority, workingAuthority, said, saidBy, grant,
           mode, merged, unauthorized, stopMerged, mcpMerged, faultMerged,
           file, step, writeChecked, commitChecked, tree, broadLoss, falseDenial,
-          repo, record, window, sessionDenied, green, recorded, acted, ungated
+          repo, record, window, sessionDenied, green, recorded, acted, ungated, edited
 mergeVars == <<attended, baseAuthority, workingAuthority, said, saidBy, grant, mode,
                merged, unauthorized, stopMerged, mcpMerged, faultMerged>>
 writeVars == <<file, step, writeChecked, commitChecked>>
 gitVars == <<tree, broadLoss, falseDenial, repo, record, window, sessionDenied>>
-pushVars == <<green, recorded, acted, ungated>>
+pushVars == <<green, recorded, acted, ungated, edited>>
 vars == <<concern, mergeVars, writeVars, gitVars, pushVars>>
 
 MergeStart == /\ said = {}
@@ -118,7 +118,7 @@ WriteIdle == file = IdleFile /\ WriteStart
 RepoIdle == repo = "none" /\ record = "none" /\ window = FALSE /\ sessionDenied = FALSE
 GitIdle == tree = {} /\ broadLoss = FALSE /\ falseDenial = FALSE /\ RepoIdle
 PushStart == recorded = FALSE /\ acted = FALSE /\ ungated = FALSE
-PushIdle == green = FALSE /\ PushStart
+PushIdle == green = FALSE /\ edited = FALSE /\ PushStart
 
 Init == \/ /\ concern = "merge"
            /\ attended \in BOOLEAN
@@ -147,6 +147,7 @@ Init == \/ /\ concern = "merge"
            /\ WriteIdle
            /\ GitIdle
            /\ green \in BOOLEAN
+           /\ edited \in BOOLEAN
            /\ PushStart
 
 Prompt == /\ concern = "merge"
@@ -241,16 +242,16 @@ RunGit == /\ concern = "git"
 
 GatesRun == /\ concern = "push"
             /\ ~acted
-            /\ recorded' = (recorded \/ green)
-            /\ UNCHANGED <<concern, green, acted, ungated, mergeVars, writeVars, gitVars>>
+            /\ recorded' = (recorded \/ green \/ edited)
+            /\ UNCHANGED <<concern, green, acted, ungated, edited, mergeVars, writeVars, gitVars>>
 
 Push == /\ concern = "push"
         /\ ~acted
         /\ \E skips \in BOOLEAN, target \in Targets :
-             /\ ~skips \/ (target = "head" /\ recorded)
+             /\ ~skips \/ (target = "head" /\ recorded /\ ~edited)
              /\ acted' = TRUE
              /\ ungated' = (skips /\ ~(target = "head" /\ green))
-        /\ UNCHANGED <<concern, green, recorded, mergeVars, writeVars, gitVars>>
+        /\ UNCHANGED <<concern, green, recorded, edited, mergeVars, writeVars, gitVars>>
 
 Pushed == /\ concern = "push"
           /\ acted
@@ -288,6 +289,7 @@ TypeOK == /\ concern \in Concerns
           /\ recorded \in BOOLEAN
           /\ acted \in BOOLEAN
           /\ ungated \in BOOLEAN
+          /\ edited \in BOOLEAN
 
 GrantFromWords == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson == grant # {} => PersonTyped(saidBy, attended)
