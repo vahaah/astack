@@ -176,6 +176,51 @@ describe("a manifest that cites a plan record", () => {
 		heavyTestTimeout,
 	);
 
+	test(
+		"[control:proof-effects-advice] each effects finding prints as an advice line, and the exit and the verdict equal those of a tree with no finding",
+		() => {
+			const stamped = {
+				...PLAN_FILES,
+				"src/gate.ts": `${PLAN_FILES["src/gate.ts"] ?? ""}export const stamp = (): number => Date.now();\n`,
+			};
+			const run = (files: Readonly<Record<string, string>>) => {
+				const out = proof(planProofRepo(scratch, () => {}, files).root);
+				return {
+					code: out.code,
+					last: lastLine(out.out).split(" at ")[0],
+					advice: out.out
+						.split("\n")
+						.filter((line) => line.startsWith("advice:")),
+				};
+			};
+			const pure = (text: string | undefined): string =>
+				(text ?? "").replace(
+					"context Gate : src/**\n",
+					"context Gate : src/**\npure src/gate.ts\n",
+				);
+			expect({
+				clean: run(PLAN_FILES),
+				advised: run({ ...stamped, "CONTEXT.md": pure(stamped["CONTEXT.md"]) }),
+			}).toEqual({
+				clean: {
+					code: 0,
+					last: "ok: proof gate-admission admitted",
+					advice: [],
+				},
+				advised: {
+					code: 0,
+					last: "ok: proof gate-admission admitted",
+					advice: [
+						"advice: src/gate.ts:10: pure: a pure line of CONTEXT.md names this module, but it has clock (clock by Date.now)",
+						"advice: src/gate.ts:10: step: step parseGate allows none by its row, but its module has clock (clock by Date.now)",
+						"advice: src/gate.ts:10: step: step admitGate allows none by its row, but its module has clock (clock by Date.now)",
+					],
+				},
+			});
+		},
+		heavyTestTimeout,
+	);
+
 	test("[control:proof-plan-record-schema] a manifest needs domain.plan or category, and not both", () => {
 		const both = {
 			...planRecordProof(validProof("a".repeat(40))),

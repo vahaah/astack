@@ -78,7 +78,8 @@ import {
 	type RunLabel,
 	type Violation,
 } from "../../../change-proof/tlc.ts";
-import { parseCard } from "../../../domain/notation.ts";
+import { type CardFile, parseCard } from "../../../domain/notation.ts";
+import { effectReport, findingLine } from "../../../domain/report.ts";
 import { allCaps, lawClaims } from "../../../domain/rules.ts";
 import {
 	type Reading,
@@ -187,13 +188,9 @@ type PlanRead = {
 };
 
 function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
-	const { composition, domain } = proof;
+	const { composition } = proof;
 	if (composition.kind !== "plan") return undefined;
-	const cardPaths = [...new Set([...GLOSSARY_MAPS, domain.glossary])];
-	const cardFiles = cardPaths.flatMap((path) => {
-		const read = readRepoFile(root, path);
-		return read.kind === "text" ? [{ path, text: read.text }] : [];
-	});
+	const { paths: cardPaths, files } = cardFiles(root, proof);
 	const reading = loadProfile(root).domain.carrier;
 	const atHead = readRepoFile(root, composition.plan);
 	const text =
@@ -214,7 +211,7 @@ function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
 				`the plan record ${composition.plan} is missing at HEAD and at the manifest base ${proof.base}`,
 			),
 		);
-	const card = parseCard(cardFiles);
+	const card = parseCard(files);
 	if (!card.ok)
 		return none(
 			rejection(
@@ -252,6 +249,48 @@ function planRecord(root: string, proof: ChangeProof): PlanRead | undefined {
 		links: links.value,
 		reading,
 	};
+}
+
+function cardFiles(
+	root: string,
+	proof: ChangeProof,
+): { readonly paths: readonly string[]; readonly files: CardFile[] } {
+	const paths = [...new Set([...GLOSSARY_MAPS, proof.domain.glossary])];
+	return {
+		paths,
+		files: paths.flatMap((path) => {
+			const read = readRepoFile(root, path);
+			return read.kind === "text" ? [{ path, text: read.text }] : [];
+		}),
+	};
+}
+
+function effectLines(
+	root: string,
+	proof: ChangeProof,
+	record: PlanRead | undefined,
+	diffBase: string,
+): readonly string[] {
+	const card = parseCard(cardFiles(root, proof).files);
+	if (!card.ok || card.value.kind === "none") return [];
+	const { composition } = proof;
+	const plan =
+		record?.read.ok && composition.kind === "plan"
+			? { ...record.read.value, path: composition.plan }
+			: undefined;
+	const report = effectReport({
+		root,
+		codeRoots: loadProfile(root).domain.codeRoots,
+		card: card.value,
+		plan,
+		base: plan === undefined ? undefined : diffBase,
+		totality: false,
+	});
+	return report.ok
+		? report.value.findings.map(findingLine)
+		: [
+				`advice: effects: astack check effects cannot read the modules: ${report.error.message}`,
+			];
 }
 
 async function planEvidence(
@@ -619,6 +658,8 @@ async function prove(
 		io.out(
 			`witness: the ${record.reading} reading passes ${plan.witness.value.kind === "pass" ? plan.witness.value.checks : 0} checks on ${plan.record.value.block.steps.length} linked steps\n`,
 		);
+	for (const line of effectLines(root, proof, record, base.value.diff))
+		io.out(`${oneLine(line)}\n`);
 	if (!ladder.ok) return stopAt(io, "rung", ladder.error);
 	if (ladder.value.kind === "ladder") io.out(rungLine(ladder.value));
 	const [manifestRun, ...selectedRuns] = runs;
