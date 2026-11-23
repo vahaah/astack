@@ -26,7 +26,8 @@ Its `domain` fence uses the grammar of the plan block of [ADR 0018](0018-one-dom
 ### D2. An ADR past Proposed at the base changes only by a dated block, a status move or its Amended by: line
 
 A dated block starts with `> Note YYYY-MM-DD:` or `> Amended YYYY-MM-DD:`, and its date is on or after the `Date:` of the ADR.
-The status can move to `Superseded by NNNN` or `Deprecated`.
+The status can move to `Superseded by NNNN` or `Deprecated` in the header.
+The one `Amended by:` line stays in the header too.
 A raw line diff exempts the base proof spans, the base Domain and effects part and each Invariant audit part, because they name code.
 A new Invariant audit part passes, because the model audit test asks for it in the first record of each model.
 Each exempt part ends at the next decision heading, so it cannot hide a new decision.
