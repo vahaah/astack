@@ -123,6 +123,14 @@ describe("moduleFacts", () => {
 		});
 	});
 
+	test("a prototype key of the class tables, such as constructor.name, gives no use", () => {
+		expect(
+			facts(
+				'const kind = constructor.name;\ntoString.call(x);\nimport { m } from "constructor";',
+			).uses,
+		).toEqual([]);
+	});
+
 	test("a throw statement and an unsafe cast count, and as const, satisfies and a throw in a string do not", () => {
 		const read = facts(
 			[

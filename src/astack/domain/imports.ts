@@ -48,26 +48,39 @@ const READ_NAMES: ReadonlySet<string> = new Set([
 	"access",
 ]);
 
-const NODE_CLASSES: Readonly<Record<string, Effect>> = {
-	fs: "fs-read",
-	"fs/promises": "fs-read",
-	child_process: "spawn",
-	net: "network",
-	http: "network",
-	https: "network",
-	os: "env",
-};
+const NODE_CLASSES: ReadonlyMap<string, Effect> = new Map([
+	["fs", "fs-read"],
+	["fs/promises", "fs-read"],
+	["child_process", "spawn"],
+	["net", "network"],
+	["http", "network"],
+	["https", "network"],
+	["os", "env"],
+]);
 
-const MEMBER_CLASSES: Readonly<
-	Record<string, Readonly<Record<string, Effect>>>
-> = {
-	Bun: { spawn: "spawn", spawnSync: "spawn" },
-	process: { env: "env", cwd: "env" },
-	Date: { now: "clock" },
-	performance: { now: "clock" },
-	Math: { random: "random" },
-	crypto: { randomUUID: "random" },
-};
+const MEMBER_CLASSES: ReadonlyMap<
+	string,
+	ReadonlyMap<string, Effect>
+> = new Map([
+	[
+		"Bun",
+		new Map<string, Effect>([
+			["spawn", "spawn"],
+			["spawnSync", "spawn"],
+		]),
+	],
+	[
+		"process",
+		new Map<string, Effect>([
+			["env", "env"],
+			["cwd", "env"],
+		]),
+	],
+	["Date", new Map<string, Effect>([["now", "clock"]])],
+	["performance", new Map<string, Effect>([["now", "clock"]])],
+	["Math", new Map<string, Effect>([["random", "random"]])],
+	["crypto", new Map<string, Effect>([["randomUUID", "random"]])],
+]);
 
 const DECLARES = new Set([
 	"function",
@@ -114,19 +127,13 @@ function unquote(token: Token | undefined): string | undefined {
 	return token?.kind === "string" ? token.text.slice(1, -1) : undefined;
 }
 
-function nodeModule(specifier: string): string | undefined {
-	const name = specifier.startsWith("node:") ? specifier.slice(5) : specifier;
-	return name in NODE_CLASSES ? name : undefined;
-}
-
 function moduleUses(
 	specifier: string,
 	names: Names,
 	line: number,
 ): EffectUse[] {
-	const name = nodeModule(specifier);
-	if (name === undefined) return [];
-	const effect = NODE_CLASSES[name];
+	const name = specifier.startsWith("node:") ? specifier.slice(5) : specifier;
+	const effect = NODE_CLASSES.get(name);
 	if (effect === undefined) return [];
 	const uses: EffectUse[] = [{ effect, line, via: specifier }];
 	if (effect !== "fs-read") return uses;
@@ -340,14 +347,14 @@ function readGlobal(tokens: readonly Token[], at: number, draft: Draft): void {
 	const token = tokens[at];
 	if (token === undefined || token.kind !== "word" || isMember(tokens, at))
 		return;
-	const members = MEMBER_CLASSES[token.text];
+	const members = MEMBER_CLASSES.get(token.text);
 	const member = tokens[at + 2];
 	if (
 		members !== undefined &&
 		is(tokens[at + 1], ".") &&
 		member !== undefined
 	) {
-		const effect = members[member.text];
+		const effect = members.get(member.text);
 		if (effect !== undefined)
 			draft.uses.push({
 				effect,
