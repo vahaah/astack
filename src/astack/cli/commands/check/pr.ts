@@ -20,12 +20,31 @@ function reportLinks(io: Io, body: string, root: string | undefined): number {
 	return findings.length > 0 ? 1 : 0;
 }
 
+type RecordLines = { readonly table: number; readonly code: number };
+
+function recordLines(lines: readonly string[]): RecordLines {
+	let fenced = false;
+	let table = 0;
+	let code = 0;
+	for (const line of lines) {
+		if (/^\s*(?:```|~~~)/.test(line)) fenced = !fenced;
+		else if (fenced) code++;
+		else if (line.trimStart().startsWith("|")) table++;
+	}
+	return { table, code };
+}
+
 function noteLength(io: Io, body: string): void {
-	const lines = body.trimEnd().split("\n").length;
-	if (lines > PR_BODY_MAX_LINES)
-		io.out(
-			`note: PR body has ${lines} lines, over the ${PR_BODY_MAX_LINES} lines of astack:write-docs. Link long run records from Verification.\n`,
-		);
+	const lines = body.trimEnd().split("\n");
+	if (lines.length <= PR_BODY_MAX_LINES) return;
+	const { table, code } = recordLines(lines);
+	const records =
+		table + code > 0
+			? `It has ${table} table rows and ${code} code lines. Post the tables and code blocks in one PR comment, and link that comment from Verification.`
+			: "Link long run records from Verification.";
+	io.out(
+		`note: PR body has ${lines.length} lines, over the ${PR_BODY_MAX_LINES} lines of astack:write-docs. ${records}\n`,
+	);
 }
 
 function headingSource(

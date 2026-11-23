@@ -91,6 +91,24 @@ const playbookEntries = (text: string): number => {
 const PLAYBOOK_COUNT =
 	/\bthe (\d+) playbooks that `references\/playbooks\.md` lists\b/;
 
+const card = `${mode}/references/card.md`;
+const MODE_PATH = /`((?:references|playbooks)\/[a-z0-9-]+\.md)`/g;
+const BARE_FILE = /`[a-z0-9-]+\.md`/;
+
+function cardRouteGaps(text: string): string[] {
+	const missing = [...text.matchAll(MODE_PATH)]
+		.map((match) => match[1] ?? "")
+		.filter((path) => !existsSync(join(root, mode, path)))
+		.map(
+			(path) => `the card names ${path}, which the mode skill does not hold`,
+		);
+	const routes = text
+		.split("\n")
+		.filter((line) => line.startsWith("| ") && BARE_FILE.test(line))
+		.map((line) => `a route names a mode file with no folder: ${line}`);
+	return [...missing, ...routes];
+}
+
 describe("the docs state the counts and names of the tree", () => {
 	test("[control:wb-facts-counts] each count of the README equals the tree, and a stale count names its line", () => {
 		expect(countGaps("README.md", read("README.md"), readmeClaims)).toEqual([]);
@@ -113,6 +131,18 @@ describe("the docs state the counts and names of the tree", () => {
 		expect(
 			unknownNames("README.md", "Run `astack:gone` and `astack:plan`."),
 		).toEqual(["README.md names astack:gone, which is no skill or agent"]);
+	});
+
+	test("[control:card-route-paths] each mode path of the card is a file of the mode skill, and each route names its folder", () => {
+		expect(cardRouteGaps(read(card))).toEqual([]);
+		expect(
+			cardRouteGaps(
+				"| x | Mode file `references/gone.md` |\n| y | `resume.md` |",
+			),
+		).toEqual([
+			"the card names references/gone.md, which the mode skill does not hold",
+			"a route names a mode file with no folder: | y | `resume.md` |",
+		]);
 	});
 
 	test("[control:wb-facts-playbooks] mode/SKILL.md and routes.md state the entry count of playbooks.md", () => {

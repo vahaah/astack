@@ -1,4 +1,4 @@
-import { ghBody, ghFlags, isGh } from "../../gh.ts";
+import { bodyText, ghBody, ghFlags, isGh } from "../../gh.ts";
 import { runGit } from "../../git.ts";
 import {
 	duplicateReasons,
@@ -7,6 +7,7 @@ import {
 	type NewPr,
 } from "../../pr/open.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	type Context,
@@ -58,20 +59,19 @@ function verdictOf(
 
 function shellVerdict(event: EventOf<"shell">, list: ListOpenPrs): Verdict {
 	if (!/\bgh\b/.test(event.command)) return ALLOW;
+	const steps = shellSteps(event.command, event.cwd);
 	return combineAll(
-		shellSteps(event.command, event.cwd)
-			.filter((step) => isGh(step.values, "pr", "create"))
-			.map((step) => {
-				const flags = ghFlags(step.words.slice(3));
-				const head = headFlag(step) ?? currentBranch(step.dir);
-				return verdictOf(
-					"gh pr create",
-					{ head, body: ghBody(flags, step.simple, step.dir) },
-					step.dir,
-					flags.repo,
-					list,
-				);
-			}),
+		steps.flatMap((step, at) => {
+			if (!isGh(step.values, "pr", "create")) return [];
+			const flags = ghFlags(step.words.slice(3));
+			const head = headFlag(step) ?? currentBranch(step.dir);
+			const body = bodyText(
+				ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+			);
+			return [
+				verdictOf("gh pr create", { head, body }, step.dir, flags.repo, list),
+			];
+		}),
 	);
 }
 

@@ -190,6 +190,90 @@ describe("the handler registry", () => {
 		},
 	);
 
+	const denyAll = defineHandler({
+		id: "deny-all",
+		on: ["shell"],
+		run: () => deny("astack blocked this commit message."),
+	});
+	const shellContext: Context = {
+		tool: "claude-code",
+		event: "PreToolUse",
+		cwd: project,
+		projectDir: undefined,
+		env: {},
+		today: "2026-10-16",
+	};
+
+	test.each([
+		[
+			"git add -A && git commit -m x",
+			"Nothing in this command ran. It had 2 steps. git, git.\nastack blocked this commit message.",
+		],
+		[
+			"cd sub && FOO=1 git commit -m x",
+			"Nothing in this command ran. It had 2 steps. cd, git.\nastack blocked this commit message.",
+		],
+		["git commit -m x", "astack blocked this commit message."],
+		[
+			"git commit -m \"$(cat <<'EOF'\nx\nEOF\n)\"",
+			"astack blocked this commit message.",
+		],
+	])(
+		"[control:chain-deny-line] a deny of %p names each top-level step that did not run",
+		(command, reason) => {
+			expect(
+				judge(
+					[denyAll],
+					[{ kind: "shell", command, cwd: project }],
+					shellContext,
+				),
+			).toEqual(deny(reason));
+		},
+	);
+
+	test("a chained note keeps its text, and a chained gh pr merge gets the line and the merge reason", () => {
+		const hint = defineHandler({
+			id: "hint",
+			on: ["shell"],
+			run: () => note("one"),
+		});
+		expect(
+			judge(
+				[hint],
+				[
+					{
+						kind: "shell",
+						command: "git add -A && git commit -m x",
+						cwd: project,
+					},
+				],
+				shellContext,
+			),
+		).toEqual(note("one"));
+		const merge = mergeGuard(() => {
+			throw new Error("the guard reads no PR for a chained merge");
+		});
+		const verdict = judge(
+			[merge],
+			[
+				{
+					kind: "shell",
+					command: "gh pr checks 12 && gh pr merge 12",
+					cwd: project,
+				},
+			],
+			shellContext,
+		);
+		const reason = verdict.kind === "deny" ? verdict.reason : "";
+		expect(reason.split("\n").slice(0, 2)).toEqual([
+			"Nothing in this command ran. It had 2 steps. gh, gh.",
+			"astack blocked gh pr merge:",
+		]);
+		expect(reason).toContain(
+			"- Run gh pr merge as its own Bash call. Do not chain it with other commands, and never with the checks before it.",
+		);
+	});
+
 	test("verdicts of several handlers combine in registry order", () => {
 		const first = defineHandler({
 			id: "first",

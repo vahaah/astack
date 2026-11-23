@@ -960,6 +960,38 @@ describe("gh pr create and gh issue create", () => {
 		expect(context(run)).not.toContain("astack blocked");
 	});
 
+	test("[control:repo-origin-issue] gh issue create with a --repo that names origin denies a heading gap, and another repo gets advice", () => {
+		const repo = mkdtempSync(join(tmpdir(), "astack-hook-origin-"));
+		try {
+			git(repo, "init", "-q");
+			git(
+				repo,
+				"remote",
+				"add",
+				"origin",
+				"https://github.com/acme/widget.git",
+			);
+			const issue = (named: string) =>
+				runHook(
+					tool(
+						"Bash",
+						{
+							command: `gh issue create --repo ${named} --title t --body 'No headings.'`,
+						},
+						repo,
+					),
+				);
+			expect(decision(issue("Acme/Widget"))).toBe("deny");
+			const other = issue("other/lib");
+			expect(decision(other)).toBeUndefined();
+			expect(context(other)).toContain(
+				"astack only advises because it targets --repo other/lib",
+			);
+		} finally {
+			rmSync(repo, { recursive: true, force: true });
+		}
+	});
+
 	test("an issue labelled bug needs the bug headings, and an email adds a note", () => {
 		const command =
 			"gh issue create --title 'Import drops rows' --label bug --body-file - <<'EOF'\n## Summary\nReported by jane@customer.dev\nEOF";
@@ -969,6 +1001,75 @@ describe("gh pr create and gh issue create", () => {
 			"missing Environment, Steps to reproduce, Expected, Actual, Acceptance criteria",
 		);
 		expect(reason(run)).toContain("j***@customer.dev");
+	});
+});
+
+describe("a body file that the same command writes", () => {
+	const PR =
+		"## Why\nA reason.\n\n## What changes\nA change.\n\n## Verification\nTests.\n\n## Risk and rollback\nRevert.";
+	const BUG =
+		"## Summary\nx\n## Environment\nx\n## Steps to reproduce\nx\n## Expected\nx\n## Actual\nx\n## Acceptance criteria\nx";
+
+	function inScratch(
+		files: Readonly<Record<string, string>>,
+		command: string,
+	): HookRun {
+		const dir = mkdtempSync(join(tmpdir(), "astack-staged-"));
+		try {
+			for (const [name, text] of Object.entries(files))
+				writeFileSync(join(dir, name), `${text}\n`);
+			return runHook(tool("Bash", { command }, dir));
+		} finally {
+			rmSync(dir, { recursive: true, force: true });
+		}
+	}
+
+	test.each([
+		[
+			"a cat heredoc before gh pr create",
+			{ "body.md": PR },
+			`cat > body.md <<'EOF'\n${PR.replace("A reason.", "It's a reason.")}\nEOF\ngh pr create --title "Add the cache" --body-file body.md`,
+			"astack STE blocked this PR body",
+		],
+		[
+			"printf before git commit -F",
+			{ "msg.txt": "Add the cache" },
+			`printf '%s\\n' 'We will utilize the cache.' > msg.txt && git commit -F msg.txt`,
+			"astack STE blocked this commit message",
+		],
+		[
+			"echo before gh pr create",
+			{ "body.md": PR },
+			`echo '## Why' > body.md && gh pr create --title "Add the cache" --body-file body.md`,
+			"missing What changes, Verification, Risk and rollback",
+		],
+		[
+			"tee before gh issue create",
+			{ "issue.md": BUG },
+			`printf '%s\\n' '## Summary' | tee issue.md > /dev/null && gh issue create --title "Import drops rows" --label bug --body-file issue.md`,
+			"missing Environment, Steps to reproduce, Expected, Actual, Acceptance criteria",
+		],
+		[
+			"an append before gh issue comment",
+			{ "note.md": "The import is slow." },
+			`cat >> note.md <<'EOF'\nIt's broken.\nEOF\ngh issue comment 3 --body-file note.md`,
+			"astack STE blocked this issue comment",
+		],
+	])(
+		"[control:hook-staged-body] %s denies the text that the command writes",
+		(_name, files, command, reason) => {
+			const run = inScratch(files, command);
+			expect(decision(run)).toBe("deny");
+			expect(run.stderr).toContain(reason);
+		},
+	);
+
+	test("a clean staged body passes over a bad file on disk", () => {
+		const run = inScratch(
+			{ "body.md": "It's bad." },
+			`cat > body.md <<'EOF'\n${PR}\nEOF\ngh pr create --title "Add the cache" --body-file body.md`,
+		);
+		expect([run.status, run.stderr]).toEqual([0, ""]);
 	});
 });
 

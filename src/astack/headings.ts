@@ -72,6 +72,14 @@ export function missingHeadings(body: string, required: string[]): string[] {
 	});
 }
 
+function hasBugHeadings(headings: readonly string[]): boolean {
+	const normal = headings.map(normalizeHeading);
+	return (
+		normal.includes("steps to reproduce") ||
+		(normal.includes("expected") && normal.includes("actual"))
+	);
+}
+
 export function detectTicketKind(input: {
 	title?: string;
 	labels?: string[];
@@ -79,13 +87,7 @@ export function detectTicketKind(input: {
 }): TicketKind {
 	if ((input.labels ?? []).some((label) => /\bbug\b/i.test(label)))
 		return "bug";
-	const headings = markdownHeadings(input.body).map(normalizeHeading);
-	if (
-		headings.includes("steps to reproduce") ||
-		(headings.includes("expected") && headings.includes("actual"))
-	) {
-		return "bug";
-	}
+	if (hasBugHeadings(markdownHeadings(input.body))) return "bug";
 	return /\bbug\b|\bregression\b|\bcrash(?:es|ed)?\b|\bbroken\b/i.test(
 		input.title ?? "",
 	)
@@ -264,8 +266,11 @@ const KIND_PATTERN: Record<TicketKind, RegExp> = {
 };
 
 function namesKind(template: Template, kind: TicketKind): boolean {
-	return [template.name, basename(template.path), ...template.labels].some(
-		(value) => KIND_PATTERN[kind].test(value),
+	return (
+		(kind === "bug" && hasBugHeadings(template.headings)) ||
+		[template.name, basename(template.path), ...template.labels].some((value) =>
+			KIND_PATTERN[kind].test(value),
+		)
 	);
 }
 
@@ -303,12 +308,21 @@ const EMAIL =
 const PLACEHOLDER_DOMAIN =
 	/(?:^|\.)(?:example\.(?:com|org|net)|test|invalid|localhost|noreply\.github\.com)$/i;
 
+function isVersionForm(domain: string): boolean {
+	const labels = domain.split(".").slice(0, -1);
+	return labels.length >= 2 && labels.every((label) => /^\d+$/.test(label));
+}
+
 export function emailAddresses(text: string): string[] {
 	const found: string[] = [];
 	for (const match of text.matchAll(EMAIL)) {
 		const local = match[1] ?? "";
 		const domain = match[2] ?? "";
-		if (PLACEHOLDER_DOMAIN.test(domain) || /^no-?reply\b/i.test(local))
+		if (
+			isVersionForm(domain) ||
+			PLACEHOLDER_DOMAIN.test(domain) ||
+			/^no-?reply\b/i.test(local)
+		)
 			continue;
 		found.push(`${local.slice(0, 1)}***@${domain}`);
 	}
