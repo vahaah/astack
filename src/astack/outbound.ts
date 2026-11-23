@@ -47,24 +47,79 @@ type Flag = {
 	readonly next: number;
 };
 
+type NamedTarget = Extract<OutboundTarget, { kind: "named" }>;
+
 const UNKNOWN: OutboundTarget = { kind: "unknown" };
 
 const GH_GROUPS = new Set(["issue", "pr"]);
-const BODY_TEXT_FLAGS = new Set(["-t", "--title", "-b", "--body"]);
-const CLOSE_TEXT_FLAGS = new Set(["-c", "--comment"]);
-const MERGE_TEXT_FLAGS = new Set(["-t", "--subject", "-b", "--body"]);
-const GH_WRITES: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-	["create", BODY_TEXT_FLAGS],
-	["new", BODY_TEXT_FLAGS],
-	["edit", BODY_TEXT_FLAGS],
-	["comment", BODY_TEXT_FLAGS],
-	["review", BODY_TEXT_FLAGS],
-	["close", CLOSE_TEXT_FLAGS],
-	["reopen", CLOSE_TEXT_FLAGS],
-	["merge", MERGE_TEXT_FLAGS],
-]);
 const GH_FILE_FLAGS = new Set(["-F", "--body-file"]);
 const REPO_FLAGS = new Set(["-R", "--repo"]);
+
+type GhAction = {
+	readonly text: ReadonlySet<string>;
+	readonly values: ReadonlySet<string>;
+	readonly selects: boolean;
+};
+
+function ghAction(text: string, others: string, selects = true): GhAction {
+	const textFlags = new Set(text.split(" "));
+	const otherFlags = others.split(" ").filter((flag) => flag !== "");
+	return {
+		text: textFlags,
+		values: new Set([
+			...textFlags,
+			...GH_FILE_FLAGS,
+			...REPO_FLAGS,
+			...otherFlags,
+		]),
+		selects,
+	};
+}
+
+const TITLE_BODY = "-t --title -b --body";
+const CLOSE_TEXT = "-c --comment";
+const ISSUE_CREATE = ghAction(
+	TITLE_BODY,
+	"-a --assignee --attach --blocked-by --blocking -l --label -m --milestone --parent -p --project --recover -T --template --type",
+	false,
+);
+const PR_CREATE = ghAction(
+	TITLE_BODY,
+	"-a --assignee --attach -B --base -H --head -l --label -m --milestone -p --project --recover -r --reviewer -T --template",
+	false,
+);
+const COMMENT = ghAction("-b --body", "--attach");
+const GH_WRITES: ReadonlyMap<string, GhAction> = new Map([
+	["issue create", ISSUE_CREATE],
+	["issue new", ISSUE_CREATE],
+	[
+		"issue edit",
+		ghAction(
+			TITLE_BODY,
+			"--add-assignee --add-blocked-by --add-blocking --add-label --add-project --add-sub-issue --attach -m --milestone --parent --remove-assignee --remove-blocked-by --remove-blocking --remove-label --remove-project --remove-sub-issue --type",
+		),
+	],
+	["issue comment", COMMENT],
+	["issue close", ghAction(CLOSE_TEXT, "--duplicate-of -r --reason")],
+	["issue reopen", ghAction(CLOSE_TEXT, "")],
+	["pr create", PR_CREATE],
+	["pr new", PR_CREATE],
+	[
+		"pr edit",
+		ghAction(
+			TITLE_BODY,
+			"--add-assignee --add-label --add-project --add-reviewer --attach -B --base -m --milestone --remove-assignee --remove-label --remove-project --remove-reviewer",
+		),
+	],
+	["pr comment", COMMENT],
+	["pr review", ghAction("-b --body", "")],
+	["pr close", ghAction(CLOSE_TEXT, "")],
+	["pr reopen", ghAction(CLOSE_TEXT, "")],
+	[
+		"pr merge",
+		ghAction("-t --subject -b --body", "-A --author-email --match-head-commit"),
+	],
+]);
 const ISSUE_URL =
 	/^https?:\/\/github\.com\/([^/]+)\/([^/]+)\/(?:issues|pull)\/\d+/;
 const OTHER_TRACKERS = /linear|jira|atlassian|gitlab|sentry/i;
@@ -108,7 +163,7 @@ const WRITE_VERBS = new Set([
 	"write",
 ]);
 
-function named(text: string | undefined): OutboundTarget | undefined {
+function named(text: string | undefined): NamedTarget | undefined {
 	if (text === undefined) return undefined;
 	const parts = text
 		.replace(/^https?:\/\//, "")
@@ -171,41 +226,61 @@ function envRepo(step: ShellStep, call: ShellCall): OutboundTarget | undefined {
 	return named(call.env.GH_REPO);
 }
 
+function selectorTarget(
+	selectors: readonly string[],
+	repo: NamedTarget | undefined,
+): OutboundTarget | undefined {
+	const urls = selectors.flatMap((selector) => {
+		const match = ISSUE_URL.exec(selector);
+		const target = match ? named(`${match[1]}/${match[2]}`) : undefined;
+		return target === undefined ? [] : [target];
+	});
+	const [first] = urls;
+	if (first === undefined) return repo;
+	const slugs = new Set([...urls, ...(repo ? [repo] : [])].map((t) => t.slug));
+	return slugs.size === 1 && urls.length === selectors.length ? first : UNKNOWN;
+}
+
 function ghWrite(located: StepAt, call: ShellCall): OutboundWrite | undefined {
 	const { step } = located;
 	const { words } = step;
 	let at = 2;
-	let repo: OutboundTarget | undefined;
+	let repo: NamedTarget | undefined;
 	for (let flag = flagAt(words, at, REPO_FLAGS); REPO_FLAGS.has(flag.name); ) {
 		repo = named(flag.value?.value) ?? repo;
 		at = flag.next;
 		flag = flagAt(words, at, REPO_FLAGS);
 	}
 	const action = words[at]?.value ?? "";
-	const textFlags = GH_WRITES.get(action);
-	if (textFlags === undefined) return undefined;
-	const valueFlags = new Set([...textFlags, ...GH_FILE_FLAGS, ...REPO_FLAGS]);
+	const spec = GH_WRITES.get(`${step.values[1]} ${action}`);
+	if (spec === undefined) return undefined;
 	const body: Body = { texts: [], bodyFiles: [] };
-	let url: OutboundTarget | undefined;
+	const selectors: string[] = [];
 	for (at++; at < words.length; ) {
-		const flag = flagAt(words, at, valueFlags);
-		const { value } = flag;
-		if (value !== undefined && textFlags.has(flag.name))
-			body.texts.push(value.value);
-		else if (value !== undefined && GH_FILE_FLAGS.has(flag.name))
-			addBodyFile(value, located, body);
-		else if (REPO_FLAGS.has(flag.name)) repo = named(value?.value) ?? repo;
-		else {
-			const match = ISSUE_URL.exec(flag.name);
-			if (match) url = named(`${match[1]}/${match[2]}`);
+		const word = words[at]?.value ?? "";
+		if (!word.startsWith("-") || word === "-") {
+			if (spec.selects) selectors.push(word);
+			at++;
+			continue;
+		}
+		const flag = flagAt(words, at, spec.values);
+		if (!spec.values.has(flag.name)) {
 			at++;
 			continue;
 		}
 		at = flag.next;
+		const { value } = flag;
+		if (value === undefined) continue;
+		if (spec.text.has(flag.name)) body.texts.push(value.value);
+		else if (GH_FILE_FLAGS.has(flag.name)) addBodyFile(value, located, body);
+		else if (REPO_FLAGS.has(flag.name)) repo = named(value.value) ?? repo;
 	}
 	return {
 		subject: `gh ${step.values[1]} ${action}`,
-		target: url ?? repo ?? envRepo(step, call) ?? remotes(step.dir),
+		target:
+			selectorTarget(selectors, repo) ??
+			envRepo(step, call) ??
+			remotes(step.dir),
 		...body,
 	};
 }

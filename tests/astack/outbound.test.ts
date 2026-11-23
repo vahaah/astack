@@ -9,6 +9,7 @@ import {
 const DIR = "/w/repo";
 const REMOTES = { kind: "remotes", dir: DIR } as const;
 const NAMED = { kind: "named", slug: "o/r" } as const;
+const UNKNOWN = { kind: "unknown" } as const;
 const SUB_REMOTES = { kind: "remotes", dir: `${DIR}/sub` } as const;
 
 function shell(
@@ -69,6 +70,37 @@ describe("the GitHub text writes of a shell step or an MCP call", () => {
 			"an issue comment on an issue URL",
 			shell("gh issue comment https://github.com/o/r/issues/21 --body notes"),
 			[write("gh issue comment", NAMED, ["notes"])],
+		],
+		[
+			"a selector URL that differs from --repo",
+			shell(
+				"gh issue comment https://github.com/o/r/issues/21 -R acme/private -b notes",
+			),
+			[write("gh issue comment", UNKNOWN, ["notes"])],
+		],
+		[
+			"a selector URL that agrees with --repo",
+			shell("gh pr comment https://github.com/o/r/pull/12 --repo O/R -b notes"),
+			[write("gh pr comment", NAMED, ["notes"])],
+		],
+		[
+			"a URL that is the value of a flag",
+			shell(
+				"gh issue edit 21 --add-sub-issue https://github.com/acme/private/issues/3 -b notes",
+			),
+			[write("gh issue edit", REMOTES, ["notes"])],
+		],
+		[
+			"a URL operand of a create",
+			shell("gh pr create https://github.com/acme/private/pull/3 -b notes"),
+			[write("gh pr create", REMOTES, ["notes"])],
+		],
+		[
+			"an edit of two selectors",
+			shell(
+				"gh issue edit https://github.com/acme/private/issues/1 https://github.com/o/r/issues/2 -t notes",
+			),
+			[write("gh issue edit", UNKNOWN, ["notes"])],
 		],
 		[
 			"a PR comment from a heredoc",
