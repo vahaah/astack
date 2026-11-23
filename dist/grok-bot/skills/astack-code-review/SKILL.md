@@ -21,7 +21,6 @@ If no issue tracker was supplied, tell the user to run `/astack-setup`.
 ### 1. Pin the fixed point
 
 Use the commit, branch or tag that the user named.
-Examples include `main` and `HEAD~5`.
 If none was given, ask for it.
 
 Capture `git diff <fixed-point>...HEAD` once.
@@ -83,7 +82,8 @@ Make both Agent calls together in the foreground.
 Use `subagent_type: "astack-explorer"` for each.
 It reads files and runs read-only commands.
 It cannot edit, spawn agents or load skills.
-Aggregate the reports after both return.
+With no Agent tool, or when the brief forbids subagents, use one agent.
+It runs Standards, then Spec, and keeps two reports.
 
 Give the Standards reviewer:
 
@@ -114,7 +114,6 @@ Do not choose an overall winner between axes.
 
 Use [the TypeScript checklist](references/typescript.md) for TypeScript and TSX changes.
 Use [the PostgreSQL checklist](references/postgres.md) for SQL in a PostgreSQL repo.
-These checklists also work in clients that have no native agents.
 
 The optional `typescript-reviewer` and `postgres-reviewer` agents use those same checklists.
 They inherit the selected model and have only Read, Grep, and Glob tools.
