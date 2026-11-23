@@ -115,6 +115,7 @@ encode: (tool: Tool, event: string, v: Verdict) => { stdout: string; stderr: str
 - One dispatcher entry per event. The events are SessionStart, UserPromptSubmit, PreToolUse and Stop. astack never registers SubagentStop. Every entry runs `astack hook <tool> <event>`.
 - The PreToolUse matcher is the fixed set `Edit|Write|MultiEdit|NotebookEdit|Bash|apply_patch|mcp__.*`. Routing lives in the CLI, so `hooks.json` stays the same byte for byte across releases. Codex ties hook trust to that hash.
 - The decoder turns a Codex `apply_patch` into one edit or write event per file. A decode failure returns `undefined`, and the dispatcher allows (fail open).
+- `processPorts` in `src/astack/ports.ts` binds the files, git and profile ports once for each hook call. Each `Context` holds them in `ports`, and the decoder reads through `files.readText`. A handler and each helper that it calls read the repo, git and the profile only through these ports. One call reads the profile and the git root of a canonical folder once. The state folder stays outside the ports.
 - The handler registry is `src/astack/hook/handlers/*.ts`. `handlers/index.ts` lists the modules in one readonly array, with no dynamic load. The handlers are comments, types, ste-artifact, plan-file, ticket, pr-body, merge-guard, duplicate-pr, outbound, destructive, ste-reply, turn and plan-pointer.
 - Deferred. The instruction-file and push-note handlers are not built yet. No hook enforces what they would check.
 

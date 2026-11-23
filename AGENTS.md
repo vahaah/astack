@@ -30,7 +30,7 @@
 1. To add a hook check, write `src/astack/hook/handlers/<id>.ts`. Make the handler with `defineHandler({ id, on, run })` from `src/astack/hook/events.ts`, and export it as `handler`. `on` lists the event kinds. `run` gets only those kinds and returns a `Verdict`.
 2. Add the handler to the array in `src/astack/hook/handlers/index.ts`.
 3. To add a command, write `src/astack/cli/commands/<name>.ts`. Export `command` with `name`, `summary`, `usage` and `run`, and add it to `src/astack/cli/commands/index.ts`. A new check goes in `src/astack/cli/commands/check/` and in `check/index.ts`. Then `astack check <name>` and `astack check-<name>` both run it.
-4. Read a repo setting with `profileSection(projectDir, "<key>")` from `src/astack/profile.ts`, and parse it in your own module.
+4. Read a repo file, git and the profile only through `context.ports`. Read a setting with `sectionOf(context.ports.profile.readProfile(projectDir), "<key>")`, and parse it in your own module. `[control:hook-no-direct-read]` fails on a direct reader import under `src/astack/hook/`.
 5. Return a verdict. Never write to stdout or stderr in a handler. `src/astack/hook/encode/` turns the combined verdict into the output of each tool.
 
 ## Never hand-edit generated files

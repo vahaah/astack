@@ -234,6 +234,13 @@ A deny of one guard stays a deny when the dispatcher joins the verdicts of all g
 _Avoid_: Linter, advisory check
 _Code_: `Handler`
 
+### Hook ports
+
+The files, git and profile reads that one hook call gives to each handler through its Context.
+`processPorts` binds them once for each call, and the call reads the profile and the git root of a canonical folder once.
+_Avoid_: Hook IO, disk helpers
+_Code_: `src/astack/ports.ts`
+
 ### Merge grant
 
 The PRs that an agent can merge with no new question to the owner.
