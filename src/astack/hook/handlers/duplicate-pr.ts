@@ -187,10 +187,9 @@ function promptVerdict(event: EventOf<"prompt">, context: Context): Verdict {
 	if (!event.human) return ALLOW;
 	const store = sessionStore(context.env, event.session);
 	const record = loadSessionPrs(store);
-	saveSessionPrs(
-		{ split: splitInstructionIn(event.text), opens: record.opens },
-		store,
-	);
+	const split = splitInstructionIn(event.text);
+	if (split !== record.split)
+		saveSessionPrs({ split, opens: record.opens }, store);
 	return ALLOW;
 }
 

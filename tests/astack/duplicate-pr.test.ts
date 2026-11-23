@@ -158,7 +158,7 @@ describe("the duplicate PR guard", () => {
 });
 
 describe("a second PR of one session and worktree", () => {
-	test("[control:duplicate-pr-session] the 3 split forms get the one-PR deny, the 9 split controls pass in order, a split that no person typed clears nothing, and a denied create or no session id saves no record", () => {
+	test("[control:duplicate-pr-session] the 3 split forms get the one-PR deny, the 9 split controls pass in order, a split that no person typed clears nothing, and a denied create, no session id or a prompt with no split saves no record", () => {
 		const list: OpenPr[] = [];
 		const guard = duplicatePr(() => list);
 		const create = (cwd: string, session: string | undefined, flags: string) =>
@@ -225,6 +225,7 @@ describe("a second PR of one session and worktree", () => {
 			create(one, "s-c", "--head dev/nine"),
 		]);
 		verdicts.push(["no session id", create(one, undefined, "--head dev/ten")]);
+		prompt("s-d", "Fix the typo in the README.");
 
 		expect(reason(second)).toBe(
 			[
