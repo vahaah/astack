@@ -9,6 +9,7 @@ import {
 	PROFILE_PATH,
 	profileProblems,
 	profileSection,
+	readProfileJson,
 } from "../../src/astack/profile.ts";
 
 const dirs: string[] = [];
@@ -55,16 +56,22 @@ describe(".astack/profile.json", () => {
 	test("a missing or broken file gives the defaults", () => {
 		const empty = mkdtempSync(join(tmpdir(), "astack-profile-"));
 		dirs.push(empty);
-		expect(commentPolicy(empty)).toEqual({ keep: [], limits: DEFAULT_LIMITS });
+		expect(commentPolicy(readProfileJson(empty))).toEqual({
+			keep: [],
+			limits: DEFAULT_LIMITS,
+		});
 		const broken = repoWith({});
 		writeFileSync(join(broken, ".astack/profile.json"), "{not json");
-		expect(commentPolicy(broken).limits).toBe(DEFAULT_LIMITS);
+		expect(commentPolicy(readProfileJson(broken)).limits).toBe(DEFAULT_LIMITS);
 	});
 
 	test("the first directory with a limit wins, and keep patterns merge", () => {
 		const repo = repoWith({ maxCommentLines: 4, commentKeep: ["^// A:"] });
 		const project = repoWith({ maxCommentLines: 8, commentKeep: ["^// B:"] });
-		const policy = commentPolicy(repo, project);
+		const policy = commentPolicy(
+			readProfileJson(repo),
+			readProfileJson(project),
+		);
 		expect(policy.limits.block.max).toBe(4);
 		expect(policy.keep.map((pattern) => pattern.source)).toEqual([
 			"^\\/\\/ A:",
@@ -83,7 +90,10 @@ describe("the profile path", () => {
 			join(dir, ".claude/craft.json"),
 			JSON.stringify({ maxCommentLines: 9, commentKeep: ["^// X:"] }),
 		);
-		expect(commentPolicy(dir)).toEqual({ keep: [], limits: DEFAULT_LIMITS });
+		expect(commentPolicy(readProfileJson(dir))).toEqual({
+			keep: [],
+			limits: DEFAULT_LIMITS,
+		});
 	});
 
 	test("profileSection returns one top-level section for a later reader", () => {

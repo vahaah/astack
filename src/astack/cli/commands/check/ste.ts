@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { canonicalRelative } from "../../../paths.ts";
+import { canonicalRelative, readOptional } from "../../../paths.ts";
+import { processPorts } from "../../../ports.ts";
 import { checkText, denied } from "../../../ste/check.ts";
 import { commitProse, SUBJECT_LINES } from "../../../ste/commit.ts";
 import { findingLine } from "../../../ste/format.ts";
@@ -75,11 +76,15 @@ function settingsOf(io: Io, args: Args): SteSettings | string {
 	if (args.profile === undefined) {
 		const start =
 			args.source === "-" ? io.cwd : dirname(resolve(io.cwd, args.source));
-		return loadSettings(settingsRootFrom(start, io.cwd));
+		return loadSettings(settingsRootFrom(processPorts().files, start, io.cwd));
 	}
 	try {
 		const path = resolve(io.cwd, args.profile);
-		return settingsFor(dirname(path), JSON.parse(readFileSync(path, "utf8")));
+		return settingsFor(
+			dirname(path),
+			JSON.parse(readFileSync(path, "utf8")),
+			readOptional,
+		);
 	} catch {
 		return `cannot read the profile ${args.profile}`;
 	}

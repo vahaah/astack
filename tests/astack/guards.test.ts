@@ -25,6 +25,7 @@ import type {
 } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 
 let root = "";
 let repo = "";
@@ -95,6 +96,7 @@ function context(cwd: string): Context {
 		projectDir: cwd,
 		env: {},
 		today: "2026-10-16",
+		ports: processPorts(),
 	};
 }
 

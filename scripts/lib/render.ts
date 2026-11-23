@@ -4,6 +4,7 @@ import { DEFAULT_DOMAIN_PROFILE } from "../../src/astack/domain/profile.ts";
 import { formatJson, type Json } from "../../src/astack/json-format.ts";
 import { MANAGED_PATHS, mirroredStubPath } from "../../src/astack/managed.ts";
 import { MARKETPLACE_REPO, PLUGIN_IDS } from "../../src/astack/marketplace.ts";
+import { readOptional } from "../../src/astack/paths.ts";
 import {
 	parseProfile,
 	problemText,
@@ -120,14 +121,6 @@ export function renderRuleCopies(
 			...(upstream === undefined ? {} : { sources: upstream }),
 		};
 	});
-}
-
-function readOptional(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

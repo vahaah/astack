@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import { readOptional } from "../paths.ts";
 import { PROFILE_PATH } from "../profile.ts";
 import type { SimpleCommand, Word } from "../shell.ts";
 import type { BaseAuthority, PullRequestState } from "./github.ts";
@@ -33,13 +32,16 @@ const VALUE_FLAGS: Readonly<Record<string, ValueFlag>> = {
 	"--match-head-commit": "ignore",
 };
 
+export type ReadText = (path: string) => string | undefined;
+
 function fileText(
 	word: Word,
 	command: SimpleCommand,
 	dir: string,
+	read: ReadText,
 ): string | undefined {
 	if (word.dynamic) return undefined;
-	if (word.value !== "-") return readOptional(resolve(dir, word.value));
+	if (word.value !== "-") return read(resolve(dir, word.value));
 	return command.stdinDynamic === true ? undefined : command.stdin;
 }
 
@@ -83,6 +85,7 @@ export function parseMergeCall(
 	command: SimpleCommand,
 	words: readonly Word[],
 	dir: string,
+	read: ReadText,
 ): MergeCall {
 	let selector: string | undefined;
 	let repo: string | undefined;
@@ -109,7 +112,7 @@ export function parseMergeCall(
 				flag === undefined ? undefined : (attached ?? words[++index]);
 			if (!value || flag === "ignore") continue;
 			if (flag === "bodyFile") {
-				body = fileText(value, command, dir);
+				body = fileText(value, command, dir, read);
 				dynamic ||= value.dynamic;
 			} else if (value.dynamic) dynamic = true;
 			else if (flag === "body") body = value.value;

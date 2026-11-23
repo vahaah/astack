@@ -6,6 +6,7 @@ import { join } from "node:path";
 import fc from "fast-check";
 import type { Context } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import {
 	after,
 	type Change,
@@ -162,6 +163,7 @@ describe("the destructive guard and real git beside the SessionGuards model", ()
 						projectDir: dir,
 						env: { ASTACK_STATE_DIR: join(TEMP, "state") },
 						today: "2026-11-22",
+						ports: processPorts(),
 						session: `model-work-loss-${id}`,
 					};
 					fc.modelRun(

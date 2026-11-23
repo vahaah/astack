@@ -1,7 +1,8 @@
 import { isAbsolute, resolve } from "node:path";
 import { applyEdit } from "../../comments/added.ts";
+import type { Env } from "../../process.ts";
 import { humanPrompt } from "../../ste/session.ts";
-import type { Env, HookEvent, HookEventName } from "../events.ts";
+import type { HookEvent, HookEventName } from "../events.ts";
 import { mcpParts } from "./claude-code.ts";
 import type { DecodeDeps, Decoded } from "./types.ts";
 

@@ -1,4 +1,3 @@
-import { canonicalRelative, isScratchPath } from "../../paths.ts";
 import {
 	CHECKBOX,
 	checkPlan,
@@ -104,7 +103,8 @@ function planVerdict(
 	context: Context,
 ): Verdict {
 	const projectDir = projectDirOf(context);
-	const relPath = canonicalRelative(projectDir, path);
+	const { files } = context.ports;
+	const relPath = files.relativePath(projectDir, path);
 	if (!/\.md$/i.test(relPath) || !hasPlanFrontmatter(after)) return ALLOW;
 	const plan = parsePlan(relPath, after);
 	const previous = new Set(
@@ -115,12 +115,12 @@ function planVerdict(
 		return deny(
 			`astack blocked this plan edit. ${reasons.join(" Also, ")} The astack:plan skill has the rules in references/template.md.`,
 		);
-	const env = envForFile(path, {
+	const env = envForFile(context.ports, path, {
 		today: context.today,
 		trail: false,
 		fallbackRoot: projectDir,
 	});
-	const steHookSkips = isScratchPath(projectDir, path);
+	const steHookSkips = files.isScratch(projectDir, path);
 	const check = (text: string | undefined): PlanFinding[] =>
 		text !== undefined && hasPlanFrontmatter(text)
 			? checkPlan(parsePlan(path, text), env).filter(

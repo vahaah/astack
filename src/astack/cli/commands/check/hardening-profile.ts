@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { repoRoot } from "../../../git.ts";
 import { MANAGED_PATHS } from "../../../managed.ts";
+import { readOptional } from "../../../paths.ts";
 import {
 	MISSING_PROFILE_REPAIR,
 	NO_BLOCK_REPAIR,
@@ -14,21 +14,13 @@ import { type Io, usageError } from "../../io.ts";
 
 const NAME = "astack check hardening-profile";
 
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
-
 function run(args: readonly string[], io: Io): number {
 	if (args.length > 0) return usageError(io, `${NAME}: takes no argument`);
 	const root = repoRoot(io.cwd) ?? io.cwd;
 	const path = join(root, MANAGED_PATHS.reviewProfile);
 	const state = reviewProfileState(
 		path,
-		readText(path),
+		readOptional(path),
 		loadProfile(root).commentKeep,
 	);
 	switch (state.kind) {

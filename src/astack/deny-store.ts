@@ -1,10 +1,9 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { parseHashList } from "./deny-list.ts";
+import type { Env } from "./process.ts";
 import { err, ok, type Result } from "./result.ts";
 import { stateDir } from "./state.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type DenyStore =
 	| { readonly kind: "none" }

@@ -8,7 +8,7 @@ Product contexts keep their own terms, code, and decisions.
 Each card context groups the code owners of one area under this glossary.
 
 ```domain
-context Kernel shared : src/astack/result.ts, src/astack/glob.ts, src/astack/git.ts, src/astack/json-format.ts, src/astack/headings.ts, src/astack/print.ts
+context Kernel shared : src/astack/result.ts, src/astack/glob.ts, src/astack/git.ts, src/astack/ports.ts, src/astack/process.ts, src/astack/json-format.ts, src/astack/headings.ts, src/astack/print.ts
 context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr.ts, src/astack/spec-drift.ts, src/astack/cli/commands/check/proof.ts, src/astack/cli/commands/check/spec-drift.ts, src/astack/cli/commands/check/effects.ts, src/astack/cli/commands/check/adr.ts, src/astack/cli/commands/check/adr-base.ts
 context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/deny-*.ts, src/astack/outbound.ts, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
 context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
@@ -21,6 +21,10 @@ cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read
 cap  ReviewStore [fs-read, fs-write] @ src/astack/review-store.ts: loadRecord(read), saveRecord(write)
 cap  DenyStore [fs-read, fs-write] @ src/astack/deny-store.ts: readDenyList(read), writeDenyList(write)
 cap  SessionStore [fs-read, fs-write] @ src/astack/pr/session-prs.ts: loadSessionPrs(read), saveSessionPrs(write)
+cap  Files [fs-read] @ src/astack/ports.ts: readText(read), pathKind(read), realPath(read), relativePath(read), isScratch(read), workTree(read), listDir(read), isExecutable(read), folderId(read)
+cap  Git [fs-read, spawn] @ src/astack/ports.ts: gitRun(read), gitText(read), gitRoot(read), gitBranch(read), gitOrigin(read), gitChanges(read)
+cap  Profile [fs-read] @ src/astack/ports.ts: readProfile(read)
+cap  Process [spawn] @ src/astack/process.ts: runProcess(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
@@ -233,6 +237,13 @@ A hook handler that judges one tool call or prompt of an agent session and retur
 A deny of one guard stays a deny when the dispatcher joins the verdicts of all guards.
 _Avoid_: Linter, advisory check
 _Code_: `Handler`
+
+### Hook ports
+
+The files, git and profile reads that one hook call gives to each handler through its Context.
+`processPorts` binds them once for each call, and the call reads the profile and the git root of a canonical folder once.
+_Avoid_: Hook IO, disk helpers
+_Code_: `src/astack/ports.ts`
 
 ### Merge grant
 

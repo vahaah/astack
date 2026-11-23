@@ -1,6 +1,6 @@
 import { checkChange, type Finding } from "../../../comments/check.ts";
 import { type ChangeSources, gitChanges, repoRoot } from "../../../git.ts";
-import { commentPolicy } from "../../../profile.ts";
+import { commentPolicy, readProfileJson } from "../../../profile.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 
@@ -35,7 +35,7 @@ function run(args: readonly string[], io: Io): number {
 			: { staged: true, worktree: "all", untracked: "all" };
 	const changes = gitChanges(root, sources);
 	if (!changes) return usageError(io, "astack check-comments: git diff failed");
-	const policy = commentPolicy(root);
+	const policy = commentPolicy(readProfileJson(root));
 	const findings: Finding[] = [];
 	const skipped: string[] = [];
 	for (const change of changes) {

@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "mode-router",
-	"base": "dce01358b33b81dd94ef23e1b731ee52fad8160d",
+	"base": "c97dc7612b7f57ca735928d90a24a57a3da6a40d",
 	"scope": [
 		{
 			"path": "marketplace/plugins/astack/skills/mode/**",

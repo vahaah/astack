@@ -1,16 +1,12 @@
-import {
-	existsSync,
-	readdirSync,
-	readFileSync,
-	realpathSync,
-	statSync,
-} from "node:fs";
+import { realpathSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { parseRegistry } from "../change-proof/registry.ts";
 import { REGISTRY_PATH } from "../change-proof/rung.ts";
 import { type CardFile, parseCard } from "../domain/notation.ts";
 import { repoRoot } from "../git.ts";
-import { loadProfile, type PlanProfile } from "../profile.ts";
+import { readOptional } from "../paths.ts";
+import type { FilePorts, Ports } from "../ports.ts";
+import { type PlanProfile, parseProfile } from "../profile.ts";
 import { err, ok, type Result } from "../result.ts";
 import { defaultSkillPathEnv, principleSkills } from "../skill-path.ts";
 import { parseGlossary, planSlug } from "./check.ts";
@@ -22,59 +18,53 @@ export function todayIso(at = new Date()): string {
 	return at.toISOString().slice(0, 10);
 }
 
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
+function sortedList(files: FilePorts, path: string): string[] {
+	return [...(files.listDir(path) ?? [])].sort();
 }
 
-function listDir(path: string): string[] {
-	try {
-		return readdirSync(path).sort();
-	} catch {
-		return [];
-	}
+function exists(files: FilePorts, path: string): boolean {
+	return files.realPath(path) !== undefined;
 }
 
-function isDirectory(path: string): boolean {
-	try {
-		return statSync(path).isDirectory();
-	} catch {
-		return false;
-	}
+function isDirectory(files: FilePorts, path: string): boolean {
+	return files.pathKind(files.realPath(path) ?? path) === "directory";
 }
 
-function rootFor(path: string, fallback: string | undefined): string {
-	const dir = isDirectory(path) ? path : dirname(resolve(path));
-	return repoRoot(dir) ?? fallback ?? dir;
+function rootFor(
+	ports: Ports,
+	path: string,
+	fallback: string | undefined,
+): string {
+	const dir = isDirectory(ports.files, path) ? path : dirname(resolve(path));
+	return ports.git.gitRoot(dir) ?? fallback ?? dir;
 }
 
-export function planProfileFor(root: string): PlanProfile {
-	return loadProfile(root).plan;
+export function planProfileFor(ports: Ports, root: string): PlanProfile {
+	return parseProfile(ports.profile.readProfile(root)).plan;
 }
 
 const GLOSSARY_FILES = ["CONTEXT.md", "GLOSSARY.md"];
 export const GLOSSARY_MAPS = ["CONTEXT-MAP.md", "GLOSSARY-MAP.md"];
 
 export function loadGlossary(
+	files: FilePorts,
 	root: string,
 	configured: string | undefined,
 ): Glossary | undefined {
 	const paths: string[] = [];
 	const single = (configured ? [configured] : GLOSSARY_FILES)
 		.map((name) => join(root, name))
-		.find((path) => existsSync(path));
+		.find((path) => exists(files, path));
 	if (single) paths.push(single);
 	if (!configured) {
 		for (const map of GLOSSARY_MAPS) {
 			const mapPath = join(root, map);
-			const text = readText(mapPath);
+			const text = files.readText(mapPath);
 			if (text === undefined) continue;
 			for (const match of text.matchAll(/\]\(([^)\s]+\.md)\)/g)) {
 				const linked = resolve(root, match[1] ?? "");
-				if (existsSync(linked) && !paths.includes(linked)) paths.push(linked);
+				if (exists(files, linked) && !paths.includes(linked))
+					paths.push(linked);
 			}
 		}
 	}
@@ -82,7 +72,7 @@ export function loadGlossary(
 	const terms = new Set<string>();
 	const avoid = new Map<string, string>();
 	for (const path of paths) {
-		const parsed = parseGlossary(readText(path) ?? "");
+		const parsed = parseGlossary(files.readText(path) ?? "");
 		for (const term of parsed.terms) terms.add(term.toLowerCase());
 		for (const [word, term] of parsed.avoid) avoid.set(word, term);
 	}
@@ -94,24 +84,26 @@ export function loadGlossary(
 }
 
 export function loadDomainEnv(
+	ports: Ports,
 	root: string,
 	configured: string | undefined,
 ): DomainEnv {
+	const { files } = ports;
 	const glossary = (configured ? [configured] : GLOSSARY_FILES).find((name) =>
-		existsSync(join(root, name)),
+		exists(files, join(root, name)),
 	);
-	const files: CardFile[] = [
+	const cards: CardFile[] = [
 		...GLOSSARY_MAPS,
 		...(glossary === undefined ? [] : [glossary]),
 	].flatMap((path) => {
-		const text = readText(join(root, path));
+		const text = files.readText(join(root, path));
 		return text === undefined ? [] : [{ path, text }];
 	});
-	const registry = readText(join(root, REGISTRY_PATH));
+	const registry = files.readText(join(root, REGISTRY_PATH));
 	return {
-		card: parseCard(files),
+		card: parseCard(cards),
 		registry: registry === undefined ? ok(undefined) : parseRegistry(registry),
-		codeRoots: loadProfile(root).domain.codeRoots,
+		codeRoots: parseProfile(ports.profile.readProfile(root)).domain.codeRoots,
 	};
 }
 
@@ -124,20 +116,21 @@ export interface EnvOptions {
 	principles?: ReadonlySet<string>;
 }
 
-export function checkEnv(options: EnvOptions): CheckEnv {
+export function checkEnv(ports: Ports, options: EnvOptions): CheckEnv {
+	const { files } = ports;
 	return {
 		root: options.root,
 		today: options.today,
 		adrDir: options.config.adr,
-		glossary: loadGlossary(options.root, options.config.glossary),
-		domain: loadDomainEnv(options.root, options.config.glossary),
+		glossary: loadGlossary(files, options.root, options.config.glossary),
+		domain: loadDomainEnv(ports, options.root, options.config.glossary),
 		trail: options.trail
 			? readTrail(trailPath(options.root, options.slug))
 			: undefined,
 		...(options.principles ? { principles: options.principles } : {}),
-		exists: existsSync,
-		listDir,
-		readFile: readText,
+		exists: (path) => exists(files, path),
+		listDir: (path) => sortedList(files, path),
+		readFile: files.readText,
 	};
 }
 
@@ -186,7 +179,7 @@ export function planFileState(
 	cwd: string,
 ): Result<PlanFileState, string> {
 	const file = realFile(resolve(cwd, target));
-	const text = file === undefined ? undefined : readText(file);
+	const text = file === undefined ? undefined : readOptional(file);
 	if (file === undefined || text === undefined)
 		return err(`cannot read ${target}`);
 	const slug = trailSlug(file, text);
@@ -213,6 +206,7 @@ export function planStateFor(
 }
 
 export function envForFile(
+	ports: Ports,
 	file: string,
 	options: {
 		today: string;
@@ -222,29 +216,29 @@ export function envForFile(
 		text?: string;
 	},
 ): CheckEnv {
-	const root = options.root ?? rootFor(file, options.fallbackRoot);
+	const root = options.root ?? rootFor(ports, file, options.fallbackRoot);
 	const principles = principleSkills(
 		defaultSkillPathEnv(process.env, process.argv[1], root),
 	);
-	return checkEnv({
+	return checkEnv(ports, {
 		root,
-		config: planProfileFor(root),
-		slug: trailSlug(file, options.text ?? readText(file)),
+		config: planProfileFor(ports, root),
+		slug: trailSlug(file, options.text ?? ports.files.readText(file)),
 		today: options.today,
 		trail: options.trail,
 		...(principles ? { principles } : {}),
 	});
 }
 
-export function listPlanFiles(planDir: string): string[] {
+export function listPlanFiles(files: FilePorts, planDir: string): string[] {
 	const found: string[] = [];
 	const visit = (dir: string, depth: number): void => {
-		for (const name of listDir(dir)) {
+		for (const name of sortedList(files, dir)) {
 			const path = join(dir, name);
-			if (isDirectory(path)) {
+			if (isDirectory(files, path)) {
 				if (depth < 2) visit(path, depth + 1);
 			} else if (name.endsWith(".md")) {
-				const head = readText(path)?.slice(0, 4096) ?? "";
+				const head = files.readText(path)?.slice(0, 4096) ?? "";
 				if (hasPlanFrontmatter(head)) found.push(path);
 			}
 		}

@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import {
 	chmodSync,
 	mkdirSync,
@@ -11,12 +10,13 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
-import { runGit } from "./git.ts";
+import { nonEmpty, runGit } from "./git.ts";
 import { MANAGED_PATHS } from "./managed.ts";
+import type { GitPorts } from "./ports.ts";
 import type { ProfileGate, ToolVersion } from "./pr-review-profile.ts";
+import type { Env } from "./process.ts";
+import { runProcess } from "./process.ts";
 import { sessionFileName, stateDir } from "./state.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type GateOutcome =
 	| { readonly kind: "passed" }
@@ -106,12 +106,6 @@ export function sameProfile(
 	return record.profile === sourceBlob && record.profile === baseBlob;
 }
 
-function gitLine(root: string, args: string[]): string | undefined {
-	const result = runGit(root, args);
-	const line = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return line === "" ? undefined : line;
-}
-
 export type ProfileBlobs = {
 	readonly mergeBase: string;
 	readonly source: string;
@@ -119,13 +113,15 @@ export type ProfileBlobs = {
 };
 
 export function profileBlobs(
+	git: GitPorts,
 	root: string,
 	source: string,
 	baseSha: string,
 ): ProfileBlobs | undefined {
-	const mergeBase = gitLine(root, ["merge-base", baseSha, source]);
+	const line = (args: readonly string[]) => nonEmpty(git.gitText(root, args));
+	const mergeBase = line(["merge-base", baseSha, source]);
 	const blob = (commit: string) =>
-		gitLine(root, [
+		line([
 			"rev-parse",
 			"--verify",
 			"--quiet",
@@ -147,13 +143,15 @@ export type GateIo = {
 };
 
 function bash(io: GateIo, script: string, env: Env): number | string {
-	const result = spawnSync("bash", ["-c", script], {
+	const run = runProcess("bash", ["-c", script], {
 		cwd: io.root,
 		env,
-		stdio: ["ignore", "inherit", "inherit"],
+		stdin: "ignore",
+		output: "inherit",
 	});
-	if (result.error !== undefined) return result.error.message;
-	return result.status ?? result.signal ?? "killed";
+	if (!run.ok) return run.error.cause;
+	if (run.value.stopped !== undefined) return run.value.stopped;
+	return run.value.status ?? run.value.signal ?? "killed";
 }
 
 function gitLines(root: string, args: string[]): readonly string[] {
@@ -193,12 +191,15 @@ function toolFolder(
 	const folder = join(runFolder, `${tool.tool}-${tool.version}`);
 	mkdirSync(folder, { recursive: true });
 	if (tool.tool === "bun") {
-		const located = spawnSync(
+		const located = runProcess(
 			"bunx",
 			[`bun@${tool.version}`, "-e", "console.log(process.execPath)"],
-			{ env, encoding: "utf8" },
+			{ env },
 		);
-		const binary = located.status === 0 ? located.stdout.trim() : "";
+		const binary =
+			located.ok && located.value.status === 0
+				? located.value.stdout.toString("utf8").trim()
+				: "";
 		if (binary !== "") {
 			symlinkSync(binary, join(folder, "bun"));
 			symlinkSync(binary, join(folder, "bunx"));
@@ -211,11 +212,12 @@ function toolFolder(
 		);
 		chmodSync(script, 0o755);
 	}
-	const version = spawnSync(join(folder, tool.tool), ["--version"], {
-		env,
-		encoding: "utf8",
-	});
-	if (version.status === 0 && version.stdout.trim() === tool.version)
+	const version = runProcess(join(folder, tool.tool), ["--version"], { env });
+	if (
+		version.ok &&
+		version.value.status === 0 &&
+		version.value.stdout.toString("utf8").trim() === tool.version
+	)
 		return folder;
 	rmSync(folder, { recursive: true, force: true });
 	return undefined;

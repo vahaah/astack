@@ -506,6 +506,8 @@
 				"src/astack/gates.ts",
 				"src/astack/cli/commands/gates.ts",
 				"src/astack/paths.ts",
+				"src/astack/ports.ts",
+				"src/astack/process.ts",
 				"src/astack/hook/handlers/comments.ts",
 				"src/astack/hook/handlers/types.ts",
 				"src/astack/hook/handlers/ste-artifact.ts",

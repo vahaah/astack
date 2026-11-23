@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { readOptional } from "../../paths.ts";
 import { cursorInstall, withFragment } from "../../print.ts";
 import type { Command } from "../command.ts";
 import { type Io, usageError } from "../io.ts";
@@ -12,14 +13,6 @@ function distRoot(io: Io): string | undefined {
 	return [resolve(bin, "../../.."), resolve(bin, "..")].find((root) =>
 		existsSync(join(root, "codex", "AGENTS.fragment.md")),
 	);
-}
-
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
 }
 
 function run(args: readonly string[], io: Io): number {
@@ -42,9 +35,10 @@ function run(args: readonly string[], io: Io): number {
 		io.out(cursorInstall(root));
 		return 0;
 	}
-	const fragment = readText(join(root, "codex", "AGENTS.fragment.md")) ?? "";
+	const fragment =
+		readOptional(join(root, "codex", "AGENTS.fragment.md")) ?? "";
 	const existing =
-		file === undefined ? "" : (readText(resolve(io.cwd, file)) ?? "");
+		file === undefined ? "" : (readOptional(resolve(io.cwd, file)) ?? "");
 	io.out(withFragment(existing, fragment));
 	return 0;
 }

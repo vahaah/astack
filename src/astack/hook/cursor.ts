@@ -9,8 +9,9 @@ import {
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { hookPolicy } from "../hook-profile.ts";
-import { canonical } from "../paths.ts";
-import { profileSection } from "../profile.ts";
+import type { FilePorts, Ports } from "../ports.ts";
+import type { Env } from "../process.ts";
+import { sectionOf } from "../profile.ts";
 import { sessionFileName, stateDir } from "../state.ts";
 import {
 	type CursorEvent,
@@ -32,7 +33,6 @@ import {
 	type Context,
 	combineAll,
 	continueWith,
-	type Env,
 	type Handler,
 	message,
 	type Verdict,
@@ -258,22 +258,31 @@ function stopStatus(raw: unknown): string | undefined {
 	return typeof raw.status === "string" ? raw.status : undefined;
 }
 
+function resolved(files: FilePorts, path: string): string {
+	return files.realPath(path) ?? path;
+}
+
 function contextFor(
 	event: CursorEvent,
 	decoded: Decoded,
 	env: Env,
 	deps: CursorHookDeps,
 	session: string | undefined,
+	ports: Ports,
 ): Context {
-	const workspace = canonical(resolve(decoded.projectDir ?? decoded.cwd));
+	const workspace = resolved(
+		ports.files,
+		resolve(decoded.projectDir ?? decoded.cwd),
+	);
 	return {
 		tool: "cursor",
 		event: canonicalEvent(event),
 		cwd: decoded.cwd,
 		projectDir: workspace,
-		hooks: hookPolicy(profileSection(workspace, "hooks")),
+		hooks: hookPolicy(sectionOf(ports.profile.readProfile(workspace), "hooks")),
 		env,
 		today: deps.today,
+		ports,
 		...(session === undefined ? {} : { session }),
 	};
 }
@@ -284,24 +293,35 @@ function verdictFor(
 	env: Env,
 	deps: CursorHookDeps,
 	reply: string | undefined,
+	ports: Ports,
 ): Verdict {
 	const decoded = decodeCursor(event, raw, {
 		env,
 		cwd: deps.cwd,
-		readText: deps.readText,
+		readText: ports.files.readText,
 		reply,
 	});
 	if (!decoded || decoded.events.length === 0) return ALLOW;
 	return judge(
 		deps.handlers,
 		decoded.events,
-		contextFor(event, decoded, env, deps, sessionFileName(cursorSession(raw))),
+		contextFor(
+			event,
+			decoded,
+			env,
+			deps,
+			sessionFileName(cursorSession(raw)),
+			ports,
+		),
 	);
 }
 
-function canonicalFile(path: string): string {
+function canonicalFile(files: FilePorts, path: string): string {
 	const absolute = resolve(path);
-	return canonical(join(canonical(dirname(absolute)), basename(absolute)));
+	return resolved(
+		files,
+		join(resolved(files, dirname(absolute)), basename(absolute)),
+	);
 }
 
 function canResolveProblem(handler: Handler, context: Context): boolean {
@@ -348,21 +368,29 @@ function afterFileEdit(
 	env: Env,
 	deps: CursorHookDeps,
 	session: string | undefined,
+	ports: Ports,
 ): void {
 	const decoded = decodeCursor("afterFileEdit", raw, {
 		env,
 		cwd: deps.cwd,
-		readText: deps.readText,
+		readText: ports.files.readText,
 		reply: undefined,
 	});
 	if (!decoded) return;
-	const context = contextFor("afterFileEdit", decoded, env, deps, session);
+	const context = contextFor(
+		"afterFileEdit",
+		decoded,
+		env,
+		deps,
+		session,
+		ports,
+	);
 	const workspace = context.projectDir ?? context.cwd;
 	const pending =
 		session === undefined ? [] : deps.store.problems(session, workspace);
 	for (const event of decoded.events) {
 		if (event.kind !== "write") continue;
-		const path = canonicalFile(event.path);
+		const path = canonicalFile(ports.files, event.path);
 		for (const handler of deps.handlers) {
 			const previous = pending.find(
 				(problem) => problem.handler === handler.id && problem.path === path,
@@ -410,14 +438,10 @@ type CurrentFile =
 	| { readonly kind: "missing" }
 	| { readonly kind: "unreadable" };
 
-function currentFile(path: string): CurrentFile {
-	try {
-		return { kind: "text", text: readFileSync(path, "utf8") };
-	} catch (error) {
-		return error instanceof Error && "code" in error && error.code === "ENOENT"
-			? { kind: "missing" }
-			: { kind: "unreadable" };
-	}
+function currentFile(files: FilePorts, path: string): CurrentFile {
+	if (files.pathKind(path) === "missing") return { kind: "missing" };
+	const text = files.readText(path);
+	return text === undefined ? { kind: "unreadable" } : { kind: "text", text };
 }
 
 type RefreshedProblem = {
@@ -443,7 +467,7 @@ function refreshProblems(
 			context.hooks?.[handler.quality] === false
 		)
 			return [];
-		const current = currentFile(problem.path);
+		const current = currentFile(context.ports.files, problem.path);
 		if (current.kind === "missing") {
 			deps.store.removeProblem(problem);
 			return [];
@@ -527,6 +551,7 @@ function outcome(
 	raw: unknown,
 	env: Env,
 	deps: CursorHookDeps,
+	ports: Ports,
 ): Verdict {
 	const session = sessionFileName(cursorSession(raw));
 	switch (event) {
@@ -537,7 +562,7 @@ function outcome(
 			return ALLOW;
 		}
 		case "afterFileEdit":
-			afterFileEdit(raw, env, deps, session);
+			afterFileEdit(raw, env, deps, session, ports);
 			return ALLOW;
 		case "stop": {
 			if (stopStatus(raw) !== "completed") return ALLOW;
@@ -546,13 +571,13 @@ function outcome(
 			const decoded = decodeCursor(event, raw, {
 				env,
 				cwd: deps.cwd,
-				readText: deps.readText,
+				readText: ports.files.readText,
 				reply,
 			});
 			const context =
 				decoded === undefined
 					? undefined
-					: contextFor(event, decoded, env, deps, session);
+					: contextFor(event, decoded, env, deps, session, ports);
 			const problems =
 				context === undefined ? [] : refreshProblems(context, deps);
 			const notes = session === undefined ? [] : deps.store.takeNotes(session);
@@ -575,14 +600,14 @@ function outcome(
 		case "preToolUse":
 		case "beforeShellExecution":
 		case "beforeMCPExecution": {
-			const verdict = verdictFor(event, raw, env, deps, undefined);
+			const verdict = verdictFor(event, raw, env, deps, undefined, ports);
 			if (session !== undefined && verdict.kind === "note")
 				deps.store.addNote(session, verdict.text);
 			return verdict;
 		}
 		case "sessionStart":
 		case "beforeSubmitPrompt":
-			return verdictFor(event, raw, env, deps, undefined);
+			return verdictFor(event, raw, env, deps, undefined, ports);
 	}
 }
 
@@ -596,7 +621,7 @@ export function runCursorHook(
 	let raw: unknown;
 	try {
 		raw = JSON.parse(stdin);
-		verdict = outcome(event, raw, env, deps);
+		verdict = outcome(event, raw, env, deps, deps.ports());
 	} catch {
 		verdict = ALLOW;
 	}

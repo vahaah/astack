@@ -1,6 +1,5 @@
 import { sessionAttended } from "../attended.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
+import type { Env } from "../process.ts";
 
 const TEST_INTERACTIVE = "ASTACK_STE_TEST_INTERACTIVE";
 

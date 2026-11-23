@@ -1,20 +1,17 @@
 import {
-	type BigIntStats,
-	lstatSync,
 	mkdirSync,
-	readdirSync,
 	renameSync,
 	rmSync,
 	statSync,
 	writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { READ_ONLY_GIT, runGit } from "./git.ts";
-import { canonicalFile, readOptional } from "./paths.ts";
+import { READ_ONLY_GIT } from "./git.ts";
+import { type FolderId, readOptional, realFile } from "./paths.ts";
+import type { FilePorts, GitPorts, Ports } from "./ports.ts";
+import type { Env } from "./process.ts";
 import { err, ok, type Result } from "./result.ts";
 import { sessionFileName, stateDir } from "./state.ts";
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type FolderIdentity = {
 	readonly device: string;
@@ -148,8 +145,13 @@ export function sessionRepoAt(
 	);
 }
 
-export function probeRepo(path: string): RepoProbe | undefined {
-	const listed = runGit(path, [
+function followed(files: FilePorts, path: string): FolderId | undefined {
+	return files.folderId(files.realPath(path) ?? path);
+}
+
+export function probeRepo(ports: Ports, path: string): RepoProbe | undefined {
+	const { files, git } = ports;
+	const listed = git.gitRun(path, [
 		"rev-parse",
 		"--show-toplevel",
 		"--absolute-git-dir",
@@ -158,33 +160,28 @@ export function probeRepo(path: string): RepoProbe | undefined {
 	const [root, gitDir, common] = listed.ok
 		? listed.stdout.toString("utf8").split("\n")
 		: [];
-	const objects = root ? objectCount(root) : undefined;
+	const objects = root ? objectCount(git, root) : undefined;
 	if (!root || !gitDir || !common || objects === undefined) return undefined;
-	try {
-		const stat = statSync(root, { bigint: true });
-		const index = statSync(join(gitDir, "index"), {
-			bigint: true,
-			throwIfNoEntry: false,
-		});
-		return {
-			root,
-			commonDir: resolve(path, common),
-			identity: {
-				gitDir,
-				...folderOf(stat),
-				gitDirNode: folderOf(statSync(gitDir, { bigint: true })),
-				head: headCommit(root),
-				index: index === undefined ? "none" : String(index.mtimeNs),
-				objects,
-			},
-		};
-	} catch {
-		return undefined;
-	}
+	const folder = followed(files, root);
+	const gitDirNode = followed(files, gitDir);
+	if (folder === undefined || gitDirNode === undefined) return undefined;
+	const index = followed(files, join(gitDir, "index"));
+	return {
+		root,
+		commonDir: resolve(path, common),
+		identity: {
+			gitDir,
+			...folderOf(folder),
+			gitDirNode: folderOf(gitDirNode),
+			head: headCommit(git, root),
+			index: index === undefined ? "none" : index.mtime,
+			objects,
+		},
+	};
 }
 
-function headCommit(root: string): string {
-	const head = runGit(root, [
+function headCommit(git: GitPorts, root: string): string {
+	const head = git.gitRun(root, [
 		...READ_ONLY_GIT,
 		"rev-parse",
 		"--verify",
@@ -196,8 +193,8 @@ function headCommit(root: string): string {
 
 const OBJECT_COUNTS = /^(?:count|in-pack): (\d+)$/gm;
 
-function objectCount(root: string): string | undefined {
-	const counted = runGit(root, [...READ_ONLY_GIT, "count-objects", "-v"]);
+function objectCount(git: GitPorts, root: string): string | undefined {
+	const counted = git.gitRun(root, [...READ_ONLY_GIT, "count-objects", "-v"]);
 	const counts = counted.ok
 		? [...counted.stdout.toString("utf8").matchAll(OBJECT_COUNTS)].map(
 				([, count]) => count,
@@ -206,37 +203,43 @@ function objectCount(root: string): string | undefined {
 	return counts.length === 2 ? counts.join("+") : undefined;
 }
 
-function folderOf(stat: BigIntStats): FolderIdentity {
-	return {
-		device: String(stat.dev),
-		inode: String(stat.ino),
-		birth: String(stat.birthtimeNs),
-	};
+function folderOf(id: FolderId): FolderIdentity {
+	return { device: id.device, inode: id.inode, birth: id.birth };
 }
 
-function stampOf(path: string): Stamp {
-	const stat = lstatSync(path, { bigint: true });
-	return { birth: String(stat.birthtimeNs), ctime: String(stat.ctimeNs) };
+function stampOf(files: FilePorts, path: string): Stamp | undefined {
+	const id = files.folderId(path);
+	return id === undefined ? undefined : { birth: id.birth, ctime: id.ctime };
 }
 
 const NS_PER_SECOND = 1_000_000_000n;
 const INDEX_CTIME = /^\s+ctime: (\d+):(\d+)$/gm;
 const REFLOG_TIME = /> (\d+) [+-]\d{4}\t?/;
 
-function oldestEntry(root: string, gitDir: string): string | undefined {
-	const listed = runGit(root, [...READ_ONLY_GIT, "ls-files", "--debug"]);
+function oldestEntry(
+	ports: Ports,
+	root: string,
+	gitDir: string,
+): string | undefined {
+	const { files, git } = ports;
+	const listed = git.gitRun(root, [...READ_ONLY_GIT, "ls-files", "--debug"]);
 	if (!listed.ok) return "0";
 	const times = [...listed.stdout.toString("utf8").matchAll(INDEX_CTIME)].map(
 		([, seconds = "0", nanos = "0"]) =>
 			BigInt(seconds) * NS_PER_SECOND + BigInt(nanos),
 	);
-	const reflog = readOptional(join(gitDir, "logs", "HEAD"));
+	const reflog = files.readText(join(gitDir, "logs", "HEAD"));
 	const first = reflog === undefined ? undefined : REFLOG_TIME.exec(reflog);
 	if (first?.[1] !== undefined)
 		times.push((BigInt(first[1]) + 1n) * NS_PER_SECOND - 1n);
 	else if (
-		runGit(root, [...READ_ONLY_GIT, "rev-parse", "--verify", "--quiet", "HEAD"])
-			.ok
+		git.gitRun(root, [
+			...READ_ONLY_GIT,
+			"rev-parse",
+			"--verify",
+			"--quiet",
+			"HEAD",
+		]).ok
 	)
 		times.push(0n);
 	return times.length === 0
@@ -244,23 +247,32 @@ function oldestEntry(root: string, gitDir: string): string | undefined {
 		: String(times.reduce((low, time) => (time < low ? time : low)));
 }
 
-export function probeMadeRepo(path: string): MadeProbe | undefined {
-	const probe = probeRepo(path);
+export function probeMadeRepo(
+	ports: Ports,
+	path: string,
+): MadeProbe | undefined {
+	const probe = probeRepo(ports, path);
 	if (probe === undefined) return undefined;
-	try {
-		return {
-			...probe,
-			made: {
-				root: stampOf(probe.root),
-				gitDir: stampOf(probe.identity.gitDir),
-				marker: stampOf(join(probe.root, ".git")),
-				head: stampOf(join(probe.identity.gitDir, "HEAD")),
-				oldest: oldestEntry(probe.root, probe.identity.gitDir),
-			},
-		};
-	} catch {
-		return undefined;
-	}
+	const { gitDir } = probe.identity;
+	const root = stampOf(ports.files, probe.root);
+	const gitDirStamp = stampOf(ports.files, gitDir);
+	const marker = stampOf(ports.files, join(probe.root, ".git"));
+	const head = stampOf(ports.files, join(gitDir, "HEAD"));
+	return root === undefined ||
+		gitDirStamp === undefined ||
+		marker === undefined ||
+		head === undefined
+		? undefined
+		: {
+				...probe,
+				made: {
+					root,
+					gitDir: gitDirStamp,
+					marker,
+					head,
+					oldest: oldestEntry(ports, probe.root, gitDir),
+				},
+			};
 }
 
 function recordPath(env: Env, session: string | undefined): string | undefined {
@@ -399,37 +411,44 @@ function fileClock(env: Env, session: string | undefined): string | undefined {
 	}
 }
 
+function freeOf(
+	files: FilePorts,
+	target: string,
+	since: string,
+): FreeTarget | undefined {
+	const kind = files.pathKind(target);
+	if (kind === "missing") return { kind: "missing", since };
+	if (kind !== "directory" || files.listDir(target)?.length !== 0)
+		return undefined;
+	const folder = files.folderId(target);
+	return folder === undefined
+		? undefined
+		: { kind: "empty", folder: folderOf(folder), since };
+}
+
 function freeTarget(
+	files: FilePorts,
 	target: string,
 	since: string | undefined,
 ): SessionRepo | undefined {
 	if (since === undefined) return undefined;
-	try {
-		const stat = lstatSync(target, { bigint: true, throwIfNoEntry: false });
-		const free: FreeTarget | undefined =
-			stat === undefined
-				? { kind: "missing", since }
-				: stat.isDirectory() && readdirSync(target).length === 0
-					? { kind: "empty", folder: folderOf(stat), since }
-					: undefined;
-		return free === undefined
-			? undefined
-			: { kind: "pending", path: canonicalFile(target), free };
-	} catch {
-		return undefined;
-	}
+	const free = freeOf(files, target, since);
+	return free === undefined
+		? undefined
+		: { kind: "pending", path: realFile(files.realPath, target), free };
 }
 
 export function settledRepos(
 	env: Env,
 	session: string | undefined,
+	ports: Ports,
 ): SessionRepos {
 	const loaded = loadSessionRepos(env, session);
 	const pending = loaded.filter((repo) => repo.kind === "pending");
 	if (pending.length === 0) return loaded;
 	const probes = new Map(
 		pending.flatMap((repo): [string, MadeProbe][] => {
-			const probe = probeMadeRepo(repo.path);
+			const probe = probeMadeRepo(ports, repo.path);
 			return probe === undefined ? [] : [[repo.path, probe]];
 		}),
 	);
@@ -438,9 +457,13 @@ export function settledRepos(
 	return settled;
 }
 
-export function isSessionRepo(repos: SessionRepos, root: string): boolean {
+export function isSessionRepo(
+	repos: SessionRepos,
+	root: string,
+	ports: Ports,
+): boolean {
 	if (!repos.some((repo) => repo.kind === "bound")) return false;
-	const probe = probeRepo(root);
+	const probe = probeRepo(ports, root);
 	return (
 		probe !== undefined &&
 		probe.root === root &&
@@ -453,9 +476,12 @@ export function rememberRepos(
 	session: string | undefined,
 	repos: SessionRepos,
 	targets: readonly string[],
+	files: FilePorts,
 ): Result<void, string> {
 	const since = targets.length === 0 ? undefined : fileClock(env, session);
-	const pending = targets.flatMap((target) => freeTarget(target, since) ?? []);
+	const pending = targets.flatMap(
+		(target) => freeTarget(files, target, since) ?? [],
+	);
 	if (pending.length === 0) return ok(undefined);
 	const paths = pending.map((repo) => repo.path);
 	return saveSessionRepos(env, session, [

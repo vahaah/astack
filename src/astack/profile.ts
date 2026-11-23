@@ -56,8 +56,12 @@ export function readProfileJson(projectDir: string): unknown {
 	}
 }
 
+export function sectionOf(profile: unknown, key: string): unknown {
+	return field(profile, key);
+}
+
 export function profileSection(projectDir: string, key: string): unknown {
-	return field(readProfileJson(projectDir), key);
+	return sectionOf(readProfileJson(projectDir), key);
 }
 
 function repoRelative(value: unknown): string | undefined {
@@ -350,8 +354,8 @@ export function loadProfile(projectDir: string): Profile {
 	return parseProfile(readProfileJson(projectDir));
 }
 
-export function commentPolicy(...dirs: string[]): CommentPolicy {
-	const profiles = [...new Set(dirs)].map(loadProfile);
+export function commentPolicy(...parsed: readonly unknown[]): CommentPolicy {
+	const profiles = [...new Set(parsed)].map(parseProfile);
 	return {
 		keep: profiles.flatMap((profile) => profile.commentKeep),
 		limits: limitsFor(

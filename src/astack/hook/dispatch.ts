@@ -1,7 +1,8 @@
 import { hookPolicy } from "../hook-profile.ts";
-import { readOptional } from "../paths.ts";
 import { todayIso } from "../plan/files.ts";
-import { profileSection } from "../profile.ts";
+import { type Ports, processPorts } from "../ports.ts";
+import type { Env } from "../process.ts";
+import { sectionOf } from "../profile.ts";
 import { chainSteps } from "../shell.ts";
 import { decode } from "./decode/index.ts";
 import type { HookOutput } from "./encode/base.ts";
@@ -11,7 +12,6 @@ import {
 	type Context,
 	combineAll,
 	deny,
-	type Env,
 	type Handler,
 	type HookEvent,
 	type HookEventName,
@@ -24,7 +24,7 @@ import { HANDLERS } from "./handlers/index.ts";
 export type HookDeps = {
 	readonly cwd: string;
 	readonly today: string;
-	readonly readText: (path: string) => string | undefined;
+	readonly ports: () => Ports;
 	readonly handlers: readonly Handler[];
 };
 
@@ -32,7 +32,7 @@ export function processHookDeps(): HookDeps {
 	return {
 		cwd: process.cwd(),
 		today: todayIso(),
-		readText: readOptional,
+		ports: processPorts,
 		handlers: HANDLERS,
 	};
 }
@@ -49,7 +49,13 @@ export function judgeEach(
 	context: Context,
 ): readonly Judgment[] {
 	const hooks =
-		context.hooks ?? hookPolicy(profileSection(projectDirOf(context), "hooks"));
+		context.hooks ??
+		hookPolicy(
+			sectionOf(
+				context.ports.profile.readProfile(projectDirOf(context)),
+				"hooks",
+			),
+		);
 	const checked = { ...context, hooks };
 	return events.flatMap((event) =>
 		handlers
@@ -63,7 +69,7 @@ export function judgeEach(
 				try {
 					verdict = handler.run(event, checked);
 				} catch (error) {
-					verdict = handler.failed?.(event, error);
+					verdict = handler.failed?.(event, error, checked);
 				}
 				return { handler: handler.id, event, verdict };
 			}),
@@ -99,11 +105,12 @@ function verdictFor(
 	stdin: string,
 	env: Env,
 	deps: HookDeps,
+	ports: Ports,
 ): Verdict {
 	const decoded = decode(tool, event, JSON.parse(stdin), {
 		env,
 		cwd: deps.cwd,
-		readText: deps.readText,
+		readText: ports.files.readText,
 	});
 	if (!decoded || decoded.events.length === 0) return ALLOW;
 	return judge(deps.handlers, decoded.events, {
@@ -113,8 +120,12 @@ function verdictFor(
 		projectDir: decoded.projectDir,
 		env,
 		today: deps.today,
+		ports,
 		hooks: hookPolicy(
-			profileSection(decoded.projectDir ?? decoded.cwd, "hooks"),
+			sectionOf(
+				ports.profile.readProfile(decoded.projectDir ?? decoded.cwd),
+				"hooks",
+			),
 		),
 		...(decoded.session ? { session: decoded.session } : {}),
 	});
@@ -129,7 +140,7 @@ export function runHook(
 ): HookOutput {
 	let verdict = ALLOW;
 	try {
-		verdict = verdictFor(tool, event, stdin, env, deps);
+		verdict = verdictFor(tool, event, stdin, env, deps, deps.ports());
 	} catch {
 		verdict = ALLOW;
 	}

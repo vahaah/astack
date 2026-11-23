@@ -126,7 +126,7 @@ Depends on. M4.
 Blocks.
 - B28 The plan `domain` block, the CONTEXT.md contexts card, the parser and the tsc witness. The witness replaces the typed witness mention check, and the laws give the R2 and R3 rungs. Lane. g. Depends on. B07, B26. Brief. stub.
 - B29 `astack check effects` compares capabilities with imports, as advice, and the grant monoid gets its control when grant.ts splits. Lane. g. Depends on. B28. Brief. B29.md.
-- B35 Hook handlers reach files, git and the profile through ports. Lane. a. Depends on. B08, B10, B29. Brief. stub.
+- B35 Hook handlers reach files, git and the profile through ports. Lane. a. Depends on. B08, B10, B29. Brief. B35.md.
 - B36 `astack check effects` fails after its advice window. Lane. g. Depends on. B29, B35. Brief. stub.
 - B30 One ADR template with a domain part and an effects part, and `astack check adr` on the reader of src/astack/adr.ts. Lane. e. Depends on. B07. Brief. B30.md.
 

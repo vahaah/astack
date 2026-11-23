@@ -1,6 +1,6 @@
 import { basename, resolve } from "node:path";
 import { ghRepoPrefix, inputString } from "./gh.ts";
-import type { Env } from "./hook/events.ts";
+import type { Env } from "./process.ts";
 import {
 	pipeStageText,
 	type ShellStep,

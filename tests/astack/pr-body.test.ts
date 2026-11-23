@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Context, Verdict } from "../../src/astack/hook/events.ts";
 import { handler } from "../../src/astack/hook/handlers/pr-body.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 
 const HEADINGS =
 	"## Why\nA reason.\n\n## What changes\nA change.\n\n## Verification\nTests.\n\n## Risk and rollback\nRevert.";
@@ -37,6 +38,7 @@ function run(command: string, cwd: string): Verdict {
 		projectDir: undefined,
 		env: {},
 		today: "2026-10-16",
+		ports: processPorts(),
 	};
 	return handler.run({ kind: "shell", command, cwd }, context);
 }
@@ -112,6 +114,7 @@ describe("the GitHub MCP PR tools", () => {
 			projectDir: cwd,
 			env: {},
 			today: "2026-10-16",
+			ports: processPorts(),
 		};
 		return handler.run(
 			{ kind: "mcp", server: "plugin_github_github", tool, input },

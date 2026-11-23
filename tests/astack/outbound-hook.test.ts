@@ -19,6 +19,7 @@ import {
 	type Verdict,
 } from "../../src/astack/hook/events.ts";
 import { outbound } from "../../src/astack/hook/handlers/outbound.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import type { Visibility } from "../../src/astack/pr/github.ts";
 
 const ROOT = resolve(import.meta.dir, "../..");
@@ -74,6 +75,7 @@ function context(state: string): Context {
 		projectDir: repo,
 		env: { ASTACK_STATE_DIR: state },
 		today: "2026-11-23",
+		ports: processPorts(),
 	};
 }
 

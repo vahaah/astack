@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
 	existsSync,
@@ -13,6 +13,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join } from "node:path";
+import type { Env } from "../process.ts";
+import { runProcess } from "../process.ts";
 import { err, ok, type Result } from "../result.ts";
 import { isInside } from "./candidate.ts";
 import type { ModelFile } from "./tla.ts";
@@ -28,8 +30,6 @@ export const TLC_PIN = {
 export const DEADLINE_CAP_MS = 60_000;
 const OUTPUT_CAP_BYTES = 16 * 1024 * 1024;
 const MINIMUM_JAVA = 17;
-
-type Env = Readonly<Record<string, string | undefined>>;
 
 export type Checker = {
 	readonly jar: Uint8Array;
@@ -138,17 +138,20 @@ export function javaRuntime(
 	env: Env,
 ): Result<{ readonly java: string; readonly version: string }, string> {
 	const java = env.JAVA_HOME ? join(env.JAVA_HOME, "bin", "java") : "java";
-	const probe = spawnSync(java, ["-version"], {
+	const probe = runProcess(java, ["-version"], {
 		env: childEnv(env),
-		encoding: "utf8",
-		timeout: 20_000,
+		timeoutMs: 20_000,
 	});
-	if (probe.error !== undefined || probe.status !== 0)
+	if (
+		!probe.ok ||
+		probe.value.stopped !== undefined ||
+		probe.value.status !== 0
+	)
 		return err(
 			`Java ${MINIMUM_JAVA} or later is required, and ${java} -version failed`,
 		);
 	const version = /version "([^"]+)"/.exec(
-		`${probe.stderr}${probe.stdout}`,
+		`${probe.value.stderr.toString("utf8")}${probe.value.stdout.toString("utf8")}`,
 	)?.[1];
 	const major = Number((version ?? "").replace(/^1\./, "").split(/[.+_-]/)[0]);
 	if (version === undefined || !(major >= MINIMUM_JAVA))

@@ -9,6 +9,7 @@ import {
 	templateSource,
 	ticketStandard,
 } from "../../../headings.ts";
+import { processPorts } from "../../../ports.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 import { bodyArgs, pickTemplate, readInput, reportGaps } from "./body.ts";
@@ -29,18 +30,19 @@ function run(args: readonly string[], io: Io): number {
 			? "feature"
 			: detectTicketKind({ body });
 	const root = repoRoot(io.cwd);
+	const { files } = processPorts();
 	let template: Template | undefined;
 	if (parsed.template) {
 		const picked = pickTemplate(
 			io,
 			"astack check-ticket",
-			root ? issueTemplates(root) : [],
+			root ? issueTemplates(files, root) : [],
 			parsed.template,
 		);
 		if (typeof picked === "number") return picked;
 		template = picked;
 	} else if (!parsed.flags.has("--no-template"))
-		template = issueTemplateFor(root, kind);
+		template = issueTemplateFor(files, root, kind);
 	for (const email of emailAddresses(body))
 		io.out(`warning: email address ${email}\n`);
 	const sources = [ticketStandard(kind)];

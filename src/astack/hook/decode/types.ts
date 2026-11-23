@@ -1,4 +1,5 @@
-import type { Env, HookEvent } from "../events.ts";
+import type { Env } from "../../process.ts";
+import type { HookEvent } from "../events.ts";
 
 export type DecodeDeps = {
 	readonly env: Env;

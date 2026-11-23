@@ -9,6 +9,7 @@ import { repoRoot, runGit } from "../../../git.ts";
 import { canonical, readOptional } from "../../../paths.ts";
 import { readPlanBlock } from "../../../plan/domain.ts";
 import { loadDomainEnv, planProfileFor } from "../../../plan/files.ts";
+import { processPorts } from "../../../ports.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
@@ -70,7 +71,12 @@ function run(args: readonly string[], io: Io): number {
 		return usageError(io, `${NAME}: not inside a git repository`);
 	const root = canonical(top);
 	const { plan, base, json } = parsed.value;
-	const domain = loadDomainEnv(root, planProfileFor(root).glossary);
+	const ports = processPorts();
+	const domain = loadDomainEnv(
+		ports,
+		root,
+		planProfileFor(ports, root).glossary,
+	);
 	if (!domain.card.ok)
 		return usageError(
 			io,
