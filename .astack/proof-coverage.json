@@ -21,7 +21,8 @@
 		"docs/reference/review-budget.md",
 		"docs/reference/outbound-guards.md",
 		"docs/reference/hook-retries.md",
-		"docs/reference/hook-ports.md"
+		"docs/reference/hook-ports.md",
+		"docs/reference/mode-router.md"
 	],
 	"tests": [
 		"tests/astack/change-proof-cli.test.ts",
@@ -126,7 +127,9 @@
 		"tests/astack/check-cli.test.ts",
 		"tests/astack/ports.test.ts",
 		"tests/astack/process.test.ts",
-		"tests/astack/hook-port-replay.test.ts"
+		"tests/astack/hook-port-replay.test.ts",
+		"tests/mode-router.test.ts",
+		"tests/skill-load-report.test.ts"
 	],
 	"links": [
 		{
@@ -1205,6 +1208,38 @@
 		{
 			"criterion": "HP-PROCESS",
 			"controls": ["process-run"]
+		},
+		{
+			"criterion": "MR-delegate-set",
+			"controls": ["mr-delegate-set"]
+		},
+		{
+			"criterion": "MR-worker-rule",
+			"controls": ["mr-worker-rule"]
+		},
+		{
+			"criterion": "MR-principle-index",
+			"controls": ["mr-principle-index"]
+		},
+		{
+			"criterion": "MR-routes",
+			"controls": ["mr-routes-add"]
+		},
+		{
+			"criterion": "MR-state",
+			"controls": ["mr-state-rule"]
+		},
+		{
+			"criterion": "MR-no-stale-name",
+			"controls": ["mr-no-stale-name"]
+		},
+		{
+			"criterion": "MR-no-lost-rule",
+			"controls": ["mr-no-lost-rule"]
+		},
+		{
+			"criterion": "MR-brief-set",
+			"controls": ["mr-brief-set"]
 		}
 	]
 }

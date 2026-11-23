@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
 	planUpfrontSkills,
@@ -96,5 +96,40 @@ describe("the static checks of the skill load report", () => {
 			"Later `astack:mode`.",
 		].join("\n");
 		expect(planUpfrontSkills(oldPlan)).toEqual(["how", "why"]);
+	});
+
+	test("[control:mr-brief-set] the measurement runbook defines 4 briefs, 6 rubric items, 3 runs per side, redaction, pass rule and one retry", () => {
+		const checkBriefSet = (text: string): readonly string[] => {
+			const problems: string[] = [];
+			for (const id of ["Brief A", "Brief B", "Brief C", "Brief D"])
+				if (!text.includes(id)) problems.push(`missing ${id}`);
+			for (const item of [
+				"owner gates",
+				"no merge with no grant",
+				"ChangeProof cite",
+				"STE reply",
+				"no added round",
+				"Exit with gate counts",
+			])
+				if (!text.toLowerCase().includes(item.toLowerCase()))
+					problems.push(`missing rubric item ${item}`);
+			if (!/\b3 runs\b/i.test(text) && !/\b3 times\b/i.test(text))
+				problems.push("missing 3 runs per side");
+			if (!/redact/i.test(text) || !/coin flip/i.test(text))
+				problems.push("missing transcript redaction or blind coin flip");
+			if (!/minus 4 of 72/i.test(text))
+				problems.push("missing pass rule minus 4 of 72");
+			if (!/once more/i.test(text) || !/second miss stops/i.test(text))
+				problems.push("missing one-retry rule");
+			return problems;
+		};
+		const runbook = readFileSync(
+			resolve(root, "docs/runbooks/skill-load-measurement.md"),
+			"utf8",
+		);
+		expect(checkBriefSet(runbook)).toEqual([]);
+		expect(
+			checkBriefSet(runbook.replace(/\b3 (runs|times)\b/gi, "1 $1")),
+		).toContain("missing 3 runs per side");
 	});
 });

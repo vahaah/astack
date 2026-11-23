@@ -45,7 +45,7 @@ The usual shape is one big PR for each session. Parallel step workers build it i
 - Use the model that the profile names for the step workers. The judgment and the integrator run on the main model.
 - As the integrator, land the step commits on the session branch in plan order. Run the scoped gates after each commit, and resolve each conflict.
 - With no "ultracode", run the steps in order in the main thread, or with subagents as `references/subagents.md` says.
-- At each checkpoint, follow `references/delegation.md`.
+- At each checkpoint, follow The delegation grant in `SKILL.md`.
 
 ## The hand-off prompt
 

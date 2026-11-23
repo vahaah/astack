@@ -45,7 +45,7 @@ So the astack rule against emoji and bold labels does not apply to it.
 - Cite the code, the behavior, the check or the reproduction that supports it.
 - Keep it short. Leave out thanks, filler and status reports.
 - Keep verified facts apart from judgment.
-- Write it in STE. Follow `references/writing-the-reply.md` of `astack:mode`.
+- Write it in STE. Follow Replies of `astack:mode`.
 
 ## Post it
 
@@ -54,6 +54,6 @@ So the astack rule against emoji and bold labels does not apply to it.
 3. Write the final Markdown to a file. Run `astack check ste <file> --surface pr` on it. Fix each deny finding. No hook examines the `gh api` calls below.
 4. Write the comment to a JSON file with one `body` string. Never put comment text in a shell command.
 5. Post a top-level PR comment with `gh api --method POST repos/<owner>/<repo>/issues/<pr>/comments --input <file>`.
-6. Post a reply on a review thread with the reply call in `references/comments-triage.md` of `astack:mode`.
+6. Post a reply on a review thread with the reply call in `playbooks/babysit.md` of `astack:mode`.
 7. Make sure that GitHub returned the `html_url` of the comment.
 8. Resolve a review thread only after its reply posted.

@@ -79,18 +79,6 @@ const unknownNames = (path: string, text: string): string[] =>
 		.filter((name) => !resolves(name.slice("astack:".length)))
 		.map((name) => `${path} names ${name}, which is no skill or agent`);
 
-const playbookEntries = (text: string): number => {
-	const from = text.indexOf("\n## Choose a playbook\n");
-	const to = text.indexOf("\n## ", from + 1);
-	return text
-		.slice(from, to === -1 ? undefined : to)
-		.split("\n")
-		.filter((line) => line.startsWith("- ")).length;
-};
-
-const PLAYBOOK_COUNT =
-	/\bthe (\d+) playbooks that `references\/playbooks\.md` lists\b/;
-
 const card = `${mode}/references/card.md`;
 const MODE_PATH = /`((?:references|playbooks)\/[a-z0-9-]+\.md)`/g;
 const BARE_FILE = /`[a-z0-9-]+\.md`/;
@@ -145,12 +133,14 @@ describe("the docs state the counts and names of the tree", () => {
 		]);
 	});
 
-	test("[control:wb-facts-playbooks] mode/SKILL.md and routes.md state the entry count of playbooks.md", () => {
-		const count = playbookEntries(read(`${mode}/references/playbooks.md`));
-		expect(
-			[`${mode}/SKILL.md`, `${mode}/references/routes.md`].filter(
-				(path) => Number(PLAYBOOK_COUNT.exec(read(path))?.[1]) !== count,
-			),
-		).toEqual([]);
+	test("[control:wb-facts-playbooks] mode/SKILL.md lists each file of playbooks/ once", () => {
+		const files = readdirSync(join(root, mode, "playbooks"))
+			.filter(isMarkdown)
+			.sort();
+		const text = read(`${mode}/SKILL.md`);
+		const problems = files.filter(
+			(file) => text.split(`\`${file}\``).length - 1 !== 1,
+		);
+		expect(problems).toEqual([]);
 	});
 });

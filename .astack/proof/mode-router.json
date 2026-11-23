@@ -1,0 +1,254 @@
+{
+	"version": 1,
+	"change": "mode-router",
+	"base": "c97dc7612b7f57ca735928d90a24a57a3da6a40d",
+	"scope": [
+		{
+			"path": "marketplace/plugins/astack/skills/mode/**",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "marketplace/plugins/astack/agents/delegate.md",
+			"obligation": "MR-worker-rule"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/principles/SKILL.md",
+			"obligation": "MR-principle-index"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/council/SKILL.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-send/SKILL.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/full-stop/SKILL.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/leaving-pr-comments/SKILL.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/sol-loop/SKILL.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "rules/astack.md",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "scripts/skill-load-report.ts",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "scripts/dist/claude-terms.allow",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "docs/adr/**",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "docs/reference/mode-router.md",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "docs/reference/word-budget.md",
+			"obligation": "WB-facts"
+		},
+		{
+			"path": "docs/runbooks/skill-load-measurement.md",
+			"obligation": "MR-brief-set"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "MR-worker-rule"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "tests/mode-router.test.ts",
+			"obligation": "MR-delegate-set"
+		},
+		{
+			"path": "tests/skill-load-report.test.ts",
+			"obligation": "MR-brief-set"
+		},
+		{
+			"path": "tests/supervision-text.test.ts",
+			"obligation": "MR-state"
+		},
+		{
+			"path": "tests/doc-facts.test.ts",
+			"obligation": "WB-facts"
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "MR-no-stale-name"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Install",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B31.md#domain-and-effects",
+		"aggregate": {
+			"path": "scripts/skill-load-report.ts",
+			"symbol": "Scenario"
+		},
+		"terms": ["Worker card", "Delegate read set", "Head check"],
+		"invariants": [
+			{
+				"name": "A text acts on a PR only when gh read that PR and HEAD holds its head",
+				"modelRef": "ActOnlyOnHeldHead"
+			},
+			{
+				"name": "A text takes no PR only after the no-PR message with no --pr",
+				"modelRef": "NoPrOnlyOnMessage"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0036-the-mode-skill-routes-and-each-delegate-reads-a-worker-card.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0025-each-text-that-reads-a-pr-with-gh-runs-the-head-check-command.md",
+				"decision": "D1"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"MR-delegate-set",
+				"MR-worker-rule",
+				"MR-principle-index",
+				"MR-routes",
+				"MR-state",
+				"MR-no-stale-name",
+				"MR-no-lost-rule",
+				"MR-brief-set",
+				"WB-facts",
+				"WB-ratchet",
+				"SG-preserve",
+				"SG-generated"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The direct-file read sets of the mode router and delegates, the 24-principle index location, and the triage mode routing inside playbooks/babysit.md.",
+		"callersKnow": [
+			"A delegate reads only mode SKILL.md and references/worker.md, capped at 2,000 source words with the four fixed rules in rule 1.",
+			"The router reads only SKILL.md with no argument and adds references/routes.md on a routed request.",
+			"Every PR text keeps the astack check pr-head head line and repair rule inside playbooks/babysit.md."
+		],
+		"deletionTest": "Without worker.md and the folded mode router, every delegate loads 9 files totaling 7,190 words and repeats routes already on the rule card.",
+		"alternatives": [
+			{
+				"name": "Keep the 9-file delegate read set",
+				"rejectedBecause": "Every delegate run pays 7,190 words of upfront source text."
+			},
+			{
+				"name": "Adopt the pstack worker card verbatim",
+				"rejectedBecause": "It drops the four fixed astack rules: owner gates, merge grant, ChangeProof and STE replies."
+			},
+			{
+				"name": "Keep two copies of the principle index with a tie test",
+				"rejectedBecause": "Two copies add words and risk drift."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "run"
+				},
+				"modelAction": "Check"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/cli/commands/check/pr-head.ts",
+					"symbol": "parsePullRequest"
+				},
+				"modelAction": "Decide"
+			}
+		],
+		"omitted": [
+			"PrHeadCheck does not model source word counts or rule-home checks. The MR controls in tests/mode-router.test.ts, tests/supervision-text.test.ts and tests/skill-load-report.test.ts enforce those invariants.",
+			"Runtime behavioral equivalence between read sets is measured by the blind brief-set rubric in docs/runbooks/skill-load-measurement.md."
+		]
+	},
+	"model": {
+		"module": "formal/PrHeadCheck.tla",
+		"config": "formal/PrHeadCheck.cfg",
+		"dependencies": [],
+		"bounds": [
+			"3 gh answers, a named PR or none, 4 head relations and 3 runtime states, so each result of the command is reachable.",
+			"One check, one decision and at most one pull after a head stop."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"ActOnlyOnHeldHead",
+			"NoPrOnlyOnMessage",
+			"OtherResultStops"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/PrHeadCheck.tla",
+		"action": "Decide",
+		"original": "acted' = (result = \"ok\")",
+		"replacement": "acted' = (result \\in {\"ok\", \"stop_head\"})",
+		"defect": "A text that goes on after stop: HEAD does not hold PR_HEAD acts on a PR whose head HEAD does not hold.",
+		"expect": {
+			"kind": "invariant",
+			"name": "ActOnlyOnHeldHead"
+		}
+	},
+	"limits": [
+		"Source word counts do not measure host token counts or provider cache behavior.",
+		"Static text controls do not substitute for live brief-set trials under docs/runbooks/skill-load-measurement.md.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

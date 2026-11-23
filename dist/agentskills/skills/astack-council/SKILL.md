@@ -15,7 +15,7 @@ It loops until each seat agrees, and it keeps the scope small.
 
 ## 1. Prepare the code
 
-- Before the review, answer the open PR comments. Use `references/comments-triage.md` of `astack-mode`.
+- Before the review, answer the open PR comments. Use `playbooks/babysit.md` of `astack-mode`.
 - Fix the known issues.
 - Run the relevant gates.
 - Give the council the updated code. Do not keep a known fix until the reviews return.

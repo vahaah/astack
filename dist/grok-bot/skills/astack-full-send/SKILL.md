@@ -136,6 +136,6 @@ Start your final message with the question.
 
 ## Report
 
-Write the final message as `references/writing-the-reply.md` of the mode says.
+Write the final message as Replies in `astack-mode` `SKILL.md` says.
 Give the PR link, the merge commit and your proof.
 Give each decision that you made for the owner, with its label of measured, inferred or guess.

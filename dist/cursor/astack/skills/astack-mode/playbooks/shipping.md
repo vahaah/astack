@@ -20,7 +20,7 @@ A workflow on `workflow_run` of a started workflow starts too.
 So does a workflow on a tag or a release that a job of a started workflow makes.
 
 Name each job of each started workflow that publishes, deploys, or submits a build.
-A merge that starts such a job is a deployment under `references/autonomy.md`.
+A merge that starts such a job is a deployment under Autonomy in `SKILL.md`.
 
 ## Steps
 

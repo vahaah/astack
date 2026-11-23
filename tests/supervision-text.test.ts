@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const MODE = join(import.meta.dir, "../marketplace/plugins/astack/skills/mode");
@@ -66,7 +66,7 @@ const section = (text: string, heading: string) => {
 	const end = text.indexOf("\n## ", start + 1);
 	return flat(text.slice(start, end === -1 ? undefined : end));
 };
-const rowFor = (text: string, words: string) =>
+export const rowFor = (text: string, words: string) =>
 	text
 		.split("\n")
 		.filter((line) => line.startsWith("|"))
@@ -135,5 +135,48 @@ describe("a status ask lists each waiting item and starts no work", () => {
 					/"status"/.test(sentence),
 			),
 		).toBe(true);
+	});
+
+	test("[control:mr-state-rule] session pickup reads state through Read the state of resume.md, and no mode file calls a transcript authoritative", () => {
+		const stateRuleProblems = (
+			pickupText: string,
+			modeTexts: readonly (readonly [path: string, text: string])[],
+		): readonly string[] => {
+			const problems: string[] = [];
+			if (
+				!pickupText.includes("Read the state") ||
+				!pickupText.includes("resume.md")
+			)
+				problems.push(
+					'session-pickup.md lacks a pointer to "Read the state" of resume.md',
+				);
+			for (const [path, text] of modeTexts)
+				if (/\bauthoritative\b/i.test(text))
+					problems.push(`${path} calls a transcript or trail authoritative`);
+			return problems;
+		};
+		const modeFiles = (dir: string, prefix = ""): [string, string][] =>
+			readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+				const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+				const full = join(dir, entry.name);
+				if (entry.isDirectory()) return modeFiles(full, rel);
+				return entry.name.endsWith(".md")
+					? [[rel, readFileSync(full, "utf8")]]
+					: [];
+			});
+		const files = modeFiles(MODE);
+		const pickup = read("playbooks/session-pickup.md");
+		expect(stateRuleProblems(pickup, files)).toEqual([]);
+		expect(
+			stateRuleProblems("Treat the prior trail as authoritative input.", [
+				[
+					"playbooks/session-pickup.md",
+					"Treat the prior trail as authoritative input.",
+				],
+			]),
+		).toEqual([
+			'session-pickup.md lacks a pointer to "Read the state" of resume.md',
+			"playbooks/session-pickup.md calls a transcript or trail authoritative",
+		]);
 	});
 });
