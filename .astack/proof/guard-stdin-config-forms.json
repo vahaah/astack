@@ -49,6 +49,16 @@
 			"modelRefs": ["GatesRun"]
 		},
 		{
+			"path": "src/astack/session-repos.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["Shell", "Settle", "Exempt", "SessionRepoPasses"]
+		},
+		{
+			"path": "tests/astack/session-repos.test.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["Settle", "Exempt"]
+		},
+		{
 			"path": "src/astack/shell.ts",
 			"obligation": "SG-stdin-source",
 			"modelRefs": ["RunGit", "DenialNeedsLoss"]
@@ -212,6 +222,10 @@
 			{
 				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
 				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0028-a-broad-discard-passes-in-a-repo-that-this-session-made.md",
+				"decision": "D5"
 			}
 		],
 		"controls": {

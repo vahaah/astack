@@ -12,9 +12,10 @@ import { join } from "node:path";
 import {
 	type FreeTarget,
 	loadSessionRepos,
+	type MadeFacts,
+	type MadeProbe,
 	probeRepo,
 	type RepoIdentity,
-	type RepoProbe,
 	type SessionRepos,
 	saveSessionRepos,
 	sessionRepoAt,
@@ -25,18 +26,34 @@ const IDENTITY: RepoIdentity = {
 	gitDir: "/w/made/.git",
 	device: "1",
 	inode: "2",
-	birth: "3",
+	birth: "3000000000",
+	gitDirNode: { device: "1", inode: "5", birth: "3000000000" },
 };
 
-const MISSING: FreeTarget = { kind: "missing", since: "3" };
+const SINCE = "3000000000";
+const MISSING: FreeTarget = { kind: "missing", since: SINCE };
+const FRESH = { birth: "3000000000", ctime: "3000000009" };
+const MADE: MadeFacts = {
+	root: FRESH,
+	gitDir: FRESH,
+	marker: FRESH,
+	head: FRESH,
+	oldest: "3000000000",
+};
 
 function probe(
 	root: string,
 	gitDir: string,
 	commonDir: string,
 	birth = IDENTITY.birth,
-): RepoProbe {
-	return { root, commonDir, identity: { ...IDENTITY, gitDir, birth } };
+	made: Partial<MadeFacts> = {},
+): MadeProbe {
+	return {
+		root,
+		commonDir,
+		identity: { ...IDENTITY, gitDir, birth },
+		made: { ...MADE, root: { ...FRESH, birth }, ...made },
+	};
 }
 
 describe("[control:sg-session-repo-store] the settle of the session repo record", () => {
@@ -44,7 +61,7 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		{ kind: "bound", path: "/w/old", identity: IDENTITY },
 	];
 
-	test.each<[string, RepoProbe | undefined, SessionRepos]>([
+	test.each<[string, MadeProbe | undefined, SessionRepos]>([
 		[
 			"a repo root with its own git dir binds",
 			probe("/w/made", "/w/made/.git", "/w/made/.git"),
@@ -52,7 +69,49 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		],
 		[
 			"a repo root born before the call drops",
-			probe("/w/made", "/w/made/.git", "/w/made/.git", "2"),
+			probe("/w/made", "/w/made/.git", "/w/made/.git", "2999999999"),
+			[],
+		],
+		[
+			"a git dir born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				gitDir: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"a .git marker born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				marker: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"a HEAD born before the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				head: { birth: "2", ctime: "9" },
+			}),
+			[],
+		],
+		[
+			"an index entry or a reflog entry older than the call drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				oldest: "2999999999",
+			}),
+			[],
+		],
+		[
+			"a birth of 0 is unknown, so it drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				head: { birth: "0", ctime: "3000000009" },
+			}),
+			[],
+		],
+		[
+			"a birth equal to its ctime is unknown, so it drops",
+			probe("/w/made", "/w/made/.git", "/w/made/.git", undefined, {
+				marker: { birth: "3000000005", ctime: "3000000005" },
+			}),
 			[],
 		],
 		[
@@ -96,14 +155,19 @@ describe("[control:sg-session-repo-store] the settle of the session repo record"
 		["a folder with another inode drops", { ...IDENTITY, inode: "9" }, []],
 		["a folder with another birth drops", { ...IDENTITY, birth: "9" }, []],
 	])("%s", (_, seen, settled) => {
-		const empty: FreeTarget = { kind: "empty", folder: IDENTITY };
+		const empty: FreeTarget = { kind: "empty", folder: IDENTITY, since: SINCE };
 		expect(
 			settleRepos(
 				[{ kind: "pending", path: "/w/made", free: empty }],
 				new Map([
 					[
 						"/w/made",
-						{ root: "/w/made", commonDir: "/w/made/.git", identity: seen },
+						{
+							root: "/w/made",
+							commonDir: "/w/made/.git",
+							identity: seen,
+							made: MADE,
+						},
 					],
 				]),
 			),
@@ -143,6 +207,12 @@ describe("[control:sg-session-repo-match] the match of a session repo", () => {
 			"another birth time does not match",
 			"/w/made",
 			{ ...IDENTITY, birth: "9" },
+			false,
+		],
+		[
+			"another git dir node at the same path does not match",
+			"/w/made",
+			{ ...IDENTITY, gitDirNode: { ...IDENTITY.gitDirNode, inode: "9" } },
 			false,
 		],
 	])("%s", (_, root, identity, matches) => {

@@ -60,6 +60,8 @@ The session repo rule holds under three premises.
 - The host keeps one session id for the life of a session, also across a compaction.
 
 The model takes the identity of a repo as one value. The code compares the root, the git dir, the device, the inode and the birth time.
+It also compares the device, the inode and the birth time of the git dir.
+The settle also needs the git dir, the `.git` marker, `HEAD`, each index entry and the first reflog entry at or after the call.
 
 The [model](SessionGuards.tla) and its [configuration](SessionGuards.cfg) examine these invariants with no fairness.
 The model takes the observations of the hooks as true: the clause grammar, the prompt source, the path facts and the `git status` entries.
@@ -88,9 +90,10 @@ shellSteps   : HookCall -> ShellStep      effects: none
 readGit      : ShellStep -> GitRead       effects: none
 workLoss     : (GitInvocation, Treeish) -> WorkLoss | undefined          effects: none
 madeRepoTarget   : ShellStep -> AbsolutePath | undefined                   effects: none
-settleRepos      : (SessionRepos, Map<Path, RepoProbe>) -> SessionRepos      effects: none
+settleRepos      : (SessionRepos, Map<Path, MadeProbe>) -> SessionRepos      effects: none
 sessionRepoAt    : (SessionRepos, Root, RepoIdentity) -> boolean            effects: none
 probeRepo        : Path -> RepoProbe | undefined                           effects: spawn, fs-read
+probeMadeRepo    : Path -> MadeProbe | undefined                           effects: spawn, fs-read
 loadSessionRepos : (Env, SessionId) -> SessionRepos                        effects: fs-read
 saveSessionRepos : (Env, SessionId, SessionRepos) -> Result<void, string>   effects: fs-write
 runGates     : ProfileGate -> GateRun     effects: spawn, fs-read, fs-write, env

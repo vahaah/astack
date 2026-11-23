@@ -2,11 +2,13 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
 	chmodSync,
+	copyFileSync,
 	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
 	realpathSync,
+	renameSync,
 	rmSync,
 	symlinkSync,
 	utimesSync,
@@ -1416,6 +1418,64 @@ describe("a repo that this session made", () => {
 				}),
 			);
 			expect(said).toContain("session repo record folder");
+		},
+	);
+
+	test.each<[string, (state: string, dir: string, owner: string) => void]>([
+		[
+			"another process swaps the git dir of a bound repo",
+			(state, dir, owner) => {
+				initedRepo(state, dir);
+				expect(sessionRun("git status", dir, state).kind).toBe("allow");
+				rmSync(join(dir, ".git"), { recursive: true, force: true });
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+			},
+		],
+		[
+			"a missing target gets a git dir that is older than the call",
+			(state, dir, owner) => {
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				mkdirSync(dir);
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+				write(dir, { "a.txt": "b\n" });
+			},
+		],
+		[
+			"an empty target gets a git dir that is older than the call",
+			(state, dir, owner) => {
+				mkdirSync(dir);
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				renameSync(join(owner, ".git"), join(dir, ".git"));
+				write(dir, { "a.txt": "b\n" });
+			},
+		],
+		[
+			"a new git dir holds an index entry that is older than the call",
+			(state, dir, owner) => {
+				expect(sessionRun(`git init ${dir}`, join(dir, ".."), state).kind).toBe(
+					"allow",
+				);
+				mkdirSync(dir);
+				initRepo(dir);
+				copyFileSync(join(owner, ".git/index"), join(dir, ".git/index"));
+			},
+		],
+	])(
+		"[control:sg-session-repo-made] a reset is denied when %s",
+		(_, prepare) => {
+			const { dir, state } = fresh("new");
+			const parent = join(dir, "..");
+			const owner = join(parent, "owner");
+			dirtyRepoAt(owner);
+			prepare(state, dir, owner);
+			expect(sessionRun("ls", parent, state).kind).toBe("allow");
+			expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
+				"owner gate",
+			);
 		},
 	);
 

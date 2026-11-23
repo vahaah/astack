@@ -83,6 +83,13 @@ A bind needs the git dir `<root>/.git`, or a folder under `worktrees/` of the co
 A discard passes only when its root and that identity equal a bound record.
 So a symlink at the path or a new repo at the path of a removed session repo gets the deny.
 
+Amended 2026-11-23. The record also holds the device, inode and birth time of the git dir, so a swapped git dir gets the deny.
+A bind needs the git dir, the `.git` marker of the root and the `HEAD` of the git dir born at or after the call.
+An empty target holds that time too.
+A bind also needs each index entry and the first `HEAD` reflog entry at or after that time.
+A repo with a commit and no reflog does not bind.
+A birth time of 0, or a birth time equal to the ctime, is unknown, and such a repo does not bind.
+
 ### D6. Each record failure fails closed
 
 No session id, a refused id, no state folder, a bad file or a failed probe gives no exemption.

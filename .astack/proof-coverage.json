@@ -378,7 +378,8 @@
 				"sg-session-repo-match",
 				"sg-session-repo-archive",
 				"sg-session-repo-copied",
-				"sg-session-repo-record"
+				"sg-session-repo-record",
+				"sg-session-repo-made"
 			]
 		},
 		{
