@@ -1088,6 +1088,66 @@ function docWrite(session: string, name: string, content: string) {
 	);
 }
 
+describe("a body file that the hook cannot read as the command leaves it", () => {
+	const GH = `gh pr create --title "Add the cache" --body-file body.md`;
+	const PR =
+		"## Why\nA reason.\n\n## What changes\nA change.\n\n## Verification\nTests.\n\n## Risk and rollback\nRevert.";
+	const forms = [
+		[
+			"a python heredoc",
+			`python3 - <<'EOF'\nopen("body.md", "w").write("x")\nEOF\n${GH}`,
+		],
+		["sed", `sed -i.bak 's/a/b/' body.md\n${GH}`],
+		["diff", `diff old.md body.md\n${GH}`],
+		["a dynamic log target", `npm test > "$LOG"\n${GH}`],
+		["a write after ||", `false || printf '%s' x > body.md\n${GH}`],
+		["a write in if", `if true; then printf '%s' x > body.md; fi\n${GH}`],
+		["a write in the body pipeline", `printf '%s' x | tee body.md | ${GH}`],
+		["a write in the background", `printf '%s' x > body.md &\n${GH}`],
+	] as const;
+
+	function inScratch(body: string, command: string, session: string): Run {
+		const dir = join(base, `scratch-${session}`);
+		mkdirSync(dir, { recursive: true });
+		writeFileSync(join(dir, "body.md"), `${body}\n`);
+		return hook("PreToolUse", tool("Bash", { command }, dir, session));
+	}
+
+	test.each(forms.map(([name, command], index) => [name, command, index]))(
+		"[control:hook-unread-body] %s keeps the disk check and gives one note and one unread-body event",
+		(_name, command, index) => {
+			const session = `unread-${index}`;
+			const bad = inScratch(
+				PR.replace("A reason.", "It's a reason."),
+				command,
+				session,
+			);
+			expect(bad.status).toBe(2);
+			expect(bad.stderr).toContain("astack STE blocked this PR body");
+			expect(outcomes(session, "unread-body")).toEqual([
+				["ste-artifact", "unread-body", "masked"],
+			]);
+			const clean = inScratch(PR, command, `${session}-clean`);
+			expect(clean.status).toBe(0);
+			expect(clean.context.split("could not read body.md").length).toBe(2);
+			expect(outcomes(`${session}-clean`, "unread-body")).toEqual([
+				["ste-artifact", "unread-body", "advise"],
+			]);
+		},
+	);
+
+	test("--body-file - keeps the stdin text", () => {
+		const run = hook(
+			"PreToolUse",
+			tool("Bash", {
+				command: `gh pr create --title "Add the cache" --body-file - <<'EOF'\n${PR.replace("A reason.", "It's a reason.")}\nEOF`,
+			}),
+		);
+		expect(run.status).toBe(2);
+		expect(run.stderr).toContain("astack STE blocked this PR body");
+	});
+});
+
 describe("the finding event log", () => {
 	test("[control:tel-notext] a write with a contraction writes one deny line with only the event keys, and no sentence or path", () => {
 		const run = docWrite(

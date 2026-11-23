@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { globMatches } from "../../src/astack/glob.ts";
+import type { StagedText } from "../../src/astack/shell.ts";
 import {
 	type CheckOptions,
 	checkText,
@@ -449,8 +450,12 @@ describe("commit messages", () => {
 	}
 
 	test("message flags give the static text, and anything else fails open", () => {
-		const read = (path: string) =>
-			path.endsWith("msg.txt") ? "from a file" : undefined;
+		const read = (path: string): StagedText =>
+			path.endsWith("msg.txt")
+				? { kind: "text", text: "from a file" }
+				: path.endsWith("old.txt")
+					? { kind: "unread", disk: "from the disk" }
+					: { kind: "missing" };
 		expect(
 			commitMessage(
 				words("-m", "subject", "-m", "body"),
@@ -458,26 +463,36 @@ describe("commit messages", () => {
 				"/r",
 				read,
 			),
-		).toEqual({ kind: "static", text: "subject\n\nbody" });
+		).toEqual({ kind: "static", text: "subject\n\nbody", unread: [] });
 		expect(commitMessage(words("-am", "x"), undefined, "/r", read)).toEqual({
 			kind: "static",
 			text: "x",
+			unread: [],
 		});
 		expect(commitMessage(words("-mx"), undefined, "/r", read)).toEqual({
 			kind: "static",
 			text: "x",
+			unread: [],
 		});
 		expect(commitMessage(words("--message=x"), undefined, "/r", read)).toEqual({
 			kind: "static",
 			text: "x",
+			unread: [],
 		});
 		expect(commitMessage(words("-F", "-"), "from stdin", "/r", read)).toEqual({
 			kind: "static",
 			text: "from stdin",
+			unread: [],
 		});
 		expect(
 			commitMessage(words("--file", "msg.txt"), undefined, "/r", read),
-		).toEqual({ kind: "static", text: "from a file" });
+		).toEqual({ kind: "static", text: "from a file", unread: [] });
+		expect(
+			commitMessage(words("-F", "old.txt"), undefined, "/r", read),
+		).toEqual({ kind: "static", text: "from the disk", unread: ["old.txt"] });
+		expect(
+			commitMessage(words("-F", "gone.txt"), undefined, "/r", read),
+		).toEqual({ kind: "dynamic" });
 		expect(
 			commitMessage(
 				[

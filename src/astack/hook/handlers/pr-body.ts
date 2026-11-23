@@ -1,4 +1,4 @@
-import { foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
+import { bodyText, foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
 import { originSlug, repoRoot } from "../../git.ts";
 import {
 	headingAdvice,
@@ -9,6 +9,7 @@ import {
 import { linkFindings } from "../../pr/links.ts";
 import { partOfRequired } from "../../pr/profile.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	type Context,
@@ -73,7 +74,9 @@ function originOf(root: string | undefined): string | undefined {
 	return root === undefined ? undefined : originSlug(root);
 }
 
-function shellPr(step: ShellStep): PrText | undefined {
+function shellPr(steps: readonly ShellStep[], at: number): PrText | undefined {
+	const step = steps[at];
+	if (step === undefined) return undefined;
 	const action = step.values[2] ?? "";
 	const flags = ghFlags(step.words.slice(3));
 	if (flags.skip) return undefined;
@@ -82,7 +85,9 @@ function shellPr(step: ShellStep): PrText | undefined {
 		subject: `gh pr ${action}`,
 		create: action === "create",
 		title: flags.title,
-		body: ghBody(flags, step.simple, step.dir),
+		body: bodyText(
+			ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+		),
 		foreign: foreignRepo(flags.repo, originOf(root)),
 		root,
 	};
@@ -134,17 +139,17 @@ export const handler = defineHandler({
 			}
 			case "shell": {
 				if (!/\bgh\b/.test(event.command)) return ALLOW;
+				const steps = shellSteps(event.command, event.cwd);
 				return combineAll(
-					shellSteps(event.command, event.cwd)
-						.filter(
-							(step) =>
-								isGh(step.values, "pr", "create") ||
-								isGh(step.values, "pr", "edit"),
+					steps.flatMap((step, at) => {
+						if (
+							!isGh(step.values, "pr", "create") &&
+							!isGh(step.values, "pr", "edit")
 						)
-						.flatMap((step) => {
-							const pr = shellPr(step);
-							return pr ? [textVerdict(pr)] : [];
-						}),
+							return [];
+						const pr = shellPr(steps, at);
+						return pr ? [textVerdict(pr)] : [];
+					}),
 				);
 			}
 		}

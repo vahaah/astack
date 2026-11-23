@@ -1,4 +1,4 @@
-import { foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
+import { bodyText, foreignRepo, ghBody, ghFlags, isGh } from "../../gh.ts";
 import { originSlug, repoRoot } from "../../git.ts";
 import {
 	detectTicketKind,
@@ -13,6 +13,7 @@ import {
 	ticketFooter,
 } from "../../headings.ts";
 import { type ShellStep, shellSteps } from "../../shell.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	combineAll,
@@ -29,10 +30,14 @@ function notesVerdict(notes: readonly string[]): Verdict {
 	return notes.length > 0 ? note(notes.join("\n\n")) : ALLOW;
 }
 
-function issueCreateVerdict(step: ShellStep): Verdict {
+function issueCreateVerdict(steps: readonly ShellStep[], at: number): Verdict {
+	const step = steps[at];
+	if (step === undefined) return ALLOW;
 	const flags = ghFlags(step.words.slice(3));
 	if (flags.skip) return ALLOW;
-	const body = ghBody(flags, step.simple, step.dir);
+	const body = bodyText(
+		ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+	);
 	if (body === undefined) return ALLOW;
 	const kind = detectTicketKind({
 		title: flags.title,
@@ -137,13 +142,17 @@ export const handler = defineHandler({
 	on: ["shell", "mcp"],
 	run: (event) => {
 		switch (event.kind) {
-			case "shell":
+			case "shell": {
 				if (!/\bgh\b/.test(event.command)) return ALLOW;
+				const steps = shellSteps(event.command, event.cwd);
 				return combineAll(
-					shellSteps(event.command, event.cwd)
-						.filter((step) => isGh(step.values, "issue", "create"))
-						.map(issueCreateVerdict),
+					steps.flatMap((step, at) =>
+						isGh(step.values, "issue", "create")
+							? [issueCreateVerdict(steps, at)]
+							: [],
+					),
 				);
+			}
 			case "mcp":
 				return linearVerdict(event);
 		}

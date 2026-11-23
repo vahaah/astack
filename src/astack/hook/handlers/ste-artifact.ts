@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import type { BodyReader } from "../../gh.ts";
 import { commitFlags, gitInvocation } from "../../git-command.ts";
 import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import {
@@ -7,7 +8,12 @@ import {
 	type ShellStep,
 	shellSteps,
 } from "../../shell.ts";
-import { checkText, type LineRange, regionLines } from "../../ste/check.ts";
+import {
+	checkText,
+	fingerprint,
+	type LineRange,
+	regionLines,
+} from "../../ste/check.ts";
 import { commitMessage, commitProse, SUBJECT_LINES } from "../../ste/commit.ts";
 import { type Judged, judged, logRun } from "../../ste/events.ts";
 import {
@@ -19,17 +25,34 @@ import {
 	settingsRoot,
 	settingsRootFrom,
 } from "../../ste/profile.ts";
-import { ghTargets, mcpTargets, type Target } from "../../ste/targets.ts";
+import {
+	ghTargets,
+	mcpTargets,
+	type Target,
+	type UnreadBody,
+} from "../../ste/targets.ts";
 import { outcomeOf, withLedger } from "../../ste/verdict.ts";
+import { stagedReader } from "../body-reader.ts";
 import {
 	ALLOW,
 	type Context,
+	combine,
 	defineHandler,
 	type EventOf,
+	note,
 	projectDirOf,
 } from "../events.ts";
 
 type Checked = { readonly target: Target; readonly settings: SteSettings };
+
+type ShellTargets = {
+	readonly checked: readonly Checked[];
+	readonly unread: readonly UnreadBody[];
+};
+
+const NO_SHELL_TARGETS: ShellTargets = { checked: [], unread: [] };
+
+const UNREAD_RULE = "unread-body";
 
 function settingsNear(dir: string, context: Context): SteSettings {
 	return loadSettings(settingsRootFrom(dir, projectDirOf(context)));
@@ -76,52 +99,100 @@ function writeTarget(write: FileWrite, context: Context): readonly Checked[] {
 	return checked ? [checked] : [];
 }
 
-function commitTargets(step: ShellStep, context: Context): readonly Checked[] {
+function commitTargets(
+	step: ShellStep,
+	read: BodyReader,
+	context: Context,
+): ShellTargets {
 	const git = gitInvocation(step.values, step.dir);
-	if (git?.sub !== "commit" || commitFlags(git.args).dryRun) return [];
+	if (git?.sub !== "commit" || commitFlags(git.args).dryRun)
+		return NO_SHELL_TARGETS;
 	const args = step.words.slice(step.words.length - git.args.length);
-	const message = commitMessage(args, step.simple.stdin, git.dir, readOptional);
-	if (message.kind !== "static") return [];
+	const message = commitMessage(args, step.simple.stdin, git.dir, read);
+	if (message.kind !== "static") return NO_SHELL_TARGETS;
+	const unread = message.unread.map(
+		(file): UnreadBody => ({ file, surface: "commit" }),
+	);
 	const prose = commitProse(message.text);
-	if (prose === undefined) return [];
-	return [
-		{
-			settings: settingsNear(git.dir, context),
-			target: {
-				subject: "this commit message",
-				text: prose,
-				surface: "commit",
-				enforcement: "deny",
-				titleLines: SUBJECT_LINES,
+	if (prose === undefined) return { checked: [], unread };
+	return {
+		checked: [
+			{
+				settings: settingsNear(git.dir, context),
+				target: {
+					subject: "this commit message",
+					text: prose,
+					surface: "commit",
+					enforcement: "deny",
+					titleLines: SUBJECT_LINES,
+				},
 			},
-		},
-	];
+		],
+		unread,
+	};
+}
+
+function stepTargets(
+	steps: readonly ShellStep[],
+	at: number,
+	context: Context,
+): ShellTargets {
+	const step = steps[at];
+	if (step === undefined) return NO_SHELL_TARGETS;
+	const read = stagedReader(steps, at);
+	switch (step.values[0]) {
+		case "gh": {
+			const found = ghTargets(step, read);
+			const settings = settingsNear(step.dir, context);
+			return {
+				checked: found.targets.map((target) => ({ target, settings })),
+				unread: found.unread,
+			};
+		}
+		case "git":
+			return commitTargets(step, read, context);
+		default:
+			return NO_SHELL_TARGETS;
+	}
 }
 
 function shellTargets(
 	command: string,
 	cwd: string,
 	context: Context,
-): readonly Checked[] {
-	if (!/\b(?:gh|git|cat|tee|echo|printf)\b/.test(command)) return [];
+): ShellTargets {
+	if (!/\b(?:gh|git|cat|tee|echo|printf)\b/.test(command))
+		return NO_SHELL_TARGETS;
 	const steps = shellSteps(command, cwd);
-	const tools = steps.flatMap((step) => {
-		switch (step.values[0]) {
-			case "gh":
-				return ghTargets(step).map((target) => ({
-					target,
-					settings: settingsNear(step.dir, context),
-				}));
-			case "git":
-				return commitTargets(step, context);
-			default:
-				return [];
-		}
-	});
-	return [
-		...tools,
-		...fileWrites(steps).flatMap((write) => writeTarget(write, context)),
-	];
+	const tools = steps.map((_step, at) => stepTargets(steps, at, context));
+	return {
+		checked: [
+			...tools.flatMap((found) => found.checked),
+			...fileWrites(steps).flatMap((write) => writeTarget(write, context)),
+		],
+		unread: tools.flatMap((found) => found.unread),
+	};
+}
+
+function unreadNote(body: UnreadBody): string {
+	return `could not read ${body.file} as this command leaves it, so astack judged the file on disk. Write the file in an earlier Bash call, or with cat, echo, printf or tee in a step that always runs.`;
+}
+
+function withUnread(run: Judged, unread: readonly UnreadBody[]): Judged {
+	if (unread.length === 0) return run;
+	return {
+		verdict: combine(run.verdict, note(unread.map(unreadNote).join("\n"))),
+		observed: [
+			...run.observed,
+			...unread.map((body) => ({
+				check: "ste" as const,
+				surface: body.surface,
+				rule: UNREAD_RULE,
+				fingerprint: fingerprint(UNREAD_RULE, body.surface),
+				shown: "advise" as const,
+			})),
+		],
+	};
 }
 
 function judgeTargets(targets: readonly Checked[], context: Context): Judged {
@@ -176,11 +247,10 @@ function judgeEvent(
 			);
 			return judgeTargets(checked ? [checked] : [], context);
 		}
-		case "shell":
-			return judgeTargets(
-				shellTargets(event.command, event.cwd, context),
-				context,
-			);
+		case "shell": {
+			const found = shellTargets(event.command, event.cwd, context);
+			return withUnread(judgeTargets(found.checked, context), found.unread);
+		}
 		case "mcp": {
 			const settings = settingsNear(projectDirOf(context), context);
 			return judgeTargets(
