@@ -64,6 +64,11 @@
 			"modelRefs": ["RunGit", "DenialNeedsLoss"]
 		},
 		{
+			"path": "src/astack/git.ts",
+			"obligation": "SG-session-repo-identity",
+			"modelRefs": ["Settle", "RunGit"]
+		},
+		{
 			"path": "src/astack/git-command.ts",
 			"obligation": "SG-stdin-source",
 			"modelRefs": ["RunGit"]

@@ -9,7 +9,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
-import { runGit } from "./git.ts";
+import { READ_ONLY_GIT, runGit } from "./git.ts";
 import { canonicalFile, readOptional } from "./paths.ts";
 import { err, ok, type Result } from "./result.ts";
 import { sessionFileName, stateDir } from "./state.ts";
@@ -187,7 +187,7 @@ const INDEX_CTIME = /^\s+ctime: (\d+):(\d+)$/gm;
 const REFLOG_TIME = /> (\d+) [+-]\d{4}\t?/;
 
 function oldestEntry(root: string, gitDir: string): string | undefined {
-	const listed = runGit(root, ["ls-files", "--debug"]);
+	const listed = runGit(root, [...READ_ONLY_GIT, "ls-files", "--debug"]);
 	if (!listed.ok) return "0";
 	const times = [...listed.stdout.toString("utf8").matchAll(INDEX_CTIME)].map(
 		([, seconds = "0", nanos = "0"]) =>
@@ -197,7 +197,10 @@ function oldestEntry(root: string, gitDir: string): string | undefined {
 	const first = reflog === undefined ? undefined : REFLOG_TIME.exec(reflog);
 	if (first?.[1] !== undefined)
 		times.push((BigInt(first[1]) + 1n) * NS_PER_SECOND - 1n);
-	else if (runGit(root, ["rev-parse", "--verify", "--quiet", "HEAD"]).ok)
+	else if (
+		runGit(root, [...READ_ONLY_GIT, "rev-parse", "--verify", "--quiet", "HEAD"])
+			.ok
+	)
 		times.push(0n);
 	return times.length === 0
 		? undefined

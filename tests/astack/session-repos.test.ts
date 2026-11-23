@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import {
+	existsSync,
 	mkdirSync,
 	mkdtempSync,
 	realpathSync,
@@ -14,6 +15,7 @@ import {
 	loadSessionRepos,
 	type MadeFacts,
 	type MadeProbe,
+	probeMadeRepo,
 	probeRepo,
 	type RepoIdentity,
 	type SessionRepos,
@@ -346,6 +348,21 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 		expect(seen?.commonDir).toBe(join(made, ".git"));
 		expect(seen?.identity.gitDir).toBe(join(made, ".git"));
 		expect(seen?.identity.inode).toMatch(/^\d+$/);
+	});
+
+	test("a probe of a made repo runs no fsmonitor command of the repo config", () => {
+		const made = join(root, "monitored");
+		const marker = join(root, "fsmonitor-ran");
+		const monitor = join(root, "monitor.sh");
+		writeFileSync(monitor, `#!/bin/sh\ntouch '${marker}'\n`, { mode: 0o755 });
+		spawnSync("git", ["init", "-q", made]);
+		spawnSync("git", ["config", "core.fsmonitor", monitor], { cwd: made });
+		writeFileSync(join(made, "a.txt"), "a\n");
+		spawnSync("git", ["-c", "core.fsmonitor=false", "add", "a.txt"], {
+			cwd: made,
+		});
+		expect(probeMadeRepo(made)?.root).toBe(made);
+		expect(existsSync(marker)).toBe(false);
 	});
 
 	test.each([

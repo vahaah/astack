@@ -1,7 +1,7 @@
 import { lstatSync, realpathSync, statSync } from "node:fs";
 import { basename, isAbsolute, join, relative, resolve } from "node:path";
 import { loadGateRecord, profileBlobs, sameProfile } from "../../gates.ts";
-import { repoRoot, runGit } from "../../git.ts";
+import { READ_ONLY_GIT, repoRoot, runGit } from "../../git.ts";
 import {
 	type GitInvocation,
 	type GitRead,
@@ -41,7 +41,6 @@ const SHARED_BRANCH =
 const RUNNERS = new Set(["npx", "bunx", "pnpx"]);
 const PACKAGE_MANAGERS = new Set(["npm", "pnpm", "yarn", "bun"]);
 const OWNER_GATE = "This is an owner gate, so stop and ask the owner.";
-const READ_ONLY_GIT = ["--no-optional-locks", "-c", "core.fsmonitor=false"];
 
 function denial(reasons: readonly string[]): Verdict {
 	return reasons.length === 0

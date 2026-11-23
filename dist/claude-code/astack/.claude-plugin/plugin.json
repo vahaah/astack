@@ -1,6 +1,6 @@
 {
 	"name": "astack",
-	"version": "0.3.0+19bf16196948",
+	"version": "0.3.0+81a9f2befced",
 	"description": "Plan, build, review and write, with hooks that check the work.",
 	"author": {
 		"name": "Alex Vakhitov"
