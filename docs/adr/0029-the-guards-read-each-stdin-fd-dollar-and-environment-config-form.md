@@ -69,6 +69,8 @@ An old record with no blob gives the owner gate.
 The destructive guard also reads Write and Edit calls.
 A Write or an Edit call into `<state>/gates/` gets a deny.
 So does a shell step with a static word or a redirect target in that folder. A plain read, such as `cat`, passes.
+The reads are `cat`, `cmp`, `diff`, `find`, `grep`, `head`, `jq`, `less`, `ls`, `stat`, `tail`, `wc` and the hash tools `md5`, `md5sum`, `sha1sum`, `sha256sum` and `shasum`.
+A `find` with `-delete`, an `-exec` form, an `-ok` form, an `-fprint` form or `-fls` is no read.
 
 ### D7. A `core.hooksPath` target must hold the active hooks
 

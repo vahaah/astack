@@ -886,6 +886,7 @@ describe("the gate record folder", () => {
 		["an &> redirect", () => shell(`echo '{}' &> ${gates}/x.json`, records)],
 		["an &>> redirect", () => shell(`echo '{}' &>> ${gates}/x.json`, records)],
 		["a cp with no git word", () => shell(`cp a.json ${gates}/`, records)],
+		["a find with -delete", () => shell(`find ${gates} -delete`, records)],
 		[
 			"a cp through a relative path",
 			() => shell("cp a.json ../gate-folder-state/gates/b.json", records),
@@ -900,12 +901,19 @@ describe("the gate record folder", () => {
 	);
 
 	test.each([
-		shell(`cat ${gates}/a.json`, records),
-		shell("astack gates run --base main", records),
-		shell(`echo '{}' > ${records}/b.json`, records),
+		["cat GATES/a.json"],
+		["find GATES -name '*.json'"],
+		["diff GATES/a.json GATES/a.json"],
+		["shasum -a 256 GATES/a.json"],
+		["astack gates run --base main"],
+		["echo '{}' > RECORDS/b.json"],
 	])(
-		"%p passes, because it only reads the gate record folder or does not name it",
-		(event) => {
+		"%s passes, because it only reads the gate record folder or does not name it",
+		(command) => {
+			const event = shell(
+				command.replaceAll("GATES", gates).replaceAll("RECORDS", records),
+				records,
+			);
 			expect(run(event).kind).toBe("allow");
 		},
 	);

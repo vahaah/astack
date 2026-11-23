@@ -1183,15 +1183,36 @@ function sessionRepoTest(
 
 const GATE_READERS = new Set([
 	"cat",
+	"cmp",
+	"diff",
+	"find",
 	"grep",
 	"head",
 	"jq",
 	"less",
 	"ls",
+	"md5",
+	"md5sum",
+	"sha1sum",
+	"sha256sum",
+	"shasum",
 	"stat",
 	"tail",
 	"wc",
 ]);
+const FIND_ACTIONS =
+	/^-(?:delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)$/;
+
+function readsOnly(step: ShellStep): boolean {
+	const [program, ...args] = step.words;
+	if (program === undefined || program.dynamic) return false;
+	const name = basename(program.value);
+	return (
+		GATE_READERS.has(name) &&
+		(name !== "find" ||
+			args.every((arg) => !arg.dynamic && !FIND_ACTIONS.test(arg.value)))
+	);
+}
 
 type RecordFolder = {
 	readonly path: string;
@@ -1246,11 +1267,7 @@ function recordFolderReasons(
 	env: Env,
 ): readonly string[] {
 	return steps.flatMap((step) => {
-		const program = step.words[0];
-		const reads =
-			program !== undefined &&
-			!program.dynamic &&
-			GATE_READERS.has(basename(program.value));
+		const reads = readsOnly(step);
 		return folders.flatMap((folder) => {
 			const there = (word: Word) =>
 				wordPaths(step, word, env).some((path) => inFolder(folder.path, path));
