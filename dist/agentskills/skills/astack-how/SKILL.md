@@ -3,7 +3,7 @@ name: "astack-how"
 description: "Explain how code works, its architecture, its owners, or where a change belongs. Use for walkthroughs and teaching requests. Use why for design reasons."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
   disable-model-invocation: "true"
 ---

@@ -3,7 +3,7 @@ name: "astack-diagnosing-bugs"
 description: "Diagnosis loop for hard bugs, flaky tests and performance regressions. Use when the user says \"diagnose\" or \"debug this\", or a bug or regression resists a first look. Not for questions about how code works."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 

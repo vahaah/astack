@@ -20,9 +20,9 @@ Before publication, use the portable bundle route in `docs/runbooks/install-grok
 The skills run the `astack` CLI. The bot can run it from the published package:
 
 ```sh
-bunx github:vahaah/astack#v0.3.0 --help
+bunx github:vahaah/astack#v0.4.0 --help
 ```
 
-Version: 0.3.0.
+Version: 0.4.0.
 
 Source: https://docs.x.ai/grok-bot/skills-routines-and-automations

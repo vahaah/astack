@@ -3,7 +3,7 @@ name: "astack-grilling"
 description: "Interview the user about a plan, decision or idea. Use when the user asks to grill or test their reasoning."
 license: "MIT"
 metadata:
-  astack-version: "0.3.0"
+  astack-version: "0.4.0"
   source: "astack"
 ---
 
