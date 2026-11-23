@@ -29,6 +29,7 @@ So each answer must come from the command text at PreToolUse.
 A file that no earlier step touches gives the disk text.
 A write that can skip gives an unread body with the disk text.
 A static write is a cat heredoc, an `echo`, a `printf` or a `tee` that `fileWrites` reads.
+A `cat` or a `tee` with a heredoc or a here-string that holds a variable or a substitution is not a static write.
 
 A write is certain when its pipeline starts an and-or list.
 A write is also certain when `&&` comes before it and only `&&` links it to the body step.

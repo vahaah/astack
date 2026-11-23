@@ -982,7 +982,10 @@ export function fileWrites(steps: readonly ShellStep[]): FileWrite[] {
 		if (name === "tee") {
 			const piped = step.simple.piped === true ? steps[index - 1] : undefined;
 			const fed = piped ? printedText(piped) : undefined;
-			const stdin = step.simple.stdin ?? fed;
+			const stdin =
+				step.simple.stdinDynamic === true
+					? undefined
+					: (step.simple.stdin ?? fed);
 			if (stdin === undefined) return [];
 			return teeTargets(step.words.slice(1)).map((write) => ({
 				step,

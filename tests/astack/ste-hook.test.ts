@@ -1104,6 +1104,10 @@ describe("a body file that the hook cannot read as the command leaves it", () =>
 		["a write in if", `if true; then printf '%s' x > body.md; fi\n${GH}`],
 		["a write in the body pipeline", `printf '%s' x | tee body.md | ${GH}`],
 		["a write in the background", `printf '%s' x > body.md &\n${GH}`],
+		[
+			"a tee with a dynamic heredoc",
+			`tee body.md > /dev/null <<EOF\n$(cat draft.md)\nEOF\n${GH}`,
+		],
 	] as const;
 
 	function inScratch(body: string, command: string, session: string): Run {
