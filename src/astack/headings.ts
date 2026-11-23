@@ -308,11 +308,9 @@ const EMAIL =
 const PLACEHOLDER_DOMAIN =
 	/(?:^|\.)(?:example\.(?:com|org|net)|test|invalid|localhost|noreply\.github\.com)$/i;
 
-function namesHost(domain: string): boolean {
-	return domain
-		.split(".")
-		.slice(0, -1)
-		.some((label) => /[A-Za-z]/.test(label));
+function isVersionForm(domain: string): boolean {
+	const labels = domain.split(".").slice(0, -1);
+	return labels.length >= 2 && labels.every((label) => /^\d+$/.test(label));
 }
 
 export function emailAddresses(text: string): string[] {
@@ -321,7 +319,7 @@ export function emailAddresses(text: string): string[] {
 		const local = match[1] ?? "";
 		const domain = match[2] ?? "";
 		if (
-			!namesHost(domain) ||
+			isVersionForm(domain) ||
 			PLACEHOLDER_DOMAIN.test(domain) ||
 			/^no-?reply\b/i.test(local)
 		)

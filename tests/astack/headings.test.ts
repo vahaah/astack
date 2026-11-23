@@ -126,6 +126,7 @@ describe("tickets", () => {
 		["Run `npx @scope/pkg@1.2.3.tgz` again.", []],
 		["typescript@5.4.2.md is the notes file.", []],
 		["Mail `jane@customer.dev` the log.", ["j***@customer.dev"]],
+		["Reported by li@163.com today.", ["l***@163.com"]],
 	])(
 		"[control:email-version-forms] %p gives the addresses %p",
 		(text, found) => {
