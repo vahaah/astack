@@ -31,7 +31,9 @@ The window counts the false findings first.
 A value import of `node:fs`, `node:child_process`, `node:net`, `node:http`, `node:https` or `node:os` gives its class.
 A read name of `node:fs` gives fs-read. A namespace import or another name also gives fs-write.
 `Bun.spawn`, a bare `fetch` call, `process.env`, `process.cwd`, `Date.now`, a bare `new Date()`, `performance.now`, `Math.random` and `crypto.randomUUID` give a class too.
+
 A string, a comment, `import type` and an import of a JSON file give none.
+An `import()` type, such as `import("node:fs").Stats`, gives none too.
 
 ### D3. The card rules use the classes through imports, and the change rule the own classes
 

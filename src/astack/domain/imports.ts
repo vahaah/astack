@@ -106,6 +106,12 @@ const PREFIXES = [
 	"~",
 ];
 
+const PROMISE_MEMBERS: ReadonlySet<string> = new Set([
+	"then",
+	"catch",
+	"finally",
+]);
+
 type Names = "all" | readonly string[];
 
 type Clause = {
@@ -280,6 +286,9 @@ function readImport(
 	if (is(next, "(")) {
 		const literal = unquote(tokens[at + 2]);
 		const closes = is(tokens[at + 3], ")") || is(tokens[at + 3], ",");
+		const member = is(tokens[at + 4], ".") ? tokens[at + 5]?.text : undefined;
+		if (closes && member !== undefined && !PROMISE_MEMBERS.has(member))
+			return at + 4;
 		if (literal !== undefined && closes)
 			addImport(draft, token.line, literal, "all");
 		else draft.unknown.push({ line: token.line, form: "import()" });

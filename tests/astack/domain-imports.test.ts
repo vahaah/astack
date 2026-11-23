@@ -50,6 +50,16 @@ describe("moduleFacts", () => {
 			'await import("node:child_process");',
 			["spawn"],
 		],
+		[
+			"a dynamic import with then",
+			'import("node:net").then((net) => net.connect(1));',
+			["network"],
+		],
+		[
+			"an import type in a type position",
+			'let stats: import("node:fs").Stats | undefined;',
+			[],
+		],
 		["node:net", 'import { connect } from "node:net";', ["network"]],
 		["node:http", 'import { get } from "node:http";', ["network"]],
 		["node:https", 'import { request } from "node:https";', ["network"]],
