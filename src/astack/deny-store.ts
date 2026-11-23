@@ -25,7 +25,7 @@ export function denyStore(env: Env): DenyStore {
 		: { kind: "none" };
 }
 
-function stop(path: string, error: unknown): DenyListStop {
+function listStop(path: string, error: unknown): DenyListStop {
 	return {
 		path,
 		message: error instanceof Error ? error.message : String(error),
@@ -43,7 +43,7 @@ export function readDenyList(store: DenyStore): Result<DenyList, DenyListStop> {
 	try {
 		text = readFileSync(path, "utf8");
 	} catch (error) {
-		return isMissing(error) ? ok(NO_LIST) : err(stop(path, error));
+		return isMissing(error) ? ok(NO_LIST) : err(listStop(path, error));
 	}
 	const parsed = parseHashList(text);
 	return parsed.errors.length > 0
@@ -64,6 +64,6 @@ export function writeDenyList(
 		renameSync(temporary, path);
 		return ok(undefined);
 	} catch (error) {
-		return err(stop(path, error));
+		return err(listStop(path, error));
 	}
 }
