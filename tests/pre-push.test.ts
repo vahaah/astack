@@ -12,8 +12,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { exampleCompanionRoot } from "../scripts/lib/companion.ts";
 import { cleanEnv } from "../scripts/lib/exec.ts";
-import { sha256 } from "../src/astack/deny-list.ts";
 import { repoRoot } from "../scripts/lib/projects.ts";
+import { sha256 } from "../src/astack/deny-list.ts";
 import { envWithoutCompanion } from "./child-env.ts";
 
 const backwards = (text: string): string => [...text].reverse().join("");
