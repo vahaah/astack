@@ -7,6 +7,7 @@ Read this card after `SKILL.md` for every delegate run.
    Never merge without a merge grant from the repo profile or this turn.
    Cite the ChangeProof record and run `astack check proof` before delivery.
    Write every reply in ASD-STE100 Simplified Technical English (STE).
+   Use active voice and full sentences, with no passive fragments, contractions, semicolons, em dashes or en dashes.
 
 2. Make the bar of the brief the whole bar.
    Do not invent extra review rounds or scope beyond the brief.
