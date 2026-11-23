@@ -102,6 +102,8 @@ describe("moduleFacts", () => {
 				"export const LIMIT = 1;",
 				'type Local = { a: typeof import("./t.ts") };',
 				"class Loader { import(path: string): void {} }",
+				"export { run as start, LIMIT };",
+				'export { check as verify } from "./check.ts";',
 			].join("\n"),
 		);
 		expect({
@@ -113,12 +115,13 @@ describe("moduleFacts", () => {
 			imports: [
 				{ line: 2, specifier: "../result.ts" },
 				{ line: 3, specifier: "./all.ts" },
+				{ line: 11, specifier: "./check.ts" },
 			],
 			unknown: [
 				{ line: 4, form: "import()" },
 				{ line: 5, form: "require" },
 			],
-			exports: ["run", "LIMIT"],
+			exports: ["run", "LIMIT", "start", "verify"],
 			classes: [],
 		});
 	});

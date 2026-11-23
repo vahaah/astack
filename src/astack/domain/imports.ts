@@ -168,12 +168,21 @@ function namesProperty(tokens: readonly Token[], at: number): boolean {
 	return is(after, "{") || (is(after, ":") && !operand);
 }
 
-function namedList(
-	tokens: readonly Token[],
-	open: number,
-): { readonly names: string[]; readonly typed: number; readonly end: number } {
+function nameOf(token: Token): string {
+	return token.kind === "string" ? (unquote(token) ?? "") : token.text;
+}
+
+type NamedList = {
+	readonly names: string[];
+	readonly aliases: string[];
+	readonly typed: number;
+	readonly end: number;
+};
+
+function namedList(tokens: readonly Token[], open: number): NamedList {
 	const end = closeOf(tokens, open);
 	const names: string[] = [];
+	const aliases: string[] = [];
 	let typed = 0;
 	let start = true;
 	for (let at = open + 1; at < end; at++) {
@@ -195,9 +204,11 @@ function namedList(
 			typed++;
 			continue;
 		}
-		names.push(token.kind === "string" ? (unquote(token) ?? "") : token.text);
+		names.push(nameOf(token));
+		const alias = is(after, "as") ? tokens[at + 2] : undefined;
+		aliases.push(nameOf(alias ?? token));
 	}
-	return { names, typed, end };
+	return { names, aliases, typed, end };
 }
 
 function fromClause(tokens: readonly Token[], at: number): Clause {
@@ -325,13 +336,13 @@ function readExport(
 	if (is(next, "{")) {
 		const list = namedList(tokens, at + 1);
 		const source = tokens[list.end + 2];
+		draft.exports.push(...list.aliases);
 		if (is(tokens[list.end + 1], "from") && source?.kind === "string") {
 			const specifier = unquote(source) ?? "";
 			if (list.names.length > 0)
 				addImport(draft, token.line, specifier, list.names);
 			return list.end + 3;
 		}
-		draft.exports.push(...list.names);
 		return list.end + 1;
 	}
 	if (is(next, "default")) {
