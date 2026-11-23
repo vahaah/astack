@@ -19,7 +19,7 @@ let count = 0;
 
 let template: Template | undefined;
 
-function pullRequest(base: Files, head: Files): string {
+function pullRequest(base: Files, head: Files, mainMoves?: Files): string {
 	count += 1;
 	template ??= buildTemplate(
 		{
@@ -33,6 +33,9 @@ function pullRequest(base: Files, head: Files): string {
 		commits: [
 			{ branch: "main", files: base },
 			{ branch: "pr", from: "main", files: head },
+			...(mainMoves === undefined
+				? []
+				: [{ branch: "main", files: mainMoves }]),
 		],
 		checkout: "pr",
 	}).root;
@@ -89,6 +92,8 @@ const stop =
 	"stop: only CI can prove this PR, for the reason in each line above\n";
 const ciProof =
 	"ci_proof: the PR changes CI and no tool version that CI sets up, so only CI on the head of the PR can prove it\n";
+const ciMixed =
+	"ci_mixed: the PR changes CI and another file and no tool version that CI sets up, so each gate blocks and CI on the head of the PR must pass\n";
 const fromCheck = (line: number) =>
 	`from the bun-version-file of oven-sh/setup-bun at .github/workflows/check.yml:${line}`;
 
@@ -743,28 +748,67 @@ describe("a PR that changes CI and no tool version runs in mode ci_proof", () =>
 		);
 	});
 
-	test("a PR that changes CI and a file outside CI exits 1, because a red gate can then come from that file and not from CI", () => {
+	const alsoA =
+		"src/a.ts: the PR also changes this file, which is not a CI file, so the run cannot go on in mode ci_proof.";
+	const withA = (files: Files, a: string): Files => ({
+		...files,
+		"src/a.ts": `export const a = ${a};\n`,
+	});
+	const mainFiles = withA(
+		{ [CHECK]: workflow(bunAndCli), "package.json": manifest(bun142) },
+		"1",
+	);
+	const sameSetup = `${CHECK}#static: CI sets up runner ubuntu-latest, bun 1.4.2 (oven-sh/setup-bun@v2), supabase 2.117.0 (supabase/setup-cli@v1) at the base and at the head.`;
+
+	test("[control:ci-mixed-mode] a PR that changes a workflow and src/a.ts and no tool version exits 3 in mode ci_mixed, so each gate blocks", () => {
 		expect(
-			run(
-				{
-					[CHECK]: workflow(bunAndCli),
-					"package.json": manifest(bun142),
-					"src/a.ts": "export const a = 1;\n",
-				},
-				{
-					[CHECK]: strict(workflow(bunAndCli)),
-					"src/a.ts": "export const a = 2;\n",
-				},
-			),
-		).toEqual(
-			exits(
-				1,
+			run(mainFiles, withA({ [CHECK]: strict(workflow(bunAndCli)) }, "2")),
+		).toEqual({
+			code: 3,
+			out: [changesCi, sameBun, alsoA, sameSetup, ciMixed].join("\n"),
+			err: "",
+		});
+	});
+
+	test.each([
+		[
+			"a tool version",
+			{ [CHECK]: workflow(bunAndCli.replace("2.117.0", "2.118.0")) },
+			undefined,
+			[
 				changesCi,
 				sameBun,
-				"src/a.ts: the PR also changes this file, which is not a CI file, so the run cannot go on in mode ci_proof.",
-			),
-		);
-	});
+				alsoA,
+				`${CHECK}#static: CI sets up runner ubuntu-latest, bun 1.4.2 (oven-sh/setup-bun@v2), supabase 2.117.0 (supabase/setup-cli@v1) at the base and runner ubuntu-latest, bun 1.4.2 (oven-sh/setup-bun@v2), supabase 2.118.0 (supabase/setup-cli@v1) at the head, so the PR changes a tool version.`,
+			],
+		],
+		[
+			"the version in a version file",
+			{
+				[CHECK]: strict(workflow(bunAndCli)),
+				"package.json": manifest({ packageManager: "bun@1.4.3" }),
+			},
+			undefined,
+			[changesCi, packageJson("1.4.2", "1.4.3", "The version changes.")],
+		],
+		[
+			"CI on a base that moves after the merge base",
+			{ [CHECK]: strict(workflow(bunAndCli)) },
+			{ [CHECK]: `${workflow(bunAndCli)}      - run: bun test\n` },
+			[
+				changesCi,
+				sameBun,
+				`main moves after the merge base, and a pull_request run tests the merge: ${changesCi}`,
+			],
+		],
+	] as const)(
+		"[control:ci-mixed-stops] a PR that changes a workflow and src/a.ts exits 1 when it also changes %s",
+		(_, head, mainMoves, lines) => {
+			expect(
+				ciPins(pullRequest(mainFiles, withA(head, "2"), mainMoves)),
+			).toEqual(exits(1, ...lines));
+		},
+	);
 
 	test("a PR that changes a workflow and the bun pin in package.json exits 1, because a tool version that CI reads from a file changes", () => {
 		expect(

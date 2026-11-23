@@ -13,11 +13,12 @@ context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr
 context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/deny-*.ts, src/astack/outbound.ts, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
 context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
 context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
-context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
+context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/review-record.ts, src/astack/review-store.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
 context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/cli/commands/check/index.ts, src/astack/codex-hooks.ts, src/astack/codex-trust.ts, src/astack/commit-style.ts, src/astack/doctor.ts, src/astack/hook-profile.ts, src/astack/init.ts, src/astack/managed.ts, src/astack/marketplace.ts, src/astack/profile.ts, src/astack/public-repo.ts, src/astack/repo-facts.ts, src/astack/rules.ts, src/astack/skill-path.ts
 cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
 cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write), loadFullStop(read), saveFullStop(write)
 cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
+cap  ReviewStore [fs-read, fs-write] @ src/astack/review-store.ts: loadRecord(read), saveRecord(write)
 cap  DenyStore [fs-read, fs-write] @ src/astack/deny-store.ts: readDenyList(read), writeDenyList(write)
 cap  SessionStore [fs-read, fs-write] @ src/astack/pr/session-prs.ts: loadSessionPrs(read), saveSessionPrs(write)
 pure src/astack/domain/notation.ts
@@ -28,6 +29,7 @@ pure src/astack/domain/imports.ts
 pure src/astack/domain/effects.ts
 pure src/astack/domain/effect-change.ts
 pure src/astack/pr/grant.ts
+pure src/astack/review-record.ts
 pure src/astack/deny-list.ts
 pure src/astack/outbound.ts
 pure src/astack/pr/split.ts
@@ -154,6 +156,27 @@ _Code_: `tests/astack/model-audit.test.ts`
 A bounded review whose ledger owns findings, recurrence, and iteration use.
 Its fixed growth record survives resumes and later runs.
 _Avoid_: Proof admission
+
+### Review record
+
+The one record of a PR at `pr-review-hardening/<branch>.review.json` in the git common dir.
+It keeps `baseSha` and `firstReviewedHead`, and each reviewed head joins the end with its stop decision and its reviewer launches.
+_Avoid_: Growth file, review log
+_Code_: `src/astack/review-record.ts`
+
+### Delta review
+
+A hardening run whose reviewers get only the diff from the last `stop_clean` head of the review record that HEAD holds.
+The run keeps the ledger, the comment gate and each gate.
+_Avoid_: Partial review, quick review
+_Code_: `deltaBase`
+
+### Mixed CI mode
+
+The mode `ci_mixed` of a hardening run whose PR changes CI and another file with the same tool versions.
+Each gate blocks, and a clean stop needs the CI read-back.
+_Avoid_: CI proof mode
+_Code_: `ciMode`
 
 ### Effective decision
 

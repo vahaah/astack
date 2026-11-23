@@ -1,7 +1,10 @@
 {
 	"version": 1,
 	"specs": ["formal/ci-proof-records.md"],
-	"tests": ["tests/astack/ci-proof-records.test.ts"],
+	"tests": [
+		"tests/astack/ci-proof-records.test.ts",
+		"tests/astack/ci-pins.test.ts"
+	],
 	"links": [
 		{
 			"criterion": "ci-proof-records",
@@ -21,7 +24,9 @@
 				"ci-proof-committed-inputs",
 				"ci-proof-per-change",
 				"ci-proof-two-manifests",
-				"ci-proof-merged-manifest"
+				"ci-proof-merged-manifest",
+				"ci-mixed-mode",
+				"ci-mixed-stops"
 			]
 		}
 	]

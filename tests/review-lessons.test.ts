@@ -123,14 +123,36 @@ const unguardedClasses = (lessons: Lessons): string[] =>
 			),
 	);
 
+const QUESTIONS = "Questions for astack changes";
+
 const checklistItems = (text: string): string[] =>
 	[...text.matchAll(/^### (.+)$/gm)].map((match) => match[1] ?? "");
 
-const classesWithoutItem = (lessons: Lessons, items: readonly string[]) =>
-	lessons.classes.filter((classId) => !items.includes(classId));
+const areas = (text: string): string[] =>
+	[...text.matchAll(/^## (.+)$/gm)].map((match) => match[1] ?? "");
 
-const itemsWithoutClass = (lessons: Lessons, items: readonly string[]) =>
-	items.filter((item) => !lessons.classes.includes(item));
+function sectionText(text: string, heading: string): string {
+	const start = text.indexOf(`\n## ${heading}\n`);
+	if (start === -1) return "";
+	const end = text.indexOf("\n## ", start + 1);
+	return text.slice(start, end === -1 ? undefined : end);
+}
+
+function questionGaps(
+	lessons: Lessons,
+	homes: readonly (readonly string[])[],
+): string[] {
+	const items = homes.flat();
+	return [
+		...lessons.classes.flatMap((classId) => {
+			const count = items.filter((item) => item === classId).length;
+			return count === 1 ? [] : [`${classId}: ${count} questions`];
+		}),
+		...items
+			.filter((item) => !lessons.classes.includes(item))
+			.map((item) => `${item}: no class`),
+	];
+}
 
 const COUNT_PHRASE =
 	/\b(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(?:review\s+)?(?:findings|rounds|classes)\b/gi;
@@ -206,13 +228,21 @@ describe("the checks of the review lessons find each broken row", () => {
 		expect(unguardedClasses(sample)).toEqual(["pinned-only"]);
 	});
 
-	test("the checklist and the classes table must name the same classes", () => {
-		const items = checklistItems("# List\n\n### guarded\n\n### stale-item\n");
-		expect(classesWithoutItem(sample, items)).toEqual([
-			"pinned-only",
-			"counted",
+	test("a class with a question in both homes or in neither, and a question with no class, are gaps", () => {
+		const engineItems = checklistItems(
+			"# List\n\n### guarded\n\n### stale-item\n",
+		);
+		const astackItems = checklistItems(
+			sectionText(
+				`# Doc\n\n## ${QUESTIONS}\n\n### guarded\n\n### pinned-only\n\n## Next\n\n### counted\n`,
+				QUESTIONS,
+			),
+		);
+		expect(questionGaps(sample, [engineItems, astackItems])).toEqual([
+			"guarded: 2 questions",
+			"counted: 0 questions",
+			"stale-item: no class",
 		]);
-		expect(itemsWithoutClass(sample, items)).toEqual(["stale-item"]);
 	});
 
 	test("a count of rounds or findings in the prose is a gap, and a number in a table row is not", () => {
@@ -239,12 +269,22 @@ describe("the checks of the review lessons find each broken row", () => {
 
 describe(lessonsPath, () => {
 	const lessons = parseLessons(read(lessonsPath));
-	const items = checklistItems(read(checklistPath));
+	const engineItems = checklistItems(read(checklistPath));
+	const astackItems = checklistItems(sectionText(read(lessonsPath), QUESTIONS));
 
-	test("the parser reads the classes table", () => {
+	test("the parser reads the classes table and both homes of the questions", () => {
 		expect(lessons.classes).toContain("review-target-identity");
-		expect(items).toContain("review-target-identity");
+		expect(engineItems).toContain("ci-job-coverage");
+		expect(astackItems).toContain("review-target-identity");
 		expect(lessons.problems).toEqual([]);
+	});
+
+	test("the review checklist of the engine keeps only the areas that a product repo PR changes", () => {
+		expect(areas(read(checklistPath))).toEqual([
+			"Use it",
+			"Gates of a profile",
+			"CI parity",
+		]);
 	});
 
 	test("each guard file exists and holds each part of its locator", () => {
@@ -259,12 +299,8 @@ describe(lessonsPath, () => {
 		expect(unguardedClasses(lessons)).toEqual([]);
 	});
 
-	test("each class has an item in the review checklist of the engine", () => {
-		expect(classesWithoutItem(lessons, items)).toEqual([]);
-	});
-
-	test("each item of the review checklist names a class of the doc", () => {
-		expect(itemsWithoutClass(lessons, items)).toEqual([]);
+	test("each class has one question in the review checklist of the engine or in the questions for astack changes, and each question names a class", () => {
+		expect(questionGaps(lessons, [engineItems, astackItems])).toEqual([]);
 	});
 
 	test("the prose states no count of findings, rounds or classes, because the next row makes it false", () => {

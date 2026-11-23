@@ -7,7 +7,8 @@ They do not replace tests, static checks, or verification of the user's journey.
 
 Record the merge base and head immediately before the first review.
 Keep their full commit SHAs across resumes and later runs.
-The hardening protocol stores them in its fixed first-review record beside the findings ledger.
+The hardening protocol stores them with `astack review record` in the review record beside the findings ledger.
+`astack review base` prints them, and its last line names a delta run or a full run.
 
 ```sh
 astack check review-growth --base <base-sha> --first-reviewed <first-reviewed-sha> --head HEAD

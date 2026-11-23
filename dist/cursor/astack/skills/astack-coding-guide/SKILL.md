@@ -100,7 +100,7 @@ Where a step says to ask or show the user, it reports to the root that spawned i
    Then act on the stop:
    - `stop_clean` continues to step 8.
      The stop counts while the PR's `git patch-id` stays the same.
-     A later fix commit, such as a babysitting or verification fix, needs another run before the merge.
+     A later fix commit needs a delta run before the merge, which reviews only the later commits.
    - For an `out-of-scope` finding, fix it yourself in a new commit.
      Then run hardening again.
      For example, its fix needs a migration or a file that the finding does not name.

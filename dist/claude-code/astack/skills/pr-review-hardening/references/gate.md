@@ -105,9 +105,13 @@ The gate is green when all of these hold:
 
 A red gate is a finding `G<n>.<k>` when the failure is in a file that the PR changed. It is also a finding when the same command is green on the base branch. Name the files in the failure output. Otherwise it is a pre-existing red. List it, and never fix it. The run cannot stop clean while it stays red.
 
-In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red. The required current proof gate stays blocking. No attribution makes a failed proof advisory. The proof names the changed line of the CI diff that the gate does not mirror. It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0. The run gives the command what the changed line gives, such as an `env` value. When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change. Then stop with principled incompletion, and name the step.
+In mode `ci_proof`, a red gate is advisory when the run shows that the CI change of the PR makes it red. The required current proof gate stays blocking. No attribution makes a failed proof advisory. The proof names the changed line of the CI diff that the gate does not mirror. It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0. The run gives the command what the changed line gives, such as an `env` value.
 
 Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof. Each other red gate blocks, as in the mode `standard`. CI on `PR_HEAD` still gates the merge.
+
+In mode `ci_mixed`, the PR also changes a file outside CI, so a red gate can come from that file. No gate of that mode is advisory, and each red gate blocks.
+
+In mode `ci_proof` or `ci_mixed`, a PR can remove a CI step that runs a gate command. The gates then no longer mirror CI, so the profile must change. Stop with principled incompletion, and name the step.
 
 ## Iteration output
 
@@ -150,15 +154,18 @@ commentGateFindings:
 gateFindings:
 gitStatusChangedByGate:
 diffFiles:
+reviewRange:
+reviewerLaunches:
 reviewedHead:
 headSha:
 prHead:
-mode: standard | ci_proof
-ciReadBack: pass | fail | not_run
-decision: continue | stop_clean | stop_recurring | stop_principled_incompletion
+mode: standard | ci_proof | ci_mixed
+ciReadBack:
+deferredFindings:
+decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion
 ```
 
-`blockingReviewerFindings` is the number of blocking reviewer and checklist findings of the iteration. `commentGateFindings` is the number of its findings `C<n>.<k>`, and `gateFindings` is the number of its findings `G<n>.<k>`. `gitStatusChangedByGate` is true when `GIT_STATUS_AFTER_GATE` shows a tracked file that the restore did not restore. `diffFiles` is the number of paths that `git diff --name-only --no-renames <BASE_SHA>...HEAD` prints after the last gate run. A clean stop needs a value above 0. `reviewedHead` is the `REVIEWED_HEAD` of the review step. `headSha` is the output of `git rev-parse HEAD` after the last gate run. A clean stop needs the two values to be equal. `prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`. `mode` is the mode of the last CI check of the run. It is `ci_proof` when that check exits 3 with a last line that starts with `ci_proof:`, and `standard` otherwise. A clean stop in mode `ci_proof` needs it to show `ci_proof`, so the final report names the mode. `ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back. A clean stop in mode `ci_proof` needs `pass`.
+`blockingReviewerFindings` is the number of blocking reviewer and checklist findings of the iteration. `commentGateFindings` is the number of its findings `C<n>.<k>`, and `gateFindings` is the number of its findings `G<n>.<k>`. `deferredFindings` is the number of open `deferred` entries of the ledger. `gitStatusChangedByGate` is true when `GIT_STATUS_AFTER_GATE` shows a tracked file that the restore did not restore. `diffFiles` is the number of paths that `git diff --name-only --no-renames <BASE_SHA>...HEAD` prints after the last gate run. A clean stop needs a value above 0. `reviewRange` is the range that the reviewers got, `<BASE_SHA>...<HEAD>` in a full run or `<DELTA_SHA>..<HEAD>` in a delta run. A converge iteration gives `<prior REVIEWED_HEAD>..<HEAD>`. `reviewerLaunches` is the number of reviewers that the iteration launched, the extra reviewers included. `reviewedHead` is the `REVIEWED_HEAD` of the review step. `headSha` is the output of `git rev-parse HEAD` after the last gate run. A clean stop needs the two values to be equal. `prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`. `mode` is the mode of the last CI check of the run. It is `ci_proof` or `ci_mixed` when that check exits 3 with a last line that starts with that mode and a colon, and `standard` otherwise. A clean stop in mode `ci_proof` or `ci_mixed` needs it to show that mode, so the final report names the mode. `ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back. A clean stop in mode `ci_proof` or `ci_mixed` needs `pass`.
 
 ## PR comment
 
@@ -176,7 +183,7 @@ When the profile asks for this comment, the comment is the proof a merge relies 
 
 ## CI read-back
 
-In mode `ci_proof`, the gates mirror the CI of the base, and the PR changes CI. So the review proves the code, and only CI proves the CI change. In that mode, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass. Read `gh pr view <n> --json headRefOid`, then `gh pr checks <n> --required --json name,state,bucket,event,workflow,link`, then `headRefOid` again. The read-back passes when each of these holds:
+In mode `ci_proof` or `ci_mixed`, the gates mirror the CI of the base, and the PR changes CI. So the review and the gates prove the code, and only CI proves the CI change. In both modes, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass. Read `gh pr view <n> --json headRefOid`, then `gh pr checks <n> --required --json name,state,bucket,event,workflow,link`, then `headRefOid` again. The read-back passes when each of these holds:
 
 - both reads of `headRefOid` give `PR_HEAD`;
 - the list holds at least one required check;
@@ -186,7 +193,7 @@ A `pull_request` run takes its workflows from the merge of the PR head into the 
 
 ## Unclean stop
 
-When the run ends in `stop_recurring` or `stop_principled_incompletion` and `proof.on_unclean` is set:
+When the run ends in `stop_converged`, `stop_recurring` or `stop_principled_incompletion` and `proof.on_unclean` is set:
 
 - if `draft` is true, return the PR to draft with `gh pr ready <n> --undo`;
 - if `label` is set, add it, creating it first with `gh label create` if it is missing;
@@ -194,7 +201,7 @@ When the run ends in `stop_recurring` or `stop_principled_incompletion` and `pro
 
 ## Final report
 
-1. How the run stopped: clean, recurrence or principled incompletion, and why. Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof, and the result of the CI read-back.
+1. How the run stopped: clean, converged, recurrence or principled incompletion, and why. Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof. In mode `ci_proof` or `ci_mixed`, also the result of the CI read-back.
 2. Findings fixed, by id.
 3. Real bugs found.
 4. Type-only changes.
@@ -217,5 +224,5 @@ When the run ends in `stop_recurring` or `stop_principled_incompletion` and `pro
 A `/goal` condition is judged from the transcript. Build it from the profile:
 
 ```text
-/goal Run /astack:pr-review-hardening <base> until a transcript-visible GATE_SUMMARY shows decision stop_clean after at least <iterations.min> iterations. It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof. It shows zero blocking reviewer, comment-gate and gate findings, gitStatusChangedByGate false, diffFiles above 0, reviewedHead equal to headSha, and prHead equal to headSha or none. If metrics ran, that GATE_SUMMARY also shows METRICS_EXIT 0 and every never_increase key no higher than the previous iteration. If the CI check gave mode ci_proof, that GATE_SUMMARY also shows mode ci_proof and ciReadBack pass. Also stop on stop_recurring or stop_principled_incompletion, with the reason printed.
+/goal Run /astack:pr-review-hardening <base> until a transcript-visible GATE_SUMMARY shows decision stop_clean after at least <iterations.min> iterations. It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof. It shows zero blocking reviewer, comment-gate and gate findings, and deferredFindings 0. It shows gitStatusChangedByGate false, diffFiles above 0, reviewedHead equal to headSha, and prHead equal to headSha or none. It shows reviewerLaunches above 0, or an empty reviewRange. If metrics ran, that GATE_SUMMARY also shows METRICS_EXIT 0 and every never_increase key no higher than the previous iteration. If the CI check gave mode ci_proof or ci_mixed, that GATE_SUMMARY also shows that mode and ciReadBack pass. Also stop on stop_converged, stop_recurring or stop_principled_incompletion, with the reason printed. No merge follows stop_converged.
 ```

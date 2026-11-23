@@ -21,7 +21,7 @@
 - `scripts/` holds the build, apply, validate, dist and neutrality scripts, and `scripts/skill-load-report.ts`, which prints source load sets. `docs/runbooks/skill-load-measurement.md` names its limits. `scripts/dist/` holds the per-tool renderers and their checks.
 - `dist/` holds the generated install builds, with one folder per tool. The public source root points to them through generated marketplace manifests.
 - `tests/` holds unit tests and synthetic fixtures. `tests/fixtures/hook-input/` holds synthetic hook payloads with the shapes that Claude Code sends.
-- `docs/` holds the design. `docs/review-lessons.md` records each class of review finding with its rule and its guards. `tests/review-lessons.test.ts` compares it with the guard files and with the review checklist of the engine, `references/checklist.md`.
+- `docs/` holds the design. `docs/review-lessons.md` records each class of review finding with its rule and its guards. Its section `Questions for astack changes` holds the questions of the classes that only an astack change can show. The Standards axis of `astack:code-review` asks each such question whose area the diff changes. `tests/review-lessons.test.ts` compares the doc with the guard files, with that section and with the review checklist of the engine, `references/checklist.md`.
 
 ## Add a hook handler or a CLI command
 

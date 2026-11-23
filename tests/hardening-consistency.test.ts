@@ -1607,11 +1607,11 @@ describe("a PR that changes CI", () => {
 			sectionLines(ciPins, "What each exit code means").join(" "),
 		);
 	const ciCheck = [
-		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest. The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base. Each record must be non-executable UTF-8 Markdown with all required sections and references. Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs. Changed models, controls, authority, and all other non-CI files still stop the run. These records grant no proof result. The current proof gate stays blocking in every mode. A file outside CI and this checked proof metadata stops the run, because a red gate can come from that file. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
-		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
+		"`astack check ci-pins --base <BASE_SHA>`, and print its output and its exit code. It exits 3 when the diff changes only paths under `.github/workflows/` or `.github/actions/`, or in the folder of a local action that a workflow uses. For exit 3, each tool version that CI sets up stays the same, and the last line starts with `ci_proof:`. The check reads the tools of the setup steps, the runner, the container and service images and the ref of a remote reusable workflow. It does not read a tool that a `run` step or a script installs, so the review examines such a change. Exit 3 also permits the manifest that `check proof --base` reads, its declared `ratification.proofRecord` files under `formal/` and each deleted manifest. The committed manifest must pass the full schema, and its base must be an ancestor of the actual merge base. Each record must be non-executable UTF-8 Markdown with all required sections and references. Records cannot also supply ADRs, glossary, implementation, witness, matrix, model, or negative inputs. These records grant no proof result. The current proof gate stays blocking in every mode. For exit 3 with another changed file or a failed proof record, the last line starts with `ci_mixed:`. A red gate can then come from that file, so each gate blocks. A version file is a file that a workflow or an action names in a `-version-file` input. The check exits 1 when the diff changes a version file and the version that the setup action reads from it changes. It also exits 1 when it cannot read an exact version from a version file at `BASE_SHA` or at `HEAD`. It also exits 1 when the diff changes CI and a tool version that CI sets up, or when it cannot read such a version.",
+		"When it exits 0 and its last line starts with `ok:`, the run goes on. When it exits 3 and its last line starts with `ci_proof:`, the run goes on in mode `ci_proof`. When it exits 3 and its last line starts with `ci_mixed:`, the run goes on in mode `ci_mixed`. Otherwise stop with principled incompletion. With no node and no bun, the launcher prints a note and exits 0, so the exit code alone is not a pass.",
 		"Another change to a version file, such as a new dependency in `package.json`, gets the gates of the run.",
 		"The gates mirror the CI that astack apply read, and CI runs the workflows of the PR, so only CI can prove a CI change.",
-		"In mode `ci_proof`, the run reviews, fixes and gates the PR as usual.",
+		"In mode `ci_proof` or `ci_mixed`, the run reviews, fixes and gates the PR as usual.",
 	];
 	const recorded =
 		"It records the mode in the ledger, in each `GATE_SUMMARY` and in each PR comment.";
@@ -1661,7 +1661,7 @@ describe("a PR that changes CI", () => {
 			"## The ledger",
 		);
 		for (const sentence of [
-			"in mode `ci_proof`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs.",
+			"in mode `ci_proof` or `ci_mixed`, that the gates mirror the CI of the base, so only the review examines the CI files before CI runs.",
 			"`astack check ci-pins` does not read a tool that a `run` step or a script installs, so a change to such an install is a blocking finding;",
 		])
 			expect(review).toContain(sentence);
@@ -1675,7 +1675,7 @@ describe("a PR that changes CI", () => {
 				"## Review-bot threads",
 			),
 		).toContain(
-			"The ledger also holds `mode`, the mode of the last CI check of the run, `standard` or `ci_proof`.",
+			"The ledger also holds `mode`, the mode of the last CI check of the run, `standard`, `ci_proof` or `ci_mixed`.",
 		);
 		expect(gate).toContain(
 			"- the mode, and each advisory gate of mode `ci_proof` with its proof;",
@@ -1690,8 +1690,6 @@ describe("a PR that changes CI", () => {
 		"The proof names the changed line of the CI diff that the gate does not mirror.",
 		"It also holds a run of the gate command as the CI of the PR runs it, and that run exits 0.",
 		"The run gives the command what the changed line gives, such as an `env` value.",
-		"When the PR removes a CI step that runs a gate command, the gates no longer mirror CI, so the profile must change.",
-		"Then stop with principled incompletion, and name the step.",
 		"Print the gate as `<NAME>_EXIT=<code> ADVISORY_CI_PROOF`, with the proof.",
 		"Each other red gate blocks, as in the mode `standard`.",
 		"CI on `PR_HEAD` still gates the merge.",
@@ -1741,7 +1739,7 @@ describe("a PR that changes CI", () => {
 
 	test("a clean stop of mode ci_proof needs a CI read-back that passes, whatever merge.after_clean_stop says, and the /goal ties ADVISORY_CI_PROOF to that mode", () => {
 		expect(sentencesFrom(gate, "## CI read-back", "## Unclean stop")).toContain(
-			"In that mode, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass.",
+			"In both modes, do the read-back after the push of the decision step of each iteration that is clean otherwise, and again before a merge. A clean stop and a merge each need it to pass.",
 		);
 		expect(sentencesFrom(gate, "## CI read-back", "## Unclean stop")).toContain(
 			"A run without a PR has no CI run to read, so its `ciReadBack` is `not_run`, and it stops with principled incompletion.",
@@ -1753,7 +1751,7 @@ describe("a PR that changes CI", () => {
 				"## Draft a profile",
 			),
 		).toContain(
-			"In mode `ci_proof`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge, whatever `after_clean_stop` and `conditions` say.",
+			"In mode `ci_proof` or `ci_mixed`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge. This holds whatever `after_clean_stop` and `conditions` say.",
 		);
 		expect(paragraphStarting(gate, "/goal Run")).toContain(
 			"It shows every gate exit 0, or ADVISORY_CI_PROOF only in mode ci_proof.",
@@ -1768,7 +1766,7 @@ describe("a PR that changes CI", () => {
 			"When a condition fails, the read-back fails. Then never merge, and stop with principled incompletion.",
 		);
 		expect(paragraphStarting(gate, "1. How the run stopped:")).toContain(
-			"Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof, and the result of the CI read-back.",
+			"Also the mode of the run. In mode `ci_proof`, also each advisory gate with its proof. In mode `ci_proof` or `ci_mixed`, also the result of the CI read-back.",
 		);
 	});
 
@@ -1776,7 +1774,7 @@ describe("a PR that changes CI", () => {
 		expect(
 			sentencesFrom(engineSkill, "## After the stop", "## References"),
 		).toContain(
-			"In mode `ci_proof`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
+			"In mode `ci_proof` or `ci_mixed`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
 		);
 	});
 
@@ -1787,16 +1785,171 @@ describe("a PR that changes CI", () => {
 			"## Files that astack writes",
 		);
 		expect(fence).toContain(
-			"In mode `ci_proof`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in that mode, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`.",
+			"In mode `ci_proof` or `ci_mixed`, the diff holds CI files, and the reviewers review them like each other file. A fix never edits CI, also in those modes, and `forbidden.paths` still holds. So a finding whose fix needs a CI edit is `out-of-scope`.",
 		);
 		expect(fence).toContain(
 			"A CI file is each path that `astack check ci-pins` prints with `the PR changes this CI file.`, also a script in the folder of a local action.",
 		);
 	});
 
+	test("[control:ci-mixed-gates] the preflight takes exit 3 with a ci_mixed: last line, a clean stop of that mode needs ciReadBack: pass, no gate of the mode is advisory, and a removed CI gate step stops the run", () => {
+		expect(sentencesFrom(engineSkill, "## Preflight", "## Baseline")).toContain(
+			"When it exits 3 and its last line starts with `ci_mixed:`, the run goes on in mode `ci_mixed`.",
+		);
+		expect(
+			paragraphStarting(
+				sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+				"The iteration is clean when",
+			),
+		).toContain(
+			"In mode `ci_proof` or `ci_mixed`, a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`, whatever `merge.after_clean_stop` says.",
+		);
+		const green = sentencesFrom(gate, "## Green", "## Iteration output");
+		expect(green).toContain(
+			"In mode `ci_mixed`, the PR also changes a file outside CI, so a red gate can come from that file. No gate of that mode is advisory, and each red gate blocks.",
+		);
+		expect(green).toContain(
+			"In mode `ci_proof` or `ci_mixed`, a PR can remove a CI step that runs a gate command. The gates then no longer mirror CI, so the profile must change. Stop with principled incompletion, and name the step.",
+		);
+		expect(
+			sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+		).toContain(
+			"  - In mode `ci_proof` or `ci_mixed`, the PR removes a CI step that runs a gate command.",
+		);
+		expect(green).toContain(
+			"every gate that ran exited 0, or is an advisory gate of mode `ci_proof`.",
+		);
+		expect(
+			sentencesFrom(engineSkill, "## After the stop", "## References"),
+		).toContain(
+			"In mode `ci_proof` or `ci_mixed`, also do the CI read-back of `references/gate.md`, and merge only when it passes.",
+		);
+	});
+
 	test("each gate run of the engine does the CI check again", () => {
 		expect(sentencesFrom(gate, "## Run it", "## Green")).toContain(
 			"Do the CI check of the preflight again. Its result sets the mode of the run.",
+		);
+	});
+});
+
+describe("the review range and the reviewer set", () => {
+	const engineSkill = read(`${engine}/SKILL.md`);
+	const review = read(`${engine}/references/review.md`);
+	const preflight = sentencesFrom(engineSkill, "## Preflight", "## Baseline");
+
+	test("the preflight runs astack review base before it loads the ledger, and a delta run reviews only the delta", () => {
+		const base = preflight.indexOf("Run `astack review base --head HEAD`");
+		expect(base).toBeGreaterThan(-1);
+		expect(base).toBeLessThan(
+			preflight.indexOf("Load the ledger once per run"),
+		);
+		const delta = sentencesFrom(
+			review,
+			"## Delta run",
+			"## Review-bot threads",
+		);
+		for (const sentence of [
+			"Exit 0 with a `delta: <sha>` last line makes a delta run, and `DELTA_SHA` is that sha.",
+			"Exit 3 with a `full:` last line, or exit 1, makes a full run.",
+			"Exit 2 stops with principled incompletion.",
+			"In a delta run, the reviewers get `git -C <WORKTREE> diff <DELTA_SHA> <HEAD>`, and an empty delta launches no reviewer.",
+			"The run keeps the ledger, the comment gate and each gate.",
+		])
+			expect(delta).toContain(sentence);
+	});
+
+	test("[control:review-rung] the rung of the last change-proof gate sizes the applicable set, and R0 launches one agent", () => {
+		const launch = sentencesFrom(
+			review,
+			"## Launch the reviewers",
+			"## Additional astack reviewers",
+		);
+		for (const sentence of [
+			"With `applicable`, the rung sizes the set. Read the `rung: R<n>` line of the last change-proof gate output. With no such line, a diff of Markdown files only is R0, and each other diff is R1.",
+			"At R0, launch one agent: `comment-analyzer` when `reviewers.agents` lists it, else the first agent that it lists.",
+			"From R1, launch the `applicable` set.",
+			"An entry of `reviewers.extra` with `when: rung R<n>` applies from that rung up.",
+		])
+			expect(launch).toContain(sentence);
+	});
+
+	test("[control:rung-floor] a full or delta run with 0 reviewer launches over a review range that is not empty never stops clean", () => {
+		expect(
+			paragraphStarting(
+				sentencesFrom(engineSkill, "## Decide", "## After the stop"),
+				"The iteration is clean when",
+			),
+		).toContain(
+			"A clean stop also needs `reviewerLaunches` above 0, or an empty `reviewRange`.",
+		);
+		expect(
+			paragraphStarting(read(`${engine}/references/gate.md`), "/goal Run"),
+		).toContain("It shows reviewerLaunches above 0, or an empty reviewRange.");
+	});
+
+	test("the run reads the review checklist only for a diff of the profile, of CI, of a package.json or of a gate script", () => {
+		const area =
+			"the profile, a file under `.github/`, a `package.json` or a script that a gate runs";
+		expect(stepWith(engineSkill, "Launch the reviewers")).toContain(
+			`\`references/review.md\` says how, and when the review checklist \`\${CLAUDE_SKILL_DIR}/references/checklist.md\` applies.`,
+		);
+		expect(
+			sentencesFrom(review, "## Checklist pass", "## comment-analyzer"),
+		).toContain(
+			`When the diff changes ${area}, go through the review checklist, \`references/checklist.md\`.`,
+		);
+	});
+
+	test("the review record of the PR is written only by astack review, and the stop adds its decision and launches", () => {
+		const growth = sentencesFrom(review, "## Review growth", "## Delta run");
+		for (const sentence of [
+			"Only `astack review` writes it.",
+			"run `astack review record --base <BASE_SHA> --head <REVIEWED_HEAD>`.",
+			"run it again with `--decision <decision> --launches <n>`.",
+			"When it exits 1, the record cannot be read. Report an unavailable growth check with the error, and never create a new record.",
+		])
+			expect(growth).toContain(sentence);
+		expect(growth).not.toContain("Use the merge base of `BASE_SHA`");
+	});
+});
+
+describe("the converge iterations and the deferred hold", () => {
+	const engineSkill = read(`${engine}/SKILL.md`);
+	const review = read(`${engine}/references/review.md`);
+	const gate = read(`${engine}/references/gate.md`);
+	const decide = sentencesFrom(engineSkill, "## Decide", "## After the stop");
+
+	test("[control:defer-hold] stop_clean needs 0 open deferred entries, a deferred entry stays open in each later run until each iteration reproduces it again and finds it fixed, and no merge follows stop_converged", () => {
+		expect(paragraphStarting(decide, "The iteration is clean when")).toContain(
+			"A clean stop also needs `deferredFindings` to be 0.",
+		);
+		expect(paragraphStarting(decide, "- `stop_converged`:")).toBe(
+			"- `stop_converged`: the iteration is clean apart from open `deferred` entries, and `n >= iterations.min`. No merge follows it.",
+		);
+		const converge = sentencesFrom(
+			review,
+			"## Converge",
+			"## Review-bot threads",
+		);
+		for (const sentence of [
+			"With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open, `fixed` and `deferred` entries.",
+			"A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.",
+			"A gate or comment finding has no severity, so it never becomes `deferred`.",
+			"A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. Each iteration reproduces it again. It becomes `fixed` when the failure does not occur at `REVIEWED_HEAD`.",
+		])
+			expect(converge).toContain(sentence);
+		expect(
+			sentencesFrom(review, "## Tell each reviewer", "## Checklist pass"),
+		).toContain("- the ledger's `deferred` entries, to check again;");
+		expect(stepWith(engineSkill, "Triage.")).toContain(
+			"Reproduce it, then classify it as blocking, advisory, out-of-scope, recurring or deferred.",
+		);
+		expect(gate).toContain(
+			"decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion",
+		);
+		expect(paragraphStarting(gate, "/goal Run")).toContain(
+			"Also stop on stop_converged, stop_recurring or stop_principled_incompletion, with the reason printed. No merge follows stop_converged.",
 		);
 	});
 });
@@ -1926,22 +2079,33 @@ describe("the proof of a clean stop", () => {
 		},
 		{
 			condition:
-				"In mode `ci_proof`, a clean stop also needs `mode: ci_proof` in the `GATE_SUMMARY`",
+				"a clean stop also needs that mode in the `mode` of the `GATE_SUMMARY`",
 			fields: ["mode"],
 			goal: [
-				"If the CI check gave mode ci_proof, that GATE_SUMMARY also shows mode ci_proof and ciReadBack pass.",
+				"If the CI check gave mode ci_proof or ci_mixed, that GATE_SUMMARY also shows that mode and ciReadBack pass.",
 			],
 		},
 		{
 			condition:
-				"In mode `ci_proof`, a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`",
+				"a clean stop also needs `ciReadBack: pass` in the `GATE_SUMMARY`",
 			fields: ["ciReadBack"],
-			goal: ["that GATE_SUMMARY also shows mode ci_proof and ciReadBack pass"],
+			goal: ["that GATE_SUMMARY also shows that mode and ciReadBack pass"],
 		},
 		{
-			condition: "so a run of mode `ci_proof` without a PR cannot stop clean",
+			condition: "so a run of either mode without a PR cannot stop clean",
 			fields: ["ciReadBack", "prHead"],
-			goal: ["mode ci_proof and ciReadBack pass", "prHead equal to headSha"],
+			goal: ["that mode and ciReadBack pass", "prHead equal to headSha"],
+		},
+		{
+			condition:
+				"A clean stop also needs `reviewerLaunches` above 0, or an empty `reviewRange`",
+			fields: ["reviewerLaunches", "reviewRange"],
+			goal: ["reviewerLaunches above 0, or an empty reviewRange"],
+		},
+		{
+			condition: "A clean stop also needs `deferredFindings` to be 0",
+			fields: ["deferredFindings"],
+			goal: ["deferredFindings 0"],
 		},
 		{
 			condition: "- `stop_clean`: the iteration is clean and",
@@ -1970,8 +2134,14 @@ describe("the proof of a clean stop", () => {
 		prHead:
 			"`prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`.",
 		decision:
-			"decision: continue | stop_clean | stop_recurring | stop_principled_incompletion",
+			"decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion",
+		deferredFindings:
+			"`deferredFindings` is the number of open `deferred` entries of the ledger.",
 		mode: "`mode` is the mode of the last CI check of the run.",
+		reviewRange:
+			"`reviewRange` is the range that the reviewers got, `<BASE_SHA>...<HEAD>` in a full run or `<DELTA_SHA>..<HEAD>` in a delta run.",
+		reviewerLaunches:
+			"`reviewerLaunches` is the number of reviewers that the iteration launched, the extra reviewers included.",
 		ciReadBack:
 			"`ciReadBack` is the result of the CI read-back of the iteration, `pass` or `fail`, or `not_run` when the iteration did no read-back.",
 	};
@@ -2127,7 +2297,7 @@ describe("the ledger keeps the evidence of the whole run", () => {
 	const gate = read(`${engine}/references/gate.md`);
 	const review = read(`${engine}/references/review.md`);
 	const reset =
-		"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty.";
+		"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start with only its `deferred` entries.";
 	const keptThroughIterations =
 		"No iteration renames or empties the ledger, because `stop_recurring` reads the entries of earlier iterations.";
 	const preflightLoad =

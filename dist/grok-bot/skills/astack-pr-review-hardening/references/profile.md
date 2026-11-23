@@ -21,6 +21,7 @@ Every key except `version`, `gates` and `test` is optional. An unknown key is an
 | `typescript` | object or `null` | `null` | Turns on `references/typescript.md`. |
 | `reviewers` | object | see below | Which reviewers run and what they are told. |
 | `test_adequacy` | `changed-behaviour` or `control-per-clause` | `changed-behaviour` | When a missing test blocks. |
+| `converge` | boolean | `false` | With `true`, an iteration after a fix reviews only the new commits, and a recurring finding can be `deferred` (`references/review.md`). |
 | `ledger` | object | `{carry_over: false}` | Whether earlier runs' findings carry over. |
 | `prepasses` | list | `[]` | One-off passes before the baseline. |
 | `comments` | object | none | Retired. The comment gate and the marker rule read only `commentKeep` in `.astack/profile.json`. The check command passes a profile that still sets `comments.keep_patterns`, and apply refuses it. |
@@ -203,7 +204,7 @@ With no `metrics`, the run reports `METRICS=UNAVAILABLE` and has no budget check
 
 | Key | Type | Default | Meaning |
 |---|---|---|---|
-| `select` | `applicable` or `all` | `applicable` | `applicable` picks agents by what the diff changes. `all` runs every agent in `agents`. |
+| `select` | `applicable` or `all` | `applicable` | `applicable` picks agents by the diff and its rung. `all` runs every agent in `agents`. |
 | `agents` | list of strings | the five below | `pr-review-toolkit` agent names. |
 | `extra` | list of `{name, invoke, when}` | `[]` | More reviewers. `invoke` says how to run one, such as a Skill name or an Agent `subagent_type`. `when` says when it applies. |
 | `checklists` | list of `{path, use}` | `[]` | Repo files the reviewers and the checklist pass apply. `use` says which part applies. |
@@ -283,7 +284,7 @@ Each entry is `{name, when, sources}`. `name` is `contract-coverage` or `claims-
 | `fallback` | string | none | The merge command to use while `command`'s script does not exist yet. |
 | `conditions` | list of strings | `[]` | Conditions the run checks and prints evidence for before it merges. |
 
-In mode `ci_proof`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge, whatever `after_clean_stop` and `conditions` say.
+In mode `ci_proof` or `ci_mixed`, the run also does the CI read-back of `references/gate.md` before a clean stop and before a merge. This holds whatever `after_clean_stop` and `conditions` say.
 
 ## Draft a profile
 

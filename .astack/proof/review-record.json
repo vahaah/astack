@@ -1,0 +1,337 @@
+{
+	"version": 1,
+	"change": "review-record",
+	"base": "1edf9c4b0a4bd3219018288b18f6eb51dcd36386",
+	"scope": [
+		{
+			"path": "src/astack/review-record.ts",
+			"obligation": "RV-record"
+		},
+		{
+			"path": "src/astack/review-store.ts",
+			"obligation": "RV-store-atomic"
+		},
+		{
+			"path": "src/astack/cli/commands/review.ts",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "src/astack/cli/commands/index.ts",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "src/astack/ci-pins.ts",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "src/astack/cli/commands/check/ci-pins.ts",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "src/astack/deny-list.ts",
+			"obligation": "OB-public-text"
+		},
+		{
+			"path": "src/astack/pr-review-profile.ts",
+			"obligation": "RV-converge"
+		},
+		{
+			"path": "tests/astack/review-record.test.ts",
+			"obligation": "RV-record"
+		},
+		{
+			"path": "tests/astack/review-cli.test.ts",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "tests/astack/registry.test.ts",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "tests/astack/ci-pins.test.ts",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "tests/astack/ci-proof-records.test.ts",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "tests/astack/hardening-profile.test.ts",
+			"obligation": "RV-converge"
+		},
+		{
+			"path": "tests/hardening-consistency.test.ts",
+			"obligation": "RV-rung"
+		},
+		{
+			"path": "tests/review-lessons.test.ts",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "tests/astack/ste.test.ts",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "formal/CiProofRecords.tla",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "formal/CiProofRecords.cfg",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "formal/ci-proof-records.md",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "formal/models.json",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/SKILL.md",
+			"obligation": "RV-rung-floor"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/review.md",
+			"obligation": "RV-rung"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/gate.md",
+			"obligation": "RV-defer-hold"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/profile.md",
+			"obligation": "RV-converge"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/ci-pins.md",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/fix.md",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/pr-review-hardening/references/checklist.md",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/code-review/SKILL.md",
+			"obligation": "RV-rung"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/coding-guide/SKILL.md",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "docs/adr/**",
+			"obligation": "RV-record"
+		},
+		{
+			"path": "docs/reference/review-budget.md",
+			"obligation": "RV-record"
+		},
+		{
+			"path": "docs/review-lessons.md",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "docs/runbooks/ci-parity.md",
+			"obligation": "RV-ci-mixed"
+		},
+		{
+			"path": "docs/runbooks/review-checks.md",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "docs/design.md",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "docs/plans/review-roadmap/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "AGENTS.md",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": "CONTEXT.md",
+			"obligation": "RV-record"
+		},
+		{
+			"path": "README.md",
+			"obligation": "RV-delta"
+		},
+		{
+			"path": "scripts/lib/budget.json",
+			"obligation": "WB-ratchet"
+		},
+		{
+			"path": ".astack/**",
+			"obligation": "SG-preserve"
+		},
+		{
+			"path": "marketplace/plugins/astack/bin/astack.js",
+			"obligation": "SG-generated"
+		},
+		{
+			"path": "dist/**",
+			"obligation": "SG-generated"
+		}
+	],
+	"domain": {
+		"context": "Delivery",
+		"glossary": "CONTEXT.md",
+		"plan": "docs/plans/review-roadmap/B12.md#domain-and-effects",
+		"aggregate": {
+			"path": "src/astack/review-record.ts",
+			"symbol": "ReviewRecord"
+		},
+		"terms": [
+			"Review record",
+			"Delta review",
+			"Mixed CI mode",
+			"CI proof record"
+		],
+		"invariants": [
+			{
+				"name": "A ci_mixed delivery has no red gate and a passing CI read-back",
+				"modelRef": "MixedKeepsGates"
+			}
+		],
+		"adrs": [
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D1"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D2"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D3"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D4"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D5"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D6"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D7"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D8"
+			},
+			{
+				"file": "docs/adr/0035-each-pr-has-one-review-record-and-a-delta-review.md",
+				"decision": "D9"
+			}
+		],
+		"controls": {
+			"matrix": ".astack/proof-coverage.json",
+			"criteria": [
+				"RV-record",
+				"RV-store-atomic",
+				"RV-delta",
+				"RV-converge",
+				"RV-defer-hold",
+				"RV-rung",
+				"RV-rung-floor",
+				"RV-ci-mixed",
+				"WB-ratchet",
+				"SG-preserve",
+				"SG-generated",
+				"OB-public-text"
+			]
+		}
+	},
+	"abstraction": {
+		"hides": "The JSON form of the review record, its path in the git common dir, the temporary file of a save, and the git ancestry reads that pick the delta head.",
+		"callersKnow": [
+			"astack review base exits 0 with a delta: line, 3 with a full: line, 1 for an unreadable record or a branch that git cannot name, and 2 for wrong arguments.",
+			"astack review record creates an absent record from the merge base and adds a head with its decision and launches. It never writes over an unreadable record.",
+			"ciMode gives ok, ci_proof, ci_mixed or stop from the stop kinds, the base move, the paths outside CI, a record problem and the tool state."
+		],
+		"deletionTest": "Without review-record.ts, the engine and each caller parse the record JSON and pick the delta head again, and a hand-written record loses the launch count.",
+		"alternatives": [
+			{
+				"name": "Hand-written JSON, as before",
+				"rejectedBecause": "An agent can drop a field or replace the first-review fields, and no file counts the launches."
+			},
+			{
+				"name": "One file for each reviewed head",
+				"rejectedBecause": "The order of the heads then depends on file times."
+			},
+			{
+				"name": "Advisory reds in ci_mixed, as in ci_proof",
+				"rejectedBecause": "A red gate can come from a product defect."
+			}
+		],
+		"relation": [
+			{
+				"concrete": {
+					"path": "src/astack/ci-pins.ts",
+					"symbol": "ciMode"
+				},
+				"modelAction": "ClassifyMixed"
+			},
+			{
+				"concrete": {
+					"path": "src/astack/ci-pins.ts",
+					"symbol": "stopsOnlyOnCiFiles"
+				},
+				"modelAction": "Classify"
+			}
+		],
+		"omitted": [
+			"The model has no review record. The laws of the plan block hold its rules, and their prop controls run them.",
+			"The model takes the gate result and the CI read-back of the engine as true observations. The engine text controls examine those rules."
+		]
+	},
+	"model": {
+		"module": "formal/CiProofRecords.tla",
+		"config": "formal/CiProofRecords.cfg",
+		"dependencies": [],
+		"bounds": [
+			"Four diff classes and nine record cases: valid or one of eight failed guards.",
+			"Tool equality, moved base, independent proof validity, a red gate and the CI read-back are Boolean.",
+			"One classification followed by one independent proof decision."
+		],
+		"fairness": [],
+		"invariants": [
+			"TypeOK",
+			"CiRecordsSafe",
+			"CurrentProofRequired",
+			"MixedKeepsGates"
+		],
+		"properties": []
+	},
+	"negative": {
+		"file": "formal/CiProofRecords.tla",
+		"action": "CheckMixed",
+		"original": "input.proofValid /\\ ~input.gateRed /\\ input.readBack",
+		"replacement": "input.proofValid /\\ input.readBack",
+		"defect": "A delivery rule of ci_mixed that drops the gate term delivers a PR whose gate is red.",
+		"expect": {
+			"kind": "invariant",
+			"name": "MixedKeepsGates"
+		}
+	},
+	"limits": [
+		"An agent can write a false clean head into the review record, so the gates and the merge grant still apply.",
+		"The engine text controls read the rules of the hardening skill, and they do not run an agent.",
+		"The finite model takes the gate result and the CI read-back as true observations.",
+		"Exact-head CI, review, Shipping and every ordinary gate stay required."
+	]
+}

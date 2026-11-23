@@ -1,7 +1,7 @@
 # CI proof-record classification
 
 The CI classifier distinguishes required proof metadata from product source changes.
-It grants a review mode. It does not grant proof success, a clean stop, or merge authority.
+It grants a review mode, `ci_proof` or `ci_mixed`. It does not grant proof success, a clean stop, or merge authority.
 ADR 0005 D4 governs coordinated adoption and preserves review and CI authority.
 ADR 0005 D3 keeps fresh model execution mandatory.
 
@@ -15,14 +15,17 @@ Its committed proof records must be regular UTF-8 Markdown files under `formal/`
 They must contain the four required proof sections and valid references.
 The records cannot also serve authority, implementation, witness, glossary, matrix, listed source, or model roles.
 The classifier reads the committed matrix and refuses missing or malformed data.
-Changed source, models, controls, arbitrary docs, and tool versions remain blocked.
+Changed source, models, controls, arbitrary docs, and a failed record give the mode `ci_mixed` when the tools and the base allow it.
+In mode `ci_mixed`, each gate blocks, and delivery needs green gates and the CI read-back.
+Changed tool versions and a base move that changes CI remain blocked.
 
 `formal/CiProofRecords.tla` models this classification under `formal/CiProofRecords.cfg`.
 `CiRecordsSafe` states that every `ci_proof` result has eligible inputs.
 `CurrentProofRequired` states that delivery still requires independent current proof.
-`delivery` means only that these two prerequisites hold. Other review and merge checks remain outside the model.
+`MixedKeepsGates` states that a `ci_mixed` delivery has no red gate and a passing CI read-back.
+`delivery` means only that these prerequisites hold. Other review and merge checks remain outside the model.
 The finite cases include four diff classes and eight record checks, with one invalid record check at a time.
-Tool equality, base movement, and proof success each have two values.
+Tool equality, base movement, proof success, a red gate, and the read-back each have two values.
 The safety model claims no fairness, progress, eventual CI success, or full implementation refinement.
 
 ### Category composition
@@ -46,6 +49,9 @@ The role inventory supplies `roles`, and the restricted path rule supplies `path
 The changed path partition supplies `kind`.
 Existing setup comparisons and moved-base checks supply `tools` and `movedBase`.
 `Classify` represents the metadata admission rule within the existing CI classification.
+`ClassifyMixed` represents the `ciMode` result `ci_mixed` for other files or a failed record.
+The pr-review-hardening skill supplies `gateRed` from its green gate and `readBack` from the CI read-back of `gate.md`.
+`CheckMixed` represents the clean stop and the merge of that mode.
 `CheckProof` represents the independently required proof gate, including its named negative and restored run.
 The model assumes these observations are truthful. CLI controls and review establish that correspondence separately.
 Deleting this helper would repeat the same proof metadata policy inside the CLI's Git effects.
@@ -55,20 +61,22 @@ Deleting this helper would repeat the same proof metadata policy inside the CLI'
 .astack/ci-proof-records-coverage.json links the criterion and executable control.
 Run the focused CLI controls against real temporary Git repositories.
 The three-file case must fail before the repair and enter `ci_proof` afterward.
-Source edits, role collisions, malformed records, false bases, invalid bytes, unsafe modes, and changed tools must stop.
+Source edits, role collisions, malformed records, false bases, invalid bytes and unsafe modes must give `ci_mixed`. Changed tools must stop.
 Working-tree edits cannot replace committed evidence.
 Run the existing CI pin suites to retain their refusal and moved-base behavior.
 
 The named mutation drops the role separation check during `Classify`.
 It must violate `CiRecordsSafe` with a counterexample.
+A copy of `CheckMixed` with no gate term must violate `MixedKeepsGates`.
 The unchanged positive run must pass again with matching counts.
 No static classification result can replace current proof or exact-head hosted CI.
 
 ## Invariant audit
 
-The audit of 2026-11-22 reads `formal/CiProofRecords.cfg`. Each row names an invariant or a property other than `TypeOK`.
+The audit of 2026-11-23 reads `formal/CiProofRecords.cfg`. Each row names an invariant or a property other than `TypeOK`.
 
 | Invariant | Class | Action | Controls |
 |---|---|---|---|
 | `CiRecordsSafe` | restates | `Classify` | `ci-proof-records` |
 | `CurrentProofRequired` | restates | `CheckProof` | `ci-proof-current` |
+| `MixedKeepsGates` | restates | `CheckMixed` | `ci-mixed-gates` |
