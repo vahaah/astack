@@ -1,0 +1,24 @@
+import { type Clause, clausesOf, NEGATIONS } from "./grant.ts";
+
+const SPLITS = "split";
+const NEW_PR = new Set(["second", "separate", "another", "two"]);
+
+function prWordAt(tokens: readonly string[], index: number): boolean {
+	const token = tokens[index];
+	if (token === "pr" || token === "prs") return true;
+	return token === "pull" && /^requests?$/.test(tokens[index + 1] ?? "");
+}
+
+function clauseSplits({ tokens, question }: Clause): boolean {
+	if (question || tokens.some((token) => NEGATIONS.has(token))) return false;
+	return tokens.some(
+		(_, index) =>
+			prWordAt(tokens, index) &&
+			(NEW_PR.has(tokens[index - 1] ?? "") ||
+				tokens.slice(0, index).includes(SPLITS)),
+	);
+}
+
+export function splitInstructionIn(prompt: string): boolean {
+	return clausesOf(prompt).some(clauseSplits);
+}
