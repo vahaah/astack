@@ -21,7 +21,6 @@ import {
 	type Context,
 	defineHandler,
 	deny,
-	type Env,
 	type EventKind,
 	type Handler,
 	HOOK_EVENTS,
@@ -33,6 +32,9 @@ import {
 } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { processPorts } from "../../src/astack/ports.ts";
+import type { Env } from "../../src/astack/process.ts";
+import { fakePorts } from "./fake-ports.ts";
 
 const FIXTURES = resolve(import.meta.dir, "../fixtures/hook-input");
 let project = "";
@@ -48,13 +50,7 @@ function deps(handlers: readonly Handler[]): HookDeps {
 	return {
 		cwd: project,
 		today: "2026-10-16",
-		readText: (path) => {
-			try {
-				return readFileSync(path, "utf8");
-			} catch {
-				return undefined;
-			}
-		},
+		ports: processPorts,
 		handlers,
 	};
 }
@@ -110,6 +106,7 @@ describe("the handler registry", () => {
 			projectDir: undefined,
 			env: {},
 			today: "2026-10-16",
+			ports: fakePorts(),
 		};
 		expect(
 			handler.run({ kind: "mcp", server: "s", tool: "t", input: {} }, context),
@@ -203,6 +200,7 @@ describe("the handler registry", () => {
 		projectDir: undefined,
 		env: {},
 		today: "2026-10-16",
+		ports: fakePorts(),
 	};
 
 	test.each([
@@ -293,6 +291,7 @@ describe("the handler registry", () => {
 			projectDir: undefined,
 			env: {},
 			today: "2026-10-16",
+			ports: fakePorts(),
 		};
 		expect(
 			judge(
@@ -437,7 +436,7 @@ describe("the Claude Code decoder", () => {
 		const decoded = decode("claude-code", "PreToolUse", raw, {
 			env: {},
 			cwd: project,
-			readText: deps([]).readText,
+			readText: processPorts().files.readText,
 		});
 		expect(decoded?.events).toEqual([
 			{

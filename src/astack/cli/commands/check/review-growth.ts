@@ -1,4 +1,4 @@
-import { repoRoot, runGit } from "../../../git.ts";
+import { gitValue, repoRoot, runGit } from "../../../git.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import {
 	growthReport,
@@ -11,19 +11,13 @@ import type { Io } from "../../io.ts";
 
 const NAME = "astack check review-growth";
 
-function gitText(root: string, args: string[]): string | undefined {
-	const result = runGit(root, args);
-	const text = result.stdout.toString("utf8").trim();
-	return result.ok && text !== "" ? text : undefined;
-}
-
 function resolveCommit(
 	root: string,
 	flag: string,
 	ref: string,
 	literal: boolean,
 ): Result<string, string> {
-	const sha = gitText(root, [
+	const sha = gitValue(root, [
 		"rev-parse",
 		"--verify",
 		"--end-of-options",
@@ -37,7 +31,7 @@ function resolveCommit(
 }
 
 function isAncestor(root: string, base: string, tip: string): boolean {
-	return gitText(root, ["merge-base", base, tip]) === base;
+	return gitValue(root, ["merge-base", base, tip]) === base;
 }
 
 function totalsBetween(

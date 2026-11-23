@@ -1,11 +1,11 @@
 import { resolve } from "node:path";
+import { gitValue } from "../../git.ts";
+import { readOptional } from "../../paths.ts";
 import { tierOf } from "../../plan/check.ts";
 import {
-	gitText,
 	latestRecord,
 	planSettings,
 	readRecord,
-	readText,
 	writeRecord,
 } from "../../plan/edge.ts";
 import { type PlanFileState, planFileState } from "../../plan/files.ts";
@@ -120,7 +120,7 @@ function prefixFor(args: readonly string[], loaded: Loaded): string {
 	return (
 		valueAfter(args, "--prefix") ??
 		planSettings(loaded.root).branchPrefix ??
-		gitText(loaded.root, ["config", "user.name"])?.split(/\s+/)[0] ??
+		gitValue(loaded.root, ["config", "user.name"])?.split(/\s+/)[0] ??
 		"work"
 	);
 }
@@ -147,8 +147,8 @@ function start(args: readonly string[], io: Io): number {
 	const chosen = session(loaded, handle, io);
 	if (!chosen) return 2;
 	const base =
-		gitText(loaded.root, ["merge-base", "HEAD", "origin/HEAD"]) ??
-		gitText(loaded.root, ["rev-parse", "HEAD"]);
+		gitValue(loaded.root, ["merge-base", "HEAD", "origin/HEAD"]) ??
+		gitValue(loaded.root, ["rev-parse", "HEAD"]);
 	return emit(
 		io,
 		args,
@@ -168,14 +168,14 @@ function readSummary(
 	io: Io,
 ): string | undefined {
 	if (!source) return undefined;
-	return source === "-" ? io.input?.() : readText(resolve(io.cwd, source));
+	return source === "-" ? io.input?.() : readOptional(resolve(io.cwd, source));
 }
 
 const PROOF_TAIL = 20;
 
 function proofOf(value: string | undefined, io: Io): ProofLog {
 	if (value === undefined || value.trim() === "") return { kind: "none" };
-	const log = readText(resolve(io.cwd, value));
+	const log = readOptional(resolve(io.cwd, value));
 	if (log === undefined) return { kind: "text", text: value };
 	const lines = log.trimEnd().split("\n");
 	return { kind: "log", tail: lines.slice(-PROOF_TAIL).join("\n") };
@@ -233,15 +233,15 @@ function checkpoint(args: readonly string[], io: Io): number {
 		record,
 		scope,
 		{
-			branch: gitText(loaded.root, ["rev-parse", "--abbrev-ref", "HEAD"]),
-			head: gitText(loaded.root, ["rev-parse", "--short", "HEAD"]),
+			branch: gitValue(loaded.root, ["rev-parse", "--abbrev-ref", "HEAD"]),
+			head: gitValue(loaded.root, ["rev-parse", "--short", "HEAD"]),
 			diffstat:
-				gitText(loaded.root, [
+				gitValue(loaded.root, [
 					"diff",
 					"--stat",
 					...(since ? [`${since}...HEAD`] : ["HEAD"]),
 				]) ?? "",
-			commits: (gitText(loaded.root, ["log", "--format=%h %s", range]) ?? "")
+			commits: (gitValue(loaded.root, ["log", "--format=%h %s", range]) ?? "")
 				.split("\n")
 				.filter(Boolean),
 		},
@@ -318,15 +318,15 @@ function historyRecord(
 	const chosen = picked.value;
 	const prefix = prefixFor(args, loaded);
 	const named = branchName(loaded.plan, chosen, loaded.path, prefix);
-	const current = gitText(loaded.root, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	const current = gitValue(loaded.root, ["rev-parse", "--abbrev-ref", "HEAD"]);
 	const branch =
-		gitText(loaded.root, ["rev-parse", "--verify", "--quiet", named]) !==
+		gitValue(loaded.root, ["rev-parse", "--verify", "--quiet", named]) !==
 		undefined
 			? named
 			: (current ?? named);
-	const base = gitText(loaded.root, ["merge-base", branch, "origin/HEAD"]);
+	const base = gitValue(loaded.root, ["merge-base", branch, "origin/HEAD"]);
 	const subjects = (
-		gitText(loaded.root, [
+		gitValue(loaded.root, [
 			"log",
 			"--format=%h %s",
 			base ? `${base}..${branch}` : branch,
@@ -340,7 +340,7 @@ function historyRecord(
 			? undefined
 			: source === "-"
 				? io.input?.()
-				: readText(resolve(io.cwd, source));
+				: readOptional(resolve(io.cwd, source));
 	return recordFromHistory(loaded.path, chosen, {
 		branch,
 		base,

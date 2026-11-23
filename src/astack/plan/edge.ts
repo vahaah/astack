@@ -1,12 +1,7 @@
-import {
-	existsSync,
-	mkdirSync,
-	readdirSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { runGit } from "../git.ts";
+import { gitValue } from "../git.ts";
+import { readOptional } from "../paths.ts";
 import { profileSection } from "../profile.ts";
 import { err, ok, type Result } from "../result.ts";
 import { type PlanSet, planSetFromText } from "./planset.ts";
@@ -14,23 +9,10 @@ import type { SessionRecord } from "./session.ts";
 import { parseSnapshot, type Snapshot } from "./tracker.ts";
 import { planStateDir } from "./trail.ts";
 
-export function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
-
-export function gitText(cwd: string, args: string[]): string | undefined {
-	const result = runGit(cwd, args);
-	const text = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return text || undefined;
-}
-
 export function planCommit(root: string, paths: readonly string[]): string {
 	return (
-		gitText(root, ["log", "-1", "--format=%h", "--", ...paths]) ?? "uncommitted"
+		gitValue(root, ["log", "-1", "--format=%h", "--", ...paths]) ??
+		"uncommitted"
 	);
 }
 
@@ -40,11 +22,11 @@ export function renderAt(
 ): (sha: string) => PlanSet | undefined {
 	return (sha) => {
 		if (!/^[0-9a-f]{4,40}$/.test(sha)) return undefined;
-		const text = gitText(root, ["show", `${sha}:${set.path}`]);
+		const text = gitValue(root, ["show", `${sha}:${set.path}`]);
 		return text === undefined
 			? undefined
 			: planSetFromText(set.path, `${text}\n`, (path) => {
-					const brief = gitText(root, ["show", `${sha}:${path}`]);
+					const brief = gitValue(root, ["show", `${sha}:${path}`]);
 					return brief === undefined ? undefined : `${brief}\n`;
 				});
 	};
@@ -86,7 +68,7 @@ export function readSnapshot(
 	const raw =
 		source === "-"
 			? (input?.() ?? "")
-			: (readText(join(cwd, source)) ?? readText(source));
+			: (readOptional(join(cwd, source)) ?? readOptional(source));
 	return raw === undefined
 		? err([`cannot read ${source}`])
 		: parseSnapshot(raw);
@@ -120,7 +102,7 @@ export function readRecord(
 	session: string,
 ): SessionRecord | undefined {
 	const path = recordFile(root, slug, session);
-	const text = path ? readText(path) : undefined;
+	const text = path ? readOptional(path) : undefined;
 	if (text === undefined) return undefined;
 	try {
 		const parsed: unknown = JSON.parse(text);
@@ -138,7 +120,7 @@ export function latestRecord(
 	if (!dir || !existsSync(dir)) return undefined;
 	return readdirSync(dir)
 		.filter((name) => /^session-.+\.json$/.test(name))
-		.map((name) => readText(join(dir, name)))
+		.map((name) => readOptional(join(dir, name)))
 		.flatMap((text) => {
 			try {
 				const parsed: unknown = JSON.parse(text ?? "");

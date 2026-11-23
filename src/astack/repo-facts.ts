@@ -9,16 +9,22 @@ const TEMPLATE_NAMES: ReadonlySet<string> = new Set([
 	"pull_request_template",
 ]);
 
-export type PathKind = "missing" | "file" | "directory" | "other";
+export type PathKind =
+	| "missing"
+	| "file"
+	| "directory"
+	| "other"
+	| "unreadable";
 
 export function kindOf(path: string): PathKind {
 	try {
-		const stat = lstatSync(path);
+		const stat = lstatSync(path, { throwIfNoEntry: false });
+		if (stat === undefined) return "missing";
 		if (stat.isFile()) return "file";
 		if (stat.isDirectory()) return "directory";
 		return "other";
 	} catch {
-		return "missing";
+		return "unreadable";
 	}
 }
 
@@ -102,7 +108,10 @@ export function readFacts(root: string): RepoFacts {
 			(path) => kindOf(join(root, path)) === "directory",
 		),
 		issueTemplate: [".github/ISSUE_TEMPLATE", ".github/ISSUE_TEMPLATE.md"].find(
-			(path) => kindOf(join(root, path)) !== "missing",
+			(path) => {
+				const kind = kindOf(join(root, path));
+				return kind !== "missing" && kind !== "unreadable";
+			},
 		),
 		indent: jsonIndent(biome),
 	};

@@ -12,6 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import type { Env } from "../src/astack/process.ts";
 import { err, ok, type Result } from "../src/astack/result.ts";
 import { git, messageOf, run } from "./lib/exec.ts";
 import { repoRoot } from "./lib/projects.ts";
@@ -31,7 +32,6 @@ export const pinnedGitleaks = {
 } as const;
 
 type Target = keyof typeof pinnedGitleaks.sha256;
-type Env = Readonly<Record<string, string | undefined>>;
 type PinnedArchive = {
 	readonly path: string;
 	readonly url: string;

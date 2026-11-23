@@ -1,7 +1,7 @@
-import { readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { DOMAIN_GRAMMAR } from "../../../domain/notation.ts";
 import { repoRoot, runGit } from "../../../git.ts";
+import { readOptional } from "../../../paths.ts";
 import { briefLines, daysOld, readPlan } from "../../../plan/brief.ts";
 import {
 	checkAgainstBase,
@@ -22,16 +22,20 @@ import {
 import { parsePlan } from "../../../plan/parse.ts";
 import { TEMPLATES } from "../../../plan/template.ts";
 import type { Plan, PlanFinding } from "../../../plan/types.ts";
+import { processPorts } from "../../../ports.ts";
 import { positional, valueAfter } from "../../args.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
 
 function planDirFiles(io: Io): { root: string; files: string[] } {
 	const root = repoRoot(io.cwd) ?? io.cwd;
-	const dir = join(root, planProfileFor(root).dir);
+	const ports = processPorts();
+	const dir = join(root, planProfileFor(ports, root).dir);
 	return {
 		root,
-		files: listPlanFiles(dir).map((path) => relative(io.cwd, path) || path),
+		files: listPlanFiles(ports.files, dir).map(
+			(path) => relative(io.cwd, path) || path,
+		),
 	};
 }
 
@@ -103,7 +107,7 @@ function run(args: readonly string[], io: Io): number {
 	if (as !== undefined) return checkAs(io, args, as, files);
 	if (args.includes("--brief")) {
 		const listed = files.length > 0 ? files : planDirFiles(io).files;
-		const lines = briefLines(listed, io.today, io.cwd);
+		const lines = briefLines(processPorts().files, listed, io.today, io.cwd);
 		if (lines.length > 0) io.out(`${lines.join("\n")}\n`);
 		return 0;
 	}
@@ -117,11 +121,12 @@ function run(args: readonly string[], io: Io): number {
 	const findings: PlanFinding[] = [];
 	const housekeeping: string[] = [];
 	const domains: { file: string; domain: DomainSummary }[] = [];
+	const ports = processPorts();
 	for (const file of files) {
 		const absolute = resolve(io.cwd, file);
-		const plan = readPlan(absolute);
+		const plan = readPlan(ports.files, absolute);
 		if (!plan) return usageError(io, `astack check-plan: cannot read ${file}`);
-		const env = envForFile(absolute, {
+		const env = envForFile(ports, absolute, {
 			today: io.today,
 			trail: !args.includes("--no-trail"),
 			fallbackRoot: repoRoot(io.cwd),
@@ -188,13 +193,13 @@ function checkAs(
 			"astack check-plan: --as takes one plan text, a file or - for stdin",
 		);
 	const text =
-		source === "-" ? io.input?.() : readPlanText(resolve(io.cwd, source));
+		source === "-" ? io.input?.() : readOptional(resolve(io.cwd, source));
 	if (text === undefined)
 		return usageError(io, `astack check-plan: cannot read ${source}`);
 	const root = repoRoot(io.cwd) ?? io.cwd;
 	const target = resolve(root, as);
 	const plan = parsePlan(relative(root, target), text);
-	const env = envForFile(target, {
+	const env = envForFile(processPorts(), target, {
 		today: io.today,
 		trail: !args.includes("--no-trail"),
 		root,
@@ -205,14 +210,6 @@ function checkAs(
 		file: as,
 	}));
 	return report(io, args, findings, [], 1);
-}
-
-function readPlanText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
 }
 
 export const command: Command = {

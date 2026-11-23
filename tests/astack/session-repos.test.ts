@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { processPorts } from "../../src/astack/ports.ts";
 import {
 	type FreeTarget,
 	loadSessionRepos,
@@ -364,7 +365,7 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 	test("a probe of a repo root gives its root, git dir and identity", () => {
 		const made = join(root, "probed");
 		spawnSync("git", ["init", "-q", made]);
-		const seen = probeRepo(made);
+		const seen = probeRepo(processPorts(), made);
 		expect(seen?.root).toBe(made);
 		expect(seen?.commonDir).toBe(join(made, ".git"));
 		expect(seen?.identity.gitDir).toBe(join(made, ".git"));
@@ -382,7 +383,7 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 		spawnSync("git", ["-c", "core.fsmonitor=false", "add", "a.txt"], {
 			cwd: made,
 		});
-		expect(probeMadeRepo(made)?.root).toBe(made);
+		expect(probeMadeRepo(processPorts(), made)?.root).toBe(made);
 		expect(existsSync(marker)).toBe(false);
 	});
 
@@ -393,6 +394,6 @@ describe("[control:sg-session-repo-edge] the edge of the session repo record", (
 	])("a probe of %s gives no identity", (_, name) => {
 		mkdirSync(join(root, "plain"), { recursive: true });
 		spawnSync("git", ["init", "-q", "--bare", join(root, "bare.git")]);
-		expect(probeRepo(join(root, name))).toBeUndefined();
+		expect(probeRepo(processPorts(), join(root, name))).toBeUndefined();
 	});
 });

@@ -1,6 +1,5 @@
-import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { repoRoot } from "../git.ts";
+import type { FilePorts, Ports } from "../ports.ts";
 import {
 	isStale,
 	liveDecisionRows,
@@ -13,12 +12,9 @@ import { listPlanFiles, planProfileFor } from "./files.ts";
 import { frontmatterValue, parsePlan } from "./parse.ts";
 import type { Plan } from "./types.ts";
 
-export function readPlan(path: string): Plan | undefined {
-	try {
-		return parsePlan(path, readFileSync(path, "utf8"));
-	} catch {
-		return undefined;
-	}
+export function readPlan(files: FilePorts, path: string): Plan | undefined {
+	const text = files.readText(path);
+	return text === undefined ? undefined : parsePlan(path, text);
 }
 
 export function daysOld(plan: Plan, today: string): number | undefined {
@@ -53,12 +49,13 @@ export function nowLabel(plan: Plan): string {
 }
 
 export function briefLines(
+	ports: FilePorts,
 	files: readonly string[],
 	today: string,
 	cwd: string,
 ): string[] {
 	return files.flatMap((file) => {
-		const plan = readPlan(resolve(cwd, file));
+		const plan = readPlan(ports, resolve(cwd, file));
 		const status = plan ? frontmatterValue(plan, "status") : undefined;
 		if (!plan || !status || !BRIEF_STATUSES.includes(status)) return [];
 		const now = nowLabel(plan);
@@ -80,14 +77,20 @@ export function briefLines(
 }
 
 export function sessionStartContext(
+	ports: Ports,
 	cwd: string,
 	projectDir: string | undefined,
 	today: string,
 	unattendedReason: string | undefined,
 ): string | undefined {
-	const root = projectDir || repoRoot(cwd) || cwd;
-	const dir = join(root, planProfileFor(root).dir);
-	const lines = briefLines(listPlanFiles(dir), today, root).slice(0, 20);
+	const root = projectDir || ports.git.gitRoot(cwd) || cwd;
+	const dir = join(root, planProfileFor(ports, root).dir);
+	const lines = briefLines(
+		ports.files,
+		listPlanFiles(ports.files, dir),
+		today,
+		root,
+	).slice(0, 20);
 	const parts =
 		unattendedReason === undefined
 			? []

@@ -11,6 +11,7 @@ import type {
 } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import type { PullRequestState } from "../../src/astack/pr/github.ts";
 import { DEFAULT_MERGE_PROFILE } from "../../src/astack/pr/profile.ts";
 
@@ -61,6 +62,7 @@ function context(event: Context["event"]): Context {
 		projectDir: repo,
 		env: { ASTACK_STATE_DIR: join(root, "state") },
 		today: "2026-11-22",
+		ports: processPorts(),
 		session: "law",
 	};
 }

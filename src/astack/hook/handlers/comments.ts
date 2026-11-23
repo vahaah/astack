@@ -9,10 +9,8 @@ import {
 	type SourceChange,
 } from "../../comments/check.ts";
 import type { CommentPolicy } from "../../comments/classify.ts";
-import { gitChanges } from "../../git.ts";
 import { type CommitScope, commitScopes } from "../../git-command.ts";
-import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
-import { commentPolicy } from "../../profile.ts";
+import { commentPolicy, sectionOf } from "../../profile.ts";
 import { type FileWrite, fileWrites, shellSteps } from "../../shell.ts";
 import { fingerprint } from "../../ste/check.ts";
 import { keptCommentFindings } from "../../ste/comments.ts";
@@ -23,10 +21,10 @@ import {
 	logRun,
 	type Observation,
 } from "../../ste/events.ts";
-import { loadSettings, settingsRoot } from "../../ste/profile.ts";
+import { portSettings, settingsRoot } from "../../ste/profile.ts";
 import { outcomeOf, withLedger } from "../../ste/verdict.ts";
 import { isTypeSource } from "../../types/check.ts";
-import { typePolicy } from "../../types/policy.ts";
+import { parseTypePolicy } from "../../types/policy.ts";
 import {
 	ALLOW,
 	type Context,
@@ -71,7 +69,10 @@ function steCommentVerdict(
 	context: Context,
 ): Judged {
 	if (context.hooks?.ste === false) return judged(ALLOW);
-	const settings = loadSettings(settingsRoot(path, projectDirOf(context)));
+	const settings = portSettings(
+		context.ports,
+		settingsRoot(context.ports.files, path, projectDirOf(context)),
+	);
 	const findings = keptCommentFindings(change, policy, settings.glossary);
 	if (!findings || findings.length === 0) return judged(ALLOW);
 	return withLedger(context, (skip) => [
@@ -92,14 +93,16 @@ function fileVerdict(
 	context: Context,
 ): Judged {
 	const projectDir = projectDirOf(context);
-	if (isScratchPath(projectDir, path)) return judged(ALLOW);
-	const relPath = canonicalRelative(projectDir, path);
+	const { files, profile } = context.ports;
+	if (files.isScratch(projectDir, path)) return judged(ALLOW);
+	const relPath = files.relativePath(projectDir, path);
 	if (!isCheckedPath(relPath)) return judged(ALLOW);
 	const change = { relPath, before, after, regions: [...regions] };
-	const policy = commentPolicy(projectDir);
+	const parsed = profile.readProfile(projectDir);
+	const policy = commentPolicy(parsed);
 	const typeHook =
 		context.hooks?.types !== false &&
-		isTypeSource(change, typePolicy(projectDir));
+		isTypeSource(change, parseTypePolicy(sectionOf(parsed, "types")));
 	const findings = checkChange(change, policy, typeHook);
 	return combineJudged([
 		findings ? findingsVerdict(findings, "this edit") : judged(ALLOW),
@@ -108,11 +111,15 @@ function fileVerdict(
 }
 
 function commitVerdict(scope: CommitScope, context: Context): Judged {
-	const projectDir = projectDirOf(context);
-	const changes = gitChanges(scope.root, scope.sources);
+	const { git, profile } = context.ports;
+	const changes = git.gitChanges(scope.root, scope.sources);
 	if (!changes) return judged(ALLOW);
-	const policy = commentPolicy(scope.root, projectDir);
-	const types = typePolicy(scope.root);
+	const parsed = profile.readProfile(scope.root);
+	const policy = commentPolicy(
+		parsed,
+		profile.readProfile(projectDirOf(context)),
+	);
+	const types = parseTypePolicy(sectionOf(parsed, "types"));
 	const findings: Finding[] = [];
 	for (const change of changes) {
 		const typed = {
@@ -133,11 +140,12 @@ function commitVerdict(scope: CommitScope, context: Context): Judged {
 function writeVerdict(write: FileWrite, context: Context): Judged {
 	if (write.target.dynamic) return judged(ALLOW);
 	const projectDir = projectDirOf(context);
+	const { files, profile } = context.ports;
 	const absolute = resolve(write.step.dir, write.target.value);
-	if (isScratchPath(projectDir, absolute)) return judged(ALLOW);
-	const relPath = canonicalRelative(projectDir, absolute);
+	if (files.isScratch(projectDir, absolute)) return judged(ALLOW);
+	const relPath = files.relativePath(projectDir, absolute);
 	if (!isCheckedPath(relPath)) return judged(ALLOW);
-	const before = readOptional(absolute);
+	const before = files.readText(absolute);
 	const after = write.append ? `${before ?? ""}${write.body}` : write.body;
 	const start = write.append ? (before ?? "").length : 0;
 	const change = {
@@ -146,10 +154,11 @@ function writeVerdict(write: FileWrite, context: Context): Judged {
 		after,
 		regions: [{ start, end: after.length }],
 	};
-	const policy = commentPolicy(projectDir);
+	const parsed = profile.readProfile(projectDir);
+	const policy = commentPolicy(parsed);
 	const typeHook =
 		context.hooks?.types !== false &&
-		isTypeSource(change, typePolicy(projectDir));
+		isTypeSource(change, parseTypePolicy(sectionOf(parsed, "types")));
 	const findings = checkChange(change, policy, typeHook);
 	return combineJudged([
 		findings ? findingsVerdict(findings, "this write") : judged(ALLOW),
@@ -162,7 +171,9 @@ function shellVerdict(command: string, cwd: string, context: Context): Judged {
 	const steps = shellSteps(command, cwd);
 	return combineJudged([
 		...fileWrites(steps).map((write) => writeVerdict(write, context)),
-		...commitScopes(steps).map((scope) => commitVerdict(scope, context)),
+		...commitScopes(steps, context.ports).map((scope) =>
+			commitVerdict(scope, context),
+		),
 	]);
 }
 

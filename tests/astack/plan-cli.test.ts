@@ -18,6 +18,7 @@ import { ALLOW, type Context, note } from "../../src/astack/hook/events.ts";
 import { handler as planFile } from "../../src/astack/hook/handlers/plan-file.ts";
 import { TEMPLATES } from "../../src/astack/plan/template.ts";
 import { trailCell } from "../../src/astack/plan/trail.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { loadProfile } from "../../src/astack/profile.ts";
 import { fixture, freshRepo, git, run } from "./plan-helpers.ts";
 
@@ -528,6 +529,7 @@ describe("plan hooks", () => {
 			projectDir: repo,
 			env: {},
 			today: "2026-10-16",
+			ports: processPorts(),
 		};
 	}
 

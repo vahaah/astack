@@ -1,7 +1,7 @@
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseUnifiedDiff } from "./comments/added.ts";
+import { runProcess } from "./process.ts";
 
 const MAX_BUFFER = 256 * 1024 * 1024;
 
@@ -16,14 +16,44 @@ export interface GitResult {
 	stdout: Buffer;
 }
 
-export function runGit(cwd: string, args: string[], input?: string): GitResult {
-	const result = spawnSync("git", args, { cwd, input, maxBuffer: MAX_BUFFER });
-	return { ok: result.status === 0, stdout: result.stdout ?? Buffer.alloc(0) };
+export function runGit(
+	cwd: string,
+	args: readonly string[],
+	input?: string,
+): GitResult {
+	const run = runProcess("git", args, {
+		cwd,
+		...(input === undefined ? {} : { input }),
+		maxBuffer: MAX_BUFFER,
+	});
+	return run.ok
+		? { ok: run.value.status === 0, stdout: run.value.stdout }
+		: { ok: false, stdout: Buffer.alloc(0) };
 }
 
-function gitText(cwd: string, args: string[]): string | undefined {
-	const result = runGit(cwd, args);
+export function gitText(
+	cwd: string,
+	args: readonly string[],
+	run: (cwd: string, args: readonly string[]) => GitResult = runGit,
+): string | undefined {
+	const result = run(cwd, args);
 	return result.ok ? result.stdout.toString("utf8").trim() : undefined;
+}
+
+export function nonEmpty(text: string | undefined): string | undefined {
+	return text === "" ? undefined : text;
+}
+
+export function gitValue(
+	cwd: string,
+	args: readonly string[],
+): string | undefined {
+	return nonEmpty(gitText(cwd, args));
+}
+
+export function currentBranch(cwd: string): string | undefined {
+	const branch = gitValue(cwd, ["rev-parse", "--abbrev-ref", "HEAD"]);
+	return branch === "HEAD" ? undefined : branch;
 }
 
 export function repoRoot(cwd: string): string | undefined {

@@ -19,7 +19,7 @@ import { runHook } from "../../src/astack/hook/dispatch.ts";
 import { SILENT } from "../../src/astack/hook/encode/base.ts";
 import type { HookEventName } from "../../src/astack/hook/events.ts";
 import { HANDLERS } from "../../src/astack/hook/handlers/index.ts";
-import { readOptional } from "../../src/astack/paths.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { grantStore, loadGrant } from "../../src/astack/pr/grant-store.ts";
 import { profileProblems } from "../../src/astack/profile.ts";
 import { ok } from "../../src/astack/result.ts";
@@ -59,7 +59,7 @@ function fixture(hooks: unknown = undefined) {
 		cwd: dir,
 		today: "2026-10-27",
 		handlers: HANDLERS,
-		readText: readOptional,
+		ports: processPorts,
 	};
 	const native = (
 		event: HookEventName,

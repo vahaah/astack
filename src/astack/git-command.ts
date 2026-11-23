@@ -1,6 +1,7 @@
 import { basename, relative, resolve } from "node:path";
-import { type ChangeSources, type Pathspec, repoRoot } from "./git.ts";
-import { canonical, toPosix } from "./paths.ts";
+import type { ChangeSources, Pathspec } from "./git.ts";
+import { toPosix } from "./paths.ts";
+import type { Ports } from "./ports.ts";
 import type { ShellStep, Unreadable, Word } from "./shell.ts";
 
 export interface GitInvocation {
@@ -465,10 +466,9 @@ export function mergeSpec(
 export function recordAdd(
 	staging: Staging,
 	args: string[],
-	dir: string,
+	base: string,
 	root: string,
 ): void {
-	const base = canonical(dir);
 	let mode: "paths" | "all" | "tracked" = "paths";
 	const paths: string[] = [];
 	let literal = false;
@@ -511,6 +511,7 @@ export interface CommitScope {
 
 export function commitScopes(
 	steps: readonly { readonly values: string[]; readonly dir: string }[],
+	ports: Ports,
 ): CommitScope[] {
 	let staging = freshStaging();
 	let indexStaged = true;
@@ -519,14 +520,15 @@ export function commitScopes(
 		if (step.values[0] !== "git") continue;
 		const git = gitInvocation(step.values, step.dir);
 		if (git?.sub === "add") {
-			const root = repoRoot(git.dir);
-			if (root) recordAdd(staging, git.args, git.dir, root);
+			const root = ports.git.gitRoot(git.dir);
+			const base = ports.files.realPath(git.dir) ?? git.dir;
+			if (root) recordAdd(staging, git.args, base, root);
 			continue;
 		}
 		if (git?.sub !== "commit") continue;
 		const flags = commitFlags(git.args);
 		if (flags.dryRun) continue;
-		const root = staging.interactive ? undefined : repoRoot(git.dir);
+		const root = staging.interactive ? undefined : ports.git.gitRoot(git.dir);
 		if (root)
 			scopes.push({
 				dir: git.dir,

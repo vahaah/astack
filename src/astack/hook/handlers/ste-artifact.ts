@@ -1,7 +1,6 @@
 import { resolve } from "node:path";
 import type { BodyReader } from "../../gh.ts";
 import { commitFlags, gitInvocation } from "../../git-command.ts";
-import { canonicalRelative, isScratchPath, readOptional } from "../../paths.ts";
 import {
 	type FileWrite,
 	fileWrites,
@@ -19,8 +18,8 @@ import { type Judged, judged, logRun } from "../../ste/events.ts";
 import {
 	hasHeaderFields,
 	isExcluded,
-	loadSettings,
 	PROSE_FILE,
+	portSettings,
 	type SteSettings,
 	settingsRoot,
 	settingsRootFrom,
@@ -55,7 +54,10 @@ const NO_SHELL_TARGETS: ShellTargets = { checked: [], unread: [] };
 const UNREAD_RULE = "unread-body";
 
 function settingsNear(dir: string, context: Context): SteSettings {
-	return loadSettings(settingsRootFrom(dir, projectDirOf(context)));
+	return portSettings(
+		context.ports,
+		settingsRootFrom(context.ports.files, dir, projectDirOf(context)),
+	);
 }
 
 function docTarget(
@@ -70,10 +72,11 @@ function docTarget(
 ): Checked | undefined {
 	if (!PROSE_FILE.test(path)) return undefined;
 	const projectDir = projectDirOf(context);
-	if (isScratchPath(projectDir, path)) return undefined;
-	const root = settingsRoot(path, projectDir);
-	const settings = loadSettings(root);
-	const relPath = canonicalRelative(root, path);
+	const { files } = context.ports;
+	if (files.isScratch(projectDir, path)) return undefined;
+	const root = settingsRoot(files, path, projectDir);
+	const settings = portSettings(context.ports, root);
+	const relPath = files.relativePath(root, path);
 	if (isExcluded(relPath, settings.profile)) return undefined;
 	return {
 		settings,
@@ -93,7 +96,7 @@ function docTarget(
 function writeTarget(write: FileWrite, context: Context): readonly Checked[] {
 	if (write.target.dynamic) return [];
 	const absolute = resolve(write.step.dir, write.target.value);
-	const before = readOptional(absolute);
+	const before = context.ports.files.readText(absolute);
 	const after = write.append ? `${before ?? ""}${write.body}` : write.body;
 	const checked = docTarget(absolute, before, after, context);
 	return checked ? [checked] : [];
@@ -139,7 +142,7 @@ function stepTargets(
 ): ShellTargets {
 	const step = steps[at];
 	if (step === undefined) return NO_SHELL_TARGETS;
-	const read = stagedReader(steps, at);
+	const read = stagedReader(steps, at, context.ports.files);
 	switch (step.values[0]) {
 		case "gh": {
 			const found = ghTargets(step, read);

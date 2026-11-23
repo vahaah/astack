@@ -6,7 +6,8 @@ import {
 	inputString,
 	isGh,
 } from "../../gh.ts";
-import { originSlug, repoRoot, runGit } from "../../git.ts";
+import { nonEmpty } from "../../git.ts";
+import type { GitPorts } from "../../ports.ts";
 import {
 	duplicateReasons,
 	type ListOpenPrs,
@@ -54,33 +55,20 @@ function flagValue(
 	return undefined;
 }
 
-function gitLine(dir: string, args: string[]): string | undefined {
-	const result = runGit(dir, args);
-	const line = result.ok ? result.stdout.toString("utf8").trim() : "";
-	return line === "" ? undefined : line;
-}
-
-function currentBranch(dir: string): string | undefined {
-	const branch = gitLine(dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
-	return branch === "HEAD" ? undefined : branch;
-}
-
-function defaultBase(dir: string): string {
-	const remote = gitLine(dir, [
-		"symbolic-ref",
-		"--short",
-		"refs/remotes/origin/HEAD",
-	]);
+function defaultBase(git: GitPorts, dir: string): string {
+	const remote = nonEmpty(
+		git.gitText(dir, ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"]),
+	);
 	return remote?.replace(/^origin\//, "") ?? "";
 }
 
-function newPr(draft: Draft, dir: string): NewPr {
-	const root = repoRoot(dir) ?? dir;
+function newPr(draft: Draft, dir: string, git: GitPorts): NewPr {
+	const root = git.gitRoot(dir) ?? dir;
 	return {
 		head: draft.head,
 		body: draft.body,
-		base: draft.base ?? defaultBase(dir),
-		repo: (draft.repo ?? originSlug(root) ?? "").toLowerCase(),
+		base: draft.base ?? defaultBase(git, dir),
+		repo: (draft.repo ?? git.gitOrigin(root) ?? "").toLowerCase(),
 		root,
 	};
 }
@@ -95,7 +83,7 @@ function verdictOf(
 	if (draft.head === undefined && draft.body === undefined) return ALLOW;
 	const open = list(dir, draft.repo);
 	if (!open) return ALLOW;
-	const pr = newPr(draft, dir);
+	const pr = newPr(draft, dir, context.ports.git);
 	const store = sessionStore(context.env, context.session);
 	const record = loadSessionPrs(store);
 	const reasons = [
@@ -137,13 +125,20 @@ function shellVerdict(
 			if (!isGh(step.values, "pr", "create")) return [];
 			const flags = ghFlags(step.words.slice(3));
 			const body = bodyText(
-				ghBody(flags, step.simple, step.dir, stagedReader(steps, at)),
+				ghBody(
+					flags,
+					step.simple,
+					step.dir,
+					stagedReader(steps, at, context.ports.files),
+				),
 			);
 			return [
 				verdictOf(
 					"gh pr create",
 					{
-						head: flagValue(step, ["-H", "--head"]) ?? currentBranch(step.dir),
+						head:
+							flagValue(step, ["-H", "--head"]) ??
+							context.ports.git.gitBranch(step.dir),
 						body,
 						base: flagValue(step, ["-B", "--base"]),
 						repo: flags.repo ?? ghRepoPrefix(step.env) ?? context.env.GH_REPO,
@@ -175,7 +170,8 @@ function mcpVerdict(
 	return verdictOf(
 		event.tool,
 		{
-			head: inputString(event.input, "head") ?? currentBranch(dir),
+			head:
+				inputString(event.input, "head") ?? context.ports.git.gitBranch(dir),
 			body: inputString(event.input, "body"),
 			base: inputString(event.input, "base"),
 			repo: owner && repo ? `${owner}/${repo}` : undefined,

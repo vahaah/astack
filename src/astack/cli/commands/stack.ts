@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { runProcess } from "../../process.ts";
 import { filesDigest, startVerdict } from "../../stack-config.ts";
 import {
 	checkoutOf,
@@ -34,16 +34,18 @@ function start(args: readonly string[], io: Io): number {
 	if (!files.ok) return usageError(io, `${NAME}: ${files.error}`);
 	const before = runningContainers(io);
 	if (!before.ok) return usageError(io, `${NAME}: ${before.error}`);
-	const started = spawnSync("bash", ["-c", command], {
+	const started = runProcess("bash", ["-c", command], {
 		cwd: io.cwd,
 		env: io.env,
-		stdio: "inherit",
+		stdin: "inherit",
+		output: "inherit",
 	});
-	if (started.error !== undefined)
-		return usageError(io, `${NAME}: cannot run bash: ${started.error.message}`);
-	if (started.status !== 0) {
+	const failed = started.ok ? started.value.stopped : started.error.cause;
+	if (failed !== undefined)
+		return usageError(io, `${NAME}: cannot run bash: ${failed}`);
+	if (started.ok && started.value.status !== 0) {
 		io.out(
-			`The start command exited ${started.status ?? started.signal}, so astack recorded nothing.\n`,
+			`The start command exited ${started.value.status ?? started.value.signal}, so astack recorded nothing.\n`,
 		);
 		return 1;
 	}

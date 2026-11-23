@@ -15,7 +15,10 @@ import {
 	TICKET_HEADINGS,
 	templateNamed,
 } from "../../src/astack/headings.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { parseShell, shellSteps } from "../../src/astack/shell.ts";
+
+const { files } = processPorts();
 
 const FEATURE = `## Problem
 Operators cannot export a report.
@@ -156,30 +159,32 @@ describe("repo templates", () => {
 	afterAll(() => rmSync(root, { recursive: true, force: true }));
 
 	test("PR headings come from the repo template when present", () => {
-		expect(prHeadings(root)).toEqual({
+		expect(prHeadings(files, root)).toEqual({
 			source: ".github/PULL_REQUEST_TEMPLATE.md",
 			headings: ["Summary", "Test plan"],
 		});
-		expect(prHeadings(undefined).headings).toEqual(PR_HEADINGS);
+		expect(prHeadings(files, undefined).headings).toEqual(PR_HEADINGS);
 	});
 
 	test("issue headings pick the template for the detected kind", () => {
-		expect(issueHeadings(root, "bug").headings).toEqual([
+		expect(issueHeadings(files, root, "bug").headings).toEqual([
 			"What happened",
 			"How to reproduce",
 		]);
-		expect(issueHeadings(root, "feature").headings).toEqual([
+		expect(issueHeadings(files, root, "feature").headings).toEqual([
 			"Need",
 			"Proposal",
 		]);
 		expect(
-			templateNamed(issueTemplates(root), "Feature request")?.headings,
+			templateNamed(issueTemplates(files, root), "Feature request")?.headings,
 		).toEqual(["Need", "Proposal"]);
-		expect(templateNamed(issueTemplates(root), "feature.md")?.path).toBe(
+		expect(templateNamed(issueTemplates(files, root), "feature.md")?.path).toBe(
 			".github/ISSUE_TEMPLATE/feature.md",
 		);
-		expect(templateNamed(issueTemplates(root), "Question")).toBeUndefined();
-		expect(issueHeadings(undefined, "bug").headings).toEqual(
+		expect(
+			templateNamed(issueTemplates(files, root), "Question"),
+		).toBeUndefined();
+		expect(issueHeadings(files, undefined, "bug").headings).toEqual(
 			TICKET_HEADINGS.bug,
 		);
 	});
@@ -191,11 +196,11 @@ describe("repo templates", () => {
 				join(lone, "ISSUE_TEMPLATE.md"),
 				"## Summary\n## Steps to reproduce\n## Expected\n## Actual\n",
 			);
-			expect(issueHeadings(lone, "bug")).toEqual({
+			expect(issueHeadings(files, lone, "bug")).toEqual({
 				source: "ISSUE_TEMPLATE.md",
 				headings: ["Summary", "Steps to reproduce", "Expected", "Actual"],
 			});
-			expect(issueHeadings(lone, "feature")).toEqual({
+			expect(issueHeadings(files, lone, "feature")).toEqual({
 				source: "the feature ticket standard",
 				headings: TICKET_HEADINGS.feature,
 			});
@@ -212,8 +217,10 @@ describe("repo templates", () => {
 				join(lone, ".github/ISSUE_TEMPLATE/bug_report.md"),
 				"---\nname: Bug report\n---\n## What happened\n",
 			);
-			expect(issueHeadings(lone, "bug").headings).toEqual(["What happened"]);
-			expect(issueHeadings(lone, "feature")).toEqual({
+			expect(issueHeadings(files, lone, "bug").headings).toEqual([
+				"What happened",
+			]);
+			expect(issueHeadings(files, lone, "feature")).toEqual({
 				source: "the feature ticket standard",
 				headings: TICKET_HEADINGS.feature,
 			});
@@ -222,11 +229,11 @@ describe("repo templates", () => {
 				join(lone, ".github/ISSUE_TEMPLATE.md"),
 				"## Context\n## Details\n",
 			);
-			expect(issueHeadings(lone, "bug").headings).toEqual([
+			expect(issueHeadings(files, lone, "bug").headings).toEqual([
 				"Context",
 				"Details",
 			]);
-			expect(issueHeadings(lone, "feature").headings).toEqual([
+			expect(issueHeadings(files, lone, "feature").headings).toEqual([
 				"Context",
 				"Details",
 			]);

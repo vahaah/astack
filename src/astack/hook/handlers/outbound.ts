@@ -1,6 +1,6 @@
 import { HashMatcher } from "../../deny-list.ts";
 import { denyStore, readDenyList } from "../../deny-store.ts";
-import { githubSlug, runGit } from "../../git.ts";
+import { githubSlug } from "../../git.ts";
 import {
 	type BodyFile,
 	type OutboundCall,
@@ -8,11 +8,13 @@ import {
 	type OutboundWrite,
 	outboundWrites,
 } from "../../outbound.ts";
+import type { FilePorts, GitPorts } from "../../ports.ts";
 import {
 	type ReadVisibility,
 	type Visibility,
 	visibilityWithGh,
 } from "../../pr/github.ts";
+import type { Env } from "../../process.ts";
 import { PUBLIC_REPO } from "../../public-repo.ts";
 import { type StagedText, shellSteps } from "../../shell.ts";
 import { stagedReader } from "../body-reader.ts";
@@ -22,7 +24,6 @@ import {
 	combineAll,
 	defineHandler,
 	deny,
-	type Env,
 	type EventOf,
 	type Handler,
 	projectDirOf,
@@ -64,8 +65,8 @@ function callOf(event: OutboundEvent, env: Env, dir: string): OutboundCall {
 	}
 }
 
-function remoteSlugs(dir: string): string[] {
-	const result = runGit(dir, [
+function remoteSlugs(git: GitPorts, dir: string): string[] {
+	const result = git.gitRun(dir, [
 		"config",
 		"--get-regexp",
 		"^remote\\..*\\.(push)?url$",
@@ -78,12 +79,15 @@ function remoteSlugs(dir: string): string[] {
 	return [...new Set(slugs)];
 }
 
-function targetSlugs(target: OutboundTarget): readonly string[] | undefined {
+function targetSlugs(
+	target: OutboundTarget,
+	git: GitPorts,
+): readonly string[] | undefined {
 	switch (target.kind) {
 		case "named":
 			return [target.slug];
 		case "remotes": {
-			const slugs = remoteSlugs(target.dir);
+			const slugs = remoteSlugs(git, target.dir);
 			return slugs.length === 0 ? undefined : slugs;
 		}
 		case "unknown":
@@ -95,8 +99,9 @@ function exposed(
 	target: OutboundTarget,
 	dir: string,
 	visibility: ReadVisibility,
+	git: GitPorts,
 ): readonly string[] {
-	const slugs = targetSlugs(target);
+	const slugs = targetSlugs(target, git);
 	if (slugs === undefined) return ["an unknown repo (unknown)"];
 	return slugs.flatMap((slug) => {
 		const seen =
@@ -105,11 +110,11 @@ function exposed(
 	});
 }
 
-function bodyReader(event: OutboundEvent): ReadBody {
+function bodyReader(event: OutboundEvent, files: FilePorts): ReadBody {
 	switch (event.kind) {
 		case "shell": {
 			const steps = shellSteps(event.command, event.cwd);
-			return ({ path, step }) => stagedReader(steps, step)(path);
+			return ({ path, step }) => stagedReader(steps, step, files)(path);
 		}
 		case "mcp":
 			return () => MISSING;
@@ -122,6 +127,7 @@ function writeVerdict(
 	dir: string,
 	visibility: ReadVisibility,
 	read: ReadBody,
+	git: GitPorts,
 ): Verdict {
 	const staged = write.bodyFiles.map(read);
 	const unread = write.unread
@@ -130,7 +136,7 @@ function writeVerdict(
 			? UNREAD_FILE
 			: undefined;
 	if (unread !== undefined) {
-		const targets = exposed(write.target, dir, visibility);
+		const targets = exposed(write.target, dir, visibility, git);
 		return targets.length === 0
 			? ALLOW
 			: deny(
@@ -149,7 +155,7 @@ function writeVerdict(
 		...new Set(texts.flatMap((text) => matcher.listedPrefixes(text))),
 	];
 	if (prefixes.length === 0) return ALLOW;
-	const targets = exposed(write.target, dir, visibility);
+	const targets = exposed(write.target, dir, visibility, git);
 	if (targets.length === 0) return ALLOW;
 	return deny(
 		[
@@ -180,9 +186,11 @@ function run(
 		);
 	if (list.value.kind === "none") return ALLOW;
 	const matcher = new HashMatcher(list.value.hashes);
-	const read = bodyReader(event);
+	const read = bodyReader(event, context.ports.files);
 	return combineAll(
-		writes.map((write) => writeVerdict(write, matcher, dir, visibility, read)),
+		writes.map((write) =>
+			writeVerdict(write, matcher, dir, visibility, read, context.ports.git),
+		),
 	);
 }
 

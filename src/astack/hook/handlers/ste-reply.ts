@@ -5,7 +5,7 @@ import {
 	writeEvents,
 } from "../../ste/events.ts";
 import { rewriteReason } from "../../ste/format.ts";
-import { loadSettings, settingsRootFrom } from "../../ste/profile.ts";
+import { portSettings, settingsRootFrom } from "../../ste/profile.ts";
 import {
 	decideReply,
 	type ReplyDecision,
@@ -52,8 +52,9 @@ function replyEvents(
 function decide(event: EventOf<"reply">, context: Context): ReplyDecision {
 	const why = replyExemption(event);
 	if (why !== undefined) return { kind: "allow", why };
-	const settings = loadSettings(
-		settingsRootFrom(context.cwd, projectDirOf(context)),
+	const settings = portSettings(
+		context.ports,
+		settingsRootFrom(context.ports.files, context.cwd, projectDirOf(context)),
 	);
 	return decideReply(event, settings.glossary);
 }

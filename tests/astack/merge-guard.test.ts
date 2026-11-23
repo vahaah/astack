@@ -19,6 +19,8 @@ import {
 	type Verdict,
 } from "../../src/astack/hook/events.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
+import { readOptional } from "../../src/astack/paths.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import {
 	type BaseAuthority,
 	type PrTarget,
@@ -123,6 +125,7 @@ function context(
 		projectDir: undefined,
 		env: { ASTACK_STATE_DIR: state },
 		today: "2026-10-16",
+		ports: processPorts(),
 		session,
 	};
 }
@@ -274,7 +277,7 @@ describe("machine prompts never change the grant", () => {
 			{
 				cwd: project,
 				today: "2026-10-16",
-				readText: () => undefined,
+				ports: processPorts,
 				handlers: [guard(GREEN)],
 			},
 		);
@@ -365,7 +368,12 @@ describe("the gh pr merge call", () => {
 			project,
 		);
 		if (!step) throw new Error("no command");
-		const call = parseMergeCall(step.simple, step.words.slice(3), project);
+		const call = parseMergeCall(
+			step.simple,
+			step.words.slice(3),
+			project,
+			readOptional,
+		);
 		expect(call).toEqual({
 			selector: "12",
 			repo: "o/r",
@@ -381,7 +389,8 @@ describe("the gh pr merge call", () => {
 		const [step] = shellSteps('gh pr merge "$PR" --squash', project);
 		if (!step) throw new Error("no command");
 		expect(
-			parseMergeCall(step.simple, step.words.slice(3), project).dynamic,
+			parseMergeCall(step.simple, step.words.slice(3), project, readOptional)
+				.dynamic,
 		).toBe(true);
 	});
 });

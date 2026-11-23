@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import {
 	accessSync,
 	appendFileSync,
@@ -6,7 +5,6 @@ import {
 	existsSync,
 	mkdirSync,
 	readdirSync,
-	readFileSync,
 	realpathSync,
 	statSync,
 	writeFileSync,
@@ -31,9 +29,11 @@ import {
 } from "../../doctor.ts";
 import { originSlug, repoRoot } from "../../git.ts";
 import { MANAGED_PATHS } from "../../managed.ts";
+import { readOptional } from "../../paths.ts";
 import { ghJson } from "../../pr/github.ts";
 import { parseMergeProfile } from "../../pr/profile.ts";
 import { reviewProfileState } from "../../pr-review-profile.ts";
+import { runProcess } from "../../process.ts";
 import { loadProfile, PROFILE_PATH, readProfileJson } from "../../profile.ts";
 import { stateDir } from "../../state.ts";
 import { EVENTS_FILE } from "../../ste/state.ts";
@@ -47,16 +47,8 @@ function isJson(value: unknown): value is Json {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function readText(path: string): string | undefined {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return undefined;
-	}
-}
-
 function readJson(path: string): unknown {
-	const text = readText(path);
+	const text = readOptional(path);
 	if (text === undefined) return undefined;
 	try {
 		return JSON.parse(text);
@@ -92,18 +84,16 @@ export function skipFilePath(home: string): string {
 }
 
 function skippedProfiles(home: string): string[] {
-	return (readText(skipFilePath(home)) ?? "")
+	return (readOptional(skipFilePath(home)) ?? "")
 		.split("\n")
 		.filter((line) => line !== "");
 }
 
 function nodeMajor(path: string): number | undefined {
 	if (basename(path).startsWith("bun")) return undefined;
-	const result = spawnSync(path, ["--version"], {
-		encoding: "utf8",
-		timeout: 5000,
-	});
-	const major = /^v?(\d+)\./.exec(result.stdout ?? "")?.[1];
+	const run = runProcess(path, ["--version"], { timeoutMs: 5000 });
+	const stdout = run.ok ? run.value.stdout.toString("utf8") : "";
+	const major = /^v?(\d+)\./.exec(stdout)?.[1];
 	return major === undefined ? undefined : Number(major);
 }
 
@@ -119,7 +109,7 @@ function guiRuntime(
 	env: Io["env"],
 	home: string,
 ): { readonly found: string | undefined; readonly old: string | undefined } {
-	const saved = readText(savedRuntimePath(home))?.split("\n")[0];
+	const saved = readOptional(savedRuntimePath(home))?.split("\n")[0];
 	const pick = [
 		env.ASTACK_RUNTIME,
 		saved,
@@ -217,7 +207,7 @@ function claudeProfiles(dirs: readonly string[]): ClaudeProfile[] {
 		ruleCard: ruleCardBytes(dir),
 		ruleNames: list(join(dir, "rules")),
 		readableRules: list(join(dir, "rules")).filter(
-			(name) => readText(join(dir, "rules", name)) !== undefined,
+			(name) => readOptional(join(dir, "rules", name)) !== undefined,
 		),
 	}));
 }
@@ -279,12 +269,12 @@ export const CODEX_HOOKS_TIMEOUT_MS = 10_000;
 
 async function codex(io: Io, home: string): Promise<CodexState | undefined> {
 	const codexHome = io.env.CODEX_HOME || join(home, ".codex");
-	const config = readText(join(codexHome, "config.toml"));
+	const config = readOptional(join(codexHome, "config.toml"));
 	if (config === undefined) return undefined;
 	const state = codexState(
 		codexHome,
 		config,
-		readText(join(codexHome, "AGENTS.md")),
+		readOptional(join(codexHome, "AGENTS.md")),
 	);
 	return state.enabled.some((id) => id.startsWith("astack@"))
 		? {
@@ -374,7 +364,7 @@ function steEventLogs(env: Io["env"]): readonly string[] {
 	if (root === undefined) return [];
 	const parent = join(root, "ste");
 	return list(parent).flatMap((name) => {
-		const text = readText(join(parent, name, EVENTS_FILE));
+		const text = readOptional(join(parent, name, EVENTS_FILE));
 		return text === undefined ? [] : [text];
 	});
 }
@@ -402,7 +392,7 @@ export async function gather(io: Io): Promise<Snapshot> {
 		bases: bases(io.cwd),
 		reviewProfile: reviewProfileState(
 			MANAGED_PATHS.reviewProfile,
-			readText(join(repo, MANAGED_PATHS.reviewProfile)),
+			readOptional(join(repo, MANAGED_PATHS.reviewProfile)),
 			loadProfile(repo).commentKeep,
 		),
 		unattendedReason: unattendedReason(io.env),

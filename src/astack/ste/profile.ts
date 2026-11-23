@@ -1,6 +1,7 @@
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { anyGlob } from "../glob.ts";
-import { readOptional, workTreeRoot } from "../paths.ts";
+import { readOptional } from "../paths.ts";
+import type { FilePorts, Ports } from "../ports.ts";
 import { readProfileJson } from "../profile.ts";
 import { DEFAULT_TECHNICAL_VERBS } from "./lexicon.ts";
 import type { Enforcement, Glossary } from "./types.ts";
@@ -128,24 +129,44 @@ export function glossaryOf(
 	};
 }
 
-export function settingsFor(root: string, parsed: unknown): SteSettings {
+export function settingsFor(
+	root: string,
+	parsed: unknown,
+	readText: (path: string) => string | undefined,
+): SteSettings {
 	const profile = parseSteProfile(parsed);
-	const glossaryText = readOptional(
+	const glossaryText = readText(
 		join(root, profile.glossary ?? DEFAULT_GLOSSARY_FILE),
 	);
 	return { root, profile, glossary: glossaryOf(profile, glossaryText) };
 }
 
 export function loadSettings(root: string): SteSettings {
-	return settingsFor(root, readProfileJson(root));
+	return settingsFor(root, readProfileJson(root), readOptional);
 }
 
-export function settingsRoot(path: string, fallback: string): string {
-	return settingsRootFrom(dirname(resolve(path)), fallback);
+export function portSettings(ports: Ports, root: string): SteSettings {
+	return settingsFor(
+		root,
+		ports.profile.readProfile(root),
+		ports.files.readText,
+	);
 }
 
-export function settingsRootFrom(start: string, fallback: string): string {
-	return workTreeRoot(start) ?? fallback;
+export function settingsRoot(
+	files: FilePorts,
+	path: string,
+	fallback: string,
+): string {
+	return settingsRootFrom(files, dirname(resolve(path)), fallback);
+}
+
+export function settingsRootFrom(
+	files: FilePorts,
+	start: string,
+	fallback: string,
+): string {
+	return files.workTree(start) ?? fallback;
 }
 
 export function hasHeaderFields(relPath: string, profile: SteProfile): boolean {

@@ -15,6 +15,7 @@ import type {
 	Verdict,
 } from "../../src/astack/hook/events.ts";
 import { duplicatePr } from "../../src/astack/hook/handlers/duplicate-pr.ts";
+import { processPorts } from "../../src/astack/ports.ts";
 import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 import {
 	loadSessionPrs,
@@ -69,6 +70,7 @@ function context(cwd: string, session?: string): Context {
 		projectDir: cwd,
 		env: { ASTACK_STATE_DIR: state },
 		today: "2026-11-23",
+		ports: processPorts(),
 		...(session === undefined ? {} : { session }),
 	};
 }

@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { unattendedReason } from "../../attended.ts";
-import { readOptional } from "../../paths.ts";
+import type { FilePorts } from "../../ports.ts";
 import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
@@ -19,7 +19,6 @@ import {
 	preflightReasons,
 	stateReasons,
 } from "../../pr/merge.ts";
-import { kindOf } from "../../repo-facts.ts";
 import { type ShellStep, shellSteps, type Word } from "../../shell.ts";
 import {
 	ALLOW,
@@ -252,10 +251,10 @@ function prMerge(args: readonly Word[], setsEnv: boolean): MergeCommand {
 	return NONE;
 }
 
-function fileReader(step: ShellStep): ReadFile {
+function fileReader(step: ShellStep, files: FilePorts): ReadFile {
 	return (path) => {
 		const file = resolve(step.dir, path);
-		return kindOf(file) === "file" ? readOptional(file) : undefined;
+		return files.pathKind(file) === "file" ? files.readText(file) : undefined;
 	};
 }
 
@@ -299,7 +298,12 @@ function mergeVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	const call = parseMergeCall(step.simple, merge.args, step.dir);
+	const call = parseMergeCall(
+		step.simple,
+		merge.args,
+		step.dir,
+		context.ports.files.readText,
+	);
 	if (call.disableAuto) return ALLOW;
 	const store = grantStore(context.env, context.session);
 	const loaded = loadGrant(store);
@@ -353,7 +357,7 @@ function stepVerdict(
 	context: Context,
 	read: ReadPullRequest,
 ): Verdict {
-	const merge = mergeCommand(step, fileReader(step));
+	const merge = mergeCommand(step, fileReader(step, context.ports.files));
 	switch (merge.kind) {
 		case "none":
 			return ALLOW;
@@ -584,11 +588,16 @@ function mcpVerdict(event: EventOf<"mcp">): Verdict {
 function failedVerdict(
 	event: EventOf<"prompt" | "shell" | "mcp">,
 	error: unknown,
+	context: Context,
 ): Verdict | undefined {
 	const merges =
 		(event.kind === "shell" &&
 			shellSteps(event.command, event.cwd).some((step) =>
-				examinesMerge(step, event.command, fileReader(step)),
+				examinesMerge(
+					step,
+					event.command,
+					fileReader(step, context.ports.files),
+				),
 			)) ||
 		(event.kind === "mcp" && isMcpMerge(event));
 	if (!merges) return undefined;

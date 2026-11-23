@@ -2,12 +2,12 @@ import { writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { sessionAttended } from "../../attended.ts";
 import { repoRoot } from "../../git.ts";
+import { readOptional } from "../../paths.ts";
 import { driftReport, driftText } from "../../plan/drift.ts";
 import {
 	planCommit,
 	planSettings,
 	readSnapshot,
-	readText,
 	renderAt,
 } from "../../plan/edge.ts";
 import { exportPlan, writePlanText } from "../../plan/export.ts";
@@ -38,6 +38,7 @@ import {
 } from "../../plan/trail.ts";
 import type { TrailRow } from "../../plan/types.ts";
 import { extractCopy } from "../../plan/units.ts";
+import { processPorts } from "../../ports.ts";
 import { err, ok, type Result } from "../../result.ts";
 import { checkText, denied } from "../../ste/check.ts";
 import { denyMessage } from "../../ste/format.ts";
@@ -140,7 +141,8 @@ function draft(args: readonly string[], io: Io): number {
 		appendDraft(state.drafts, draftEntry(title, why, io.now));
 	}
 	io.out(`${state.drafts}\n`);
-	if (title === undefined) io.out(readText(state.drafts) ?? "No drafts yet.\n");
+	if (title === undefined)
+		io.out(readOptional(state.drafts) ?? "No drafts yet.\n");
 	return 0;
 }
 
@@ -153,7 +155,7 @@ function delegate(args: readonly string[], io: Io): number {
 	if (!file || (value !== "on" && value !== "off") || args.length !== 2)
 		return usageError(io, "astack plan delegate: give <plan> on|off");
 	const path = resolve(io.cwd, file);
-	const text = readText(path);
+	const text = readOptional(path);
 	if (text === undefined)
 		return usageError(io, `astack plan delegate: cannot read ${file}`);
 	const state = stateFor("delegate", file, io);
@@ -239,7 +241,7 @@ export function setFor(
 	io: Io,
 ): { set: PlanSet; root: string } | undefined {
 	const root = rootOf(io);
-	const loaded = loadPlanSet(root, resolve(io.cwd, file), readText);
+	const loaded = loadPlanSet(root, resolve(io.cwd, file), readOptional);
 	if (!loaded.ok) {
 		usageError(io, `astack plan: ${loaded.error}`);
 		return undefined;
@@ -327,9 +329,9 @@ function setFromSnapshot(
 
 function slugFile(root: string, slug: string): string | undefined {
 	if (!SLUG.test(slug)) return undefined;
-	const dir = join(root, planProfileFor(root).dir);
+	const dir = join(root, planProfileFor(processPorts(), root).dir);
 	return [join(dir, `${slug}.md`), join(dir, slug, "index.md")].find(
-		(candidate) => readText(candidate) !== undefined,
+		(candidate) => readOptional(candidate) !== undefined,
 	);
 }
 
@@ -344,7 +346,9 @@ function drift(args: readonly string[], io: Io): number {
 	if (!snapshot) return 2;
 	const root = rootOf(io);
 	const path =
-		readText(resolve(io.cwd, file)) !== undefined ? file : slugFile(root, file);
+		readOptional(resolve(io.cwd, file)) !== undefined
+			? file
+			: slugFile(root, file);
 	const loaded = path === undefined ? undefined : setFor(path, io);
 	if (path !== undefined && !loaded) return 2;
 	const set = loaded?.set ?? setFromSnapshot(file, snapshot);
@@ -384,7 +388,7 @@ function keys(args: readonly string[], io: Io): number {
 		...[...loaded.set.briefs.values()].map((brief) => brief.path),
 	]) {
 		const absolute = resolve(loaded.root, path);
-		const text = readText(absolute) ?? "";
+		const text = readOptional(absolute) ?? "";
 		const result = writeKeys(text, loaded.set.slug, parsed, {
 			root: path === loaded.set.path,
 		});

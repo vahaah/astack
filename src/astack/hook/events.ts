@@ -1,5 +1,7 @@
 import type { Region } from "../comments/added.ts";
 import type { HookGroup, HookPolicy } from "../hook-profile.ts";
+import type { Ports } from "../ports.ts";
+import type { Env } from "../process.ts";
 
 export const TOOLS = ["claude-code", "cursor"] as const;
 export type Tool = (typeof TOOLS)[number];
@@ -69,8 +71,6 @@ export type Verdict =
 	| { readonly kind: "deny"; readonly reason: string }
 	| { readonly kind: "continue"; readonly prompt: string };
 
-export type Env = Readonly<Record<string, string | undefined>>;
-
 export type Context = {
 	readonly tool: Tool;
 	readonly event: HookEventName;
@@ -78,6 +78,7 @@ export type Context = {
 	readonly projectDir: string | undefined;
 	readonly env: Env;
 	readonly today: string;
+	readonly ports: Ports;
 	readonly session?: string;
 	readonly refresh?: boolean;
 	readonly hooks?: HookPolicy;
@@ -88,7 +89,11 @@ export type Handler = {
 	readonly quality?: HookGroup;
 	readonly on: readonly EventKind[];
 	readonly run: (event: HookEvent, context: Context) => Verdict;
-	readonly failed?: (event: HookEvent, error: unknown) => Verdict | undefined;
+	readonly failed?: (
+		event: HookEvent,
+		error: unknown,
+		context: Context,
+	) => Verdict | undefined;
 };
 
 export const ALLOW: Verdict = { kind: "allow" };
@@ -158,7 +163,11 @@ export function defineHandler<K extends EventKind>(spec: {
 	readonly quality?: HookGroup;
 	readonly on: readonly K[];
 	readonly run: (event: EventOf<K>, context: Context) => Verdict;
-	readonly failed?: (event: EventOf<K>, error: unknown) => Verdict | undefined;
+	readonly failed?: (
+		event: EventOf<K>,
+		error: unknown,
+		context: Context,
+	) => Verdict | undefined;
 }): Handler {
 	const { failed } = spec;
 	return {
@@ -170,8 +179,8 @@ export function defineHandler<K extends EventKind>(spec: {
 		...(failed === undefined
 			? {}
 			: {
-					failed: (event: HookEvent, error: unknown) =>
-						isKind(event, spec.on) ? failed(event, error) : undefined,
+					failed: (event: HookEvent, error: unknown, context: Context) =>
+						isKind(event, spec.on) ? failed(event, error, context) : undefined,
 				}),
 	};
 }

@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
@@ -9,6 +8,7 @@ import {
 	migrationFile,
 	parseApplied,
 } from "../../../migrations.ts";
+import { runProcess } from "../../../process.ts";
 import { err, ok, type Result } from "../../../result.ts";
 import { positional, valueAfter } from "../../args.ts";
 import type { Command } from "../../command.ts";
@@ -21,19 +21,16 @@ const PSQL_MAX_OUTPUT_BYTES = 1024 * 1024 * 1024;
 const ROWS = `select coalesce(json_agg(json_build_object('version', version, 'name', name, 'statements', statements) order by version), '[]'::json) from ${TABLE}`;
 
 function psql(io: Io, url: string, sql: string): Result<string, string> {
-	const result = spawnSync(
+	const run = runProcess(
 		"psql",
 		[url, "-XAtq", "-v", "ON_ERROR_STOP=1", "-c", sql],
-		{
-			cwd: io.cwd,
-			env: io.env,
-			encoding: "utf8",
-			maxBuffer: PSQL_MAX_OUTPUT_BYTES,
-		},
+		{ cwd: io.cwd, env: io.env, maxBuffer: PSQL_MAX_OUTPUT_BYTES },
 	);
-	if (result.error !== undefined) return err(result.error.message);
-	if (result.status !== 0) return err(result.stderr.trim());
-	return ok(result.stdout.trim());
+	if (!run.ok) return err(run.error.cause);
+	if (run.value.stopped !== undefined) return err(run.value.stopped);
+	if (run.value.status !== 0)
+		return err(run.value.stderr.toString("utf8").trim());
+	return ok(run.value.stdout.toString("utf8").trim());
 }
 
 function readApplied(
