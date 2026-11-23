@@ -492,15 +492,20 @@ function cardContext(
 			);
 }
 
+export function glossaryTerms(text: string): ReadonlySet<string> {
+	return new Set([
+		...headings(text),
+		...[...text.matchAll(/\*\*([^*\n]+)\*\*/g)].map((match) => match[1] ?? ""),
+	]);
+}
+
 function domainCheck(proof: ChangeProof, view: RepoView): Check {
 	const { domain } = proof;
 	const { files } = view;
 	const glossary = textOf(files, domain.glossary);
 	if (!glossary.ok) return fail(glossary.error);
 	const titles = headings(glossary.value);
-	const bold = [...glossary.value.matchAll(/\*\*([^*\n]+)\*\*/g)].map(
-		(match) => match[1] ?? "",
-	);
+	const terms = glossaryTerms(glossary.value);
 	return first([
 		() =>
 			proof.composition.kind === "plan"
@@ -512,7 +517,7 @@ function domainCheck(proof: ChangeProof, view: RepoView): Check {
 						),
 		() =>
 			domain.terms
-				.filter((term) => !titles.includes(term) && !bold.includes(term))
+				.filter((term) => !terms.has(term))
 				.map((term) =>
 					fail(`${domain.glossary} defines no term "${term}"`),
 				)[0] ?? PASS,

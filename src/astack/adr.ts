@@ -134,6 +134,13 @@ export function adrNumber(path: string): string | undefined {
 	return /(?:^|\/)(\d{4})-[^/]*\.md$/.exec(path)?.[1];
 }
 
+export function adrFolder(dir: string, files: readonly AdrFile[]): AdrFolder {
+	return {
+		files: files.filter((file) => adrNumber(file.path) !== undefined),
+		index: files.find((file) => file.path === `${dir}/README.md`),
+	};
+}
+
 type Span = {
 	readonly key: string;
 	readonly start: number;

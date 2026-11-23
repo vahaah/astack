@@ -17,7 +17,7 @@ astack is a plugin and CLI for AI coding agents such as Claude Code, Codex and C
 - 5 subagents: 2 read-only reviewers for TypeScript and PostgreSQL, and 3 helpers that the skills start.
 - 5 rules files: the rule card, the coding and comment rules, and the TypeScript and PostgreSQL packs.
 - Hooks that Claude Code, Codex, Cursor and Grok Build run on agent events, such as a prompt, a tool call or a reply. Their 12 handlers check replies, types, comments, plans, PR and ticket text. They stop a merge or a destructive command without your grant.
-- The `astack` CLI for plan sessions and 15 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
+- The `astack` CLI for plan sessions and 16 checks. One check is the [change proof](#change-proof): a TLA+ model check of each change, with its domain terms and its decision records (ADRs). The rule card asks the agent for it in every session. A repo that runs the `change-proof` gate blocks a change without it.
 
 ## Contents
 
@@ -446,6 +446,7 @@ Then run `astack doctor`. It reports the installed copies and each Codex hook th
 | `astack check spec-drift` | Check that each declared criterion links to a test control. A pass shows traceability, not coverage. Findings exit 1 |
 | `astack check hardening-profile` | Check `.claude/pr-review-hardening.profile.md` with the rules that apply uses. Each problem prints with its repair and exits 1. A missing profile or fenced block exits 2. `astack doctor` runs the same rules |
 | `astack check effects [--plan <file>] [--base <ref>] [--json]` | Compare the effect classes of each module with the `pure` lines and caps of the contexts card and with a plan domain block. Each finding is advice, and the check exits 0 |
+| `astack check adr [--base <ref>]` | Check the index rows and relations of the ADR folder. With `--base`, an ADR past Proposed changes only by a dated block, a status move or its `Amended by:` line, and a new ADR follows the template. Problems exit 1 |
 | `astack check proof [--base <ref>] [--summary]` | Admit a change only with a domain contract, composition records and the model runs of its proof rung. A cited ADR is Accepted, or Proposed with an integrated-proposal ratification. `--summary` runs nothing and prints `UNVERIFIED`. Needs Java 17 or later |
 | `astack check comments\|types [--staged\|--base <ref>]` | Fail when an added comment is in a class that no keep rule covers, or when an unsafe type-pattern count rises in a file |
 | `astack check migrations` | Compare the migrations a local Supabase stack applied with the files on the branch. It prints a reset command and never runs it |
