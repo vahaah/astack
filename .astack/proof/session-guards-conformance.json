@@ -205,6 +205,14 @@
 			"obligation": "BOUNDARY-ONCE"
 		},
 		{
+			"path": "marketplace/plugins/astack/skills/plan/references/upkeep.md",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
+			"path": "marketplace/plugins/astack/skills/plan/references/sessions.md",
+			"obligation": "BOUNDARY-ONCE"
+		},
+		{
 			"path": "marketplace/plugins/astack/bin/astack.js",
 			"obligation": "SG-generated",
 			"modelRefs": ["Prompt", "Merge", "ModeOf", "FullStopNeverMerges"]
