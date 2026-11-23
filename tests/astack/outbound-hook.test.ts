@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { judge } from "../../src/astack/hook/dispatch.ts";
 import {
+	ALLOW,
 	type Context,
 	deny,
 	type HookEvent,
@@ -99,7 +100,10 @@ function listedDeny(
 }
 
 describe("the outbound guard", () => {
-	test.each<[string, HookEvent, string]>([
+	const PUBLIC = "o/r (public)";
+	const spelling = (text: string): HookEvent =>
+		shell(`gh issue comment 21 -b "x ${text} y"`);
+	const forms: readonly [string, HookEvent, string][] = [
 		[
 			"an issue create with --body",
 			shell(`gh issue create --title Plan --body "Notes for ${NAME}"`),
@@ -171,46 +175,61 @@ describe("the outbound guard", () => {
 			mcp("cocode", "pull_request_respond", { comments: [{ body: NAME }] }),
 			"pull_request_respond",
 		],
-	])(
-		"[control:outbound-text] %s gets the deny-list deny with no text line",
-		(_, event, subject) => {
-			expect(guard.run(event, context(listed))).toEqual(
-				listedDeny(subject, NAME_HASH, "o/r (public)"),
-			);
-		},
-	);
+	];
 
-	test.each([
-		[WORDS.join(" ").toUpperCase(), NAME_HASH],
-		[WORDS.join("-"), NAME_HASH],
-		[WORDS.map(capital).join(""), NAME_HASH],
-		[`${WORDS.join("_")}.md`, NAME_HASH],
-		[capital(TOKEN), TOKEN_HASH],
-		[`${TOKEN}Client`, TOKEN_HASH],
-	])(
-		"[control:outbound-text] the spelling %p gets the deny of hash %p",
-		(spelling, prefix) => {
-			expect(
-				guard.run(
-					shell(`gh issue comment 21 -b "x ${spelling} y"`),
-					context(listed),
-				),
-			).toEqual(listedDeny("gh issue comment", prefix, "o/r (public)"));
-		},
-	);
-
-	test.each<[string, HookEvent]>([
+	test.each<[string, HookEvent, Verdict]>([
+		...forms.map(([label, event, subject]): [string, HookEvent, Verdict] => [
+			label,
+			event,
+			listedDeny(subject, NAME_HASH, PUBLIC),
+		]),
+		[
+			"an upper case name",
+			spelling(WORDS.join(" ").toUpperCase()),
+			listedDeny("gh issue comment", NAME_HASH, PUBLIC),
+		],
+		[
+			"a name with a hyphen",
+			spelling(WORDS.join("-")),
+			listedDeny("gh issue comment", NAME_HASH, PUBLIC),
+		],
+		[
+			"a camelCase name",
+			spelling(WORDS.map(capital).join("")),
+			listedDeny("gh issue comment", NAME_HASH, PUBLIC),
+		],
+		[
+			"a name in a file name",
+			spelling(`${WORDS.join("_")}.md`),
+			listedDeny("gh issue comment", NAME_HASH, PUBLIC),
+		],
+		[
+			"a one-word name",
+			spelling(capital(TOKEN)),
+			listedDeny("gh issue comment", TOKEN_HASH, PUBLIC),
+		],
+		[
+			"a one-word name in an identifier",
+			spelling(`${TOKEN}Client`),
+			listedDeny("gh issue comment", TOKEN_HASH, PUBLIC),
+		],
 		[
 			"an issue to a private repo",
 			shell(`gh issue create --repo acme/private -b "${NAME}"`),
+			ALLOW,
 		],
-		["a clean text", shell('gh issue create -b "the plan notes"')],
+		["a clean text", shell('gh issue create -b "the plan notes"'), ALLOW],
 		[
 			"a body that only a variable gives",
 			shell('gh issue create --body "$TEXT"'),
+			ALLOW,
 		],
-		["a Linear save_issue", mcp("linear", "save_issue", { title: NAME })],
-		["gh issue list", shell(`gh issue list --search "${NAME}"`)],
+		[
+			"a Linear save_issue",
+			mcp("linear", "save_issue", { title: NAME }),
+			ALLOW,
+		],
+		["gh issue list", shell(`gh issue list --search "${NAME}"`), ALLOW],
 		[
 			"a comment to an internal repo",
 			mcp("github", "add_issue_comment", {
@@ -218,10 +237,14 @@ describe("the outbound guard", () => {
 				repo: "internal",
 				body: NAME,
 			}),
+			ALLOW,
 		],
-	])("[control:outbound-text] %s passes", (_, event) => {
-		expect(guard.run(event, context(listed))).toEqual({ kind: "allow" });
-	});
+	])(
+		"[control:outbound-text] %s gets the deny-list deny with no text line, or passes",
+		(_, event, verdict) => {
+			expect(guard.run(event, context(listed))).toEqual(verdict);
+		},
+	);
 
 	test("[control:outbound-fail-closed] an unread visibility and a bad copy deny, and no copy passes", () => {
 		const hidden = shell(`gh issue create --repo acme/gone -b "${NAME}"`);
@@ -235,7 +258,7 @@ describe("the outbound guard", () => {
 			bad: deny(
 				`astack blocked gh issue create, because it cannot read the outbound deny list at ${bad}/deny/names.sha256: line 1 is not 64 lowercase hex characters. Run bun run deny sync.`,
 			),
-			none: { kind: "allow" },
+			none: ALLOW,
 		});
 	});
 
@@ -254,7 +277,7 @@ describe("the outbound guard", () => {
 			write: deny(
 				'astack blocked gh issue create, because the outbound guard failed with "gh exploded", so astack cannot examine its text. Let the owner post it.',
 			),
-			read: { kind: "allow" },
+			read: ALLOW,
 		});
 	});
 });
