@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "review-record",
-	"base": "a02289616219940a682908873fb3c3b9af5fe6d6",
+	"base": "1edf9c4b0a4bd3219018288b18f6eb51dcd36386",
 	"scope": [
 		{
 			"path": "src/astack/review-record.ts",

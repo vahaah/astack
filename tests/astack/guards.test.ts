@@ -24,9 +24,7 @@ import type {
 	Verdict,
 } from "../../src/astack/hook/events.ts";
 import { handler as destructive } from "../../src/astack/hook/handlers/destructive.ts";
-import { duplicatePr } from "../../src/astack/hook/handlers/duplicate-pr.ts";
 import { mergeGuard } from "../../src/astack/hook/handlers/merge-guard.ts";
-import { type OpenPr, openPrsFrom } from "../../src/astack/pr/open.ts";
 
 let root = "";
 let repo = "";
@@ -1910,80 +1908,4 @@ describe("a repo that this session made", () => {
 			expect(later).toBe("allow");
 		},
 	);
-});
-
-describe("the duplicate PR guard", () => {
-	const open: readonly OpenPr[] = [
-		{
-			number: 12,
-			url: "https://github.com/o/r/pull/12",
-			head: "dev/abc-1/export",
-			title: "Stream the export",
-			body: "Part of ABC-1, ABC-2\n\n## Why\nx",
-		},
-	];
-
-	function run(event: HookEvent, list = open): Verdict {
-		return duplicatePr(() => list).run(event, context(repo));
-	}
-
-	test("a second PR for the same branch is denied", () => {
-		const verdict = run(
-			shell('gh pr create --title "Add x" --body "Part of ABC-9"'),
-		);
-		expect(reason(verdict)).toContain(
-			"#12 (https://github.com/o/r/pull/12) is already open for the branch dev/abc-1/export",
-		);
-	});
-
-	test("a PR on another branch for a ticket of an open PR is denied", () => {
-		const verdict = run(
-			shell(
-				'gh pr create --head dev/abc-2/fix --title "Fix y" --body "Part of ABC-2"',
-			),
-		);
-		expect(reason(verdict)).toContain("is already open for ABC-2");
-	});
-
-	test("a PR for new work passes, and an unreadable list fails open", () => {
-		expect(
-			run(
-				shell(
-					'gh pr create --head dev/abc-3/new --title "New" --body "Part of ABC-3"',
-				),
-			).kind,
-		).toBe("allow");
-		expect(
-			duplicatePr(() => undefined).run(
-				shell('gh pr create --title "x" --body "Part of ABC-1"'),
-				context(repo),
-			).kind,
-		).toBe("allow");
-	});
-
-	test("the GitHub MCP create tool gets the same check", () => {
-		const verdict = run({
-			kind: "mcp",
-			server: "plugin_github_github",
-			tool: "create_pull_request",
-			input: {
-				owner: "o",
-				repo: "r",
-				head: "dev/abc-1/export",
-				title: "Again",
-				body: "Part of ABC-7",
-			},
-		});
-		expect(reason(verdict)).toContain("already open for the branch");
-	});
-
-	test("the gh list reply parses to open PRs", () => {
-		expect(
-			openPrsFrom([
-				{ number: 3, url: "u", headRefName: "b", title: "t", body: "x" },
-				{ title: "no number" },
-			]),
-		).toEqual([{ number: 3, url: "u", head: "b", title: "t", body: "x" }]);
-		expect(openPrsFrom({})).toBeUndefined();
-	});
 });

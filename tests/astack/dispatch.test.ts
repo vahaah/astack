@@ -91,6 +91,7 @@ describe("the handler registry", () => {
 			"pr-body",
 			"merge-guard",
 			"duplicate-pr",
+			"outbound",
 			"destructive",
 			"ste-reply",
 			"turn",

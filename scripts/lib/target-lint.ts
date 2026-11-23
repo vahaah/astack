@@ -1,16 +1,14 @@
 import { join } from "node:path";
-import { err, ok, type Result } from "../../src/astack/result.ts";
-import { type Companion, companionPaths } from "./companion.ts";
 import {
-	type Finding,
 	HashMatcher,
-	lintFiles,
 	nameHash,
 	parseHashList,
 	sha256,
-	type TextFile,
 	wordTokens,
-} from "./neutrality.ts";
+} from "../../src/astack/deny-list.ts";
+import { err, ok, type Result } from "../../src/astack/result.ts";
+import { type Companion, companionPaths } from "./companion.ts";
+import { type Finding, lintFiles, type TextFile } from "./neutrality.ts";
 import { type ProjectConfig, projectPath } from "./projects.ts";
 
 export type HashLists = { hashes: Set<string>; warnings: string[] };

@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { HashMatcher } from "../src/astack/deny-list.ts";
 import { companionPaths, openCompanion } from "./lib/companion.ts";
 import { git } from "./lib/exec.ts";
 import { isFrozen, LEAK_RULES, readLeakScan } from "./lib/leak-rules.ts";
@@ -8,7 +9,6 @@ import {
 	type Finding,
 	formatFinding,
 	HASH_RULES,
-	HashMatcher,
 	lintFiles,
 	type TextFile,
 } from "./lib/neutrality.ts";

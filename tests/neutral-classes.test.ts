@@ -11,9 +11,7 @@ import {
 import { type LeakRule, readLeakScan } from "../scripts/lib/leak-rules.ts";
 import {
 	formatFinding,
-	HashMatcher,
 	lintFiles,
-	sha256,
 	type TextFile,
 } from "../scripts/lib/neutrality.ts";
 import {
@@ -23,6 +21,7 @@ import {
 } from "../scripts/lib/projects.ts";
 import { loadHashLists, readTargetDeny } from "../scripts/lib/target-lint.ts";
 import { scanTree } from "../scripts/neutral.ts";
+import { HashMatcher, sha256 } from "../src/astack/deny-list.ts";
 import type { Result } from "../src/astack/result.ts";
 import { trackedTree } from "./tracked-tree.ts";
 

@@ -5,7 +5,7 @@ export type MergeGrant =
 
 export const NO_GRANT: MergeGrant = { kind: "none" };
 
-const NEGATIONS = new Set([
+export const NEGATIONS: ReadonlySet<string> = new Set([
 	"avoid",
 	"can't",
 	"cannot",
@@ -144,7 +144,7 @@ function withholdsFullSend(clause: Clause): boolean {
 	return stops || keepsTheMerge || refuses;
 }
 
-interface Clause {
+export interface Clause {
 	readonly tokens: readonly string[];
 	readonly question: boolean;
 	readonly opensPrompt: boolean;
@@ -192,7 +192,7 @@ export function joinGrants(a: MergeGrant, b: MergeGrant): MergeGrant {
 	return { kind: "prs", numbers: [...new Set([...a.numbers, ...b.numbers])] };
 }
 
-function clausesOf(prompt: string): readonly Clause[] {
+export function clausesOf(prompt: string): readonly Clause[] {
 	return prose(prompt)
 		.split(/(?<=[!?\n])|(?<=[.:])(?=\s|$)/)
 		.flatMap((sentence) =>
