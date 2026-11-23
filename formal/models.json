@@ -340,6 +340,7 @@
 				"src/astack/change-proof/**",
 				"src/astack/cli/commands/check/proof.ts",
 				"scripts/check-proof.ts",
+				"scripts/lib/check-base.ts",
 				"src/astack/result.ts",
 				"src/astack/hook/events.ts",
 				"src/astack/domain/**"
