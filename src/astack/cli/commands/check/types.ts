@@ -1,4 +1,5 @@
 import { type ChangeSources, gitChanges, repoRoot } from "../../../git.ts";
+import { profileSection } from "../../../profile.ts";
 import {
 	checkTypes,
 	denies,
@@ -6,7 +7,7 @@ import {
 	isTypeSource,
 } from "../../../types/check.ts";
 import { LABELS } from "../../../types/messages.ts";
-import { typePolicy } from "../../../types/policy.ts";
+import { parseTypePolicy } from "../../../types/policy.ts";
 import { valueAfter } from "../../args.ts";
 import type { Command } from "../../command.ts";
 import { type Io, usageError } from "../../io.ts";
@@ -39,7 +40,7 @@ function run(args: readonly string[], io: Io): number {
 		return usageError(io, "astack check-types: not inside a git repository");
 	const changes = gitChanges(root, sources);
 	if (!changes) return usageError(io, "astack check-types: git diff failed");
-	const policy = typePolicy(root);
+	const policy = parseTypePolicy(profileSection(root, "types"));
 	const reports: FileReport[] = [];
 	const skipped: string[] = [];
 	let checked = 0;

@@ -354,8 +354,8 @@ export function loadProfile(projectDir: string): Profile {
 	return parseProfile(readProfileJson(projectDir));
 }
 
-export function commentPolicy(...dirs: string[]): CommentPolicy {
-	const profiles = [...new Set(dirs)].map(loadProfile);
+export function commentPolicy(...parsed: readonly unknown[]): CommentPolicy {
+	const profiles = [...new Set(parsed)].map(parseProfile);
 	return {
 		keep: profiles.flatMap((profile) => profile.commentKeep),
 		limits: limitsFor(

@@ -1,5 +1,4 @@
 import { globToRegExp } from "../glob.ts";
-import { profileSection } from "../profile.ts";
 import type { HatchKind } from "./syntax.ts";
 
 export type TypeAllow = {
@@ -101,10 +100,6 @@ export function parseTypePolicy(raw: unknown): TypePolicy {
 		allow: allowEntries(raw.allow),
 		extendsAllow: patterns(raw.extendsAllow),
 	};
-}
-
-export function typePolicy(projectDir: string): TypePolicy {
-	return parseTypePolicy(profileSection(projectDir, "types"));
 }
 
 export function isGeneratedText(text: string): boolean {
