@@ -4,6 +4,7 @@ import {
 	chmodSync,
 	copyFileSync,
 	existsSync,
+	lstatSync,
 	mkdirSync,
 	mkdtempSync,
 	readFileSync,
@@ -1263,14 +1264,41 @@ describe("a repo that this session made", () => {
 		expect(sessionRun("git reset --hard", dir, state).kind).toBe("allow");
 	});
 
-	test("[control:sg-session-repo-worktree] git reset --hard passes in a worktree that git worktree add made in this session", () => {
+	function reportsBirthTimes(paths: readonly string[]): boolean {
+		return paths.every((path) => {
+			const { birthtimeNs, ctimeNs } = lstatSync(path, { bigint: true });
+			return birthtimeNs !== 0n && birthtimeNs !== ctimeNs;
+		});
+	}
+
+	const WORKTREE_RESET_BY_BIRTH: Readonly<Record<"known" | "none", Verdict>> = {
+		known: { kind: "allow" },
+		none: {
+			kind: "deny",
+			reason:
+				"astack blocked a destructive command:\n- git reset --hard discards the uncommitted changes in a.txt. This is an owner gate, so stop and ask the owner.",
+		},
+	};
+
+	test("[control:sg-session-repo-worktree] git reset --hard in a worktree that git worktree add made in this session passes when the host reports a birth time for each file that the guard stamps, and is denied when it does not", () => {
 		const { dir, state } = fresh("main");
 		dirtyRepoAt(dir);
 		const worktree = join(dir, "..", "wt");
+		const gitDir = join(dir, ".git", "worktrees", "wt");
 		expect(sessionRun("git worktree add ../wt", dir, state).kind).toBe("allow");
 		git(dir, "worktree", "add", "-q", "../wt");
 		write(worktree, { "a.txt": "b\n", "new.txt": "n\n" });
-		expect(sessionRun("git reset --hard", worktree, state).kind).toBe("allow");
+		const birth = reportsBirthTimes([
+			worktree,
+			gitDir,
+			join(worktree, ".git"),
+			join(gitDir, "HEAD"),
+		])
+			? "known"
+			: "none";
+		expect(sessionRun("git reset --hard", worktree, state)).toEqual(
+			WORKTREE_RESET_BY_BIRTH[birth],
+		);
 		expect(reason(sessionRun("git reset --hard", dir, state))).toContain(
 			"owner gate",
 		);
