@@ -7,7 +7,7 @@ This playbook handles the requests below even when another installed skill match
 Route a request to land or ship through `playbooks/shipping.md`.
 Shipping starts after this playbook ends.
 
-Start babysitting when the user asks.
+Start babysitting when the user asks, or when row 1 of the state table in `SKILL.md` routes open threads or red CI here.
 That is normally after a phase or the whole stack is built.
 A new PR does not start a babysit.
 Finish the stack, make it green here, then use Shipping to land it.
@@ -15,6 +15,8 @@ Finish the stack, make it green here, then use Shipping to land it.
 ## PR head checks
 
 Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named PR. Go on only after exit 0 with an `ok:` last line or exit 3 with a `no_pr:` last line.
+A failure of `gh pr view` is an error, not a missing PR. Print it, and stop.
+After `stop: HEAD does not hold PR_HEAD`, pull the PR branch. Then run `astack check pr-head` again. When `UNPUSHED` lists a commit, push it before you reply on a thread.
 
 ## Steps
 
@@ -22,6 +24,9 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
 
    Use `drive` to run until merge-ready.
    Its requests include "babysit this", "get it green", and "merge-ready".
+   Use `triage` for "comments", "check github comments", and "fix CI".
+   `triage` runs steps 5, 7 and 8 on the PR of the branch with no `/loop`.
+   It repeats until no thread is open and CI is green on the head, or an owner gate stops you.
    Use `background` to triage without blocking a plan that is still executing.
    Use `threads-only` to answer review comments and do no other work.
    Its request includes "address the review-bot comments".
@@ -58,8 +63,19 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
    A fix whose owning PR already merged becomes a new PR above the remaining stack.
    Never rewrite merged history.
 
-5. Handle conflicts, then review threads, then CI.
+5. Read the PR, then handle conflicts, review threads, and CI.
 
+   Find the PR with `gh pr view --json number,url,headRefName,headRefOid,baseRefName,headRepositoryOwner,headRepository,isCrossRepository,maintainerCanModify`.
+   The local branch of the PR is `headRefName`, or `pr-<n>` when `isCrossRepository` is true. A branch of a fork can have the name of a local branch, such as `main`.
+   When the current branch is not the local branch of the PR, work in the worktree that holds it in `git worktree list --porcelain`. When none holds it, run `git worktree add --detach <dir>` with a new directory outside this checkout, then `gh pr checkout <n> --branch <local branch>` in it. Never fix the threads of a PR on another branch.
+   When `isCrossRepository` is true, follow the fork rules of steps 1 and 7 of [`create-pr.md`](../references/create-pr.md).
+   Read all review threads in one GraphQL call:
+
+   ```sh
+   gh api graphql -f query='query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { id isResolved isOutdated path line comments(first: 20) { nodes { databaseId author { login } body url } } } } } } }' -f owner=<owner> -f name=<repo> -F number=<number>
+   ```
+
+   Read failing checks with `gh pr checks` and `gh run view <run-id> --log-failed`.
    Batch all known fixes into one push wave.
    Report a conflict instead of resolving it in the babysit.
    Name the branch that needs a rebase and stop.
@@ -106,14 +122,17 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
    Do not retry it again as a flake.
    A failure outside code touched by the diff indicates a stale base.
    Examine ancestry with `git merge-base --is-ancestor` before assuming a flake.
-   Report a stale base as a required rebase.
+   In `triage`, update an old base with `references/refresh.md`. Otherwise report a stale base as a required rebase.
    Do not spend retries on it.
    Commit a fix only for failure in the diff's own code.
 
-8. Examine review-bot claims skeptically.
+8. Examine review threads skeptically and close each thread.
 
    Verify each claim against the code through `review-bot-triage.md`.
-   Give a real finding a failing check before its fix.
+   Classify each open thread: Fix (true and in scope), Answer (false or already correct), Draft (out of scope, add to drafts), or Owner.
+   Ask an Owner thread with options, or decide it under a delegation grant.
+   For a file managed by astack, follow the managed-file rule in `references/fix.md` of `astack-pr-review-hardening`.
+   Run the failing check before the fix. Record its output. Then commit the test or script together with the fix, so every commit is green. The PR's Verification shows the failing run first, then the passing run. Each finding owns its commits. No commit holds two findings.
    Fix it in the lowest PR that owns the code.
    Use the top PR only when the owning PR has merged.
    That case requires the follow-up PR from step 4.
@@ -124,6 +143,12 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
    Send it with `gh api --method POST "repos/<owner>/<repo>/pulls/<pr>/comments/<comment-id>/replies" --input <payload.json>`.
    Never interpolate comment or reply text into a shell command.
    Dismiss noise with the concrete disproof on its thread.
+   Resolve each handled thread:
+
+   ```sh
+   gh api graphql -f query='mutation($id: ID!) { resolveReviewThread(input: { threadId: $id }) { thread { isResolved } } }' -f id=<thread id>
+   ```
+
    Use the watcher fields `reviewBot` and `reviewBotPasses` on each thread.
    From a bot's third pass, favor dismissal when a documented pattern applies.
    Still escalate findings about security, auth, billing, data, or migrations.
@@ -143,5 +168,5 @@ Run `astack check pr-head` before you act on a PR, with `--pr <n>` for a named P
    Put that change in its own PR.
    Never keep the pattern only in private memory.
 
-`drive` ends at merge-ready.
-Use `playbooks/shipping.md` to land the stack.
+In `triage`, reply in 6 lines or fewer with the PR link, class counts, CI state and next step.
+`drive` ends at merge-ready. Use `playbooks/shipping.md` to land the stack.

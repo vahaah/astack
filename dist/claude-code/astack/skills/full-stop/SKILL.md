@@ -72,6 +72,6 @@ Stop the watcher before the hand-off or a question.
 
 ## Report
 
-Write the report as `references/writing-the-reply.md` of `astack:mode` says.
+Write the report as Replies of `astack:mode` says.
 Give the PR link, the final head, the verdict, the proof, the outcome of each reviewer and the open risks.
 Say whether the PR is still open and unmerged.

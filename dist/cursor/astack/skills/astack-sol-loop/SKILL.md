@@ -38,7 +38,7 @@ Watch for scope growth, and push back with evidence.
 1. Run `git status --short`. Do not stash, discard or include unrelated changes.
 2. Limit the review to the paths of the change when they separate cleanly. Else stop and ask the owner.
 3. Run `git fetch origin`.
-4. For a PR, read `gh pr view <n> --json baseRefName,headRefOid`. Work in the checkout of the PR, as `references/comments-triage.md` of `astack-mode` says.
+4. For a PR, read `gh pr view <n> --json baseRefName,headRefOid`. Work in the checkout of the PR, as `playbooks/babysit.md` of `astack-mode` says.
 5. `HEAD` must be the head of the PR, or ahead of it only by this change. Then the base is `git merge-base HEAD origin/<baseRefName>`.
 6. Without a PR, the base is `git merge-base HEAD origin/<default branch>`.
 7. Without a remote, use a base that the owner names, or `HEAD` for uncommitted changes only.
