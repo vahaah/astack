@@ -1908,6 +1908,40 @@ describe("the review range and the reviewer set", () => {
 	});
 });
 
+describe("the converge iterations and the deferred hold", () => {
+	const engineSkill = read(`${engine}/SKILL.md`);
+	const review = read(`${engine}/references/review.md`);
+	const gate = read(`${engine}/references/gate.md`);
+	const decide = sentencesFrom(engineSkill, "## Decide", "## After the stop");
+
+	test("[control:defer-hold] stop_clean needs 0 open deferred entries, a deferred entry stays open in each later run, and no merge follows stop_converged", () => {
+		expect(paragraphStarting(decide, "The iteration is clean when")).toContain(
+			"A clean stop also needs `deferredFindings` to be 0.",
+		);
+		expect(paragraphStarting(decide, "- `stop_converged`:")).toBe(
+			"- `stop_converged`: the iteration is clean apart from open `deferred` entries, and `n >= iterations.min`. No merge follows it.",
+		);
+		const converge = sentencesFrom(
+			review,
+			"## Converge",
+			"## Review-bot threads",
+		);
+		for (const sentence of [
+			"With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open and `fixed` entries.",
+			"A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.",
+			"A gate or comment finding has no severity, so it never becomes `deferred`.",
+			"A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. It stays open until a reviewed commit fixes it.",
+		])
+			expect(converge).toContain(sentence);
+		expect(gate).toContain(
+			"decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion",
+		);
+		expect(paragraphStarting(gate, "/goal Run")).toContain(
+			"Also stop on stop_converged, stop_recurring or stop_principled_incompletion, with the reason printed. No merge follows stop_converged.",
+		);
+	});
+});
+
 describe("a clean iteration commits no fix", () => {
 	const engineSkill = read(`${engine}/SKILL.md`);
 	const unseen =
@@ -2057,6 +2091,11 @@ describe("the proof of a clean stop", () => {
 			goal: ["reviewerLaunches above 0 in a full run"],
 		},
 		{
+			condition: "A clean stop also needs `deferredFindings` to be 0",
+			fields: ["deferredFindings"],
+			goal: ["deferredFindings 0"],
+		},
+		{
 			condition: "- `stop_clean`: the iteration is clean and",
 			fields: ["decision"],
 			goal: [
@@ -2083,7 +2122,9 @@ describe("the proof of a clean stop", () => {
 		prHead:
 			"`prHead` is the `PR_HEAD` of the last head check, after the push of the decision step, or `none` in a run without a PR. A clean stop in a run with a PR needs it to equal `headSha`.",
 		decision:
-			"decision: continue | stop_clean | stop_recurring | stop_principled_incompletion",
+			"decision: continue | stop_clean | stop_converged | stop_recurring | stop_principled_incompletion",
+		deferredFindings:
+			"`deferredFindings` is the number of open `deferred` entries of the ledger.",
 		mode: "`mode` is the mode of the last CI check of the run.",
 		reviewRange:
 			"`reviewRange` is the range that the reviewers got, `<BASE_SHA>...<HEAD>` in a full run or `<DELTA_SHA>..<HEAD>` in a delta run.",
@@ -2244,7 +2285,7 @@ describe("the ledger keeps the evidence of the whole run", () => {
 	const gate = read(`${engine}/references/gate.md`);
 	const review = read(`${engine}/references/review.md`);
 	const reset =
-		"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty.";
+		"With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start with only its `deferred` entries.";
 	const keptThroughIterations =
 		"No iteration renames or empties the ledger, because `stop_recurring` reads the entries of earlier iterations.";
 	const preflightLoad =

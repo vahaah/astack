@@ -102,7 +102,7 @@ Each entry holds:
 - `class`, the id of the class that the finding fits, or `none`. The class is an item of `references/checklist.md`, or of the questions for astack changes of `docs/review-lessons.md` in astack;
 - `claim`, one line, and `claim_hash`, the SHA-256 of the reviewer's text with whitespace collapsed;
 - `reproduction` and its result;
-- `status`: `open`, `fixed`, `advisory`, `out-of-scope` or `recurring`, with the `reason`;
+- `status`: `open`, `fixed`, `advisory`, `out-of-scope`, `recurring` or `deferred`, with the `reason`;
 - `commits`, the SHAs of the finding's commits, in order;
 - `blob`, from `git rev-parse HEAD:<file>` when the entry was last decided. When `git rev-parse HEAD:<file>` fails because `HEAD` holds no such file, such as a file that the branch deletes, the blob is `deleted`.
 
@@ -135,7 +135,7 @@ A warning is advisory and never starts another review by itself.
 An unavailable growth check is a reported limit, never a zero-growth result.
 The existing iteration cap remains binding.
 
-The preflight loads the ledger once per run, before the prepasses. A ledger whose `stopped` is `null` comes from a run that was cut off, so this run resumes it, whatever `ledger.carry_over` says. A resumed run keeps each entry, and its first iteration is the one after the highest `iteration` of the entries. So each id stays unique, and `iterations.max` bounds both runs. Otherwise, with `ledger.carry_over: true`, a new run starts from the existing ledger. An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since. With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start empty. Each run sets `stopped` to `null` at this load, and to its decision when it stops.
+The preflight loads the ledger once per run, before the prepasses. A ledger whose `stopped` is `null` comes from a run that was cut off, so this run resumes it, whatever `ledger.carry_over` says. A resumed run keeps each entry, and its first iteration is the one after the highest `iteration` of the entries. So each id stays unique, and `iterations.max` bounds both runs. Otherwise, with `ledger.carry_over: true`, a new run starts from the existing ledger. An entry that is `fixed` or `advisory` there is not raised again unless its file's blob has changed since. With `false`, rename an existing ledger to `<branch>.<UTC timestamp>.json` and start with only its `deferred` entries. Each run sets `stopped` to `null` at this load, and to its decision when it stops.
 
 A finding recurs when, after one fix attempt, a new candidate matches a `fixed` entry's `claim_hash`. It also recurs when the candidate names the same file with a materially similar claim. Mark it `recurring` and stop the run.
 
@@ -147,6 +147,15 @@ Exit 3 with a `full:` last line, or exit 1, makes a full run. The final report n
 Exit 2 stops with principled incompletion.
 In a delta run, the reviewers get `git -C <WORKTREE> diff <DELTA_SHA> <HEAD>`, and an empty delta launches no reviewer.
 The run keeps the ledger, the comment gate and each gate.
+
+## Converge
+
+`converge` is `false` by default.
+With `converge: true`, an iteration after a fix commit reviews `<prior REVIEWED_HEAD>..<HEAD>`, with the ids of the open and `fixed` entries.
+A High or Important reviewer finding that recurs after one fix attempt becomes `deferred`, and the run goes on. A recurring Critical or Blocker finding still ends in `stop_recurring`.
+A gate or comment finding has no severity, so it never becomes `deferred`.
+A `deferred` entry carries into each later run, whatever `ledger.carry_over` says. It stays open until a reviewed commit fixes it.
+When a plan covers the branch, send each `deferred` finding to `astack plan draft <slug>`. Otherwise, the final report and the PR comment name it.
 
 ## Review-bot threads
 

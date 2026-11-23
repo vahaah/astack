@@ -21,6 +21,7 @@ Every key except `version`, `gates` and `test` is optional. An unknown key is an
 | `typescript` | object or `null` | `null` | Turns on `references/typescript.md`. |
 | `reviewers` | object | see below | Which reviewers run and what they are told. |
 | `test_adequacy` | `changed-behaviour` or `control-per-clause` | `changed-behaviour` | When a missing test blocks. |
+| `converge` | boolean | `false` | With `true`, an iteration after a fix reviews only the new commits, and a recurring finding can be `deferred` (`references/review.md`). |
 | `ledger` | object | `{carry_over: false}` | Whether earlier runs' findings carry over. |
 | `prepasses` | list | `[]` | One-off passes before the baseline. |
 | `comments` | object | none | Retired. The comment gate and the marker rule read only `commentKeep` in `.astack/profile.json`. The check command passes a profile that still sets `comments.keep_patterns`, and apply refuses it. |
