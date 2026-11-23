@@ -68,6 +68,8 @@ A guard returns a plain value and reads files, git and the environment at the ho
 
 ```data
 mergeGrantIn : PromptText -> MergeGrant   effects: none
+saveGrant    : (MergeGrant, GrantStore) -> Result<void, GrantSaveStop>   effects: fs-write
+loadGrant    : GrantStore -> Result<MergeGrant, never>                   effects: fs-read
 mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, network
 handler      : HookCall -> Verdict        comments: fs-read, fs-write, spawn, env
 handler      : HookCall -> Verdict        types: fs-read, spawn, env
@@ -86,7 +88,9 @@ recordOf     : GateRun -> GateRecord      effects: none
 ```
 
 `mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
-`mergeGuard` saves that grant for a person's prompt, and it reads the grant back when a `gh pr merge` call arrives.
+`mergeGuard` saves that grant for a person's prompt with `saveGrant`, and it reads the grant back with `loadGrant` when a `gh pr merge` call arrives.
+`src/astack/pr/grant-store.ts` holds both. `src/astack/pr/grant.ts` holds only the pure grant rules.
+A save that fails returns an error. The prompt still passes, and the earlier grant file stays.
 
 `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
 It also saves the session repo record, so it gets the fs-write effect.
@@ -105,9 +109,9 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 
 | Model concept | Concrete contract |
 |---|---|
-| `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt |
+| `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt with `saveGrant` in `src/astack/pr/grant-store.ts` |
 | `HumanPrompt` | `humanPrompt` with `replyInteractive`, and `unattendedReason` in `src/astack/attended.ts` |
-| `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts` |
+| `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts`, and `loadGrant` in `src/astack/pr/grant-store.ts` |
 | `mode` of `Merge` | The full-stop and full-send skills. The full-stop skill never merges, and no function enforces this part |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
