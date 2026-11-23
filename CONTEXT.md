@@ -16,7 +16,7 @@ context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/as
 context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
 context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/cli/commands/check/index.ts, src/astack/codex-hooks.ts, src/astack/codex-trust.ts, src/astack/commit-style.ts, src/astack/doctor.ts, src/astack/hook-profile.ts, src/astack/init.ts, src/astack/managed.ts, src/astack/marketplace.ts, src/astack/profile.ts, src/astack/public-repo.ts, src/astack/repo-facts.ts, src/astack/rules.ts, src/astack/skill-path.ts
 cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
-cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write)
+cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write), loadFullStop(read), saveFullStop(write)
 cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
@@ -130,6 +130,20 @@ A manifest cites it as the witness of the law.
 _Avoid_: Model law, sample loop
 _Code_: `tests/property/`
 
+### Conformance test
+
+A test that reads the tables of a model and drives the real guards with each row.
+It compares each verdict of the code with the verdict of the model, and each count both ways.
+_Avoid_: Trace replay, model copy
+_Code_: `tests/astack/session-guards-model.test.ts`
+
+### Restating invariant
+
+An invariant whose check only repeats one guard or one update of a model action.
+TLC cannot fail it on a code change, so the invariant audit of its record names an implementation control.
+_Avoid_: Proof of the code, vacuous invariant
+_Code_: `tests/astack/model-audit.test.ts`
+
 ### ReviewRun
 
 A bounded review whose ledger owns findings, recurrence, and iteration use.
@@ -188,7 +202,7 @@ _Code_: `MergeGrant`
 
 ### Grant store
 
-The state file that keeps the merge grant of one session between hook calls.
+The state files that keep the merge grant and the full-stop record of one session between hook calls.
 `saveGrant` returns an error with the grant path, and the merge guard still allows the prompt.
 A store with no state folder or no session id saves nothing and loads no grant.
 _Avoid_: Grant cache, grant file
@@ -217,7 +231,8 @@ _Code_: `unattendedReason`
 
 ### Scratch file
 
-A file outside the project with no `.git` or `.astack/profile.json` at or above it, or a file in the OS temp folder outside the project.
+A file outside the project with no `.git` or `.astack/profile.json` at or above it.
+A file in the OS temp folder follows the same rule, so a git clone there keeps each check.
 The write-time quality hooks skip it. A commit of it keeps every check.
 _Avoid_: Ignored file, temp file
 _Code_: `isScratchPath`

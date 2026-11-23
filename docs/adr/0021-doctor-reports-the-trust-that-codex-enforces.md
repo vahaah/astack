@@ -134,3 +134,13 @@ Doctor reads nothing outside a git repo with a GitHub remote.
 - A second rule list in the CLI. Rejected because the two lists drift apart.
 - Read the protection endpoint. Rejected because it needs admin rights.
 - A push guard for a profile edit. Rejected because branch protection already controls a pushed edit.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/DoctorTrust.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `OkMeansCodexTrusts` | restates | `Report` | `dt-trust-ok`, `dt-trust-modified` |
+| `OkNeedsReply` | restates | `Report` | `dt-read-exit` |
+| `ListedReportIsExact` | restates | `Report` | `dt-trust-ok`, `dt-trust-modified` |

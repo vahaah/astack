@@ -12,16 +12,24 @@ The proof sections of both ADRs moved here on 2026-11-22.
 `formal/SessionGuards.tla` examines three groups of finite behaviors under one specification.
 The merge group covers attended and unattended sessions, the three merge authorities of the profile and prompts of one or two clauses.
 The clauses are a merge word, a merge word with one PR number, a negated merge, "full send", a negated "full send", "full stop" and other text.
-The prompt source is `user`, absent or a machine source.
+The prompt source is `user`, absent, a harness frame or a machine source.
 
 A merge grant names PRs that a merge word or an un-negated "full send" clause of a person's prompt covers.
 A "full stop" clause, a negated clause and a machine prompt add no PR to the grant.
+A "full stop" clause or a negated clause also withholds the full-send grant of the whole prompt, as `Withholds` and `PromptGrant` say.
+
+A prompt whose only instruction is "full stop" starts the full-stop run, from each source. That prompt stands for the command form `/astack:full-stop` too. It also stands for a prompt that adds only filler words, such as "ok" or "please".
+A harness frame opens the prompt with its own label, so a framed prompt never has "full stop" as its only instruction. `StartsFullStop` says so.
+Only a person's prompt that does not start the run ends it.
 The full-stop procedure never merges, also when `merge.authority` or `merge.standingBases` of the profile gives a grant.
 
 The write group covers each combination of four path facts: in the project, in the temp folder, under `.git` and under a profile.
+The temp-folder fact changes no verdict, so a git work tree in the temp folder keeps each write check.
+
 The git group covers 16 git commands.
 It covers each set of tracked, staged, mixed and untracked changes in a named file, a folder and the rest of the tree.
 It also covers one repo that the session makes, the record of its path, the settle window and a repo of another process.
+
 The push group covers a HEAD whose gates pass or fail, a gate run and one push or commit.
 The push or commit skips the hooks or keeps them. It goes to a head, to refs that a record cannot cover, or into a new commit.
 
@@ -29,7 +37,7 @@ The push or commit skips the hooks or keeps them. It goes to a head, to refs tha
 GrantFromWords       == \A n \in grant : OwnerCovers(said, n)
 GrantFromPerson      == grant # {} => PersonTyped(saidBy, attended)
 MergeNeedsAuthority  == each merge has a profile grant or a covering prompt of a person
-FullStopNeverMerges  == no merge happens while the last prompt of a person says "full stop"
+FullStopNeverMerges  == no merge happens after a prompt that starts the full-stop run, until a person's prompt that does not start it
 WriteChecksKept      == a write outside the scratch class gets the write checks
 ScratchSkipped       == a write of a scratch file gets no write check
 CommitSurfaceChecked == each commit gets the commit checks
@@ -68,8 +76,11 @@ A guard returns a plain value and reads files, git and the environment at the ho
 
 ```data
 mergeGrantIn : PromptText -> MergeGrant   effects: none
+startsFullStop : PromptText -> boolean    effects: none
 saveGrant    : (MergeGrant, GrantStore) -> Result<void, GrantSaveStop>   effects: fs-write
 loadGrant    : GrantStore -> Result<MergeGrant, never>                   effects: fs-read
+saveFullStop : (boolean, GrantStore) -> Result<void, GrantSaveStop>      effects: fs-write
+loadFullStop : GrantStore -> FullStopRecord                              effects: fs-read
 mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, network
 handler      : HookCall -> Verdict        comments: fs-read, fs-write, spawn, env
 handler      : HookCall -> Verdict        types: fs-read, spawn, env
@@ -77,6 +88,7 @@ handler      : HookCall -> Verdict        ste-artifact: fs-read, fs-write, env
 handler      : HookCall -> Verdict        destructive: fs-read, fs-write, spawn, env
 shellSteps   : HookCall -> ShellStep      effects: none
 readGit      : ShellStep -> GitRead       effects: none
+workLoss     : (GitInvocation, Treeish) -> WorkLoss | undefined          effects: none
 madeRepoTarget   : ShellStep -> AbsolutePath | undefined                   effects: none
 settleRepos      : (SessionRepos, Map<Path, RepoProbe>) -> SessionRepos      effects: none
 sessionRepoAt    : (SessionRepos, Root, RepoIdentity) -> boolean            effects: none
@@ -88,9 +100,13 @@ recordOf     : GateRun -> GateRecord      effects: none
 ```
 
 `mergeGrantIn` is pure. It joins the grants of the clauses of one prompt with `joinGrants`.
-`mergeGuard` saves that grant for a person's prompt with `saveGrant`, and it reads the grant back with `loadGrant` when a `gh pr merge` call arrives.
-`src/astack/pr/grant-store.ts` holds both. `src/astack/pr/grant.ts` holds only the pure grant rules.
-A save that fails returns an error. The prompt still passes, and the earlier grant file stays.
+`startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only instruction is "full stop".
+Filler words, such as "ok", "please" and "now", can stand beside it.
+
+`mergeGuard` saves that grant for a person's prompt with `saveGrant`. It saves the full-stop record with `saveFullStop` for each prompt that starts the run, and removes it for a person's prompt that does not. It reads both back with `loadGrant` and `loadFullStop` when a `gh pr merge` call arrives.
+`src/astack/pr/grant-store.ts` holds the four store functions. `src/astack/pr/grant.ts` holds only the pure grant rules.
+A save that fails returns an error. The prompt still passes, and the earlier grant file stays. A failed full-stop save also skips the grant save.
+`workLoss` is pure. It takes the treeish reader as a parameter, and the destructive `handler` passes a reader that runs `git rev-parse`.
 
 `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
 It also saves the session repo record, so it gets the fs-write effect.
@@ -110,12 +126,14 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 | Model concept | Concrete contract |
 |---|---|
 | `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt with `saveGrant` in `src/astack/pr/grant-store.ts` |
+| `Withholds` and `PromptGrant` | `withholdsFullSend`, which drops the full-send grant of each clause when one clause of the prompt withholds it |
 | `HumanPrompt` | `humanPrompt` with `replyInteractive`, and `unattendedReason` in `src/astack/attended.ts` |
 | `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts`, and `loadGrant` in `src/astack/pr/grant-store.ts` |
-| `mode` of `Merge` | The full-stop and full-send skills. The full-stop skill never merges, and no function enforces this part |
+| `ModeOf`, `StartsFullStop` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for each prompt that starts the run. `preflightReasons` denies each merge while `loadFullStop` gives `present`. `--disable-auto` passes |
+| The `fault` of `Merge` | A guard error, and a session with no path for the full-stop record. Then `loadFullStop` gives `unknown`, and `grantReasons` denies a merge that rests only on a standing grant. With no path, no grant record exists either, so each merge gets a deny |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |
 | `Commit` | `commitScopes` and the commit checks of the comment and type hooks, with no scratch test |
-| `CodeLost` and `RunGit` | `workLossReasons` and its status reader in `src/astack/hook/handlers/destructive.ts` |
+| `CodeLost` and `RunGit` | `workLoss`, which gives the kind and the pathspecs that one git call loses, and `workLossReasons` with its status reader in `src/astack/hook/handlers/destructive.ts` |
 | `MakeRepo` | `madeRepoTarget` in `src/astack/git-command.ts`, and `rememberRepos` in `src/astack/session-repos.ts`, which records a free target as pending |
 | `Shell` and `Settle` | `settledRepos` and `settleRepos` in `src/astack/session-repos.ts`, which bind a pending repo root with its own git dir that the call made, and drop each other pending path |
 | `Exempt` | `isSessionRepo` and `sessionRepoAt` in `src/astack/session-repos.ts`, which `lostPaths` reads through the session repo test of each step |
@@ -137,7 +155,29 @@ The merge guard, hook, STE hook, guard and doctor suites run each control throug
 The normal test gate also runs the tests of the notice, the upstream snapshot and the skill shape for ADR 0009 D1, D2, D5 and D6.
 
 The registry negative of the model in `formal/models.json` must give its named violation with a counterexample.
+The `conformance` field of the registry names `tests/astack/session-guards-model.test.ts` and a code mutation of `grantReasons`. The conformance test reads the tables of the model and drives the real guards with each row. With the mutation, it fails.
+`tests/property/session-guards-merge.test.ts` and `tests/property/session-guards-work-loss.test.ts` drive the merge guard, the destructive guard and real git beside the model with fast-check commands.
 The manifest negative of the session repo change cuts the identity compare of `Exempt`, and TLC must report `BroadLossDenied`.
 The unchanged model must pass again with the same state counts.
 `tests/property/shell-wrapper-law.test.ts` examines the wrapper law on both guards, and `tests/fixtures/guard-bypass.json` holds the probe forms.
 Current results belong to CI and the proof receipt, so this record does not copy a pass result.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/SessionGuards.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `GrantFromWords` | restates | `Prompt` | `sg-grant-words`, `sg-conformance-merge` |
+| `GrantFromPerson` | restates | `Prompt` | `sg-unattended-denial`, `sg-machine-prompt` |
+| `MergeNeedsAuthority` | independent | It joins the grant that `Prompt` saves with the guard of `Merge` |  |
+| `McpMergeDenied` | restates | `Merge` | `sg-mcp-merge`, `sg-conformance-merge` |
+| `GuardErrorDenies` | restates | `Merge` | `sg-guard-error`, `sg-conformance-merge` |
+| `FullStopNeverMerges` | restates | `Merge` | `sg-full-stop-merge`, `sg-model-merge` |
+| `WriteChecksKept` | restates | `Write` | `sg-scratch-write`, `sg-conformance-scratch` |
+| `ScratchSkipped` | restates | `Write` | `sg-scratch-write`, `sg-conformance-scratch` |
+| `CommitSurfaceChecked` | restates | `Commit` | `sg-commit-staged` |
+| `BroadLossDenied` | independent | It compares `CodeLost` with `GitLost`, and the record of `MakeRepo` and `Shell` with the repo that `Appear` can put at the path |  |
+| `DenialNeedsLoss` | independent | It compares `CodeLost` of the hook with `GitLost` of git over each command row |  |
+| `HookSkipNeedsGates` | independent | It joins the record of `GatesRun` with the guard and the update of `Push` |  |
+| `SessionRepoPasses` | restates | `RunGit` | `sg-session-repo`, `sg-session-repo-bundle` |

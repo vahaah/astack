@@ -13,7 +13,7 @@ The [design](../design.md) gives the hook behavior in full.
 - [criterion:SG-framed-prompt] A prompt that opens with a tag, or with a bracket label that is not a Markdown link, gives no grant. A host `source` of `user` still counts. A Cursor prompt gives a grant only in an attended session.
 - [criterion:SG-mcp-merge] Each MCP tool with a merge word in the server name or the tool name gets a deny, also with a grant. A state word such as `merged` passes only with a read verb and no write verb. A read tool on a merge request, such as `list_merge_requests`, passes. An MCP input that holds a `gh pr merge` command or a `gh api` merge gets a deny too. So does a click tool whose input names a merge button.
 - [criterion:SG-guard-error] An error of the merge guard on a merge command or an MCP merge tool gives a deny that names the error. Each other handler fails open.
-- [criterion:SG-full-stop] A "full stop" clause and a negated merge or "full send" clause give no grant. The full-stop procedure never merges.
+- [criterion:SG-full-stop] A "full stop" clause and a negated merge or "full send" clause give no grant. The full-stop procedure never merges. A prompt from each source can start the full-stop run. Then the merge guard denies each `gh pr merge` until the next prompt of a person, also with a standing grant. The prompt has `/astack:full-stop` at its start, or "full stop" as its only instruction. `--disable-auto` passes. With no path for the full-stop record, a standing grant merges nothing.
 - [criterion:SG-unattended] In an unattended session, a prompt with no source field gives no grant. The merge denial and `astack doctor` name the variable that makes the session unattended. A prompt with the source `user` gets the attended note.
 - [criterion:SG-scratch] The type, comment and doc STE hooks skip a write or an edit only when its file is a scratch file.
 - [criterion:SG-commit-surface] The comment and type hooks examine each path that a commit includes, also a scratch file.
@@ -29,6 +29,7 @@ The [design](../design.md) gives the hook behavior in full.
 - [criterion:SG-gates-run] `astack gates run` records HEAD only when each gate that applies exits 0 on a clean tree. A hook-skip push of a recorded source passes.
 - [criterion:SG-generated] Each generated file and each bundle of the CLI equals a fresh build of its source.
 - [criterion:SG-runtime] `bin/astack` runs the first runtime that it finds, with bun before node, and probes no version before a run. Below node 22, a hook exits 0 with one line on stderr, and each other command exits 1.
+- [criterion:SG-conformance] For each row of the model tables, the real guards give the verdict of the mirror. The tables hold the commands, the changes, the push targets, the merges and the file facts. Generated command runs give the verdicts and the trees after git of the model. A hand mutation of `grantReasons` fails the conformance test.
 - [criterion:SG-preserve] A change to a skill, a doc or another command leaves the verdicts of the session guards unchanged.
 - [criterion:SG-grant-store] A load after a save gives the grant of the last save, and two saves equal one. A save of `NO_GRANT` deletes the file. A save under a state path that is a file returns an error with the grant path. Then the prompt still passes, and the earlier grant file stays.
 
@@ -42,5 +43,5 @@ The session repo rule holds under three premises.
 No other process makes a repo at a pending path before the next Bash call of the session.
 The host runs a Bash call to its end before the PreToolUse hook of the next Bash call.
 The host keeps one session id for the life of a session.
-The full-stop rule that a session never merges is a procedure in the skill text.
-The merge guard enforces only the grant part of that rule.
+The merge guard keeps a full-stop record in the state folder. The record stops a mistake, not a hostile agent, because an agent can delete it.
+The conformance test and the fast-check commands examine the real guards against the tables of the model. They do not show that each other code path refines the model.

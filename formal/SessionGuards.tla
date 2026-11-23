@@ -24,12 +24,15 @@ ClauseGrant(c) == CASE c \in {"merge", "fullSend"} -> PRs
                     [] c = "mergeOne" -> {1}
                     [] OTHER -> {}
 HumanPrompt(source, attended) == IF source = "none" THEN attended ELSE source = "user"
-ModeOf(p) == IF "fullStop" \in p THEN "fullStop"
+Withholds(p) == p \cap {"negatedMerge", "negatedFullSend", "fullStop"} # {}
+PromptGrant(p) == UNION {ClauseGrant(c) : c \in IF Withholds(p) THEN p \ {"fullSend"} ELSE p}
+ModeOf(p) == IF p = {"fullStop"} THEN "fullStop"
              ELSE IF "fullSend" \in p THEN "fullSend" ELSE "plain"
+StartsFullStop(p, source) == source # "frame" /\ ModeOf(p) = "fullStop"
 
 Files == [inProject : BOOLEAN, inTemp : BOOLEAN, git : BOOLEAN, marked : BOOLEAN]
 IdleFile == [inProject |-> TRUE, inTemp |-> FALSE, git |-> TRUE, marked |-> FALSE]
-Scratch(f) == ~f.inProject /\ (f.inTemp \/ ~(f.git \/ f.marked))
+Scratch(f) == ~f.inProject /\ ~(f.git \/ f.marked)
 
 Kinds == {"unstaged", "staged", "both", "untracked"}
 Places == {"named", "folder", "other"}
@@ -149,11 +152,12 @@ Init == \/ /\ concern = "merge"
 Prompt == /\ concern = "merge"
           /\ \E p \in Prompts, source \in Sources :
                IF HumanPrompt(source, attended)
-                 THEN /\ grant' = UNION {ClauseGrant(c) : c \in p}
+                 THEN /\ grant' = PromptGrant(p)
                       /\ said' = p
                       /\ saidBy' = source
                       /\ mode' = ModeOf(p)
-                 ELSE UNCHANGED <<grant, said, saidBy, mode>>
+                 ELSE /\ mode' = IF StartsFullStop(p, source) THEN "fullStop" ELSE mode
+                      /\ UNCHANGED <<grant, said, saidBy>>
           /\ UNCHANGED <<concern, attended, baseAuthority, workingAuthority, merged,
                          unauthorized, stopMerged, mcpMerged, faultMerged, writeVars, gitVars,
                          pushVars>>
@@ -291,10 +295,8 @@ MergeNeedsAuthority == ~unauthorized
 McpMergeDenied == ~mcpMerged
 GuardErrorDenies == ~faultMerged
 FullStopNeverMerges == ~stopMerged
-WriteChecksKept == step # "new" /\ (file.inProject \/ (~file.inTemp /\ (file.git \/ file.marked)))
-                   => writeChecked
-ScratchSkipped == step # "new" /\ ~file.inProject /\ (file.inTemp \/ ~(file.git \/ file.marked))
-                  => ~writeChecked
+WriteChecksKept == step # "new" /\ (file.inProject \/ file.git \/ file.marked) => writeChecked
+ScratchSkipped == step # "new" /\ ~file.inProject /\ ~(file.git \/ file.marked) => ~writeChecked
 CommitSurfaceChecked == step = "committed" => commitChecked
 BroadLossDenied == ~broadLoss
 DenialNeedsLoss == ~falseDenial

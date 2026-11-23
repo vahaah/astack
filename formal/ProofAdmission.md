@@ -99,3 +99,25 @@ Current results belong to CI and proof receipts, so this record does not copy a 
 
 `bun run check` runs the proof once, after the lint, type, build and scan gates and before the suite.
 `bun run test` runs only the suite.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/ProofAdmission.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `AdmitSafe` | restates | `Admit` | `proof-valid-triple` |
+| `FailureIsTerminal` | restates | `ValidationFail`, `RejectPositive`, `RejectEvidence` | `proof-run-stop` |
+| `StrictDefault` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only for an eligible authority |  |
+| `LandingAuthoritySafe` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only with `LandingAllowed` |  |
+| `ProcessAuthoritySafe` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only for an eligible authority |  |
+| `HistoryBound` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only for an eligible authority |  |
+| `RatifiedAuthority` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only with `AuthorityAllowed` |  |
+| `BaseAncestry` | independent | `Admit` needs each stage, and `ValidationPass` passes the base stage only with `BaseRelationAllowed` |  |
+| `ScopeFromMergeBase` | independent | `Admit` needs each stage, and `ValidationPass` passes the base stage only with `BaseViewsAllowed` |  |
+| `HistoryAtManifest` | independent | `Admit` needs each stage, and `ValidationPass` passes the base stage only with `BaseViewsAllowed` |  |
+| `MovedAuthorityStops` | independent | `Admit` needs each stage, and `ValidationPass` passes the domain stage only with `MoveAllowed` |  |
+| `StaleStopNamesPaths` | independent | It joins the changed inputs of `InputChange` with the names of `RejectEvidence` |  |
+| `StopNamesSection` | restates | `ValidationFail`, `RejectPositive`, `RejectEvidence` | `proof-stop-section` |
+| `OneManifestPerChange` | independent | `Admit` needs each stage, and `ValidationPass` passes the schema and base stages only with `ManifestAllowed` |  |
+| `EventuallyTerminal` | independent | A liveness property under weak fairness, which no single action states |  |

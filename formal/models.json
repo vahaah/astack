@@ -504,7 +504,17 @@
 			"text": [
 				"marketplace/plugins/astack/skills/full-stop/**",
 				"marketplace/plugins/astack/skills/full-send/**"
-			]
+			],
+			"conformance": {
+				"test": "tests/astack/session-guards-model.test.ts",
+				"mutation": {
+					"file": "src/astack/pr/merge.ts",
+					"symbol": "grantReasons",
+					"original": "if (grantCovers(inputs.grant, pr.number)) return [];",
+					"replacement": "return [];",
+					"defect": "grantReasons returns no reason, so the merge guard passes a merge that no profile and no prompt of the owner grants."
+				}
+			}
 		},
 		{
 			"name": "SourceScan",

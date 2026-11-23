@@ -120,3 +120,14 @@ A test that runs many CLI cases splits into one test for each case, as the drift
 - Object writes in process. Rejected because they need a git library.
 - A file-wide `setDefaultTimeout`. Rejected because it raises the timeout of each test in the file.
 - A budget for each slow test. Rejected because each budget then hides a different slow test.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/FixtureIsolation.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `TemplateUnchanged` | independent | It joins the remote that `RewriteConfig` sets with the push target of `Push` |  |
+| `CopiesDisjoint` | independent | It joins the remote that `RewriteConfig` sets with the push target of `Push` |  |
+| `CopyIndexClean` | restates | `RefreshIndex` | `fx-index` |
+| `NoPartialTemplate` | restates | `FinishBuild` | `fx-atomic` |

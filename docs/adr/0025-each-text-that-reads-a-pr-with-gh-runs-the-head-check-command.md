@@ -116,3 +116,13 @@ Only the engine, the stub fallback and the setup seed keep their own forms, and 
 - A line that reads only the exit code. Rejected because it drops the last line, which the caller contract of the command needs.
 - Keep the manual check in each text. Rejected because 16 copies drift from the command.
 - Give the setup seed the head line. Rejected because a product repo can run the seed with no astack.
+
+## Invariant audit
+
+The audit of 2026-11-22 reads `formal/PrHeadCheck.cfg`. Each row names an invariant or a property other than `TypeOK`.
+
+| Invariant | Class | Action | Controls |
+|---|---|---|---|
+| `ActOnlyOnHeldHead` | independent | It joins the result that `Check` reads from gh, the runtime and the head with the act of `Decide`, and `Pull` can move the head |  |
+| `NoPrOnlyOnMessage` | independent | It joins the result that `Check` reads from gh and the runtime with the update of `Decide` |  |
+| `OtherResultStops` | restates | `Decide` | `ph-pair` |
