@@ -17,8 +17,8 @@ import {
 	COMPANION_ENV,
 	exampleCompanionRoot,
 } from "../../scripts/lib/companion.ts";
-import { sha256 } from "../../scripts/lib/neutrality.ts";
 import { repoRoot } from "../../scripts/lib/projects.ts";
+import { sha256 } from "../../src/astack/deny-list.ts";
 import { envWithoutCompanion } from "../child-env.ts";
 
 const dirs: string[] = [];

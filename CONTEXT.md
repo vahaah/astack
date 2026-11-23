@@ -10,7 +10,7 @@ Each card context groups the code owners of one area under this glossary.
 ```domain
 context Kernel shared : src/astack/result.ts, src/astack/glob.ts, src/astack/git.ts, src/astack/json-format.ts, src/astack/headings.ts, src/astack/print.ts
 context Proof : src/astack/change-proof/**, src/astack/domain/**, src/astack/adr.ts, src/astack/spec-drift.ts, src/astack/cli/commands/check/proof.ts, src/astack/cli/commands/check/spec-drift.ts, src/astack/cli/commands/check/effects.ts, src/astack/cli/commands/check/adr.ts, src/astack/cli/commands/check/adr-base.ts
-context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
+context Guards : src/astack/hook/**, src/astack/pr/**, src/astack/deny-*.ts, src/astack/outbound.ts, src/astack/shell.ts, src/astack/git-command.ts, src/astack/gh.ts, src/astack/attended.ts, src/astack/state.ts, src/astack/gates.ts, src/astack/paths.ts, src/astack/session-repos.ts, src/astack/cli/commands/check/pr.ts, src/astack/cli/commands/check/pr-head.ts, src/astack/cli/commands/check/body.ts
 context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**, src/astack/cli/commands/check/comments.ts, src/astack/cli/commands/check/ste.ts, src/astack/cli/commands/check/types.ts
 context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
 context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
@@ -18,6 +18,8 @@ context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/
 cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
 cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write), loadFullStop(read), saveFullStop(write)
 cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
+cap  DenyStore [fs-read, fs-write] @ src/astack/deny-store.ts: readDenyList(read), writeDenyList(write)
+cap  SessionStore [fs-read, fs-write] @ src/astack/pr/session-prs.ts: loadSessionPrs(read), saveSessionPrs(write)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
@@ -26,6 +28,9 @@ pure src/astack/domain/imports.ts
 pure src/astack/domain/effects.ts
 pure src/astack/domain/effect-change.ts
 pure src/astack/pr/grant.ts
+pure src/astack/deny-list.ts
+pure src/astack/outbound.ts
+pure src/astack/pr/split.ts
 ```
 
 ## Language
@@ -221,6 +226,20 @@ The state files that keep the merge grant and the full-stop record of one sessio
 A store with no state folder or no session id saves nothing and loads no grant.
 _Avoid_: Grant cache, grant file
 _Code_: `src/astack/pr/grant-store.ts`
+
+### Outbound deny list
+
+The state copy of the hashed names of the companion deny list, which the outbound guard reads before GitHub text leaves the machine.
+`bun run deny add` and `bun run deny sync` write it. No copy gives no check, and a bad line denies each GitHub text write.
+_Avoid_: Client list, blocklist
+_Code_: `src/astack/deny-store.ts`
+
+### Split instruction
+
+A clause in the last person's prompt of a session that asks to open a second or separate PR.
+It lets that session open a second PR from one worktree to one base. A negation, a question or a clause that joins PRs gives none.
+_Avoid_: Split grant, split permission
+_Code_: `splitInstructionIn`
 
 ### Base branch authority
 

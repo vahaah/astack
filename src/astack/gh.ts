@@ -147,3 +147,16 @@ export function isGh(
 ): boolean {
 	return values[0] === "gh" && values[1] === group && values[2] === action;
 }
+
+export function ghRepoPrefix(env: readonly Word[]): string | undefined {
+	return env
+		.map((word) => /^GH_REPO=(.*)$/s.exec(word.value)?.[1])
+		.filter((value) => value !== undefined)
+		.at(-1);
+}
+
+export function inputString(input: unknown, key: string): string | undefined {
+	if (typeof input !== "object" || input === null) return undefined;
+	const value: unknown = Reflect.get(input, key);
+	return typeof value === "string" ? value : undefined;
+}

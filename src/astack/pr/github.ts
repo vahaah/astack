@@ -205,3 +205,19 @@ export const readPullRequestWithGh: ReadPullRequest = (target) => {
 	]);
 	return pullRequestFrom(view, graph);
 };
+
+export type Visibility = "public" | "private" | "internal" | "unknown";
+
+export type ReadVisibility = (slug: string, dir: string) => Visibility;
+
+const VISIBILITIES: readonly Visibility[] = ["public", "private", "internal"];
+
+export const visibilityWithGh: ReadVisibility = (slug, dir) => {
+	const result = spawnSync(
+		"gh",
+		["api", `repos/${slug}`, "--jq", ".visibility"],
+		{ cwd: dir, encoding: "utf8", timeout: GH_TIMEOUT_MS },
+	);
+	const answer = result.status === 0 ? result.stdout.trim() : "";
+	return VISIBILITIES.find((one) => one === answer) ?? "unknown";
+};

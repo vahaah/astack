@@ -2,13 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { parseHashList, sha256 } from "../../scripts/lib/neutrality.ts";
 import {
 	loadProject,
 	projectNames,
 	repoRoot,
 } from "../../scripts/lib/projects.ts";
 import { renderReviewCopies } from "../../scripts/lib/render.ts";
+import { parseHashList, sha256 } from "../../src/astack/deny-list.ts";
 
 const example = join(repoRoot, "examples/companion");
 const projects = join(example, "projects");

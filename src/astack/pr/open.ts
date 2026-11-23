@@ -80,10 +80,13 @@ export function ticketKeys(body: string | undefined): readonly string[] {
 export type NewPr = {
 	readonly head: string | undefined;
 	readonly body: string | undefined;
+	readonly base: string;
+	readonly repo: string;
+	readonly root: string;
 };
 
 export function duplicateReasons(
-	pr: NewPr,
+	pr: Pick<NewPr, "head" | "body">,
 	open: readonly OpenPr[],
 ): readonly string[] {
 	const keys = new Set(ticketKeys(pr.body));

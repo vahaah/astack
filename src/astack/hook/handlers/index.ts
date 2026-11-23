@@ -3,6 +3,7 @@ import { handler as comments } from "./comments.ts";
 import { handler as destructive } from "./destructive.ts";
 import { handler as duplicatePr } from "./duplicate-pr.ts";
 import { handler as mergeGuard } from "./merge-guard.ts";
+import { handler as outbound } from "./outbound.ts";
 import { handler as planFile } from "./plan-file.ts";
 import { handler as planPointer } from "./plan-pointer.ts";
 import { handler as prBody } from "./pr-body.ts";
@@ -21,6 +22,7 @@ export const HANDLERS: readonly Handler[] = [
 	prBody,
 	mergeGuard,
 	duplicatePr,
+	outbound,
 	destructive,
 	steReply,
 	turn,

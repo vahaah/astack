@@ -12,8 +12,8 @@ import {
 	openCompanion,
 	writable,
 } from "../scripts/lib/companion.ts";
-import { sha256 } from "../scripts/lib/neutrality.ts";
 import { repoRoot } from "../scripts/lib/projects.ts";
+import { sha256 } from "../src/astack/deny-list.ts";
 
 describe("companionFrom", () => {
 	test.each<[string, string | undefined, string | undefined, Companion]>([
