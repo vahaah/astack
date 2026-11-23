@@ -1069,7 +1069,7 @@
 		},
 		{
 			"criterion": "OB-fail-closed",
-			"controls": ["outbound-fail-closed", "outbound-fault"]
+			"controls": ["outbound-fail-closed", "outbound-fault", "outbound-unread"]
 		},
 		{
 			"criterion": "OB-sync",
