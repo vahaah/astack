@@ -81,6 +81,10 @@ A guard returns a plain value and reads files, git and the environment at the ho
 ```data
 mergeGrantIn : PromptText -> MergeGrant   effects: none
 startsFullStop : PromptText -> boolean    effects: none
+saveGrant    : (MergeGrant, GrantStore) -> Result<void, GrantSaveStop>   effects: fs-write
+loadGrant    : GrantStore -> Result<MergeGrant, never>                   effects: fs-read
+saveFullStop : (boolean, GrantStore) -> Result<void, GrantSaveStop>      effects: fs-write
+loadFullStop : GrantStore -> FullStopRecord                              effects: fs-read
 mergeGuard   : HookCall -> Verdict        effects: fs-read, fs-write, spawn, network
 handler      : HookCall -> Verdict        comments: fs-read, fs-write, spawn, env
 handler      : HookCall -> Verdict        types: fs-read, spawn, env
@@ -105,7 +109,9 @@ sameProfile  : (GateRecord, string, string) -> boolean   effects: none
 `startsFullStop` is pure. It is true for the full-stop command at the start of a prompt, or for a prompt whose only instruction is "full stop".
 Filler words, such as "ok", "please" and "now", can stand beside it.
 
-`mergeGuard` saves that grant for a person's prompt. It saves the full-stop record for each prompt that starts the run, and removes it for a person's prompt that does not. It reads both back when a `gh pr merge` call arrives.
+`mergeGuard` saves that grant for a person's prompt with `saveGrant`. It saves the full-stop record with `saveFullStop` for each prompt that starts the run, and removes it for a person's prompt that does not. It reads both back with `loadGrant` and `loadFullStop` when a `gh pr merge` call arrives.
+`src/astack/pr/grant-store.ts` holds the four store functions. `src/astack/pr/grant.ts` holds only the pure grant rules.
+A save that fails returns an error. The prompt still passes, and the earlier grant file stays. A failed full-stop save also skips the grant save.
 `workLoss` is pure. It takes the treeish reader as a parameter, and the destructive `handler` passes a reader that runs `git rev-parse`.
 
 `shellSteps` and `readGit` stay pure. The destructive `handler` reads the gate record, so it gets the env effect.
@@ -125,10 +131,10 @@ The wrapper law is not one of the eight category laws, so the proof matrix lists
 
 | Model concept | Concrete contract |
 |---|---|
-| `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt |
+| `Prompt` and `ClauseGrant` | `mergeGrantIn` and `FULL_SEND_COMMAND` read the clauses, and `mergeGuard` saves the grant of a person's prompt with `saveGrant` in `src/astack/pr/grant-store.ts` |
 | `Withholds` and `PromptGrant` | `withholdsFullSend`, which drops the full-send grant of each clause when one clause of the prompt withholds it |
 | `HumanPrompt` | `humanPrompt` with `replyInteractive`, and `unattendedReason` in `src/astack/attended.ts` |
-| `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts` |
+| `Merge` | `preflightReasons`, `stateReasons` and `grantCovers` in `src/astack/pr/merge.ts` and `src/astack/pr/grant.ts`, and `loadGrant` in `src/astack/pr/grant-store.ts` |
 | `ModeOf`, `StartsFullStop` and the `mode` of `Merge` | `startsFullStop` and `saveFullStop`, which write the full-stop record for each prompt that starts the run. `preflightReasons` denies each merge while `loadFullStop` gives `present`. `--disable-auto` passes |
 | The `fault` of `Merge` | A guard error, and a session with no path for the full-stop record. Then `loadFullStop` gives `unknown`, and `grantReasons` denies a merge that rests only on a standing grant. With no path, no grant record exists either, so each merge gets a deny |
 | `Scratch` and `Write` | `isScratchPath` in the comment, type and doc STE hooks |

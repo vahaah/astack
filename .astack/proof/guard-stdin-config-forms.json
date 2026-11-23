@@ -1,7 +1,7 @@
 {
 	"version": 1,
 	"change": "guard-stdin-config-forms",
-	"base": "5b107e76dd24a4f5db4a7945017f8e9fb0a8ce0c",
+	"base": "65bc7ffc5295e365411ac2e79b427e334075e2dd",
 	"scope": [
 		{
 			"path": "formal/SessionGuards.tla",

@@ -5,14 +5,14 @@ import {
 	type ReadPullRequest,
 	readPullRequestWithGh,
 } from "../../pr/github.ts";
+import { mergeGrantIn, NO_GRANT, startsFullStop } from "../../pr/grant.ts";
 import {
+	grantStore,
 	loadFullStop,
 	loadGrant,
-	mergeGrantIn,
 	saveFullStop,
 	saveGrant,
-	startsFullStop,
-} from "../../pr/grant.ts";
+} from "../../pr/grant-store.ts";
 import {
 	mergeDenial,
 	parseMergeCall,
@@ -301,12 +301,14 @@ function mergeVerdict(
 ): Verdict {
 	const call = parseMergeCall(step.simple, merge.args, step.dir);
 	if (call.disableAuto) return ALLOW;
+	const store = grantStore(context.env, context.session);
+	const loaded = loadGrant(store);
 	const inputs = {
 		call,
 		chained,
 		setsEnv: merge.setsEnv,
-		grant: loadGrant(context.env, context.session),
-		fullStop: loadFullStop(context.env, context.session),
+		grant: loaded.ok ? loaded.value : NO_GRANT,
+		fullStop: loadFullStop(store),
 		unattendedReason: unattendedReason(context.env),
 	};
 	const preflight = preflightReasons(inputs);
@@ -607,11 +609,13 @@ export function mergeGuard(read: ReadPullRequest): Handler {
 			switch (event.kind) {
 				case "prompt": {
 					if (!event.session) return ALLOW;
+					const store = grantStore(context.env, event.session);
 					const fullStop = startsFullStop(event.text);
-					if (event.human || fullStop)
-						saveFullStop(context.env, event.session, fullStop);
-					if (event.human)
-						saveGrant(context.env, event.session, mergeGrantIn(event.text));
+					if (event.human || fullStop) {
+						const marked = saveFullStop(fullStop, store);
+						if (!marked.ok) return ALLOW;
+					}
+					if (event.human) saveGrant(mergeGrantIn(event.text), store);
 					return ALLOW;
 				}
 				case "shell":

@@ -92,7 +92,14 @@
 		"tests/astack/session-guards-model.test.ts",
 		"tests/property/session-guards-merge.test.ts",
 		"tests/property/session-guards-work-loss.test.ts",
-		"tests/astack/model-audit.test.ts"
+		"tests/astack/model-audit.test.ts",
+		"tests/astack/domain-imports.test.ts",
+		"tests/astack/domain-sources.test.ts",
+		"tests/astack/domain-effects.test.ts",
+		"tests/astack/domain-effect-change.test.ts",
+		"tests/astack/check-effects-cli.test.ts",
+		"tests/property/grant-store.test.ts",
+		"tests/property/grant-monoid.test.ts"
 	],
 	"links": [
 		{
@@ -957,6 +964,39 @@
 		{
 			"criterion": "RS-ONE-LIST",
 			"controls": ["rs-one-list"]
+		},
+		{
+			"criterion": "DR-effect-card",
+			"controls": ["effects-card-rules", "check-effects-advice"]
+		},
+		{
+			"criterion": "DR-effect-classes",
+			"controls": ["effects-module-facts", "effects-card-rules"]
+		},
+		{
+			"criterion": "DR-effect-change",
+			"controls": ["effects-change-named", "effects-abs-callers"]
+		},
+		{
+			"criterion": "DR-effect-advice",
+			"controls": [
+				"proof-effects-advice",
+				"check-effects-advice",
+				"effects-sources",
+				"effects-totality"
+			]
+		},
+		{
+			"criterion": "GM-MONOID",
+			"controls": ["grant-join-meaning"]
+		},
+		{
+			"criterion": "SG-grant-store",
+			"controls": [
+				"grant-store-roundtrip",
+				"grant-save-fail",
+				"sg-grant-save-allows"
+			]
 		}
 	]
 }
