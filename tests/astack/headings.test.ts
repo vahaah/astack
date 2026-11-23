@@ -171,6 +171,26 @@ describe("repo templates", () => {
 		);
 	});
 
+	test("[control:template-bug-headings] a lone template with bug headings and a neutral name serves a bug and no feature", () => {
+		const lone = mkdtempSync(join(tmpdir(), "astack-lone-template-"));
+		try {
+			writeFileSync(
+				join(lone, "ISSUE_TEMPLATE.md"),
+				"## Summary\n## Steps to reproduce\n## Expected\n## Actual\n",
+			);
+			expect(issueHeadings(lone, "bug")).toEqual({
+				source: "ISSUE_TEMPLATE.md",
+				headings: ["Summary", "Steps to reproduce", "Expected", "Actual"],
+			});
+			expect(issueHeadings(lone, "feature")).toEqual({
+				source: "the feature ticket standard",
+				headings: TICKET_HEADINGS.feature,
+			});
+		} finally {
+			rmSync(lone, { recursive: true, force: true });
+		}
+	});
+
 	test("a lone template applies only to its own kind, or to every kind when it names none", () => {
 		const lone = mkdtempSync(join(tmpdir(), "astack-lone-template-"));
 		try {
