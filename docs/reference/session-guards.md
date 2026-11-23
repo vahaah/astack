@@ -30,6 +30,7 @@ The [design](../design.md) gives the hook behavior in full.
 - [criterion:SG-generated] Each generated file and each bundle of the CLI equals a fresh build of its source.
 - [criterion:SG-runtime] `bin/astack` runs the first runtime that it finds, with bun before node, and probes no version before a run. Below node 22, a hook exits 0 with one line on stderr, and each other command exits 1.
 - [criterion:SG-preserve] A change to a skill, a doc or another command leaves the verdicts of the session guards unchanged.
+- [criterion:SG-grant-store] A load after a save gives the grant of the last save, and two saves equal one. A save of `NO_GRANT` deletes the file. A save under a state path that is a file returns an error with the grant path. Then the prompt still passes, and the earlier grant file stays.
 
 ## Claim boundary
 

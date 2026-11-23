@@ -15,11 +15,17 @@ context Writing : src/astack/ste/**, src/astack/comments/**, src/astack/types/**
 context Plan : src/astack/plan/**, src/astack/cli/commands/check/plan.ts, src/astack/cli/commands/check/ticket.ts
 context Delivery : src/astack/watch-pr/**, src/astack/ci-pins.ts, src/astack/stack-config.ts, src/astack/stack-edge.ts, src/astack/migrations.ts, src/astack/review-growth.ts, src/astack/pr-review-profile.ts, src/astack/cli/commands/check/ci-pins.ts, src/astack/cli/commands/check/stack-config.ts, src/astack/cli/commands/check/migrations.ts, src/astack/cli/commands/check/review-growth.ts, src/astack/cli/commands/check/hardening-profile.ts
 context Install : src/astack/cli/*.ts, src/astack/cli/commands/*.ts, src/astack/cli/commands/check/index.ts, src/astack/codex-hooks.ts, src/astack/codex-trust.ts, src/astack/commit-style.ts, src/astack/doctor.ts, src/astack/hook-profile.ts, src/astack/init.ts, src/astack/managed.ts, src/astack/marketplace.ts, src/astack/profile.ts, src/astack/public-repo.ts, src/astack/repo-facts.ts, src/astack/rules.ts, src/astack/skill-path.ts
-cap  TypeCheck [fs-read, fs-write, spawn] @ src/astack/domain/witness-run.ts: typeCheck(write)
+cap  TypeCheck [fs-read, fs-write, spawn, env] @ src/astack/domain/witness-run.ts: typeCheck(write)
+cap  GrantStore [fs-read, fs-write] @ src/astack/pr/grant-store.ts: loadGrant(read), saveGrant(write)
+cap  Sources [fs-read, spawn] @ src/astack/domain/sources.ts: moduleSources(read)
 pure src/astack/domain/notation.ts
 pure src/astack/domain/profile.ts
 pure src/astack/domain/rules.ts
 pure src/astack/domain/witness.ts
+pure src/astack/domain/imports.ts
+pure src/astack/domain/effects.ts
+pure src/astack/domain/effect-change.ts
+pure src/astack/pr/grant.ts
 ```
 
 ## Language
@@ -93,6 +99,14 @@ The one `domain` fence under `## Contexts` of the context map, else of the gloss
 Each card context groups code owners under one glossary.
 _Avoid_: Card path key, a glossary for each code owner
 _Code_: `parseCard`
+
+### Effect class
+
+One of fs-read, fs-write, spawn, network, env, clock and random.
+A module gets a class from a value import of a node module or from a named global. It also gets the classes of each module that it imports by value.
+`astack check effects` compares the classes with the `pure` lines, the caps and the step rows.
+_Avoid_: Side effect list, capability
+_Code_: `src/astack/domain/imports.ts`
 
 ### Composition record
 
@@ -171,6 +185,14 @@ It comes from the base branch authority of the PR.
 It also comes from merge words or an un-negated "full send" clause in a person's prompt of the current turn.
 _Avoid_: Approval, green light
 _Code_: `MergeGrant`
+
+### Grant store
+
+The state file that keeps the merge grant of one session between hook calls.
+`saveGrant` returns an error with the grant path, and the merge guard still allows the prompt.
+A store with no state folder or no session id saves nothing and loads no grant.
+_Avoid_: Grant cache, grant file
+_Code_: `src/astack/pr/grant-store.ts`
 
 ### Base branch authority
 

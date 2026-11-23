@@ -329,7 +329,7 @@ The stance is plain TypeScript with FP conventions. Use ADTs with exhaustive mat
 | no `any`, no unsafe cast, no `!`, no compiler silencing, strict base tsconfig flags | the type hook (8.1), the comment hook, tsc, `astack doctor types` |
 | brands only in the parser, types from the owning schema, parse once at the edge | review, the cast deny |
 | records for products, unions for sums, full matches, literal unions over `enum` | tsc, Biome `useExhaustiveSwitchCases` (never its fix), the hook |
-| readonly data, expected failure as a value, one `Result` type per repo, pure domain | Biome, review, repo architecture tests, a note on `throw` in `pureCore` globs |
+| readonly data, expected failure as a value, one `Result` type per repo, pure domain | Biome, review, repo architecture tests, `astack check effects` on the `pure` lines of the contexts card |
 | combine and empty, round trips, idempotent normalizers, total-order comparators | fast-check laws, `effect` FastCheck in a repo that uses Effect |
 
 ### 8.1 The type hook

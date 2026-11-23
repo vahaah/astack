@@ -12,7 +12,7 @@ The card names the pure modules and the caps, and each step names the caps of it
 No check compared those names with the imports of the code.
 So a module under a `pure` line can write files, and the plan does not see the effect that a change adds.
 
-A probe with the scanner of the type hook read the 167 modules under `src/` in less than 0.1 s.
+A probe with the scanner of the type hook read the 174 modules under `src/` in less than 0.1 s.
 It found 18 throws, all outside the pure modules, and 0 casts.
 A regex reads the word `throw` in 5 strings and comments of `comments/` and `types/`.
 
